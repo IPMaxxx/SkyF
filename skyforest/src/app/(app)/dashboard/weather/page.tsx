@@ -142,11 +142,14 @@ export default function WeatherPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const [locRes, savedRes, lastRes, rainRes] = await Promise.all([
-        supabase.from("locations").select("*").order("created_at", { ascending: false }),
-        supabase.from("saved_weather").select("id, check_date, created_at, location:locations(name)").order("created_at", { ascending: false }).limit(10),
-        supabase.from("saved_weather").select("*").order("created_at", { ascending: false }).limit(1).single(),
-        supabase.from("saved_rain_maps").select("*").order("created_at", { ascending: false }).limit(10),
+        supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("saved_weather").select("id, check_date, created_at, location:locations(name)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+        supabase.from("saved_weather").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
+        supabase.from("saved_rain_maps").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
       ]);
       if (locRes.data) {
         setLocations(locRes.data);

@@ -54,9 +54,13 @@ export default function NewBestDayPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingLocs(false); return; }
+
       const { data } = await supabase
         .from("locations")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (data) {
         setLocations(data);

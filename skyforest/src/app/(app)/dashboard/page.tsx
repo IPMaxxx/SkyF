@@ -27,11 +27,15 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
     const [locRes, bdRes] = await Promise.all([
-      supabase.from("locations").select("*").order("created_at", { ascending: false }),
+      supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase
         .from("best_days")
         .select("*, location:locations(*), mushroom:mushroom_species(*)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5),
     ]);

@@ -102,10 +102,13 @@ export default function ComparePage() {
 
   const loadAll = async () => {
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const [cmpRes, bdRes, locRes] = await Promise.all([
-      supabase.from("auto_compares").select("*, best_day:best_days(*, location:locations(*), mushroom:mushroom_species(*)), location:locations(*)").order("created_at", { ascending: false }),
-      supabase.from("best_days").select("*, location:locations(*), mushroom:mushroom_species(*)").order("created_at", { ascending: false }),
-      supabase.from("locations").select("*").order("created_at", { ascending: false }),
+      supabase.from("auto_compares").select("*, best_day:best_days(*, location:locations(*), mushroom:mushroom_species(*)), location:locations(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("best_days").select("*, location:locations(*), mushroom:mushroom_species(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
     if (bdRes.data) { setBestDays(bdRes.data); if (bdRes.data.length > 0) setNewBdId(bdRes.data[0].id); }
     if (locRes.data) { setLocations(locRes.data); if (locRes.data.length > 0) setNewLocId(locRes.data[0].id); }

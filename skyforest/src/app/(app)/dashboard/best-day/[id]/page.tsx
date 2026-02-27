@@ -66,13 +66,17 @@ export default function EditBestDayPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
       const [bdRes, locRes] = await Promise.all([
         supabase
           .from("best_days")
           .select("*, location:locations(*), mushroom:mushroom_species(*)")
           .eq("id", id)
+          .eq("user_id", user.id)
           .single(),
-        supabase.from("locations").select("*").order("created_at", { ascending: false }),
+        supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
       if (bdRes.data) {
