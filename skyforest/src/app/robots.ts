@@ -1,56 +1,35 @@
 import type { MetadataRoute } from "next";
 
+const PRIVATE_PATHS = ["/dashboard", "/map", "/payment", "/account", "/api/", "/login", "/register"];
+
+const AI_BOTS = [
+  "GPTBot",
+  "ChatGPT-User",
+  "Claude-Web",
+  "ClaudeBot",
+  "Anthropic-AI",
+  "PerplexityBot",
+  "Google-Extended",
+  "Applebot-Extended",
+  "Bytespider",
+  "CCBot",
+  "Cohere-AI",
+  "Meta-ExternalAgent",
+];
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
         allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: [
-          "/dashboard",
-          "/map",
-          "/payment",
-          "/account",
-          "/api/",
-          "/login",
-          "/register",
-        ],
+        disallow: PRIVATE_PATHS,
       },
-      {
-        userAgent: "GPTBot",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "ChatGPT-User",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "Claude-Web",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "ClaudeBot",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "PerplexityBot",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "Google-Extended",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
-      {
-        userAgent: "Applebot-Extended",
-        allow: ["/", "/llms.txt", "/llms-full.txt"],
-        disallow: ["/dashboard", "/map", "/payment", "/account", "/api/"],
-      },
+      ...AI_BOTS.map((bot) => ({
+        userAgent: bot,
+        allow: ["/", "/llms.txt", "/llms-full.txt", "/offer", "/privacy", "/payment_method", "/return_goods"],
+        disallow: PRIVATE_PATHS,
+      })),
     ],
     sitemap: "https://skyforest.by/sitemap.xml",
   };

@@ -7,17 +7,6 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface Subscription {
-  id: string;
-  user_id: string;
-  status: "active" | "expired" | "cancelled";
-  started_at: string;
-  expires_at: string;
-  payment_id: string | null;
-  amount: number;
-  created_at: string;
-}
-
 export interface Location {
   id: string;
   user_id: string;
@@ -107,15 +96,6 @@ export interface TokenTransaction {
   description: string | null;
   payment_id: string | null;
   balance_after: number | null;
-  created_at: string;
-}
-
-export interface SearchRequest {
-  id: string;
-  user_id: string;
-  request_type: "mushroom_search" | "rain_map";
-  lat: number | null;
-  lng: number | null;
   created_at: string;
 }
 

@@ -32,31 +32,14 @@ create policy "Seller can cancel own listings"
   on marketplace_listings for update
   using (seller_id = auth.uid() and status = 'active');
 
--- Allow reading profiles (name only) for marketplace seller display
-create policy "Anyone can read basic profile info"
-  on public.profiles for select
-  using (
-    auth.uid() = id
-    or id in (select seller_id from marketplace_listings where status = 'active')
-  );
+-- NOTE: No extra profiles policy needed. The marketplace RPC uses security
+-- definer and reads profiles directly. The existing "Users can view own
+-- profile" policy is sufficient.
 
--- Allow reading best_days that are listed on the marketplace
-create policy "Anyone can view marketplace best days"
-  on public.best_days for select
-  using (
-    id in (select best_day_id from marketplace_listings where status = 'active')
-  );
-
--- Allow reading locations of marketplace best days
-create policy "Anyone can view marketplace locations"
-  on public.locations for select
-  using (
-    id in (
-      select bd.location_id from best_days bd
-      join marketplace_listings ml on ml.best_day_id = bd.id
-      where ml.status = 'active'
-    )
-  );
+-- NOTE: No permissive RLS policies on best_days or locations for marketplace.
+-- The marketplace RPC get_marketplace_listings() uses security definer and
+-- bypasses RLS. Adding permissive SELECT policies here would leak other
+-- users' data into normal dashboard queries (PERMISSIVE policies are OR'd).
 
 -- RPC: get all active marketplace listings with full data (security definer bypasses RLS)
 create or replace function get_marketplace_listings()

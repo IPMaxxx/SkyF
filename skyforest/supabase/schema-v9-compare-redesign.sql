@@ -1,36 +1,6 @@
 -- V9: Compare redesign — comparison = Best Day + Location
--- Includes table creation (from v5) + new columns
-
--- Create the table if it doesn't exist yet
-create table if not exists public.auto_compares (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  best_day_id uuid references public.best_days(id) on delete cascade not null,
-  enabled boolean not null default true,
-  run_time time not null default '08:00',
-  weights jsonb not null default '{"rain_sum":30,"temperature_mean":25,"temperature_min":10,"temperature_max":10,"wind_speed_max":10,"relative_humidity_mean":15}',
-  last_run_at timestamptz,
-  last_score numeric,
-  created_at timestamptz default now()
-);
-
-alter table public.auto_compares enable row level security;
-
--- RLS: each user sees only their own comparisons
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies where tablename = 'auto_compares' and policyname = 'Users can manage own auto compares'
-  ) then
-    create policy "Users can manage own auto compares"
-      on public.auto_compares for all using (auth.uid() = user_id);
-  end if;
-end $$;
-
--- Index for cron queries
-create index if not exists idx_auto_compares_enabled on public.auto_compares(enabled, run_time);
-
--- New columns for redesign
+-- Run AFTER schema-v5 (auto_compares table must already exist)
+-- Adds location_id, name, last_result columns and links saved_compares
 alter table public.auto_compares
   add column if not exists location_id uuid references public.locations(id) on delete cascade;
 

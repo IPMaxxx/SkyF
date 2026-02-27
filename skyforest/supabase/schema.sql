@@ -43,7 +43,8 @@ create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- Subscriptions
+-- DEPRECATED: Subscriptions replaced by token system (schema-v3-tokens.sql)
+-- Table kept for data preservation; not used by application code
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -102,7 +103,7 @@ returns integer as $$
     and created_at >= current_date;
 $$ language sql stable security definer;
 
--- Helper function: check if user has active subscription
+-- DEPRECATED: replaced by token_balances check
 create or replace function public.has_active_subscription(p_user_id uuid)
 returns boolean as $$
   select exists(

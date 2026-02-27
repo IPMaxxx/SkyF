@@ -3,33 +3,16 @@
 
 -- 1. Allow reading profiles for marketplace seller display
 -- (drop first in case it already exists)
+-- Remove overly permissive profiles policy. The marketplace RPC uses
+-- security definer so it doesn't need this. Only own profile should be visible.
 drop policy if exists "Anyone can read basic profile info" on public.profiles;
-create policy "Anyone can read basic profile info"
-  on public.profiles for select
-  using (
-    auth.uid() = id
-    or id in (select seller_id from marketplace_listings where status = 'active')
-  );
 
--- 2. Allow reading best_days that are listed on the marketplace
+-- 2. Remove marketplace permissive policies on best_days and locations.
+-- These leaked other users' data into normal queries because PERMISSIVE
+-- policies are OR'd. The marketplace RPC uses security definer and
+-- does not need these.
 drop policy if exists "Anyone can view marketplace best days" on public.best_days;
-create policy "Anyone can view marketplace best days"
-  on public.best_days for select
-  using (
-    id in (select best_day_id from marketplace_listings where status = 'active')
-  );
-
--- 3. Allow reading locations of marketplace best days
 drop policy if exists "Anyone can view marketplace locations" on public.locations;
-create policy "Anyone can view marketplace locations"
-  on public.locations for select
-  using (
-    id in (
-      select bd.location_id from best_days bd
-      join marketplace_listings ml on ml.best_day_id = bd.id
-      where ml.status = 'active'
-    )
-  );
 
 -- 4. RPC function that returns listings with full data (security definer = bypasses RLS)
 create or replace function get_marketplace_listings()

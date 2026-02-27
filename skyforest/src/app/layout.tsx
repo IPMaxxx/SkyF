@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     "лисички",
     "опята",
     "skyforest",
+    "грибы после дождя",
+    "грибной календарь",
+    "карта осадков для грибов",
+    "анализ погоды для грибника",
   ],
   openGraph: {
     title: "Skyforest.by — знайте, когда идти за грибами",
@@ -62,6 +66,12 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://skyforest.by"),
   icons: { icon: "/favicon.png" },
+  other: {
+    "geo.region": "BY",
+    "geo.placename": "Belarus",
+    "content-language": "ru",
+  },
+  category: "technology",
 };
 
 const jsonLd = {
@@ -107,6 +117,11 @@ const jsonLd = {
       provider: {
         "@id": "https://skyforest.by/#organization",
       },
+      browserRequirements: "Requires JavaScript. Works in all modern browsers.",
+      softwareVersion: "2.0",
+      screenshot: "https://skyforest.by/images/og-cover.png",
+      inLanguage: "ru",
+      availableLanguage: ["ru"],
       featureList: [
         "Архив погоды за 14 дней для грибных локаций",
         "Сохранение лучшего дня сбора грибов (Best Day)",
@@ -124,6 +139,18 @@ const jsonLd = {
         "@id": "https://skyforest.by/#organization",
       },
       inLanguage: "ru",
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://skyforest.by/#breadcrumb",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Главная",
+          item: "https://skyforest.by",
+        },
+      ],
     },
     {
       "@type": "FAQPage",
@@ -194,6 +221,8 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <link rel="author" href="https://skyforest.by/llms.txt" />
+        <meta name="ai-content-declaration" content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt" />
       </head>
       <body className={`${roboto.variable} antialiased`}>{children}</body>
     </html>
