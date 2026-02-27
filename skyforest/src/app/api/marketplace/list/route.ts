@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { getSeason } from "@/lib/supabase/types";
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { best_day_id, price } = await request.json();
+
+  if (!best_day_id || !price || price < 1) {
+    return NextResponse.json({ error: "Invalid params" }, { status: 400 });
+  }
+
+  const { data: bd, error: bdErr } = await supabase
+    .from("best_days")
+    .select("*")
+    .eq("id", best_day_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (bdErr || !bd) {
+    return NextResponse.json(
+      { error: "Best Day не найден или не принадлежит вам" },
+      { status: 404 }
+    );
+  }
+
+  const { data: existing } = await supabase
+    .from("marketplace_listings")
+    .select("id")
+    .eq("best_day_id", best_day_id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existing) {
+    return NextResponse.json(
+      { error: "Этот Best Day уже выставлен на продажу" },
+      { status: 409 }
+    );
+  }
+
+  const season = getSeason(bd.best_date);
+
+  const { data: listing, error: insertErr } = await supabase
+    .from("marketplace_listings")
+    .insert({
+      seller_id: user.id,
+      best_day_id,
+      price: Math.floor(price),
+      season,
+    })
+    .select("*")
+    .single();
+
+  if (insertErr) {
+    console.error("Marketplace list error:", insertErr);
+    return NextResponse.json({ error: "Ошибка создания листинга" }, { status: 500 });
+  }
+
+  return NextResponse.json({ listing });
+}

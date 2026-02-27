@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #0f1a12;
+  --color-foreground: #e8f0ea;
+  --color-primary: #62a863;
+  --color-primary-dark: #4e8a4f;
+  --color-primary-light: #7bbe7c;
+  --color-muted: rgba(255, 255, 255, 0.06);
+  --color-muted-foreground: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-card: rgba(255, 255, 255, 0.05);
+  --color-card-foreground: #e8f0ea;
+  --color-glass: rgba(255, 255, 255, 0.07);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-glass-hover: rgba(255, 255, 255, 0.12);
+  --font-sans: var(--font-roboto);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid var(--color-glass-border);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Override input styles for dark background */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #e8f0ea !important;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder {
+  color: #64748b !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus {
+  border-color: #62a863 !important;
+  box-shadow: 0 0 0 1px #62a863;
+}
+
+input[type="range"] {
+  accent-color: #62a863;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Table inside glassmorphism */
+table th {
+  color: #94a3b8 !important;
+}
