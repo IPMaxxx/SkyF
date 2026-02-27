@@ -55,19 +55,6 @@ export function AppHeader() {
           </Link>
         ))}
 
-        {/* Token balance */}
-        <Link
-          href="/payment"
-          className="ml-1 flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/25"
-        >
-          <Coins className="h-4 w-4" />
-          {balanceLoading ? (
-            <span className="inline-block h-3 w-6 animate-pulse rounded bg-amber-500/20" />
-          ) : (
-            <span>{balance ?? 0}</span>
-          )}
-        </Link>
-
         <div className="relative ml-2">
           <button
             type="button"
