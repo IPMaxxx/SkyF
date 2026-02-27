@@ -35,7 +35,10 @@ create policy "Seller can cancel own listings"
 -- Allow reading profiles (name only) for marketplace seller display
 create policy "Anyone can read basic profile info"
   on public.profiles for select
-  using (true);
+  using (
+    auth.uid() = id
+    or id in (select seller_id from marketplace_listings where status = 'active')
+  );
 
 -- Allow reading best_days that are listed on the marketplace
 create policy "Anyone can view marketplace best days"
