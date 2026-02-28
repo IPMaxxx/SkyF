@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useTokens } from "@/lib/TokenContext";
 import { getSeasonLabel } from "@/lib/supabase/types";
-import type { MarketplaceListing, Season } from "@/lib/supabase/types";
+import type { MarketplaceListing, Season, BestDay } from "@/lib/supabase/types";
+import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft,
   Loader2,
@@ -18,15 +19,22 @@ import {
   ShoppingCart,
   Search,
   Crosshair,
+  Star,
 } from "lucide-react";
 
-const LocationPicker = dynamic(
+const MarketplaceSearchMap = dynamic(
   () =>
-    import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
+    import("@/components/app/MarketplaceSearchMap").then(
+      (m) => m.MarketplaceSearchMap
+    ),
   { ssr: false }
 );
 
-const SEASON_FILTERS: { value: Season | "all"; label: string; color: string }[] = [
+const SEASON_FILTERS: {
+  value: Season | "all";
+  label: string;
+  color: string;
+}[] = [
   { value: "all", label: "Все", color: "from-gray-500 to-gray-600" },
   { value: "winter", label: "Зима", color: "from-blue-400 to-blue-600" },
   { value: "spring", label: "Весна", color: "from-green-400 to-green-600" },
@@ -71,7 +79,18 @@ interface MushroomDetails {
   wikipedia_url: string | null;
   observations_count: number;
   photos: { url: string; attribution: string }[];
-  taxonomy: { rank: string; rank_label: string; name: string; common_name: string | null }[];
+  taxonomy: {
+    rank: string;
+    rank_label: string;
+    name: string;
+    common_name: string | null;
+  }[];
+}
+
+interface OwnedBestDay {
+  lat: number;
+  lng: number;
+  name: string;
 }
 
 export default function MarketplacePage() {
@@ -79,32 +98,59 @@ export default function MarketplacePage() {
   const [centerLng, setCenterLng] = useState<number | null>(null);
   const [radiusKm, setRadiusKm] = useState(50);
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
+  const [ownedDays, setOwnedDays] = useState<OwnedBestDay[]>([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [seasonFilter, setSeasonFilter] = useState<Season | "all">("all");
   const [mushroomFilter, setMushroomFilter] = useState<string>("all");
   const [forestFilter, setForestFilter] = useState<string>("all");
   const [buying, setBuying] = useState<string | null>(null);
-  const [buyConfirm, setBuyConfirm] = useState<MarketplaceListing | null>(null);
-  const [mushroomPreview, setMushroomPreview] = useState<MushroomOption | null>(null);
-  const [mushroomDetails, setMushroomDetails] = useState<MushroomDetails | null>(null);
+  const [buyConfirm, setBuyConfirm] = useState<MarketplaceListing | null>(
+    null
+  );
+  const [mushroomPreview, setMushroomPreview] = useState<MushroomOption | null>(
+    null
+  );
+  const [mushroomDetails, setMushroomDetails] =
+    useState<MushroomDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { balance, refresh } = useTokens();
 
+  useEffect(() => {
+    const loadOwned = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("best_days")
+        .select("name, location:locations(lat, lng)")
+        .eq("user_id", user.id);
+      if (data) {
+        const days: OwnedBestDay[] = [];
+        for (const d of data) {
+          const loc = d.location as unknown as { lat: number; lng: number } | null;
+          if (loc) days.push({ lat: loc.lat, lng: loc.lng, name: d.name });
+        }
+        setOwnedDays(days);
+      }
+    };
+    loadOwned();
+  }, []);
+
   const handleSearch = async () => {
     if (centerLat === null || centerLng === null) {
       setError("Поставьте точку на карте");
       return;
     }
-
     setLoading(true);
     setError("");
     setSuccess("");
     setSearched(true);
-
     try {
       const res = await fetch(
         `/api/marketplace/listings?lat=${centerLat}&lng=${centerLng}&radius_km=${radiusKm}`
@@ -154,7 +200,10 @@ export default function MarketplacePage() {
   const filteredListings = useMemo(() => {
     return listings.filter((l) => {
       if (seasonFilter !== "all" && l.season !== seasonFilter) return false;
-      if (mushroomFilter !== "all" && l.best_day?.mushroom?.id !== mushroomFilter)
+      if (
+        mushroomFilter !== "all" &&
+        l.best_day?.mushroom?.id !== mushroomFilter
+      )
         return false;
       if (forestFilter !== "all") {
         const ft = l.best_day?.location?.forest_info?.forest_type;
@@ -180,7 +229,9 @@ export default function MarketplacePage() {
         `/api/mushrooms/details?inaturalist_id=${m.inaturalist_id}`
       );
       if (res.ok) setMushroomDetails(await res.json());
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
     setDetailsLoading(false);
   };
 
@@ -243,16 +294,19 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Search area: map + radius + button */}
+      {/* Search: map + controls */}
       <div className="glass rounded-2xl p-5 mb-6">
         <p className="mb-3 text-sm font-medium">
-          Укажите точку и радиус поиска
+          Поставьте точку на карте и выберите радиус поиска
         </p>
 
-        <div className="h-[280px] mb-4">
-          <LocationPicker
-            lat={centerLat}
-            lng={centerLng}
+        {/* Map */}
+        <div className="mb-4 rounded-xl overflow-hidden border border-border">
+          <MarketplaceSearchMap
+            centerLat={centerLat}
+            centerLng={centerLng}
+            radiusKm={radiusKm}
+            ownedDays={ownedDays}
             onSelect={(lat, lng) => {
               setCenterLat(lat);
               setCenterLng(lng);
@@ -260,18 +314,19 @@ export default function MarketplacePage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-end gap-4">
+        {/* Controls row */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <button
             onClick={handleGeolocate}
-            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           >
             <Crosshair className="h-3.5 w-3.5" />
             Моё местоположение
           </button>
 
-          <div className="flex-1 min-w-[200px]">
-            <label className="mb-1 block text-xs text-muted-foreground">
-              Радиус: <strong>{radiusKm} км</strong>
+          <div className="flex-1 min-w-[180px]">
+            <label className="mb-1.5 block text-xs text-muted-foreground">
+              Радиус поиска: <strong className="text-foreground">{radiusKm} км</strong>
             </label>
             <input
               type="range"
@@ -280,9 +335,9 @@ export default function MarketplacePage() {
               step={5}
               value={radiusKm}
               onChange={(e) => setRadiusKm(parseInt(e.target.value))}
-              className="w-full accent-primary"
+              className="w-full accent-primary h-2"
             />
-            <div className="flex justify-between text-[10px] text-muted-foreground/50">
+            <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
               <span>10 км</span>
               <span>150 км</span>
             </div>
@@ -291,7 +346,7 @@ export default function MarketplacePage() {
           <button
             onClick={handleSearch}
             disabled={loading || centerLat === null}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -303,8 +358,16 @@ export default function MarketplacePage() {
         </div>
 
         {centerLat !== null && centerLng !== null && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Центр: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} · Радиус: {radiusKm} км
+          <p className="mt-3 text-xs text-muted-foreground">
+            Центр: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} · Радиус:{" "}
+            {radiusKm} км
+          </p>
+        )}
+
+        {ownedDays.length > 0 && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-400/70">
+            <Star className="h-3 w-3" />
+            Ваши Best Days отмечены на карте золотыми маркерами
           </p>
         )}
       </div>
@@ -313,16 +376,21 @@ export default function MarketplacePage() {
       {error && (
         <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
           {error}
-          <button onClick={() => setError("")} className="ml-2 text-red-300 hover:text-red-200">
+          <button
+            onClick={() => setError("")}
+            className="ml-2 text-red-300 hover:text-red-200"
+          >
             <X className="inline h-3.5 w-3.5" />
           </button>
         </div>
       )}
-
       {success && (
         <div className="mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-400">
           {success}
-          <button onClick={() => setSuccess("")} className="ml-2 text-emerald-300 hover:text-emerald-200">
+          <button
+            onClick={() => setSuccess("")}
+            className="ml-2 text-emerald-300 hover:text-emerald-200"
+          >
             <X className="inline h-3.5 w-3.5" />
           </button>
         </div>
@@ -331,13 +399,14 @@ export default function MarketplacePage() {
       {/* Results */}
       {searched && !loading && (
         <>
-          {/* Filters — only show when we have results */}
           {listings.length > 0 && (
             <div className="mb-4 space-y-3">
               {/* Mushroom filter */}
               {mushroomOptions.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">Гриб</p>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    Гриб
+                  </p>
                   <div className="flex flex-wrap gap-2.5">
                     <button
                       onClick={() => setMushroomFilter("all")}
@@ -359,7 +428,9 @@ export default function MarketplacePage() {
                               ? "bg-amber-500/20 text-amber-300 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10"
                               : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
                           }`}
-                          onClick={() => setMushroomFilter(isActive ? "all" : m.id)}
+                          onClick={() =>
+                            setMushroomFilter(isActive ? "all" : m.id)
+                          }
                         >
                           {m.image_url ? (
                             <button
@@ -375,16 +446,6 @@ export default function MarketplacePage() {
                                 alt={m.latin_name}
                                 className="h-14 w-14 rounded-xl object-cover transition-transform group-hover:scale-105"
                               />
-                              <div className="absolute inset-0 rounded-xl bg-black/0 transition-colors group-hover:bg-black/20 flex items-center justify-center">
-                                <svg
-                                  className="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-80 drop-shadow"
-                                  fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
-                                >
-                                  <circle cx="11" cy="11" r="7" />
-                                  <path d="m21 21-4.35-4.35" />
-                                  <path d="M11 8v6M8 11h6" />
-                                </svg>
-                              </div>
                             </button>
                           ) : (
                             <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">
@@ -401,7 +462,12 @@ export default function MarketplacePage() {
                               </p>
                             )}
                             <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {m.count} {m.count === 1 ? "предложение" : m.count < 5 ? "предложения" : "предложений"}
+                              {m.count}{" "}
+                              {m.count === 1
+                                ? "предложение"
+                                : m.count < 5
+                                ? "предложения"
+                                : "предложений"}
                             </p>
                           </div>
                         </div>
@@ -414,7 +480,9 @@ export default function MarketplacePage() {
               {/* Season + Forest type */}
               <div className="flex flex-wrap items-end gap-6">
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Сезон</p>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Сезон
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {SEASON_FILTERS.map((f) => (
                       <button
@@ -432,7 +500,9 @@ export default function MarketplacePage() {
                   </div>
                 </div>
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Тип леса</p>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Тип леса
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {FOREST_TYPE_FILTERS.map((f) => (
                       <button
@@ -487,7 +557,6 @@ export default function MarketplacePage() {
                 const loc = bd?.location;
                 const mushroom = bd?.mushroom;
                 const seller = listing.seller;
-
                 return (
                   <div
                     key={listing.id}
@@ -523,20 +592,18 @@ export default function MarketplacePage() {
                           {loc?.forest_info?.forest_type && (
                             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                               <Trees className="h-3 w-3" />
-                              {FOREST_TYPE_LABELS[loc.forest_info.forest_type] ?? "Лес"}
+                              {FOREST_TYPE_LABELS[
+                                loc.forest_info.forest_type
+                              ] ?? "Лес"}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-sm font-bold text-amber-400">
-                          <Coins className="h-3.5 w-3.5" />
-                          {listing.price}
-                        </span>
-                      </div>
+                      <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-sm font-bold text-amber-400">
+                        <Coins className="h-3.5 w-3.5" />
+                        {listing.price}
+                      </span>
                     </div>
-
-                    {/* Photos preview */}
                     {bd?.photos && bd.photos.length > 0 && (
                       <div className="mt-3 flex gap-1.5 overflow-x-auto">
                         {bd.photos.slice(0, 4).map((url, i) => (
@@ -554,8 +621,6 @@ export default function MarketplacePage() {
                         )}
                       </div>
                     )}
-
-                    {/* Seller + buy */}
                     <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <User className="h-3 w-3" />
@@ -582,7 +647,7 @@ export default function MarketplacePage() {
         </>
       )}
 
-      {/* Initial state — before search */}
+      {/* Initial state */}
       {!searched && !loading && (
         <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
           <MapPin className="mb-3 h-12 w-12 text-muted-foreground/30" />
@@ -614,17 +679,29 @@ export default function MarketplacePage() {
               const current = photos[photoIndex] || photos[0];
               return (
                 <div className="relative">
-                  <img src={current.url} alt={mushroomPreview.latin_name} className="h-72 w-full object-cover" />
+                  <img
+                    src={current.url}
+                    alt={mushroomPreview.latin_name}
+                    className="h-72 w-full object-cover"
+                  />
                   {photos.length > 1 && (
                     <>
                       <button
-                        onClick={() => setPhotoIndex((i) => (i > 0 ? i - 1 : photos.length - 1))}
+                        onClick={() =>
+                          setPhotoIndex((i) =>
+                            i > 0 ? i - 1 : photos.length - 1
+                          )
+                        }
                         className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                       >
                         ‹
                       </button>
                       <button
-                        onClick={() => setPhotoIndex((i) => (i < photos.length - 1 ? i + 1 : 0))}
+                        onClick={() =>
+                          setPhotoIndex((i) =>
+                            i < photos.length - 1 ? i + 1 : 0
+                          )
+                        }
                         className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                       >
                         ›
@@ -634,26 +711,28 @@ export default function MarketplacePage() {
                           <button
                             key={i}
                             onClick={() => setPhotoIndex(i)}
-                            className={`h-1.5 rounded-full transition-all ${i === photoIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"}`}
+                            className={`h-1.5 rounded-full transition-all ${
+                              i === photoIndex
+                                ? "w-4 bg-white"
+                                : "w-1.5 bg-white/50"
+                            }`}
                           />
                         ))}
                       </div>
                     </>
                   )}
-                  {current.attribution && (
-                    <p className="absolute bottom-2 right-2 max-w-[200px] truncate rounded bg-black/60 px-2 py-0.5 text-[9px] text-white/70 backdrop-blur-sm">
-                      {current.attribution}
-                    </p>
-                  )}
                 </div>
               );
             })()}
-
             <div className="p-5">
               <h3 className="text-lg font-bold">
-                {mushroomDetails?.common_name || mushroomPreview.common_name || mushroomPreview.latin_name}
+                {mushroomDetails?.common_name ||
+                  mushroomPreview.common_name ||
+                  mushroomPreview.latin_name}
               </h3>
-              <p className="mt-0.5 text-sm italic text-muted-foreground">{mushroomPreview.latin_name}</p>
+              <p className="mt-0.5 text-sm italic text-muted-foreground">
+                {mushroomPreview.latin_name}
+              </p>
               {detailsLoading && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -662,58 +741,69 @@ export default function MarketplacePage() {
               )}
               {mushroomDetails?.wikipedia_summary && (
                 <div className="mt-4">
-                  <p className="text-sm leading-relaxed text-foreground/80">{mushroomDetails.wikipedia_summary}</p>
+                  <p className="text-sm leading-relaxed text-foreground/80">
+                    {mushroomDetails.wikipedia_summary}
+                  </p>
                   {mushroomDetails.wikipedia_url && (
-                    <a href={mushroomDetails.wikipedia_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs text-primary hover:underline">
+                    <a
+                      href={mushroomDetails.wikipedia_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-block text-xs text-primary hover:underline"
+                    >
                       Читать на Wikipedia →
                     </a>
                   )}
                 </div>
               )}
-              {mushroomDetails?.taxonomy && mushroomDetails.taxonomy.length > 0 && (
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Таксономия</p>
-                  <div className="space-y-1">
-                    {mushroomDetails.taxonomy.map((t) => (
-                      <div key={t.rank} className="flex items-center gap-2 text-xs">
-                        <span className="w-20 flex-shrink-0 text-right text-muted-foreground">{t.rank_label}</span>
-                        <span className="h-px flex-1 bg-white/10" />
-                        <span className="font-medium italic">{t.name}</span>
-                        {t.common_name && <span className="text-muted-foreground">({t.common_name})</span>}
-                      </div>
-                    ))}
+              {mushroomDetails?.taxonomy &&
+                mushroomDetails.taxonomy.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Таксономия
+                    </p>
+                    <div className="space-y-1">
+                      {mushroomDetails.taxonomy.map((t) => (
+                        <div
+                          key={t.rank}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <span className="w-20 flex-shrink-0 text-right text-muted-foreground">
+                            {t.rank_label}
+                          </span>
+                          <span className="h-px flex-1 bg-white/10" />
+                          <span className="font-medium italic">{t.name}</span>
+                          {t.common_name && (
+                            <span className="text-muted-foreground">
+                              ({t.common_name})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {mushroomDetails && (
-                    <span>{mushroomDetails.observations_count.toLocaleString("ru-RU")} наблюдений в мире</span>
-                  )}
-                  <span>{mushroomPreview.count} на маркетплейсе</span>
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  {mushroomPreview.count} на маркетплейсе
+                </span>
                 <button
-                  onClick={() => { setMushroomFilter(mushroomPreview.id); setMushroomPreview(null); setMushroomDetails(null); }}
+                  onClick={() => {
+                    setMushroomFilter(mushroomPreview.id);
+                    setMushroomPreview(null);
+                    setMushroomDetails(null);
+                  }}
                   className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/30"
                 >
                   Показать все
                 </button>
               </div>
-              {mushroomPreview.inaturalist_id && (
-                <a
-                  href={`https://www.inaturalist.org/taxa/${mushroomPreview.inaturalist_id}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 py-2 text-xs text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
-                >
-                  Открыть на iNaturalist
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
-                  </svg>
-                </a>
-              )}
             </div>
             <button
-              onClick={() => { setMushroomPreview(null); setMushroomDetails(null); }}
+              onClick={() => {
+                setMushroomPreview(null);
+                setMushroomDetails(null);
+              }}
               className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
             >
               <X className="h-4 w-4" />
@@ -725,16 +815,24 @@ export default function MarketplacePage() {
       {/* Buy confirmation modal */}
       {buyConfirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setBuyConfirm(null)} />
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setBuyConfirm(null)}
+          />
           <div className="relative z-[10000] w-full max-w-sm rounded-2xl bg-[#1a2a1f]/95 border border-white/10 p-6 shadow-2xl backdrop-blur-xl">
             <h3 className="mb-3 text-lg font-bold">Подтвердить покупку</h3>
             <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-medium">{buyConfirm.best_day?.name}</p>
+              <p className="text-sm font-medium">
+                {buyConfirm.best_day?.name}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {buyConfirm.best_day?.location?.name} · {getSeasonLabel(buyConfirm.season)}
+                {buyConfirm.best_day?.location?.name} ·{" "}
+                {getSeasonLabel(buyConfirm.season)}
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-lg font-bold text-amber-400">{buyConfirm.price}</span>
+                <span className="text-lg font-bold text-amber-400">
+                  {buyConfirm.price}
+                </span>
                 <Coins className="h-4 w-4 text-amber-400" />
                 <span className="text-xs text-muted-foreground">токенов</span>
               </div>
@@ -744,12 +842,18 @@ export default function MarketplacePage() {
               {(balance ?? 0) < buyConfirm.price && (
                 <p className="mt-1 text-xs text-red-400">
                   Недостаточно токенов.{" "}
-                  <Link href="/payment" className="underline hover:text-red-300">Пополнить</Link>
+                  <Link
+                    href="/payment"
+                    className="underline hover:text-red-300"
+                  >
+                    Пополнить
+                  </Link>
                 </p>
               )}
             </div>
             <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-              После покупки вы получите полные данные: точные координаты, дату и погодный паттерн. Best Day будет добавлен в ваш профиль.
+              После покупки вы получите полные данные: точные координаты, дату и
+              погодный паттерн. Best Day будет добавлен в ваш профиль.
             </p>
             <div className="flex gap-3">
               <button
@@ -760,10 +864,16 @@ export default function MarketplacePage() {
               </button>
               <button
                 onClick={confirmBuy}
-                disabled={buying !== null || (balance ?? 0) < buyConfirm.price}
+                disabled={
+                  buying !== null || (balance ?? 0) < buyConfirm.price
+                }
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {buying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                {buying ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
                 Купить
               </button>
             </div>
