@@ -9,6 +9,7 @@ import { NewLocationModal } from "@/components/app/NewLocationModal";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, WeatherDay, ForestInfo } from "@/lib/supabase/types";
+import { checkPhotoLocation } from "@/lib/photo-geo";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import {
@@ -45,6 +46,7 @@ export default function NewBestDayPage() {
   const [loadingWeather, setLoadingWeather] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [geoWarnings, setGeoWarnings] = useState<string[]>([]);
   const [loadingLocs, setLoadingLocs] = useState(true);
   const { balance, spend } = useTokens();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,13 +114,26 @@ export default function NewBestDayPage() {
 
     setUploadingPhoto(true);
     setError("");
+    setGeoWarnings([]);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError("Необходимо авторизоваться"); setUploadingPhoto(false); return; }
 
     const tempId = savedBestDayId || "new";
     const newUrls: string[] = [];
+    const warnings: string[] = [];
+
     for (const file of Array.from(files)) {
+      if (selectedLocation) {
+        const geoCheck = await checkPhotoLocation(file, selectedLocation.lat, selectedLocation.lng);
+        if (!geoCheck.ok) {
+          warnings.push(
+            `${file.name}: фото из другой локации (${geoCheck.distance} км от указанной точки)`
+          );
+          continue;
+        }
+      }
+
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${user.id}/${tempId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
@@ -140,9 +155,8 @@ export default function NewBestDayPage() {
       }
     }
 
-    if (newUrls.length > 0) {
-      setPhotos((prev) => [...prev, ...newUrls]);
-    }
+    if (warnings.length > 0) setGeoWarnings(warnings);
+    if (newUrls.length > 0) setPhotos((prev) => [...prev, ...newUrls]);
     setUploadingPhoto(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -420,6 +434,16 @@ export default function NewBestDayPage() {
             )}
             {uploadingPhoto ? "Загрузка..." : "Добавить фото"}
           </button>
+
+          {geoWarnings.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+              {geoWarnings.map((w, i) => (
+                <p key={i} className="text-xs text-amber-400">
+                  ⚠ {w}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Get Data */}

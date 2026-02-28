@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!bd.photos || bd.photos.length === 0) {
+    return NextResponse.json(
+      { error: "Добавьте хотя бы одно фото, чтобы выставить Best Day на продажу" },
+      { status: 400 }
+    );
+  }
+
   const { data: existing } = await supabase
     .from("marketplace_listings")
     .select("id")

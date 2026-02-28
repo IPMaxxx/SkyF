@@ -20,8 +20,13 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
   if (!open) return null;
 
   const season = getSeason(bestDay.best_date);
+  const hasPhotos = bestDay.photos && bestDay.photos.length > 0;
 
   const handleSubmit = async () => {
+    if (!hasPhotos) {
+      setError("Добавьте хотя бы одно фото, чтобы выставить на продажу");
+      return;
+    }
     if (price < 1) {
       setError("Минимальная цена — 1 токен");
       return;
@@ -122,6 +127,14 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
             </div>
           </div>
         </div>
+
+        {!hasPhotos && (
+          <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
+            <p className="text-xs text-red-400 font-medium">
+              Для продажи необходимо добавить фото. Вернитесь к редактированию Best Day и загрузите хотя бы одно фото.
+            </p>
+          </div>
+        )}
 
         {/* Price input */}
         <div className="mb-5">
