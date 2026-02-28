@@ -88,6 +88,7 @@ interface MushroomDetails {
 }
 
 interface OwnedBestDay {
+  id: string;
   lat: number;
   lng: number;
   name: string;
@@ -108,6 +109,7 @@ export default function MarketplacePage() {
   const [buyConfirm, setBuyConfirm] = useState<MarketplaceListing | null>(
     null
   );
+  const [listingPreview, setListingPreview] = useState<MarketplaceListing | null>(null);
   const [mushroomPreview, setMushroomPreview] = useState<MushroomOption | null>(
     null
   );
@@ -128,13 +130,13 @@ export default function MarketplacePage() {
       if (!user) return;
       const { data } = await supabase
         .from("best_days")
-        .select("name, location:locations(lat, lng)")
+        .select("id, name, location:locations(lat, lng)")
         .eq("user_id", user.id);
       if (data) {
         const days: OwnedBestDay[] = [];
         for (const d of data) {
           const loc = d.location as unknown as { lat: number; lng: number } | null;
-          if (loc) days.push({ lat: loc.lat, lng: loc.lng, name: d.name });
+          if (loc) days.push({ id: d.id, lat: loc.lat, lng: loc.lng, name: d.name });
         }
         setOwnedDays(days);
       }
@@ -554,13 +556,13 @@ export default function MarketplacePage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {filteredListings.map((listing) => {
                 const bd = listing.best_day;
-                const loc = bd?.location;
                 const mushroom = bd?.mushroom;
                 const seller = listing.seller;
                 return (
-                  <div
+                  <button
                     key={listing.id}
-                    className="glass rounded-xl p-4 transition-all hover:bg-glass-hover"
+                    onClick={() => setListingPreview(listing)}
+                    className="glass text-left rounded-xl p-4 transition-all hover:bg-glass-hover hover:shadow-lg hover:shadow-black/10"
                   >
                     <div className="flex items-start gap-3">
                       {mushroom?.image_url ? (
@@ -589,14 +591,6 @@ export default function MarketplacePage() {
                           >
                             {getSeasonLabel(listing.season)}
                           </span>
-                          {loc?.forest_info?.forest_type && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <Trees className="h-3 w-3" />
-                              {FOREST_TYPE_LABELS[
-                                loc.forest_info.forest_type
-                              ] ?? "Лес"}
-                            </span>
-                          )}
                         </div>
                       </div>
                       <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-sm font-bold text-amber-400">
@@ -604,42 +598,11 @@ export default function MarketplacePage() {
                         {listing.price}
                       </span>
                     </div>
-                    {bd?.photos && bd.photos.length > 0 && (
-                      <div className="mt-3 flex gap-1.5 overflow-x-auto">
-                        {bd.photos.slice(0, 4).map((url, i) => (
-                          <img
-                            key={i}
-                            src={url}
-                            alt=""
-                            className="h-16 w-20 flex-shrink-0 rounded-lg object-cover"
-                          />
-                        ))}
-                        {bd.photos.length > 4 && (
-                          <div className="flex h-16 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-white/5 text-xs text-muted-foreground">
-                            +{bd.photos.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        {seller?.full_name || "Пользователь"}
-                      </span>
-                      <button
-                        onClick={() => setBuyConfirm(listing)}
-                        disabled={buying === listing.id}
-                        className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                      >
-                        {buying === listing.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                        )}
-                        Купить · {listing.price} т.
-                      </button>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      {seller?.full_name || "Пользователь"}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -659,6 +622,153 @@ export default function MarketplacePage() {
           </p>
         </div>
       )}
+
+      {/* Listing detail preview modal */}
+      {listingPreview && (() => {
+        const bd = listingPreview.best_day;
+        const loc = bd?.location;
+        const mushroom = bd?.mushroom;
+        const seller = listingPreview.seller;
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setListingPreview(null)}
+            />
+            <div className="relative z-[10000] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a2a1f]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
+              {/* Photos */}
+              {bd?.photos && bd.photos.length > 0 && (
+                <div className="flex gap-1 overflow-x-auto p-3 pb-0">
+                  {bd.photos.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt=""
+                      className="h-40 w-auto flex-shrink-0 rounded-xl object-cover"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-start gap-3 mb-4">
+                  {mushroom?.image_url ? (
+                    <img
+                      src={mushroom.image_url}
+                      alt={mushroom.latin_name}
+                      className="h-14 w-14 flex-shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">
+                      ★
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold">{bd?.name}</h3>
+                    {mushroom && (
+                      <p className="text-sm italic text-muted-foreground">
+                        {mushroom.common_name || mushroom.latin_name}
+                      </p>
+                    )}
+                  </div>
+                  <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-3 py-1.5 text-lg font-bold text-amber-400">
+                    <Coins className="h-4 w-4" />
+                    {listingPreview.price}
+                  </span>
+                </div>
+
+                {/* Info rows */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Продавец:</span>
+                    <span className="font-medium">{seller?.full_name || "Пользователь"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Сезон:</span>
+                    <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEASON_COLORS[listingPreview.season] ?? ""}`}>
+                      {getSeasonLabel(listingPreview.season)}
+                    </span>
+                  </div>
+                  {loc?.forest_info?.forest_type && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Trees className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Тип леса:</span>
+                      <span className="font-medium">
+                        {FOREST_TYPE_LABELS[loc.forest_info.forest_type] ?? "Не определён"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Blurred: Location */}
+                <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 mb-3 overflow-hidden">
+                  <div className="blur-[6px] select-none pointer-events-none">
+                    <div className="flex items-center gap-2 text-sm mb-1">
+                      <MapPin className="h-4 w-4" />
+                      <span className="font-medium">53.XXXX, 27.XXXX</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {loc?.name || "Локация"} · точные координаты
+                    </p>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
+                    <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-amber-400 backdrop-blur-sm">
+                      🔒 Откроется после покупки
+                    </div>
+                  </div>
+                </div>
+
+                {/* Blurred: Weather pattern */}
+                <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 mb-4 overflow-hidden">
+                  <div className="blur-[6px] select-none pointer-events-none">
+                    <p className="text-sm font-medium mb-2">Погодный паттерн (14 дней)</p>
+                    <div className="flex gap-1">
+                      {Array.from({ length: 14 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded bg-blue-500/30"
+                          style={{ height: `${20 + Math.random() * 30}px` }}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+                      <span>t° 12-18°C</span>
+                      <span>Осадки: 23мм</span>
+                      <span>Влажн: 78%</span>
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
+                    <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-amber-400 backdrop-blur-sm">
+                      🔒 Откроется после покупки
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buy button */}
+                <button
+                  onClick={() => {
+                    setBuyConfirm(listingPreview);
+                    setListingPreview(null);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Купить за {listingPreview.price} токенов
+                </button>
+              </div>
+
+              <button
+                onClick={() => setListingPreview(null)}
+                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Mushroom preview modal */}
       {mushroomPreview && (

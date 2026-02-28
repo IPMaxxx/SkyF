@@ -42,6 +42,7 @@ function ClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => vo
 }
 
 interface OwnedBestDay {
+  id: string;
   lat: number;
   lng: number;
   name: string;
@@ -113,9 +114,24 @@ export function MarketplaceSearchMap({
       {ownedDays.map((d, i) => (
         <Marker key={`owned-${i}`} position={[d.lat, d.lng]} icon={ownedIcon}>
           <Popup>
-            <div className="text-sm">
-              <p className="font-medium">★ {d.name}</p>
-              <p className="text-gray-500">Ваш Best Day</p>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+              <p style={{ fontWeight: 600, marginBottom: 4 }}>★ {d.name}</p>
+              <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>Ваш Best Day</p>
+              <a
+                href={`/dashboard/best-day/${d.id}`}
+                style={{
+                  display: "inline-block",
+                  padding: "4px 12px",
+                  borderRadius: 6,
+                  background: "#f59e0b",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                Открыть →
+              </a>
             </div>
           </Popup>
         </Marker>
