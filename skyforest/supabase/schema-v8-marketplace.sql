@@ -69,8 +69,6 @@ begin
         'location', case when loc.id is not null then jsonb_build_object(
           'id', loc.id,
           'name', loc.name,
-          'lat', round(loc.lat::numeric, 1),
-          'lng', round(loc.lng::numeric, 1),
           'forest_info', loc.forest_info
         ) else null end,
         'mushroom', case when ms.id is not null then jsonb_build_object(
