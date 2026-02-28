@@ -18,7 +18,8 @@ drop policy if exists "Anyone can view marketplace locations" on public.location
 create or replace function search_marketplace_listings(
   p_lat double precision,
   p_lng double precision,
-  p_radius_km double precision
+  p_radius_km double precision,
+  p_user_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -67,6 +68,7 @@ begin
     left join profiles p on p.id = ml.seller_id
     where ml.status = 'active'
       and loc.id is not null
+      and (p_user_id is null or ml.seller_id != p_user_id)
       and (
         6371 * acos(
           cos(radians(p_lat)) * cos(radians(loc.lat))

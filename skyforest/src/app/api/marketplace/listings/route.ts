@@ -20,10 +20,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid params" }, { status: 400 });
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase.rpc("search_marketplace_listings", {
     p_lat: pLat,
     p_lng: pLng,
     p_radius_km: pRadius,
+    p_user_id: user?.id ?? null,
   });
 
   if (error) {
