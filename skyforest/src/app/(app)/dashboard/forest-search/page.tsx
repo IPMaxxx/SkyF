@@ -1,17 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   ArrowLeft, Trees, Search, Loader2, MapPin, Crosshair, Leaf, Satellite,
   Database, ChevronDown, ChevronUp, CloudSun, Save, Check,
-  Thermometer, Droplets, Wind, Info, Globe,
+  Thermometer, Droplets, Wind, Info, Globe, History, RotateCcw, Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
 import type { WeatherDay } from "@/lib/supabase/types";
 import type { ForestMatch, ForestPattern, ScoreBreakdown } from "@/app/api/forest-search/route";
+
+interface HistoryItem {
+  id: string;
+  ref_lat: number;
+  ref_lng: number;
+  search_lat: number;
+  search_lng: number;
+  radius_km: number;
+  token_cost: number;
+  ref_pattern: ForestPattern;
+  matches: ForestMatch[];
+  stats: { polygons: number; osmMassifs: number; scanZones: number };
+  created_at: string;
+}
 
 const ForestSearchMap = dynamic(
   () => import("@/components/app/ForestSearchMap").then((m) => m.ForestSearchMap),
@@ -74,7 +88,54 @@ export default function ForestSearchPage() {
   const [savedSet, setSavedSet] = useState<Set<number>>(new Set());
   const [showDetails, setShowDetails] = useState(false);
 
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
   const tokenCost = Math.max(1, Math.ceil(Math.min(radiusKm, 20) / 2));
+
+  const fetchHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/forest-search/history");
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data.items || []);
+      }
+    } catch { /* ignore */ }
+    setHistoryLoading(false);
+  }, []);
+
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+
+  const restoreFromHistory = (item: HistoryItem) => {
+    setRefLat(item.ref_lat);
+    setRefLng(item.ref_lng);
+    setSearchLat(item.search_lat);
+    setSearchLng(item.search_lng);
+    setRadiusKm(item.radius_km);
+    setRefPattern(item.ref_pattern);
+    setMatches(item.matches);
+    setStats(item.stats);
+    setStep("results");
+    setSelectedIdx(null);
+    setDetailIdx(null);
+    setWeather(null);
+    setSavedSet(new Set());
+    setWeatherLoadedSet(new Set());
+    setShowHistory(false);
+  };
+
+  const deleteHistoryItem = async (id: string) => {
+    try {
+      await fetch("/api/forest-search/history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setHistory((prev) => prev.filter((h) => h.id !== id));
+    } catch { /* ignore */ }
+  };
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (step === "reference") {
@@ -113,6 +174,7 @@ export default function ForestSearchPage() {
       setStats({ polygons: data.total_osm_polygons, osmMassifs: data.total_osm_massifs, scanZones: data.total_scan_zones });
       setStep("results");
       refreshTokens();
+      fetchHistory();
     } catch {
       setError("Ошибка подключения");
     } finally {
@@ -194,7 +256,7 @@ export default function ForestSearchPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
           <Trees className="h-5 w-5" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold">Поиск леса</h1>
           <p className="text-sm text-muted-foreground">
             {step === "reference" && "Шаг 1: Укажите эталонную точку леса"}
@@ -202,6 +264,16 @@ export default function ForestSearchPage() {
             {step === "results" && `Найдено ${matches.length} похожих массивов`}
           </p>
         </div>
+        {history.length > 0 && (
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${showHistory ? "bg-blue-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20 hover:text-foreground"}`}
+          >
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">История</span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">{history.length}</span>
+          </button>
+        )}
       </div>
 
       {/* How it works */}
@@ -259,6 +331,71 @@ export default function ForestSearchPage() {
           </div>
         )}
       </div>
+
+      {/* History panel */}
+      {showHistory && (
+        <div className="mb-6 rounded-xl border border-blue-500/20 bg-blue-500/5 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-blue-500/15">
+            <History className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-semibold text-blue-400 flex-1">История поисков</span>
+            <button onClick={() => setShowHistory(false)} className="text-xs text-muted-foreground hover:text-foreground">Скрыть</button>
+          </div>
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : history.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-muted-foreground text-center">Нет сохранённых поисков</p>
+          ) : (
+            <div className="divide-y divide-blue-500/10 max-h-80 overflow-y-auto">
+              {history.map((item) => {
+                const date = new Date(item.created_at);
+                const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
+                const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                const bestMatch = item.matches.length > 0 ? item.matches[0].similarity : 0;
+                const rp = item.ref_pattern;
+                return (
+                  <div key={item.id} className="flex items-center gap-3 px-4 py-3 group">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">{rp.dominant_species || FOREST_LABELS[rp.forest_type]}</span>
+                        <span className="text-xs text-muted-foreground">· R={item.radius_km}км · {item.matches.length} результ.</span>
+                        {bestMatch > 0 && (
+                          <span className={`text-xs font-bold ${bestMatch >= 70 ? "text-emerald-400" : bestMatch >= 40 ? "text-amber-400" : "text-gray-400"}`}>
+                            лучший {bestMatch}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="inline h-3 w-3 mr-0.5" />Эталон: {item.ref_lat.toFixed(3)}, {item.ref_lng.toFixed(3)}
+                        <span className="ml-2">{dateStr} {timeStr}</span>
+                        <span className="ml-2">{item.token_cost} ток.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => restoreFromHistory(item)}
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                        title="Восстановить"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Открыть</span>
+                      </button>
+                      <button
+                        onClick={() => deleteHistoryItem(item.id)}
+                        className="rounded-lg p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Удалить"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Steps indicator */}
       <div className="mb-6 flex gap-1">

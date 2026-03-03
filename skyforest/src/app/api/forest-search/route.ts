@@ -566,6 +566,27 @@ export async function POST(request: NextRequest) {
 
   matches.sort((a, b) => b.similarity - a.similarity);
 
+  const statsObj = {
+    polygons: osmForests.length,
+    osmMassifs: osmMassifs.length,
+    scanZones: scanZones.length,
+  };
+
+  // Persist to history (fire-and-forget, don't block response)
+  supabase
+    .from("forest_search_history")
+    .insert({
+      user_id: user.id,
+      ref_lat, ref_lng,
+      search_lat, search_lng,
+      radius_km: clampedRadius,
+      token_cost: tokenCost,
+      ref_pattern: refPattern as unknown as Record<string, unknown>,
+      matches: matches as unknown as Record<string, unknown>[],
+      stats: statsObj,
+    })
+    .then(() => {});
+
   return NextResponse.json({
     matches,
     ref_pattern: refPattern,

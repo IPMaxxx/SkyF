@@ -119,6 +119,7 @@ export function ForestSearchMap({
               pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.08, weight: 2, dashArray: "6 4" }}
             />
             {step === "search" && <FlyTo lat={searchLat} lng={searchLng} />}
+            {step === "results" && <FlyTo lat={searchLat} lng={searchLng} />}
           </>
         )}
 
