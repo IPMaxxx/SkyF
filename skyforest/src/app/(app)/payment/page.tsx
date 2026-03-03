@@ -50,8 +50,8 @@ export default function PaymentPage() {
           <Coins className="h-8 w-8 text-amber-400" />
         </div>
         <h1 className="text-2xl font-bold">Токены</h1>
-        <p className="mt-2 text-muted-foreground">
-          Токены расходуются на каждый запрос погодных данных
+        <p className="mx-auto mt-2 max-w-md text-muted-foreground">
+          Токены — внутренняя валюта сервиса. Вы платите только за то, что используете — без абонентской платы и скрытых списаний.
         </p>
       </div>
 
@@ -74,7 +74,9 @@ export default function PaymentPage() {
           Стоимость операций
         </h2>
         <div className="space-y-2">
-          {costEntries.map(([key, cost]) => (
+          {costEntries
+            .filter(([key]) => key !== "marketplace_buy")
+            .map(([key, cost]) => (
             <div key={key} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
               <span className="text-sm">{getTokenCostLabel(key)}</span>
               <span className="flex items-center gap-1 text-sm font-semibold text-amber-400">
@@ -82,6 +84,19 @@ export default function PaymentPage() {
               </span>
             </div>
           ))}
+          <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
+            <span className="text-sm">Покупка на маркетплейсе</span>
+            <span className="text-sm font-semibold text-muted-foreground">цена продавца</span>
+          </div>
+          <div className="mt-3 border-t border-white/5 pt-3">
+            <p className="mb-2 text-xs font-medium text-emerald-400">Бесплатно:</p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>- Добавление локаций</p>
+              <p>- Сохранение грибных дней</p>
+              <p>- Поиск на маркетплейсе</p>
+              <p>- Сохранение найденных лесов как локации</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -147,9 +162,40 @@ export default function PaymentPage() {
         Купить {selected.tokens} токенов за {selected.price} BYN
       </button>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Оплата через bePaid. Visa, MasterCard, Белкарт.
-      </p>
+      <div className="mt-6 space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <svg className="h-4 w-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <span className="text-xs font-medium">Безопасная оплата</span>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+            Visa
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+            MasterCard
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+            Белкарт
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            Оплата через bePaid — сертифицированный провайдер PCI DSS Level 1.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            Данные вашей карты защищены и не хранятся на наших серверах.
+          </p>
+        </div>
+        <div className="text-center">
+          <a href="/return_goods" className="text-xs text-primary hover:underline">
+            Условия возврата средств
+          </a>
+          <span className="mx-2 text-muted-foreground/30">·</span>
+          <a href="https://t.me/skyforest_support" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+            Поддержка в Telegram
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

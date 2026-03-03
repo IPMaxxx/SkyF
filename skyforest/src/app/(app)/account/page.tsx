@@ -35,7 +35,10 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">Мой аккаунт</h1>
+      <h1 className="mb-2 text-2xl font-bold">Мой аккаунт</h1>
+      <p className="mb-8 text-sm text-muted-foreground">
+        Управляйте профилем, паролем и отслеживайте историю операций с токенами.
+      </p>
 
       {/* Profile */}
       <div className="glass mb-6 rounded-2xl p-6">

@@ -30,7 +30,7 @@ function SuccessContent() {
             href="/dashboard"
             className="inline-block rounded-xl bg-primary px-8 py-3 text-base font-medium text-white transition-colors hover:bg-primary-dark"
           >
-            Перейти к Dashboard
+            Перейти на главную
           </Link>
         </div>
       </div>

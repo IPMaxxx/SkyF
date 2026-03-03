@@ -7,6 +7,7 @@ import { useTokens } from "@/lib/TokenContext";
 import { getSeasonLabel } from "@/lib/supabase/types";
 import type { MarketplaceListing, Season, BestDay } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Loader2,
@@ -261,9 +262,9 @@ export default function MarketplacePage() {
         setBuyConfirm(null);
         return;
       }
-      setSuccess(
-        `Best Day «${buyConfirm.best_day?.name}» успешно куплен! Он уже в вашем профиле.`
-      );
+      const msg = `Грибной день «${buyConfirm.best_day?.name}» успешно куплен! Он уже в вашем профиле.`;
+      setSuccess(msg);
+      toast.success(msg);
       setBuyConfirm(null);
       await refresh();
       if (centerLat !== null && centerLng !== null) await handleSearch();
@@ -281,7 +282,7 @@ export default function MarketplacePage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
@@ -289,10 +290,22 @@ export default function MarketplacePage() {
           <Store className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Маркетплейс Best Days</h1>
+          <h1 className="text-xl font-bold">Маркетплейс</h1>
           <p className="text-sm text-muted-foreground">
-            Найдите проверенные грибные локации рядом с вами
+            Покупайте проверенные грибные места других пользователей
           </p>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-pink-500/20 bg-pink-500/5 p-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Здесь вы можете купить проверенные грибные локации других пользователей.
+          Каждый лот содержит координаты, дату находки, вид грибов и погодные данные того дня.
+          Стоимость устанавливается продавцом.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — бесплатно</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупка — цена продавца в токенах</span>
         </div>
       </div>
 
@@ -355,7 +368,7 @@ export default function MarketplacePage() {
             ) : (
               <Search className="h-4 w-4" />
             )}
-            Найти Best Days
+            Найти грибные дни
           </button>
         </div>
 
@@ -369,7 +382,7 @@ export default function MarketplacePage() {
         {ownedDays.length > 0 && (
           <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-400/70">
             <Star className="h-3 w-3" />
-            Ваши Best Days отмечены на карте золотыми маркерами
+            Ваши грибные дни отмечены на карте золотыми маркерами
           </p>
         )}
       </div>
@@ -615,7 +628,7 @@ export default function MarketplacePage() {
         <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
           <MapPin className="mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            Поставьте точку на карте и нажмите «Найти Best Days»
+            Поставьте точку на карте и нажмите «Найти грибные дни»
           </p>
           <p className="mt-1 text-xs text-muted-foreground/60">
             Мы покажем доступные предложения в вашем радиусе
@@ -963,7 +976,7 @@ export default function MarketplacePage() {
             </div>
             <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
               После покупки вы получите полные данные: точные координаты, дату и
-              погодный паттерн. Best Day будет добавлен в ваш профиль.
+              погодный паттерн. Грибной день будет добавлен в ваш профиль.
             </p>
             <div className="flex gap-3">
               <button

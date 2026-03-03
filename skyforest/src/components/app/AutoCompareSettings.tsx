@@ -135,7 +135,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
 
         {/* Best Day select */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium">Best Day для сравнения</label>
+          <label className="mb-1.5 block text-sm font-medium">Грибной день для сравнения</label>
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {bestDays.map((bd) => (
               <button

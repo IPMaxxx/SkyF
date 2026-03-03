@@ -97,7 +97,7 @@ export default function EditLocationPage() {
       <div className="mx-auto max-w-2xl px-4 py-8 text-center">
         <p className="text-muted-foreground">Локация не найдена</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Назад к Dashboard
+          Назад
         </Link>
       </div>
     );
@@ -110,7 +110,7 @@ export default function EditLocationPage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
@@ -190,7 +190,7 @@ export default function EditLocationPage() {
           {showDeleteConfirm ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
               <p className="mb-3 text-sm text-red-400">
-                Удалить локацию «{location.name}»? Все связанные Best Days тоже будут удалены.
+                Удалить локацию «{location.name}»? Все связанные грибные дни тоже будут удалены.
               </p>
               <div className="flex gap-2">
                 <button

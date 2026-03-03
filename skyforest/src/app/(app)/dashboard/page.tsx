@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Location, BestDay } from "@/lib/supabase/types";
+import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 
 export default function DashboardPage() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -50,33 +51,35 @@ export default function DashboardPage() {
   const mainCards = [
     {
       title: "Погода",
-      desc: "Архив погоды за 14 дней и карта осадков",
+      desc: "Узнайте, была ли погода подходящей для грибов. Проверьте осадки, температуру и влажность за любой период",
       icon: CloudSun,
       href: "/dashboard/weather",
       color: "from-blue-500 to-cyan-600",
       iconBg: "from-blue-500/20 to-cyan-500/20",
       needsLocation: true,
+      blockedHint: "Чтобы проверить погоду, сначала укажите на карте ваше грибное место. Это бесплатно и займёт 30 секунд.",
     },
     {
-      title: "Сравнения",
-      desc: "Мониторинг совпадения погоды с эталоном по локациям",
+      title: "Мониторинг погоды",
+      desc: "Система следит за погодой и оповестит, когда условия совпадут с вашими лучшими грибными днями",
       icon: GitCompareArrows,
       href: "/dashboard/compare",
       color: "from-violet-500 to-purple-600",
       iconBg: "from-violet-500/20 to-purple-500/20",
       needsBestDay: true,
+      blockedHint: "Чтобы включить мониторинг, сначала запишите ваш удачный грибной день. Система запомнит погоду и будет искать похожие условия.",
     },
     {
       title: "Поиск леса",
-      desc: "Найти участки с таким же типом леса и породами деревьев",
+      desc: "Найдите новые грибные места по типу леса, породам деревьев и данным со спутника",
       icon: Trees,
       href: "/dashboard/forest-search",
       color: "from-emerald-500 to-teal-600",
       iconBg: "from-emerald-500/20 to-teal-500/20",
     },
     {
-      title: "Маркетплейс Best Days",
-      desc: "Покупайте и продавайте проверенные грибные локации",
+      title: "Маркетплейс",
+      desc: "Покупайте проверенные грибные места других пользователей или продавайте свои находки",
       icon: Store,
       href: "/dashboard/marketplace",
       color: "from-pink-500 to-rose-600",
@@ -87,11 +90,15 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">Главная</h1>
         <p className="mt-1 text-muted-foreground">
-          Инструменты для поиска грибных мест
+          Узнайте, когда погода идеальна для грибов. Добавьте локацию, запишите удачный день — и система подскажет, когда условия повторятся.
         </p>
       </div>
+
+      {(!hasLocations || !hasBestDays) && !loading && (
+        <OnboardingSteps hasLocations={hasLocations} hasBestDays={hasBestDays} />
+      )}
 
       {/* Main cards */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -118,12 +125,9 @@ export default function DashboardPage() {
                   {card.desc}
                 </p>
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-                  <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-400">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {card.needsLocation && !hasLocations
-                      ? "Сначала добавьте локацию"
-                      : "Сначала создайте лучший день"}
-                  </div>
+                  <p className="mb-2 text-xs leading-relaxed text-amber-400/80">
+                    {(card as Record<string, unknown>).blockedHint as string}
+                  </p>
                   <Link
                     href={
                       card.needsLocation && !hasLocations
@@ -135,7 +139,7 @@ export default function DashboardPage() {
                     <Plus className="h-3 w-3" />
                     {card.needsLocation && !hasLocations
                       ? "Добавить локацию"
-                      : "Создать Best Day"}
+                      : "Записать грибной день"}
                   </Link>
                 </div>
               </div>
@@ -185,7 +189,7 @@ export default function DashboardPage() {
           }`}
         >
           <Star className="h-4 w-4 text-amber-400" />
-          Добавить лучший день
+          Записать грибной день
           {hasBestDays && (
             <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
               {bestDays.length}
@@ -197,7 +201,7 @@ export default function DashboardPage() {
       {/* Best days */}
       {hasBestDays && (
         <div className="mt-10">
-          <h2 className="mb-4 text-lg font-semibold">Лучшие дни</h2>
+          <h2 className="mb-4 text-lg font-semibold">Мои грибные дни</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {bestDays.map((bd) => (
               <Link

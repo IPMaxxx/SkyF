@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { toast } from "sonner";
 import type { Location, WeatherDay } from "@/lib/supabase/types";
 import {
   CloudSun,
@@ -137,6 +139,7 @@ export default function WeatherPage() {
   const [gridData, setGridData] = useState<GridPoint[]>([]);
   const [rainError, setRainError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showWeatherConfirm, setShowWeatherConfirm] = useState(false);
   const [savedRainList, setSavedRainList] = useState<{ id: string; center_lat: number; center_lng: number; radius_km: number; step_km: number; days: number; created_at: string }[]>([]);
 
   useEffect(() => {
@@ -182,7 +185,13 @@ export default function WeatherPage() {
   const selectedLocation = locations.find((l) => l.id === selectedId);
 
   // --- Weather handlers ---
+  const requestGetData = () => {
+    if (!selectedLocation) return;
+    setShowWeatherConfirm(true);
+  };
+
   const handleGetData = async () => {
+    setShowWeatherConfirm(false);
     if (!selectedLocation) return;
 
     const spendResult = await spend("weather_check", "Проверка погоды");
@@ -190,6 +199,7 @@ export default function WeatherPage() {
       setError(spendResult.error || "Недостаточно токенов");
       return;
     }
+    toast.success(`Списан ${TOKEN_COSTS.weather_check} токен`);
 
     setLoading(true);
     setError("");
@@ -280,6 +290,7 @@ export default function WeatherPage() {
       setRainError(spendResult.error || "Недостаточно токенов");
       return;
     }
+    toast.success(`Списано ${tokenCost} токенов`);
 
     setRainLoading(true);
     setRainError("");
@@ -347,7 +358,7 @@ export default function WeatherPage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
@@ -357,8 +368,19 @@ export default function WeatherPage() {
         <div>
           <h1 className="text-xl font-bold">Погода</h1>
           <p className="text-sm text-muted-foreground">
-            Архив погоды и карта осадков — всё в одном месте
+            Проверьте погоду для ваших грибных мест
           </p>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Здесь вы можете посмотреть архив погоды за любые 14 дней и карту осадков.
+          Это поможет понять, были ли дожди, достаточно ли влаги в лесу для грибов.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Проверка погоды — 1 токен</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Карта осадков — 5 токенов за 50 точек</span>
         </div>
       </div>
 
@@ -464,7 +486,7 @@ export default function WeatherPage() {
 
             <button
               type="button"
-              onClick={handleGetData}
+              onClick={requestGetData}
               disabled={loading || !selectedLocation}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
             >
@@ -473,8 +495,19 @@ export default function WeatherPage() {
               ) : (
                 <CloudSun className="h-4 w-4" />
               )}
-              Get Data · {TOKEN_COSTS.weather_check} токен
+              Загрузить погоду · {TOKEN_COSTS.weather_check} токен
             </button>
+
+            <TokenConfirmModal
+              open={showWeatherConfirm}
+              title="Загрузить погоду"
+              description="Система загрузит данные о погоде за 14 дней для выбранной локации."
+              cost={TOKEN_COSTS.weather_check}
+              balance={balance}
+              loading={loading}
+              onConfirm={handleGetData}
+              onCancel={() => setShowWeatherConfirm(false)}
+            />
           </div>
 
           {weatherDays.length > 0 && <WeatherChart data={weatherDays} />}

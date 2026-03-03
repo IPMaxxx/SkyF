@@ -10,7 +10,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
 ];
 
 export function AppHeader() {

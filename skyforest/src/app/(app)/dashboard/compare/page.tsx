@@ -8,6 +8,8 @@ import { NewLocationModal } from "@/components/app/NewLocationModal";
 import type { BestDay, Location, WeatherDay } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { toast } from "sonner";
 import {
   comparePatterns,
   WEIGHT_LABELS,
@@ -82,7 +84,7 @@ export default function ComparePage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const { spend } = useTokens();
+  const { balance, spend } = useTokens();
 
   const [showCreate, setShowCreate] = useState(false);
   const [newBdId, setNewBdId] = useState("");
@@ -97,6 +99,8 @@ export default function ComparePage() {
   const [showWeights, setShowWeights] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [confirmCompare, setConfirmCompare] = useState<Comparison | null>(null);
+  const [confirmAutoToggle, setConfirmAutoToggle] = useState<Comparison | null>(null);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -137,7 +141,7 @@ export default function ComparePage() {
   };
 
   const handleCreate = async () => {
-    if (!newBdId || !newLocId) { setError("Выберите Best Day и локацию"); return; }
+    if (!newBdId || !newLocId) { setError("Выберите грибной день и локацию"); return; }
     setCreating(true);
     setError("");
     const supabase = createClient();
@@ -151,7 +155,7 @@ export default function ComparePage() {
       user_id: user.id,
       best_day_id: newBdId,
       location_id: newLocId,
-      name: `${bd?.name || "Best Day"} → ${loc?.name || "Локация"}`,
+      name: `${bd?.name || "Грибной день"} → ${loc?.name || "Локация"}`,
       enabled: newAuto,
       run_time: newTime + ":00",
       weights: DEFAULT_WEIGHTS,
@@ -163,13 +167,22 @@ export default function ComparePage() {
     setCreating(false);
   };
 
+  const requestCompare = (cmp: Comparison) => {
+    const bd = cmp.best_day;
+    const loc = cmp.location;
+    if (!bd?.weather_data || !loc) { setError("Нет данных для сравнения"); return; }
+    setConfirmCompare(cmp);
+  };
+
   const handleRunCompare = async (cmp: Comparison) => {
+    setConfirmCompare(null);
     const bd = cmp.best_day;
     const loc = cmp.location;
     if (!bd?.weather_data || !loc) { setError("Нет данных для сравнения"); return; }
 
-    const spendResult = await spend("compare", "Сравнение паттернов");
+    const spendResult = await spend("compare", "Сравнение погодных условий");
     if (!spendResult.success) { setError(spendResult.error || "Недостаточно токенов"); return; }
+    toast.success(`Списано ${TOKEN_COSTS.compare} токена`);
 
     setRunningId(cmp.id);
     setError("");
@@ -205,11 +218,25 @@ export default function ComparePage() {
     } catch { setError("Ошибка загрузки данных"); } finally { setRunningId(null); }
   };
 
-  const handleToggleAuto = async (cmp: Comparison) => {
+  const requestToggleAuto = (cmp: Comparison) => {
+    if (cmp.enabled) {
+      doToggleAuto(cmp);
+    } else {
+      setConfirmAutoToggle(cmp);
+    }
+  };
+
+  const doToggleAuto = async (cmp: Comparison) => {
+    setConfirmAutoToggle(null);
     const supabase = createClient();
     const next = !cmp.enabled;
     await supabase.from("auto_compares").update({ enabled: next }).eq("id", cmp.id);
     setComparisons((prev) => prev.map((c) => c.id === cmp.id ? { ...c, enabled: next } : c));
+    if (next) {
+      toast.info(`Автосравнение включено. Расход: ~${TOKEN_COSTS.compare * 30} токенов/мес.`);
+    } else {
+      toast.info("Автосравнение выключено");
+    }
   };
 
   const handleTimeChange = async (cmp: Comparison, time: string) => {
@@ -256,7 +283,7 @@ export default function ComparePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Назад к Dashboard
+        <ArrowLeft className="h-4 w-4" /> Назад
       </Link>
 
       <div className="mb-6 flex items-center justify-between">
@@ -265,14 +292,25 @@ export default function ComparePage() {
             <GitCompareArrows className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Сравнения</h1>
-            <p className="text-sm text-muted-foreground">Следите за совпадением погоды с эталоном в разных локациях</p>
+            <h1 className="text-xl font-bold">Мониторинг погоды</h1>
+            <p className="text-sm text-muted-foreground">Система следит за погодой и оповещает, когда условия совпадают с вашими лучшими грибными днями</p>
           </div>
         </div>
         <button type="button" onClick={() => setShowCreate(true)} disabled={bestDays.length === 0}
           className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
           <Plus className="h-4 w-4" /> Новое сравнение
         </button>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Мониторинг сравнивает текущую погоду с погодой ваших успешных грибных дней.
+          Когда совпадение высокое — самое время идти в лес! Можно включить автоматическое сравнение каждый день.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 2 токена</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 2 токена/день</span>
+        </div>
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
@@ -286,12 +324,12 @@ export default function ComparePage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium">Эталонный Best Day</label>
+              <label className="mb-1.5 block text-xs font-medium">Грибной день-эталон</label>
               <div className="relative">
                 <Star className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
                 <select value={newBdId} onChange={(e) => setNewBdId(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 outline-none focus:border-primary">
-                  <option value="" disabled>Выберите Best Day</option>
+                  <option value="" disabled>Выберите грибной день</option>
                   {bestDays.map((bd) => <option key={bd.id} value={bd.id}>{bd.name} — {bd.location?.name}</option>)}
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
@@ -338,7 +376,7 @@ export default function ComparePage() {
           <GitCompareArrows className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-muted-foreground">Нет сравнений</p>
           <p className="mt-1 text-sm text-muted-foreground/70">Создайте первое сравнение: выберите эталонный день и локацию</p>
-          {bestDays.length === 0 && <Link href="/dashboard/best-day/new" className="mt-3 inline-block text-sm text-primary hover:underline">Сначала создайте Best Day</Link>}
+          {bestDays.length === 0 && <Link href="/dashboard/best-day/new" className="mt-3 inline-block text-sm text-primary hover:underline">Сначала запишите грибной день</Link>}
         </div>
       )}
 
@@ -420,14 +458,14 @@ export default function ComparePage() {
               <div className="max-h-[calc(100vh-160px)] overflow-y-auto px-6 py-5 space-y-5">
                 {/* Actions bar */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <button type="button" onClick={() => handleRunCompare(cmp)} disabled={isRunning || !bd?.weather_data}
+                  <button type="button" onClick={() => requestCompare(cmp)} disabled={isRunning || !bd?.weather_data}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
                     {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     Сравнить сейчас · {TOKEN_COSTS.compare} ток.
                   </button>
 
                   <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
-                    <button type="button" onClick={() => handleToggleAuto(cmp)}
+                    <button type="button" onClick={() => requestToggleAuto(cmp)}
                       className={`relative h-6 w-11 rounded-full transition-colors ${cmp.enabled ? "bg-primary" : "bg-white/15"}`}>
                       <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${cmp.enabled ? "left-[22px]" : "left-0.5"}`} />
                     </button>
@@ -581,6 +619,29 @@ export default function ComparePage() {
           </div>
         );
       })()}
+
+      <TokenConfirmModal
+        open={!!confirmCompare}
+        title="Сравнить погоду"
+        description="Система загрузит текущую погоду и сравнит её с эталонным грибным днём."
+        cost={TOKEN_COSTS.compare}
+        balance={balance}
+        loading={runningId !== null}
+        onConfirm={() => confirmCompare && handleRunCompare(confirmCompare)}
+        onCancel={() => setConfirmCompare(null)}
+      />
+
+      {confirmAutoToggle && (
+        <TokenConfirmModal
+          open
+          title="Включить автосравнение"
+          description={`Система будет каждый день автоматически сравнивать погоду и тратить ${TOKEN_COSTS.compare} токена за запуск. При текущих настройках это ~${TOKEN_COSTS.compare * 30} токенов в месяц. Убедитесь, что у вас достаточно токенов.`}
+          cost={TOKEN_COSTS.compare}
+          balance={balance}
+          onConfirm={() => doToggleAuto(confirmAutoToggle)}
+          onCancel={() => setConfirmAutoToggle(null)}
+        />
+      )}
     </div>
   );
 }

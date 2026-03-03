@@ -17,12 +17,12 @@ export const TOKEN_PACKAGES = [
 
 export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
   switch (action) {
-    case "weather_check": return "Проверка погоды";
-    case "best_day_create": return "Создание / обновление Best Day";
-    case "best_day_reload": return "Перезагрузка погоды Best Day";
-    case "compare": return "Сравнение паттернов";
+    case "weather_check": return "Проверка погоды (14 дней)";
+    case "best_day_create": return "Запись грибного дня";
+    case "best_day_reload": return "Обновление погоды грибного дня";
+    case "compare": return "Сравнение погодных условий";
     case "rain_map_per_batch": return "Карта осадков (за 50 точек)";
     case "forest_search": return "Поиск леса (½ радиуса в км)";
-    case "marketplace_buy": return "Покупка Best Day на маркетплейсе";
+    case "marketplace_buy": return "Покупка грибного дня на маркетплейсе";
   }
 }

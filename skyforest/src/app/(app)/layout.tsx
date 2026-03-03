@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/app/AppHeader";
 import { TokenProvider } from "@/lib/TokenContext";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Приложение",
@@ -31,6 +32,18 @@ export default function AppLayout({
         <AppHeader />
         <main className="flex-1">{children}</main>
       </div>
+      <Toaster
+        position="top-right"
+        theme="dark"
+        richColors
+        toastOptions={{
+          style: {
+            background: "rgba(26, 42, 31, 0.95)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(16px)",
+          },
+        }}
+      />
     </TokenProvider>
   );
 }

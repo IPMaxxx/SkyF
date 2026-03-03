@@ -12,6 +12,8 @@ import type { Location, WeatherDay, ForestInfo } from "@/lib/supabase/types";
 import { checkPhotoLocation } from "@/lib/photo-geo";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { toast } from "sonner";
 import {
   Star,
   ArrowLeft,
@@ -52,6 +54,7 @@ export default function NewBestDayPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedBestDayId, setSavedBestDayId] = useState<string | null>(null);
   const [showNewLocation, setShowNewLocation] = useState(false);
+  const [showConfirmGetData, setShowConfirmGetData] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -75,17 +78,24 @@ export default function NewBestDayPage() {
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
 
-  const handleGetData = async () => {
+  const requestGetData = () => {
     if (!selectedLocation || !bestDate) {
       setError("Выберите локацию и укажите дату");
       return;
     }
+    setShowConfirmGetData(true);
+  };
 
-    const spendResult = await spend("best_day_create", "Создание Best Day");
+  const handleGetData = async () => {
+    setShowConfirmGetData(false);
+    if (!selectedLocation || !bestDate) return;
+
+    const spendResult = await spend("best_day_create", "Загрузка погоды для грибного дня");
     if (!spendResult.success) {
       setError(spendResult.error || "Недостаточно токенов");
       return;
     }
+    toast.success(`Списан ${TOKEN_COSTS.best_day_create} токен`);
 
     setLoadingWeather(true);
     setError("");
@@ -188,7 +198,7 @@ export default function NewBestDayPage() {
       return;
     }
     if (weatherDays.length === 0) {
-      setError("Сначала нажмите Get Data для загрузки погодных данных");
+      setError("Сначала нажмите «Загрузить погоду» для загрузки погодных данных");
       return;
     }
 
@@ -262,7 +272,7 @@ export default function NewBestDayPage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
@@ -270,10 +280,21 @@ export default function NewBestDayPage() {
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Best Day</h1>
-          <p className="text-sm text-muted-foreground">
-            Шаг 3: Сохраните эталонный грибной день для сравнения
+          <h1 className="text-xl font-bold">Грибной день</h1>
+            <p className="text-sm text-muted-foreground">
+            Запишите день, когда вы удачно нашли грибы
           </p>
+        </div>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Вспомните день, когда вы нашли много грибов. Укажите дату и локацию — мы загрузим погоду за тот период.
+          Этот погодный «отпечаток» станет эталоном: система будет искать похожие условия и оповестит вас.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Загрузка погоды — 1 токен</span>
+          <span className="flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-emerald-400">Сохранение — бесплатно</span>
         </div>
       </div>
 
@@ -449,7 +470,7 @@ export default function NewBestDayPage() {
         {/* Get Data */}
         <button
           type="button"
-          onClick={handleGetData}
+          onClick={requestGetData}
           disabled={loadingWeather || !selectedLocation || !bestDate}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
         >
@@ -458,8 +479,19 @@ export default function NewBestDayPage() {
           ) : (
             <Thermometer className="h-4 w-4" />
           )}
-          Get Data · {TOKEN_COSTS.best_day_create} токен
+          Загрузить погоду · {TOKEN_COSTS.best_day_create} токен
         </button>
+
+        <TokenConfirmModal
+          open={showConfirmGetData}
+          title="Загрузить погоду"
+          description="Система загрузит данные о погоде за 14 дней для выбранной локации и даты."
+          cost={TOKEN_COSTS.best_day_create}
+          balance={balance}
+          loading={loadingWeather}
+          onConfirm={handleGetData}
+          onCancel={() => setShowConfirmGetData(false)}
+        />
 
         {/* Weather charts */}
         {weatherDays.length > 0 && <WeatherChart data={weatherDays} />}
@@ -540,7 +572,7 @@ export default function NewBestDayPage() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Сохранить Best Day
+          Сохранить грибной день · Бесплатно
         </button>
       </div>
     </div>

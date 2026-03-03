@@ -11,6 +11,8 @@ import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, BestDay, WeatherDay, ForestInfo } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { toast } from "sonner";
 import {
   Star,
   ArrowLeft,
@@ -64,6 +66,7 @@ export default function EditBestDayPage() {
   const [showSellModal, setShowSellModal] = useState(false);
   const [activeListing, setActiveListing] = useState<{ id: string } | null>(null);
   const [delistLoading, setDelistLoading] = useState(false);
+  const [showConfirmReload, setShowConfirmReload] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -131,17 +134,24 @@ export default function EditBestDayPage() {
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
 
-  const handleReloadWeather = async () => {
+  const requestReloadWeather = () => {
     if (!selectedLocation || !bestDate) {
       setError("Выберите локацию и дату");
       return;
     }
+    setShowConfirmReload(true);
+  };
 
-    const spendResult = await spend("best_day_reload", "Перезагрузка погоды Best Day");
+  const handleReloadWeather = async () => {
+    setShowConfirmReload(false);
+    if (!selectedLocation || !bestDate) return;
+
+    const spendResult = await spend("best_day_reload", "Обновление погоды грибного дня");
     if (!spendResult.success) {
       setError(spendResult.error || "Недостаточно токенов");
       return;
     }
+    toast.success(`Списан ${TOKEN_COSTS.best_day_reload} токен`);
 
     setLoadingWeather(true);
     setError("");
@@ -305,7 +315,7 @@ export default function EditBestDayPage() {
       <div className="mx-auto max-w-2xl px-4 py-8 text-center">
         <p className="text-muted-foreground">Запись не найдена</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Назад к Dashboard
+          Назад
         </Link>
       </div>
     );
@@ -318,7 +328,7 @@ export default function EditBestDayPage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6 flex items-center gap-3">
@@ -326,7 +336,7 @@ export default function EditBestDayPage() {
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Редактировать Best Day</h1>
+          <h1 className="text-xl font-bold">Редактировать грибной день</h1>
           <p className="text-sm text-muted-foreground">
             Создан {new Date(bestDay.created_at).toLocaleDateString("ru-RU")}
           </p>
@@ -456,12 +466,12 @@ export default function EditBestDayPage() {
             <p className="text-sm font-medium">Погодный паттерн</p>
             <button
               type="button"
-              onClick={handleReloadWeather}
+              onClick={requestReloadWeather}
               disabled={loadingWeather || !selectedLocation || !bestDate}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
             >
               {loadingWeather ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Thermometer className="h-3.5 w-3.5" />}
-              Обновить · {TOKEN_COSTS.best_day_reload}т
+              Обновить погоду · {TOKEN_COSTS.best_day_reload} ток.
             </button>
           </div>
           {weatherDays.length > 0 && <WeatherChart data={weatherDays} />}
@@ -651,11 +661,22 @@ export default function EditBestDayPage() {
               className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300"
             >
               <Trash2 className="h-4 w-4" />
-              Удалить Best Day
+              Удалить грибной день
             </button>
           )}
         </div>
       </div>
+
+      <TokenConfirmModal
+        open={showConfirmReload}
+        title="Обновить погоду"
+        description="Система заново загрузит данные о погоде за 14 дней для этого грибного дня."
+        cost={TOKEN_COSTS.best_day_reload}
+        balance={balance}
+        loading={loadingWeather}
+        onConfirm={handleReloadWeather}
+        onCancel={() => setShowConfirmReload(false)}
+      />
     </div>
   );
 }

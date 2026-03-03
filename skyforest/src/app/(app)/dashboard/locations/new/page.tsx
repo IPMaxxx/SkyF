@@ -77,7 +77,7 @@ export default function NewLocationPage() {
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к Dashboard
+        Назад
       </Link>
 
       <div className="mb-6">
@@ -88,9 +88,19 @@ export default function NewLocationPage() {
           <div>
             <h1 className="text-xl font-bold">Добавить локацию</h1>
             <p className="text-sm text-muted-foreground">
-              Шаг 1: Укажите название и кликните на карту
+              Укажите место, где вы ходите за грибами
             </p>
           </div>
+        </div>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Локация — это точка на карте, где вы обычно ходите за грибами.
+          Добавьте её один раз, и потом сможете отслеживать погоду и сравнивать условия.
+        </p>
+        <div className="mt-2">
+          <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs text-emerald-400">Бесплатно</span>
         </div>
       </div>
 
@@ -149,7 +159,7 @@ export default function NewLocationPage() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Сохранить локацию
+          Сохранить локацию · Бесплатно
         </button>
       </div>
     </div>

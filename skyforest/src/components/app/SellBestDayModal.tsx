@@ -74,7 +74,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
             <Store className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Продать Best Day</h2>
+            <h2 className="text-lg font-bold">Продать грибной день</h2>
             <p className="text-xs text-muted-foreground">Выставить на маркетплейс</p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
         {!hasPhotos && (
           <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
             <p className="text-xs text-red-400 font-medium">
-              Для продажи необходимо добавить фото. Вернитесь к редактированию Best Day и загрузите хотя бы одно фото.
+              Для продажи необходимо добавить фото. Вернитесь к редактированию грибного дня и загрузите хотя бы одно фото.
             </p>
           </div>
         )}

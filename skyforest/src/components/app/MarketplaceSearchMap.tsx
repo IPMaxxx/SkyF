@@ -116,7 +116,7 @@ export function MarketplaceSearchMap({
           <Popup>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
               <p style={{ fontWeight: 600, marginBottom: 4 }}>★ {d.name}</p>
-              <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>Ваш Best Day</p>
+              <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>Ваш грибной день</p>
               <a
                 href={`/dashboard/best-day/${d.id}`}
                 style={{
