@@ -1,7 +1,23 @@
+"use client";
+
 import { Check, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
-const PLANS = [
+interface Plan {
+  name: string;
+  desc: string;
+  price: string;
+  priceNote: string;
+  highlight: boolean;
+  features: string[];
+  cta: string;
+  ctaLoggedIn?: string;
+  href: string;
+  hrefLoggedIn?: string;
+}
+
+const PLANS: Plan[] = [
   {
     name: "Старт",
     desc: "Знакомство с сервисом",
@@ -16,7 +32,9 @@ const PLANS = [
       "Доступ к дашборду",
     ],
     cta: "Начать бесплатно",
+    ctaLoggedIn: "Перейти в кабинет",
     href: "/register",
+    hrefLoggedIn: "/dashboard",
   },
   {
     name: "Стандарт",
@@ -53,6 +71,7 @@ const PLANS = [
 ];
 
 export function Tariffs() {
+  const loggedIn = useIsLoggedIn();
   return (
     <section id="tariffs" className="relative py-20 sm:py-28">
       <div className="absolute inset-0 bg-black/30" />
@@ -109,14 +128,14 @@ export function Tariffs() {
                 </ul>
 
                 <Link
-                  href={plan.href}
+                  href={loggedIn && plan.hrefLoggedIn ? plan.hrefLoggedIn : plan.href}
                   className={`block w-full rounded-xl py-3 text-center text-sm font-semibold transition-all ${
                     plan.highlight
                       ? "bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary-dark hover:shadow-xl"
                       : "bg-white/10 text-white hover:bg-white/15"
                   }`}
                 >
-                  {plan.cta}
+                  {loggedIn && plan.ctaLoggedIn ? plan.ctaLoggedIn : plan.cta}
                 </Link>
               </div>
             </div>

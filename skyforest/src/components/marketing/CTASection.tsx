@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Smartphone,
@@ -6,8 +8,10 @@ import {
   Map,
   ArrowRight,
 } from "lucide-react";
+import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 export function CTASection() {
+  const loggedIn = useIsLoggedIn();
   return (
     <>
       {/* CTA with app preview */}
@@ -109,10 +113,10 @@ export function CTASection() {
               Регистрация бесплатна. Первые токены — в подарок.
             </p>
             <Link
-              href="/register"
+              href={loggedIn ? "/dashboard" : "/register"}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-base font-semibold text-primary-dark shadow-lg transition-all hover:bg-white/90 hover:shadow-xl"
             >
-              Попробовать бесплатно
+              {loggedIn ? "Перейти в кабинет" : "Попробовать бесплатно"}
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>

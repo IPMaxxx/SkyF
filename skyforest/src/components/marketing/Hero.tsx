@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Play, X, CloudSun, Database, MapPin } from "lucide-react";
+import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 const FEATURES = [
   {
@@ -25,6 +26,7 @@ const FEATURES = [
 
 export function Hero() {
   const [videoOpen, setVideoOpen] = useState(false);
+  const loggedIn = useIsLoggedIn();
 
   return (
     <>
@@ -57,10 +59,10 @@ export function Hero() {
 
           <div className="mb-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/register"
+              href={loggedIn ? "/dashboard" : "/register"}
               className="rounded-xl bg-primary px-10 py-4 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40"
             >
-              Попробовать бесплатно
+              {loggedIn ? "Перейти в кабинет" : "Попробовать бесплатно"}
             </Link>
 
             <button

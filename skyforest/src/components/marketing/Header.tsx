@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 const NAV_LINKS = [
   { label: "Главная", href: "/" },
@@ -16,6 +17,7 @@ const NAV_LINKS = [
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const loggedIn = useIsLoggedIn();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -60,18 +62,30 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden text-sm font-medium text-white/70 transition-colors hover:text-white sm:block"
-          >
-            Войти
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-          >
-            Начать
-          </Link>
+          {loggedIn ? (
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Мой кабинет
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden text-sm font-medium text-white/70 transition-colors hover:text-white sm:block"
+              >
+                Войти
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+              >
+                Начать
+              </Link>
+            </>
+          )}
 
           <button
             type="button"
@@ -97,13 +111,24 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/login"
-              onClick={() => setMobileOpen(false)}
-              className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
-            >
-              Войти
-            </Link>
+            {loggedIn ? (
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-primary-light transition-colors hover:bg-white/10"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Мой кабинет
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
+              >
+                Войти
+              </Link>
+            )}
           </nav>
         </div>
       )}
