@@ -201,15 +201,20 @@ export default function DashboardPage() {
       {/* Best days */}
       {hasBestDays && (
         <div className="mt-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Мои грибные дни</h2>
-            <Link
-              href="/dashboard/best-day/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Добавить грибной день
-            </Link>
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Мои грибные дни</h2>
+              <Link
+                href="/dashboard/best-day/new"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Добавить грибной день
+              </Link>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Даты удачного сбора с погодным «отпечатком». Используются как эталон для мониторинга — система сравнивает текущую погоду с этими днями и оповещает, когда условия повторяются.
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {bestDays.map((bd) => (
@@ -251,15 +256,20 @@ export default function DashboardPage() {
       {/* Locations — compact chips */}
       {hasLocations && (
         <div className="mt-10">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Мои локации</h2>
-            <Link
-              href="/dashboard/locations/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Добавить локацию
-            </Link>
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Мои локации</h2>
+              <Link
+                href="/dashboard/locations/new"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Добавить локацию
+              </Link>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ваши грибные места на карте. К каждой локации привязаны проверки погоды, грибные дни и мониторинг. Кликните, чтобы посмотреть детали или отредактировать.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {locations.map((loc) => (
