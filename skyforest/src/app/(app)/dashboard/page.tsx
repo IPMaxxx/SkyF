@@ -67,7 +67,7 @@ export default function DashboardPage() {
       color: "from-violet-500 to-purple-600",
       iconBg: "from-violet-500/20 to-purple-500/20",
       needsBestDay: true,
-      blockedHint: "Чтобы включить мониторинг, сначала запишите ваш удачный грибной день. Система запомнит погоду и будет искать похожие условия.",
+      blockedHint: "Чтобы включить мониторинг, сначала добавьте ваш удачный грибной день. Система запомнит погоду и будет искать похожие условия.",
     },
     {
       title: "Поиск леса",
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                     <Plus className="h-3 w-3" />
                     {card.needsLocation && !hasLocations
                       ? "Добавить локацию"
-                      : "Записать грибной день"}
+                      : "Добавить грибной день"}
                   </Link>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
           }`}
         >
           <Star className="h-4 w-4 text-amber-400" />
-          Записать грибной день
+          Добавить грибной день
           {hasBestDays && (
             <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
               {bestDays.length}
@@ -201,7 +201,16 @@ export default function DashboardPage() {
       {/* Best days */}
       {hasBestDays && (
         <div className="mt-10">
-          <h2 className="mb-4 text-lg font-semibold">Мои грибные дни</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Мои грибные дни</h2>
+            <Link
+              href="/dashboard/best-day/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Добавить грибной день
+            </Link>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {bestDays.map((bd) => (
               <Link
@@ -242,7 +251,16 @@ export default function DashboardPage() {
       {/* Locations — compact chips */}
       {hasLocations && (
         <div className="mt-10">
-          <h2 className="mb-3 text-lg font-semibold">Мои локации</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Мои локации</h2>
+            <Link
+              href="/dashboard/locations/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Добавить локацию
+            </Link>
+          </div>
           <div className="flex flex-wrap gap-2">
             {locations.map((loc) => (
               <Link
