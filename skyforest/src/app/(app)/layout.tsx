@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/app/AppHeader";
+import { Footer } from "@/components/marketing/Footer";
 import { TokenProvider } from "@/lib/TokenContext";
 import { Toaster } from "sonner";
 
@@ -31,6 +32,7 @@ export default function AppLayout({
         </div>
         <AppHeader />
         <main className="flex-1">{children}</main>
+        <Footer />
       </div>
       <Toaster
         position="top-right"

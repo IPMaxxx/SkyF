@@ -5,6 +5,7 @@ import Link from "next/link";
 import { User, Mail, Coins, Lock } from "lucide-react";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
+import { EditProfileName } from "@/components/app/EditProfileName";
 
 export const metadata: Metadata = {
   title: "Мой аккаунт",
@@ -51,12 +52,10 @@ export default async function AccountPage() {
             <Mail className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">{profile?.email || user.email}</span>
           </div>
-          {profile?.full_name && (
-            <div className="flex items-center gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{profile.full_name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <EditProfileName userId={user.id} initialName={profile?.full_name || null} />
+          </div>
         </div>
       </div>
 

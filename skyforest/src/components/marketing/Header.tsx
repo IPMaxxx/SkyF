@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 const NAV_LINKS = [
-  { label: "Главная", href: "/" },
+  { label: "Начало", href: "/" },
   { label: "О сервисе", href: "/#about" },
   { label: "Тарифы", href: "/#tariffs" },
   { label: "FAQ", href: "/#faq" },

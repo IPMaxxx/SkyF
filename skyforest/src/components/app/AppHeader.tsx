@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
-import { LogOut, User, Coins, LayoutDashboard } from "lucide-react";
+import { LogOut, User, Coins, LayoutDashboard, Home } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/", label: "Стартовая", icon: Home, exact: true },
   { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
 ];
 
@@ -39,21 +40,26 @@ export function AppHeader() {
       </Link>
 
       <nav className="flex items-center gap-1">
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              pathname === item.href || pathname.startsWith(item.href + "/")
-                ? "bg-primary/20 text-primary-light"
-                : "text-foreground/70 hover:text-foreground hover:bg-white/5"
-            )}
-          >
-            {item.icon && <item.icon className="mr-1 inline-block h-4 w-4" />}
-            {item.label}
-          </Link>
-        ))}
+        {NAV.map((item) => {
+          const active = (item as { exact?: boolean }).exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary/20 text-primary-light"
+                  : "text-foreground/70 hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              {item.icon && <item.icon className="mr-1 inline-block h-4 w-4" />}
+              {item.label}
+            </Link>
+          );
+        })}
 
         {/* Token balance */}
         <Link
