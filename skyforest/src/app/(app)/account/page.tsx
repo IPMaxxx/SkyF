@@ -74,7 +74,7 @@ export default async function AccountPage() {
           <Coins className="h-5 w-5 text-amber-400" />
           Токены
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-xl bg-amber-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-amber-400">{tokenBalance?.balance ?? 0}</p>
             <p className="text-xs text-muted-foreground">Баланс</p>
@@ -82,6 +82,10 @@ export default async function AccountPage() {
           <div className="rounded-xl bg-green-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-green-400">{tokenBalance?.total_purchased ?? 0}</p>
             <p className="text-xs text-muted-foreground">Куплено</p>
+          </div>
+          <div className="rounded-xl bg-purple-500/10 p-4 text-center">
+            <p className="text-2xl font-bold text-purple-400">{tokenBalance?.total_earned ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Заработано</p>
           </div>
           <div className="rounded-xl bg-blue-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-blue-400">{tokenBalance?.total_spent ?? 0}</p>

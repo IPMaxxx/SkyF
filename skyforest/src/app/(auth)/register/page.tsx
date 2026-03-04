@@ -48,11 +48,11 @@ function RegisterForm() {
       return;
     }
 
-    router.push(redirect);
-    router.refresh();
+    setSuccess(true);
+    setLoading(false);
   };
 
-  if (false) {
+  if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted px-4">
         <div className="w-full max-w-md text-center">
@@ -62,8 +62,14 @@ function RegisterForm() {
             </div>
             <h2 className="mb-2 text-xl font-bold">Проверьте почту</h2>
             <p className="text-sm text-muted-foreground">
-              placeholder
+              Мы отправили письмо на <strong>{email}</strong>. Перейдите по ссылке в письме, чтобы подтвердить аккаунт. Если письма нет — проверьте папку «Спам».
             </p>
+            <Link
+              href="/login"
+              className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              Перейти к входу
+            </Link>
           </div>
         </div>
       </div>

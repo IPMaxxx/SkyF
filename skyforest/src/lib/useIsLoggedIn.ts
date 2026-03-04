@@ -8,9 +8,9 @@ export function useIsLoggedIn() {
 
   useEffect(() => {
     createClient()
-      .auth.getSession()
+      .auth.getUser()
       .then(({ data }) => {
-        setLoggedIn(!!data.session);
+        setLoggedIn(!!data.user);
       });
   }, []);
 

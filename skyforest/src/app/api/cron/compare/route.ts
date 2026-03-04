@@ -65,16 +65,11 @@ export async function GET(request: NextRequest) {
             `Skyforest: недостаточно токенов для автосравнения`,
             buildInsufficientTokensEmail(bestDay.name, balance)
           );
-        } catch {}
+        } catch (emailErr) {
+          console.error("Failed to send insufficient tokens email:", emailErr);
+        }
         continue;
       }
-
-      const { data: spendResult } = await supabase.rpc("spend_tokens", {
-        p_user_id: ac.user_id,
-        p_amount: cost,
-        p_description: `Автосравнение: ${ac.name || bestDay.name} → ${loc.name}`,
-      });
-      if (!spendResult?.success) continue;
 
       const today = new Date().toISOString().split("T")[0];
       const startDate = new Date();
@@ -86,6 +81,13 @@ export async function GET(request: NextRequest) {
       const weatherRaw = await weatherRes.json();
 
       if (!weatherRaw.daily?.time) continue;
+
+      const { data: spendResult } = await supabase.rpc("spend_tokens", {
+        p_user_id: ac.user_id,
+        p_amount: cost,
+        p_description: `Автосравнение: ${ac.name || bestDay.name} → ${loc.name}`,
+      });
+      if (!spendResult?.success) continue;
 
       const currentWeather: WeatherDay[] = weatherRaw.daily.time.map((date: string, i: number) => ({
         date,

@@ -572,7 +572,7 @@ export async function POST(request: NextRequest) {
     scanZones: scanZones.length,
   };
 
-  // Persist to history (fire-and-forget, don't block response)
+  // Persist to history (don't block response)
   supabase
     .from("forest_search_history")
     .insert({
@@ -585,7 +585,9 @@ export async function POST(request: NextRequest) {
       matches: matches as unknown as Record<string, unknown>[],
       stats: statsObj,
     })
-    .then(() => {});
+    .then(({ error }) => {
+      if (error) console.error("Failed to save forest search history:", error);
+    });
 
   return NextResponse.json({
     matches,

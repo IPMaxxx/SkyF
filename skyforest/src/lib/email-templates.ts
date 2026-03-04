@@ -1,3 +1,5 @@
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://skyforest.by";
+
 interface CompareEmailData {
   bestDayName: string;
   locationName: string;
@@ -99,13 +101,13 @@ export function buildCompareEmail(data: CompareEmailData): string {
 
     <!-- CTA -->
     <div style="text-align:center;margin-bottom:24px;">
-      <a href="https://skyforest.by/dashboard/compare" style="display:inline-block;background:#62a863;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Посмотреть подробности</a>
+      <a href="${APP_URL}/dashboard/compare" style="display:inline-block;background:#62a863;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Посмотреть подробности</a>
     </div>
 
     <!-- Footer -->
     <p style="text-align:center;font-size:11px;color:#475569;">
       Вы получили это письмо, потому что включили автосравнение в Skyforest.<br>
-      <a href="https://skyforest.by/dashboard/compare" style="color:#62a863;">Отключить уведомления</a>
+      <a href="${APP_URL}/dashboard/compare" style="color:#62a863;">Отключить уведомления</a>
     </p>
   </div>
 </body>
@@ -130,7 +132,7 @@ export function buildInsufficientTokensEmail(bestDayName: string, balance: numbe
       </p>
     </div>
     <div style="text-align:center;">
-      <a href="https://skyforest.by/payment" style="display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Купить токены</a>
+      <a href="${APP_URL}/payment" style="display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Купить токены</a>
     </div>
   </div>
 </body>

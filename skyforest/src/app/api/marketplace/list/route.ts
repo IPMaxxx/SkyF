@@ -13,9 +13,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { best_day_id, price } = await request.json();
+  const numericPrice = Number(price);
 
-  if (!best_day_id || !price || price < 1) {
-    return NextResponse.json({ error: "Invalid params" }, { status: 400 });
+  if (!best_day_id || !Number.isFinite(numericPrice) || numericPrice < 1 || numericPrice > 10000) {
+    return NextResponse.json(
+      { error: "Цена должна быть от 1 до 10 000 токенов" },
+      { status: 400 }
+    );
   }
 
   const { data: bd, error: bdErr } = await supabase
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest) {
     .insert({
       seller_id: user.id,
       best_day_id,
-      price: Math.floor(price),
+      price: Math.floor(numericPrice),
       season,
     })
     .select("*")

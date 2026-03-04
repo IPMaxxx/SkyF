@@ -23,7 +23,11 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "auth_failed"
+      ? "Не удалось подтвердить аккаунт. Попробуйте ещё раз."
+      : ""
+  );
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
