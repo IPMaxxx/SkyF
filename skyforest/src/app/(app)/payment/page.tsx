@@ -67,41 +67,8 @@ export default function PaymentPage() {
         <p className="mt-1 text-sm text-muted-foreground">токенов</p>
       </div>
 
-      {/* Cost table */}
-      <div className="glass mb-8 rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-          <Zap className="h-4 w-4 text-amber-400" />
-          Стоимость операций
-        </h2>
-        <div className="space-y-2">
-          {costEntries
-            .filter(([key]) => key !== "marketplace_buy")
-            .map(([key, cost]) => (
-            <div key={key} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
-              <span className="text-sm">{getTokenCostLabel(key)}</span>
-              <span className="flex items-center gap-1 text-sm font-semibold text-amber-400">
-                {cost} <Coins className="h-3 w-3" />
-              </span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
-            <span className="text-sm">Покупка на маркетплейсе</span>
-            <span className="text-sm font-semibold text-muted-foreground">цена продавца</span>
-          </div>
-          <div className="mt-3 border-t border-white/5 pt-3">
-            <p className="mb-2 text-xs font-medium text-emerald-400">Бесплатно:</p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p>- Добавление локаций</p>
-              <p>- Сохранение грибных дней</p>
-              <p>- Поиск на маркетплейсе</p>
-              <p>- Сохранение найденных лесов как локации</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Packages */}
-      <div className="mb-6">
+      <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Выберите пакет</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {TOKEN_PACKAGES.map((pack) => (
@@ -139,6 +106,39 @@ export default function PaymentPage() {
               )}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Cost table */}
+      <div className="glass mb-6 rounded-2xl p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+          <Zap className="h-4 w-4 text-amber-400" />
+          Стоимость операций
+        </h2>
+        <div className="space-y-2">
+          {costEntries
+            .filter(([key]) => key !== "marketplace_buy")
+            .map(([key, cost]) => (
+            <div key={key} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
+              <span className="text-sm">{getTokenCostLabel(key)}</span>
+              <span className="flex items-center gap-1 text-sm font-semibold text-amber-400">
+                {cost} <Coins className="h-3 w-3" />
+              </span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
+            <span className="text-sm">Покупка на маркетплейсе</span>
+            <span className="text-sm font-semibold text-muted-foreground">цена продавца</span>
+          </div>
+          <div className="mt-3 border-t border-white/5 pt-3">
+            <p className="mb-2 text-xs font-medium text-emerald-400">Бесплатно:</p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>- Добавление локаций</p>
+              <p>- Сохранение грибных дней</p>
+              <p>- Поиск на маркетплейсе</p>
+              <p>- Сохранение найденных лесов как локации</p>
+            </div>
+          </div>
         </div>
       </div>
 
