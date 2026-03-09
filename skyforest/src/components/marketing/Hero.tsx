@@ -2,24 +2,29 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ExternalLink, CloudSun, Database, MapPin } from "lucide-react";
+import { ExternalLink, Bell, Droplets, Store, Trees } from "lucide-react";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 const FEATURES = [
   {
-    icon: CloudSun,
-    title: "Анализ погодных паттернов",
-    desc: "Температура, осадки, влажность и ветер — отслеживаем все параметры для роста грибов",
+    icon: Bell,
+    title: "Подскажем, когда пора в лес",
+    desc: "Запишите дату удачного сбора — мы запомним погоду того дня. Когда условия повторятся, вы узнаете первым",
   },
   {
-    icon: Database,
-    title: "Запись грибных данных",
-    desc: "Сохраняйте даты удачного сбора — мы зафиксируем погодный паттерн как эталон",
+    icon: Droplets,
+    title: "Покажем, где прошли дожди",
+    desc: "Карта осадков за последние дни в вашем районе — грибы появляются там, где недавно была влага",
   },
   {
-    icon: MapPin,
-    title: "Точная настройка локаций",
-    desc: "Добавьте свои грибные места и получайте персональный анализ по каждому",
+    icon: Store,
+    title: "Найдите новые грибные места",
+    desc: "Маркетплейс с проверенными локациями от других грибников — координаты, даты, виды грибов",
+  },
+  {
+    icon: Trees,
+    title: "Найдите лес, похожий на ваш",
+    desc: "Поиск лесов по типу, породам деревьев и расстоянию — откройте новые места, похожие на ваши любимые",
   },
 ];
 
@@ -74,7 +79,7 @@ export function Hero() {
             </a>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
