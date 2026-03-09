@@ -271,7 +271,7 @@ export default function WithdrawPage() {
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
               <div className="text-xs leading-relaxed text-amber-300">
                 <p>
-                  Токены будут списаны с баланса сразу. Мы свяжемся с вами по email
+                  Заявка будет отправлена администратору. Мы свяжемся с вами по email
                   для подтверждения и перевода средств. Обработка обычно занимает 1–3 рабочих дня.
                 </p>
               </div>

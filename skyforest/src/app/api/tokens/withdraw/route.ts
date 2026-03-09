@@ -32,36 +32,14 @@ export async function POST(request: NextRequest) {
   const { data: balanceData } = await supabase.rpc("get_token_balance", {
     p_user_id: user.id,
   });
+  const currentBalance = balanceData ?? 0;
 
-  if (!balanceData || balanceData < numAmount) {
+  if (currentBalance < numAmount) {
     return NextResponse.json(
       { error: "Недостаточно токенов на балансе" },
       { status: 400 }
     );
   }
-
-  const { data: spendResult, error: spendErr } = await supabase.rpc(
-    "spend_tokens",
-    {
-      p_user_id: user.id,
-      p_amount: numAmount,
-      p_description: `Запрос на вывод (${method})`,
-    }
-  );
-
-  if (spendErr) {
-    console.error("Withdraw spend error:", spendErr);
-    const msg =
-      spendErr.message?.includes("Недостаточно")
-        ? "Недостаточно токенов на балансе"
-        : "Ошибка списания токенов";
-    return NextResponse.json({ error: msg }, { status: 400 });
-  }
-
-  const newBalance =
-    typeof spendResult === "object" && spendResult?.balance != null
-      ? spendResult.balance
-      : "—";
 
   try {
     const html = `
@@ -71,7 +49,7 @@ export async function POST(request: NextRequest) {
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Пользователь</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${user.email}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">ID пользователя</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${user.id}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Сумма вывода</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} токенов</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Остаток после списания</td><td style="padding:8px;border-bottom:1px solid #eee;">${newBalance} токенов</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Текущий баланс</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} токенов</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Способ вывода</td><td style="padding:8px;border-bottom:1px solid #eee;">${method}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Реквизиты</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${details}</td></tr>
           ${comment ? `<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Комментарий</td><td style="padding:8px;border-bottom:1px solid #eee;">${comment}</td></tr>` : ""}
@@ -87,11 +65,14 @@ export async function POST(request: NextRequest) {
     );
   } catch (emailErr) {
     console.error("Withdraw email error:", emailErr);
+    return NextResponse.json(
+      { error: "Ошибка отправки заявки. Попробуйте позже." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
     success: true,
     withdrawn: numAmount,
-    newBalance,
   });
 }
