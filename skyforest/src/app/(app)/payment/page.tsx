@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Coins, Loader2, Zap, Check, Gift, Tag } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel } from "@/lib/tokens";
 
 export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <PaymentContent />
+    </Suspense>
+  );
+}
+
+function PaymentContent() {
   const searchParams = useSearchParams();
   const { balance, loading: balanceLoading, refresh } = useTokens();
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
