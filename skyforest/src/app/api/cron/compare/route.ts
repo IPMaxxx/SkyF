@@ -26,6 +26,11 @@ export async function GET(request: NextRequest) {
     { cookies: { getAll: () => [], setAll: () => {} } }
   );
 
+  const nowMinsk = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Minsk" }));
+  const currentHour = nowMinsk.getHours();
+  const hourStart = `${String(currentHour).padStart(2, "0")}:00:00`;
+  const hourEnd = `${String(currentHour).padStart(2, "0")}:59:59`;
+
   const { data: autoCompares, error: acError } = await supabase
     .from("auto_compares")
     .select(`
@@ -34,17 +39,23 @@ export async function GET(request: NextRequest) {
       location:locations(*),
       profile:profiles(email)
     `)
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .gte("run_time", hourStart)
+    .lte("run_time", hourEnd);
 
   if (acError || !autoCompares) {
-    return NextResponse.json({ error: acError?.message || "No data", processed: 0 });
+    return NextResponse.json({ error: acError?.message || "No data", processed: 0, hour: currentHour });
   }
 
   let processed = 0;
   let errors = 0;
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   for (const ac of autoCompares) {
     try {
+      if (ac.last_run_at && ac.last_run_at.startsWith(todayStr)) continue;
+
       const bestDay = ac.best_day;
       const loc = ac.location;
       const profile = ac.profile;
@@ -71,7 +82,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = todayStr;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 13);
 
@@ -185,5 +196,6 @@ export async function GET(request: NextRequest) {
     processed,
     errors,
     total: autoCompares.length,
+    hour: currentHour,
   });
 }
