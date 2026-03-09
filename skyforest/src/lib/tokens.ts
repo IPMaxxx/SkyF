@@ -6,6 +6,7 @@ export const TOKEN_COSTS = {
   rain_map_per_batch: 5, // per 50 points
   forest_search: 1, // base; actual cost = ceil(radius_km / 2)
   marketplace_buy: 0, // dynamic — equals listing price; 0 is placeholder
+  marketplace_list: 10,
 } as const;
 
 export const TOKEN_PACKAGES = [
@@ -24,5 +25,6 @@ export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
     case "rain_map_per_batch": return "Карта осадков (за 50 точек)";
     case "forest_search": return "Поиск леса (½ радиуса в км)";
     case "marketplace_buy": return "Покупка грибного дня на маркетплейсе";
+    case "marketplace_list": return "Размещение на маркетплейсе";
   }
 }

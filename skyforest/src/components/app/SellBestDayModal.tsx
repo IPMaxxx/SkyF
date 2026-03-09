@@ -157,6 +157,19 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
           </p>
         </div>
 
+        {/* Listing fee */}
+        <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Комиссия за размещение:</span>
+            <span className="flex items-center gap-1 font-semibold text-amber-400">
+              10 <Coins className="h-3 w-3" />
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            Списывается при публикации, не возвращается при снятии с продажи
+          </p>
+        </div>
+
         {error && (
           <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
             {error}

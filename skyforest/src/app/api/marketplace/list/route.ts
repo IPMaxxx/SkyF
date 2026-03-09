@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSeason } from "@/lib/supabase/types";
 
+const LISTING_FEE = 10;
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -18,6 +20,18 @@ export async function POST(request: NextRequest) {
   if (!best_day_id || !Number.isFinite(numericPrice) || numericPrice < 1 || numericPrice > 10000) {
     return NextResponse.json(
       { error: "Цена должна быть от 1 до 10 000 токенов" },
+      { status: 400 }
+    );
+  }
+
+  // Check balance for listing fee
+  const { data: balanceData } = await supabase.rpc("get_token_balance", {
+    p_user_id: user.id,
+  });
+
+  if (!balanceData || balanceData < LISTING_FEE) {
+    return NextResponse.json(
+      { error: `Недостаточно токенов. Для размещения нужно ${LISTING_FEE} токенов` },
       { status: 400 }
     );
   }
@@ -73,6 +87,17 @@ export async function POST(request: NextRequest) {
   if (insertErr) {
     console.error("Marketplace list error:", insertErr);
     return NextResponse.json({ error: "Ошибка создания листинга" }, { status: 500 });
+  }
+
+  // Charge listing fee
+  const { error: feeErr } = await supabase.rpc("spend_tokens", {
+    p_user_id: user.id,
+    p_amount: LISTING_FEE,
+    p_description: "Размещение на маркетплейсе",
+  });
+
+  if (feeErr) {
+    console.error("Listing fee error:", feeErr);
   }
 
   return NextResponse.json({ listing });
