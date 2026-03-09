@@ -82,8 +82,7 @@ export default function NewLocationPage() {
           addressdetails: "1",
           limit: "6",
           "accept-language": "ru",
-        }),
-        { headers: { "User-Agent": "SkyForest/2.0" } }
+        })
       );
       const data: GeoResult[] = await res.json();
       setSearchResults(data);
