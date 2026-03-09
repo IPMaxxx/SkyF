@@ -26,7 +26,9 @@ import {
   Store,
   XCircle,
   ShoppingCart,
+  CloudSun,
 } from "lucide-react";
+import { toast } from "sonner";
 import { SellBestDayModal } from "@/components/app/SellBestDayModal";
 import { ListingChat } from "@/components/app/ListingChat";
 import { checkPhotoLocation } from "@/lib/photo-geo";
@@ -63,6 +65,7 @@ export default function EditBestDayPage() {
   const [activeListing, setActiveListing] = useState<{ id: string } | null>(null);
   const [delistLoading, setDelistLoading] = useState(false);
   const [chatListingId, setChatListingId] = useState<string | null>(null);
+  const [creatingMonitor, setCreatingMonitor] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -137,6 +140,45 @@ export default function EditBestDayPage() {
       }
     } catch { /* noop */ }
     setDelistLoading(false);
+  };
+
+  const handleCreateMonitor = async () => {
+    if (!bestDay) return;
+    setCreatingMonitor(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Необходимо авторизоваться"); setCreatingMonitor(false); return; }
+
+      const loc = locations.find((l) => l.id === bestDay.location_id);
+      const defaultWeights = {
+        rain_sum: 30,
+        temperature_mean: 25,
+        temperature_min: 10,
+        temperature_max: 10,
+        wind_speed_max: 10,
+        relative_humidity_mean: 15,
+      };
+
+      const { data, error: dbErr } = await supabase.from("auto_compares").insert({
+        user_id: user.id,
+        best_day_id: bestDay.id,
+        location_id: bestDay.location_id,
+        name: `${bestDay.name || "Грибной день"} → ${loc?.name || "Локация"}`,
+        enabled: false,
+        run_time: "08:00:00",
+        weights: defaultWeights,
+      }).select("id").single();
+
+      if (dbErr) { toast.error(dbErr.message); setCreatingMonitor(false); return; }
+      if (data) {
+        toast.success("Мониторинг создан");
+        router.push(`/dashboard/compare?open=${data.id}`);
+      }
+    } catch {
+      toast.error("Ошибка создания мониторинга");
+    }
+    setCreatingMonitor(false);
   };
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
@@ -313,10 +355,20 @@ export default function EditBestDayPage() {
 
       {/* Purchased badge */}
       {bestDay?.purchased_from_listing_id && (
-        <div className="mb-5 flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3">
-          <ShoppingCart className="h-4 w-4 text-blue-400" />
-          <span className="text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
-          <span className="ml-auto text-xs text-muted-foreground">Перепродажа недоступна</span>
+        <div className="mb-5 space-y-3">
+          <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3">
+            <ShoppingCart className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
+            <span className="ml-auto text-xs text-muted-foreground">Перепродажа недоступна</span>
+          </div>
+          <button
+            onClick={handleCreateMonitor}
+            disabled={creatingMonitor}
+            className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
+          >
+            {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
+            Мониторинг погоды
+          </button>
         </div>
       )}
 
@@ -352,13 +404,23 @@ export default function EditBestDayPage() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowSellModal(true)}
-              className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
-            >
-              <Store className="h-4 w-4" />
-              Продать на маркетплейсе
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSellModal(true)}
+                className="glass flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
+              >
+                <Store className="h-4 w-4" />
+                Продать на маркетплейсе
+              </button>
+              <button
+                onClick={handleCreateMonitor}
+                disabled={creatingMonitor}
+                className="glass flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
+              >
+                {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
+                Мониторинг погоды
+              </button>
+            </div>
           )}
         </div>
       )}

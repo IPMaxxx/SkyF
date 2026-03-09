@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CompareChart } from "@/components/app/CompareChart";
 import { NewLocationModal } from "@/components/app/NewLocationModal";
@@ -80,6 +81,7 @@ const DEFAULT_WEIGHTS: Record<keyof WeightConfig, number> = {
 const paramKeys = Object.keys(DEFAULT_WEIGHTS) as (keyof WeightConfig)[];
 
 export default function ComparePage() {
+  const searchParams = useSearchParams();
   const { locations, bestDays, loading: appLoading, addLocation } = useAppData();
   const [comparisons, setComparisons] = useState<Comparison[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,15 @@ export default function ComparePage() {
   }, [bestDays, locations, newBdId, newLocId]);
 
   useEffect(() => { loadComparisons(); }, []);
+
+  useEffect(() => {
+    if (!loading && comparisons.length > 0) {
+      const openParam = searchParams.get("open");
+      if (openParam && comparisons.some((c) => c.id === openParam) && openId !== openParam) {
+        openComparison(openParam);
+      }
+    }
+  }, [loading, comparisons, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComparisons = async () => {
     const supabase = createClient();
