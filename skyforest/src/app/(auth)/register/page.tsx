@@ -38,7 +38,7 @@ function RegisterForm() {
     }
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -49,6 +49,14 @@ function RegisterForm() {
 
     if (authError) {
       setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Supabase returns a user with empty identities when email is already registered
+    // (security measure to prevent email enumeration)
+    if (data.user && data.user.identities?.length === 0) {
+      setError("Этот email уже зарегистрирован. Попробуйте войти или восстановить пароль.");
       setLoading(false);
       return;
     }
@@ -111,7 +119,17 @@ function RegisterForm() {
         >
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
+              <p>{error}</p>
+              {error.includes("уже зарегистрирован") && (
+                <div className="mt-2 flex gap-3 text-xs font-medium">
+                  <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-primary hover:underline">
+                    Войти
+                  </Link>
+                  <Link href="/forgot-password" className="text-primary hover:underline">
+                    Забыли пароль?
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
