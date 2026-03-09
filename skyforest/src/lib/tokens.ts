@@ -1,8 +1,8 @@
 export const TOKEN_COSTS = {
-  weather_check: 1,
+  weather_check: 2,
   best_day_create: 1,
   best_day_reload: 1,
-  compare: 2,
+  compare: 3,
   rain_map_per_batch: 5, // per 50 points
   forest_search: 1, // base; actual cost = ceil(radius_km / 2)
   marketplace_buy: 0, // dynamic — equals listing price; 0 is placeholder

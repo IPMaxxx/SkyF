@@ -75,5 +75,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Processing error" }, { status: 500 });
   }
 
-  return NextResponse.json({ status: "ok", result: data });
+  // Apply referral bonus: +10% to buyer, 10% to referrer
+  const { data: bonusResult, error: bonusError } = await supabase.rpc(
+    "apply_referral_purchase_bonus",
+    {
+      p_buyer_id: userId,
+      p_purchased_tokens: tokens,
+      p_payment_id: paymentId,
+    }
+  );
+
+  if (bonusError) {
+    console.error("Referral bonus error (non-fatal):", bonusError);
+  }
+
+  return NextResponse.json({ status: "ok", result: data, referral_bonus: bonusResult });
 }

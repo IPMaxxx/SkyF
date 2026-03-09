@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app/AppHeader";
 import { Footer } from "@/components/marketing/Footer";
 import { TokenProvider } from "@/lib/TokenContext";
+import { ReferralApplier } from "@/components/app/ReferralApplier";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
@@ -31,6 +32,7 @@ export default function AppLayout({
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f0f]/40 via-transparent to-[#0a1f0f]/60" />
         </div>
         <AppHeader />
+        <ReferralApplier />
         <main className="flex-1">{children}</main>
         <Footer />
       </div>

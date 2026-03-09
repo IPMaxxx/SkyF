@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Coins, Loader2, Zap, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Coins, Loader2, Zap, Check, Gift } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel } from "@/lib/tokens";
 
@@ -10,6 +10,14 @@ export default function PaymentPage() {
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState("");
+  const [hasReferrer, setHasReferrer] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/referral/has-referrer")
+      .then((r) => r.json())
+      .then((d) => setHasReferrer(d.has_referrer))
+      .catch(() => {});
+  }, []);
 
   const selected = TOKEN_PACKAGES.find((p) => p.id === selectedPack)!;
 
@@ -67,6 +75,15 @@ export default function PaymentPage() {
         <p className="mt-1 text-sm text-muted-foreground">токенов</p>
       </div>
 
+      {hasReferrer && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3">
+          <Gift className="h-5 w-5 flex-shrink-0 text-emerald-400" />
+          <p className="text-sm text-emerald-300">
+            У вас активирован промокод — <strong>+10% токенов</strong> к каждой покупке
+          </p>
+        </div>
+      )}
+
       {/* Packages */}
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Выберите пакет</h2>
@@ -90,6 +107,9 @@ export default function PaymentPage() {
               <div className="mb-2 flex items-center gap-2">
                 <Coins className="h-5 w-5 text-amber-400" />
                 <span className="text-2xl font-bold">{pack.tokens}</span>
+                {hasReferrer && (
+                  <span className="text-sm font-semibold text-emerald-400">+{Math.max(1, Math.round(pack.tokens * 0.1))}</span>
+                )}
                 <span className="text-sm text-muted-foreground">токенов</span>
               </div>
               <div className="flex items-baseline gap-1">
@@ -159,7 +179,7 @@ export default function PaymentPage() {
         ) : (
           <Coins className="h-5 w-5" />
         )}
-        Купить {selected.tokens} токенов за {selected.price} BYN
+        Купить {selected.tokens}{hasReferrer ? ` + ${Math.max(1, Math.round(selected.tokens * 0.1))}` : ""} токенов за {selected.price} BYN
       </button>
 
       <div className="mt-6 space-y-4">

@@ -19,6 +19,7 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
+  const refCode = searchParams.get("ref") || "";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,6 +32,10 @@ function RegisterForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (refCode) {
+      try { localStorage.setItem("skyforest_ref", refCode); } catch {}
+    }
 
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signUp({
@@ -93,6 +98,11 @@ function RegisterForm() {
           <p className="mt-2 text-sm text-muted-foreground">
             Создайте аккаунт для доступа к сервису
           </p>
+          {refCode && (
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+              🎁 +10% токенов к каждой покупке
+            </div>
+          )}
         </div>
 
         <form
