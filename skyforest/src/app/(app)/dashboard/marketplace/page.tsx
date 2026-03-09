@@ -309,6 +309,19 @@ export default function MarketplacePage() {
         </div>
       </div>
 
+      {/* How to sell */}
+      <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <p className="mb-2 text-sm font-semibold text-emerald-400">Хотите продавать свои локации?</p>
+        <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+          <li>Создайте <strong>грибной день</strong> — укажите дату, локацию и вид гриба</li>
+          <li>Загрузите хотя бы одно <strong>фото</strong></li>
+          <li>Нажмите <strong>«Продать на маркетплейсе»</strong> и укажите цену</li>
+        </ol>
+        <p className="mt-2 text-xs text-muted-foreground/70">
+          Комиссия за размещение — <strong className="text-amber-400">10 токенов</strong>. Цена продажи устанавливается вами и начисляется после покупки.
+        </p>
+      </div>
+
       {/* Search: map + controls */}
       <div className="glass rounded-2xl p-5 mb-6">
         <p className="mb-3 text-sm font-medium">
