@@ -454,7 +454,7 @@ export default function EditBestDayPage() {
             <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {photos.map((url) => (
                 <div key={url} className="group relative aspect-square overflow-hidden rounded-xl">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img src={url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
                   <button
                     type="button"
                     onClick={() => handleRemovePhoto(url)}
