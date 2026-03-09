@@ -50,6 +50,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (bd.purchased_from_listing_id) {
+    return NextResponse.json(
+      { error: "Купленные грибные дни нельзя перепродавать" },
+      { status: 403 }
+    );
+  }
+
   if (!bd.photos || bd.photos.length === 0) {
     return NextResponse.json(
       { error: "Добавьте хотя бы одно фото, чтобы выставить Best Day на продажу" },

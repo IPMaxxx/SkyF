@@ -9,6 +9,7 @@ import { NewLocationModal } from "@/components/app/NewLocationModal";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, BestDay, WeatherDay, ForestInfo } from "@/lib/supabase/types";
+import { getSeason, getSeasonLabel } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
@@ -28,6 +29,7 @@ import {
   ImagePlus,
   Store,
   XCircle,
+  ShoppingCart,
 } from "lucide-react";
 import { SellBestDayModal } from "@/components/app/SellBestDayModal";
 import { checkPhotoLocation } from "@/lib/photo-geo";
@@ -343,41 +345,52 @@ export default function EditBestDayPage() {
         </div>
       </div>
 
-      {/* Marketplace sell/delist */}
-      <div className="mb-5">
-        {activeListing ? (
-          <div className="glass flex items-center justify-between rounded-xl p-4">
-            <div className="flex items-center gap-2">
-              <Store className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">
-                Выставлен на маркетплейсе
-              </span>
-            </div>
-            <button
-              onClick={handleDelist}
-              disabled={delistLoading}
-              className="flex items-center gap-1 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
-            >
-              {delistLoading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <XCircle className="h-3.5 w-3.5" />
-              )}
-              Снять с продажи
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowSellModal(true)}
-            className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
-          >
-            <Store className="h-4 w-4" />
-            Продать на маркетплейсе
-          </button>
-        )}
-      </div>
+      {/* Purchased badge */}
+      {bestDay?.purchased_from_listing_id && (
+        <div className="mb-5 flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3">
+          <ShoppingCart className="h-4 w-4 text-blue-400" />
+          <span className="text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
+          <span className="ml-auto text-xs text-muted-foreground">Перепродажа недоступна</span>
+        </div>
+      )}
 
-      {bestDay && (
+      {/* Marketplace sell/delist (hidden for purchased days) */}
+      {!bestDay?.purchased_from_listing_id && (
+        <div className="mb-5">
+          {activeListing ? (
+            <div className="glass flex items-center justify-between rounded-xl p-4">
+              <div className="flex items-center gap-2">
+                <Store className="h-4 w-4 text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-400">
+                  Выставлен на маркетплейсе
+                </span>
+              </div>
+              <button
+                onClick={handleDelist}
+                disabled={delistLoading}
+                className="flex items-center gap-1 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+              >
+                {delistLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5" />
+                )}
+                Снять с продажи
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowSellModal(true)}
+              className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
+            >
+              <Store className="h-4 w-4" />
+              Продать на маркетплейсе
+            </button>
+          )}
+        </div>
+      )}
+
+      {bestDay && !bestDay.purchased_from_listing_id && (
         <SellBestDayModal
           open={showSellModal}
           onClose={() => setShowSellModal(false)}
@@ -434,14 +447,22 @@ export default function EditBestDayPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="bd-date" className="mb-1 block text-xs font-medium text-muted-foreground">Дата лучшего дня</label>
-              <input
-                id="bd-date"
-                type="date"
-                value={bestDate}
-                onChange={(e) => setBestDate(e.target.value)}
-                className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-              />
+              <label htmlFor="bd-date" className="mb-1 block text-xs font-medium text-muted-foreground">
+                {bestDay?.purchased_from_listing_id ? "Сезон" : "Дата лучшего дня"}
+              </label>
+              {bestDay?.purchased_from_listing_id ? (
+                <div className="w-full rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm">
+                  {getSeasonLabel(getSeason(bestDate))}
+                </div>
+              ) : (
+                <input
+                  id="bd-date"
+                  type="date"
+                  value={bestDate}
+                  onChange={(e) => setBestDate(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              )}
             </div>
           </div>
 

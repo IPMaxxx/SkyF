@@ -63,6 +63,7 @@ export interface BestDay {
   best_date: string;
   weather_data: WeatherDay[] | null;
   photos: string[];
+  purchased_from_listing_id: string | null;
   created_at: string;
   // joined
   location?: Location;

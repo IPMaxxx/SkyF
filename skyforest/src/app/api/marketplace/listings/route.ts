@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const pLng = parseFloat(lng);
   const pRadius = parseFloat(radiusKm);
 
-  if (isNaN(pLat) || isNaN(pLng) || isNaN(pRadius) || pRadius <= 0 || pRadius > 500) {
+  if (isNaN(pLat) || isNaN(pLng) || isNaN(pRadius) || pRadius <= 0 || pRadius > 1000) {
     return NextResponse.json({ error: "Invalid params" }, { status: 400 });
   }
 
