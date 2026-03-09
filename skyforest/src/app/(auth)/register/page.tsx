@@ -169,6 +169,18 @@ function RegisterForm() {
             </div>
           </div>
 
+          <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
+            Нажимая «Создать аккаунт», вы принимаете условия{" "}
+            <Link href="/offer" target="_blank" className="text-primary hover:underline">
+              договора-оферты
+            </Link>{" "}
+            и{" "}
+            <Link href="/privacy" target="_blank" className="text-primary hover:underline">
+              политики конфиденциальности
+            </Link>
+            .
+          </p>
+
           <button
             type="submit"
             disabled={loading}
