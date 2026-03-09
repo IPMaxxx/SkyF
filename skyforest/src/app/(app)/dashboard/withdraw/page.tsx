@@ -23,6 +23,7 @@ const METHODS = [
 ] as const;
 
 const MIN_WITHDRAW = 10;
+const MIN_REMAINING = 50;
 
 export default function WithdrawPage() {
   const { balance, refresh } = useTokens();
@@ -37,7 +38,8 @@ export default function WithdrawPage() {
   const [withdrawn, setWithdrawn] = useState(0);
 
   const currentMethod = METHODS.find((m) => m.id === method) ?? METHODS[0];
-  const maxAmount = balance ?? 0;
+  const totalBalance = balance ?? 0;
+  const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
 
   useEffect(() => {
     if (amount > maxAmount && maxAmount > 0) setAmount(maxAmount);
@@ -49,7 +51,7 @@ export default function WithdrawPage() {
       return;
     }
     if (amount > maxAmount) {
-      setError("Недостаточно токенов на балансе");
+      setError(`Максимум для вывода — ${maxAmount} токенов (на балансе должно остаться ${MIN_REMAINING})`);
       return;
     }
     if (!details.trim()) {
@@ -151,18 +153,22 @@ export default function WithdrawPage() {
           <span className="text-sm text-muted-foreground">Ваш баланс</span>
           <span className="flex items-center gap-1.5 text-lg font-bold text-amber-400">
             <Coins className="h-5 w-5" />
-            {balance ?? 0} токенов
+            {totalBalance} токенов
           </span>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <span>Минимальный остаток: {MIN_REMAINING} токенов</span>
+          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong></span>
         </div>
       </div>
 
       {maxAmount < MIN_WITHDRAW ? (
         <div className="glass rounded-2xl p-6 text-center">
           <AlertCircle className="mx-auto mb-3 h-8 w-8 text-amber-400" />
-          <p className="mb-2 font-medium">Недостаточно токенов</p>
+          <p className="mb-2 font-medium">Недостаточно токенов для вывода</p>
           <p className="mb-4 text-sm text-muted-foreground">
-            Минимальная сумма вывода — {MIN_WITHDRAW} токенов. Зарабатывайте токены, размещая
-            грибные локации на маркетплейсе или приглашая друзей.
+            На балансе должно быть больше {MIN_REMAINING + MIN_WITHDRAW} токенов (минимальный остаток — {MIN_REMAINING}, минимальный вывод — {MIN_WITHDRAW}).
+            Зарабатывайте токены, размещая грибные локации на маркетплейсе или приглашая друзей.
           </p>
           <Link
             href="/dashboard/referral"
@@ -194,13 +200,13 @@ export default function WithdrawPage() {
               />
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-              <span>Мин. {MIN_WITHDRAW} токенов</span>
+              <span>Мин. {MIN_WITHDRAW}, макс. {maxAmount} токенов</span>
               <button
                 type="button"
                 onClick={() => setAmount(maxAmount)}
                 className="text-primary-light hover:underline"
               >
-                Вывести всё ({maxAmount})
+                Максимум ({maxAmount})
               </button>
             </div>
           </div>
@@ -273,6 +279,7 @@ export default function WithdrawPage() {
                 <p>
                   Заявка будет отправлена администратору. Мы свяжемся с вами по email
                   для подтверждения и перевода средств. Обработка обычно занимает 1–3 рабочих дня.
+                  На балансе должно остаться минимум {MIN_REMAINING} токенов.
                 </p>
               </div>
             </div>

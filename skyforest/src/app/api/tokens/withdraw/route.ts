@@ -34,9 +34,18 @@ export async function POST(request: NextRequest) {
   });
   const currentBalance = balanceData ?? 0;
 
-  if (currentBalance < numAmount) {
+  const MIN_REMAINING = 50;
+
+  if (currentBalance < MIN_REMAINING) {
     return NextResponse.json(
-      { error: "Недостаточно токенов на балансе" },
+      { error: `Для вывода на балансе должно быть минимум ${MIN_REMAINING} токенов` },
+      { status: 400 }
+    );
+  }
+
+  if (currentBalance - numAmount < MIN_REMAINING) {
+    return NextResponse.json(
+      { error: `После вывода на балансе должно остаться минимум ${MIN_REMAINING} токенов. Максимум для вывода: ${currentBalance - MIN_REMAINING}` },
       { status: 400 }
     );
   }
