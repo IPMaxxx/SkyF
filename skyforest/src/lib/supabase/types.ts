@@ -3,6 +3,7 @@ export interface Profile {
   email: string | null;
   full_name: string | null;
   phone: string | null;
+  account_type: "user" | "admin";
   created_at: string;
   updated_at: string;
 }

@@ -8,6 +8,7 @@ import { getSeasonLabel } from "@/lib/supabase/types";
 import type { MarketplaceListing, Season, BestDay } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { UserName } from "@/components/app/UserName";
 import {
   ArrowLeft,
   Loader2,
@@ -20,6 +21,11 @@ import {
   Search,
   Crosshair,
   Star,
+  Shield,
+  Trash2,
+  Eye,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const MarketplaceSearchMap = dynamic(
@@ -80,6 +86,25 @@ interface OwnedBestDay {
   name: string;
 }
 
+interface AdminListing {
+  id: string;
+  seller_id: string;
+  price: number;
+  season: string;
+  status: string;
+  created_at: string;
+  best_day: {
+    id: string;
+    name: string;
+    best_date: string;
+    photos: string[];
+    weather_data: unknown;
+    location: { id: string; name: string; lat: number; lng: number; forest_info: unknown } | null;
+    mushroom: { id: string; latin_name: string; common_name: string | null; image_url: string | null } | null;
+  } | null;
+  seller: { id: string; full_name: string | null; email: string | null; account_type: string } | null;
+}
+
 export default function MarketplacePage() {
   const [centerLat, setCenterLat] = useState<number | null>(null);
   const [centerLng, setCenterLng] = useState<number | null>(null);
@@ -106,6 +131,13 @@ export default function MarketplacePage() {
   const [success, setSuccess] = useState("");
   const { balance, refresh } = useTokens();
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminListings, setAdminListings] = useState<AdminListing[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminPreview, setAdminPreview] = useState<AdminListing | null>(null);
+  const [adminDeleting, setAdminDeleting] = useState<string | null>(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
   useEffect(() => {
     const loadOwned = async () => {
       const supabase = createClient();
@@ -113,17 +145,30 @@ export default function MarketplacePage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("best_days")
-        .select("id, name, location:locations(lat, lng)")
-        .eq("user_id", user.id);
-      if (data) {
+
+      const [bdRes, profileRes] = await Promise.all([
+        supabase
+          .from("best_days")
+          .select("id, name, location:locations(lat, lng)")
+          .eq("user_id", user.id),
+        supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", user.id)
+          .single(),
+      ]);
+
+      if (bdRes.data) {
         const days: OwnedBestDay[] = [];
-        for (const d of data) {
+        for (const d of bdRes.data) {
           const loc = d.location as unknown as { lat: number; lng: number } | null;
           if (loc) days.push({ id: d.id, lat: loc.lat, lng: loc.lng, name: d.name });
         }
         setOwnedDays(days);
+      }
+
+      if (profileRes.data?.account_type === "admin") {
+        setIsAdmin(true);
       }
     };
     loadOwned();
@@ -259,6 +304,44 @@ export default function MarketplacePage() {
     }
   };
 
+  const loadAdminListings = async () => {
+    setAdminLoading(true);
+    try {
+      const res = await fetch("/api/marketplace/admin-listings");
+      const data = await res.json();
+      setAdminListings(data.listings ?? []);
+      setShowAdminPanel(true);
+    } catch {
+      toast.error("Ошибка загрузки");
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleAdminDelete = async (listingId: string) => {
+    if (!confirm("Удалить этот листинг? Продавцу будет возвращено 10 токенов за размещение.")) return;
+    setAdminDeleting(listingId);
+    try {
+      const res = await fetch("/api/marketplace/admin-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listing_id: listingId }),
+      });
+      if (res.ok) {
+        setAdminListings((prev) => prev.filter((l) => l.id !== listingId));
+        if (adminPreview?.id === listingId) setAdminPreview(null);
+        toast.success("Листинг удалён, токены возвращены продавцу");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Ошибка удаления");
+      }
+    } catch {
+      toast.error("Ошибка сети");
+    } finally {
+      setAdminDeleting(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link
@@ -307,6 +390,204 @@ export default function MarketplacePage() {
           Цена продажи устанавливается вами, вы получаете 80% от указанной цены.
         </p>
       </div>
+
+      {/* Admin panel */}
+      {isAdmin && (
+        <div className="mb-6 rounded-2xl border border-purple-500/30 bg-purple-500/5 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-purple-400" />
+              <h2 className="text-sm font-bold text-purple-300">Панель администратора</h2>
+            </div>
+            <button
+              onClick={() => showAdminPanel ? setShowAdminPanel(false) : loadAdminListings()}
+              disabled={adminLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-purple-500/20 px-3 py-1.5 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-500/30 disabled:opacity-50"
+            >
+              {adminLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : showAdminPanel ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+              {showAdminPanel ? "Скрыть" : "Все активные листинги"}
+            </button>
+          </div>
+
+          {showAdminPanel && (
+            <>
+              {adminListings.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Нет активных листингов</p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">{adminListings.length} активных листингов</p>
+                  <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1">
+                    {adminListings.map((al) => {
+                      const bd = al.best_day;
+                      const loc = bd?.location;
+                      const mushroom = bd?.mushroom;
+                      return (
+                        <div
+                          key={al.id}
+                          className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3"
+                        >
+                          {mushroom?.image_url ? (
+                            <img src={mushroom.image_url} alt="" className="h-10 w-10 flex-shrink-0 rounded-lg object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-sm">★</div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{bd?.name || "—"}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {loc ? `${loc.name} (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})` : "Без локации"}
+                              {" · "}
+                              <UserName name={al.seller?.full_name} accountType={al.seller?.account_type} />
+                              {al.seller?.email && <span className="text-muted-foreground/60"> ({al.seller.email})</span>}
+                            </p>
+                          </div>
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-400">
+                            <Coins className="h-3 w-3" />
+                            {al.price}
+                          </span>
+                          <button
+                            onClick={() => setAdminPreview(al)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+                            title="Подробнее"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleAdminDelete(al.id)}
+                            disabled={adminDeleting === al.id}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400/70 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                            title="Удалить листинг"
+                          >
+                            {adminDeleting === al.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Admin listing detail modal */}
+      {adminPreview && (() => {
+        const bd = adminPreview.best_day;
+        const loc = bd?.location;
+        const mushroom = bd?.mushroom;
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setAdminPreview(null)} />
+            <div className="relative z-[10000] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a2a1f]/95 border border-purple-500/20 shadow-2xl backdrop-blur-xl">
+              {/* Photos */}
+              {bd?.photos && bd.photos.length > 0 && (
+                <div className="p-3 pb-0">
+                  <div className="flex gap-2 overflow-x-auto">
+                    {bd.photos.map((photo, i) => (
+                      <img key={i} src={photo} alt="" className="h-40 rounded-xl object-cover flex-shrink-0" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="p-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  {mushroom?.image_url ? (
+                    <img src={mushroom.image_url} alt="" className="h-14 w-14 flex-shrink-0 rounded-xl object-cover" />
+                  ) : (
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">★</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold">{bd?.name}</h3>
+                    {mushroom && (
+                      <p className="text-sm italic text-muted-foreground">{mushroom.common_name || mushroom.latin_name}</p>
+                    )}
+                  </div>
+                  <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-3 py-1.5 text-lg font-bold text-amber-400">
+                    <Coins className="h-4 w-4" />{adminPreview.price}
+                  </span>
+                </div>
+
+                {/* Seller info */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Продавец:</span>
+                    <UserName name={adminPreview.seller?.full_name} accountType={adminPreview.seller?.account_type} className="font-medium" />
+                  </div>
+                  {adminPreview.seller?.email && (
+                    <p className="text-xs text-muted-foreground/60 pl-6">{adminPreview.seller.email}</p>
+                  )}
+                </div>
+
+                {/* Location (full, not hidden) */}
+                {loc && (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-1.5">
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-emerald-400" />
+                      <span className="font-medium">{loc.name}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      Координаты: {loc.lat.toFixed(6)}, {loc.lng.toFixed(6)}
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block pl-6 text-xs text-primary hover:underline"
+                    >
+                      Открыть в Google Maps →
+                    </a>
+                  </div>
+                )}
+
+                {/* Date and season */}
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-muted-foreground">Дата:</span>
+                  <span className="font-medium">
+                    {bd?.best_date
+                      ? new Date(bd.best_date).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+                      : "—"}
+                  </span>
+                  <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEASON_COLORS[adminPreview.season] ?? ""}`}>
+                    {getSeasonLabel(adminPreview.season as Season)}
+                  </span>
+                </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={() => handleAdminDelete(adminPreview.id)}
+                  disabled={adminDeleting === adminPreview.id}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+                >
+                  {adminDeleting === adminPreview.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Удалить листинг (возврат 10 токенов продавцу)
+                </button>
+              </div>
+
+              <button
+                onClick={() => setAdminPreview(null)}
+                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Search: map + controls */}
       <div className="glass rounded-2xl p-5 mb-6">
@@ -591,7 +872,7 @@ export default function MarketplacePage() {
                     </div>
                     <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                       <User className="h-3 w-3" />
-                      {seller?.full_name || "Пользователь"}
+                      <UserName name={seller?.full_name} accountType={seller?.account_type} />
                     </div>
                   </button>
                 );
@@ -676,7 +957,7 @@ export default function MarketplacePage() {
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Продавец:</span>
-                    <span className="font-medium">{listingPreview.seller?.full_name || "Пользователь"}</span>
+                    <UserName name={listingPreview.seller?.full_name} accountType={listingPreview.seller?.account_type} className="font-medium" />
                   </div>
                 </div>
 

@@ -5,6 +5,8 @@ import { X, Coins, Loader2, Store, AlertCircle } from "lucide-react";
 import { getSeasonLabel, getSeason } from "@/lib/supabase/types";
 import type { BestDay } from "@/lib/supabase/types";
 
+const LISTING_FEE = 10;
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -179,6 +181,15 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
           </div>
           <p className="text-xs text-muted-foreground/70">
             Комиссия за размещение списывается сразу, комиссия с продажи — при покупке
+          </p>
+        </div>
+
+        {/* Moderation disclaimer */}
+        <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3">
+          <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+            Размещая локацию на маркетплейсе, вы соглашаетесь с тем, что администратор вправе
+            удалить объявление без указания причин. В случае удаления {LISTING_FEE} токенов за
+            размещение будут возвращены на ваш баланс.
           </p>
         </div>
 

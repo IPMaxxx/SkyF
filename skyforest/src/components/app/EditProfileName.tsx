@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Pencil, Check, X } from "lucide-react";
+import { Loader2, Pencil, Check, X, Star } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditProfileNameProps {
   userId: string;
   initialName: string | null;
+  accountType?: string | null;
 }
 
-export function EditProfileName({ userId, initialName }: EditProfileNameProps) {
+export function EditProfileName({ userId, initialName, accountType }: EditProfileNameProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName || "");
   const [saving, setSaving] = useState(false);
+  const isAdmin = accountType === "admin";
 
   const handleSave = async () => {
     const trimmed = name.trim();
@@ -42,7 +44,8 @@ export function EditProfileName({ userId, initialName }: EditProfileNameProps) {
         onClick={() => setEditing(true)}
         className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <span>{initialName || "Имя не указано"}</span>
+        <span className={isAdmin ? "font-bold" : ""}>{initialName || "Имя не указано"}</span>
+        {isAdmin && <Star className="h-3 w-3 fill-amber-400 text-amber-400" />}
         <Pencil className="h-3.5 w-3.5" />
       </button>
     );

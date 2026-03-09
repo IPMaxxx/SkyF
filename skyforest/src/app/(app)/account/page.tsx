@@ -54,7 +54,7 @@ export default async function AccountPage() {
           </div>
           <div className="flex items-center gap-3">
             <User className="h-4 w-4 text-muted-foreground" />
-            <EditProfileName userId={user.id} initialName={profile?.full_name || null} />
+            <EditProfileName userId={user.id} initialName={profile?.full_name || null} accountType={profile?.account_type} />
           </div>
         </div>
       </div>

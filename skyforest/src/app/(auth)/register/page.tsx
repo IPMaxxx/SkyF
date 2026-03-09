@@ -53,9 +53,13 @@ function RegisterForm() {
       return;
     }
 
-    // Supabase returns a user with empty identities when email is already registered
-    // (security measure to prevent email enumeration)
-    if (data.user && data.user.identities?.length === 0) {
+    const isExistingUser = data.user && (
+      data.user.identities?.length === 0 ||
+      (data.user.created_at &&
+        new Date(data.user.created_at).getTime() < Date.now() - 10_000)
+    );
+
+    if (isExistingUser) {
       setError("Этот email уже зарегистрирован. Попробуйте войти или восстановить пароль.");
       setLoading(false);
       return;

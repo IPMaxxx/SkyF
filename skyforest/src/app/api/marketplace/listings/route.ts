@@ -49,6 +49,7 @@ function sanitizeListings(data: unknown) {
         ? {
             id: item.seller.id,
             full_name: item.seller.full_name ?? null,
+            account_type: item.seller.account_type ?? "user",
           }
         : null,
     };

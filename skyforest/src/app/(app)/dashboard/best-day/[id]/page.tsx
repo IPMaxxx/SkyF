@@ -5,16 +5,11 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { MushroomSearch } from "@/components/app/MushroomSearch";
-import { NewLocationModal } from "@/components/app/NewLocationModal";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, BestDay, WeatherDay, ForestInfo } from "@/lib/supabase/types";
 import { getSeason, getSeasonLabel } from "@/lib/supabase/types";
-import { useTokens } from "@/lib/TokenContext";
 import { useAppData } from "@/lib/AppDataContext";
-import { TOKEN_COSTS } from "@/lib/tokens";
-import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
-import { toast } from "sonner";
 import {
   Star,
   ArrowLeft,
@@ -33,6 +28,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { SellBestDayModal } from "@/components/app/SellBestDayModal";
+import { ListingChat } from "@/components/app/ListingChat";
 import { checkPhotoLocation } from "@/lib/photo-geo";
 
 interface MushroomResult {
@@ -46,7 +42,7 @@ export default function EditBestDayPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { locations, addLocation } = useAppData();
+  const { locations } = useAppData();
 
   const [bestDay, setBestDay] = useState<BestDay | null>(null);
   const [selectedLocId, setSelectedLocId] = useState("");
@@ -56,20 +52,17 @@ export default function EditBestDayPage() {
   const [weatherDays, setWeatherDays] = useState<WeatherDay[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [loadingWeather, setLoadingWeather] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
   const [geoWarnings, setGeoWarnings] = useState<string[]>([]);
-  const { balance, spend } = useTokens();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showNewLocation, setShowNewLocation] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [activeListing, setActiveListing] = useState<{ id: string } | null>(null);
   const [delistLoading, setDelistLoading] = useState(false);
-  const [showConfirmReload, setShowConfirmReload] = useState(false);
+  const [chatListingId, setChatListingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -99,6 +92,21 @@ export default function EditBestDayPage() {
             common_name: bd.mushroom.common_name,
             image_url: bd.mushroom.image_url,
           });
+        }
+
+        if (bd.purchased_from_listing_id) {
+          setChatListingId(bd.purchased_from_listing_id);
+        } else {
+          const { data: soldListing } = await supabase
+            .from("marketplace_listings")
+            .select("id")
+            .eq("best_day_id", id)
+            .eq("seller_id", user.id)
+            .eq("status", "sold")
+            .order("sold_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (soldListing) setChatListingId(soldListing.id);
         }
       }
 
@@ -132,41 +140,6 @@ export default function EditBestDayPage() {
   };
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
-
-  const requestReloadWeather = () => {
-    if (!selectedLocation || !bestDate) {
-      setError("Выберите локацию и дату");
-      return;
-    }
-    setShowConfirmReload(true);
-  };
-
-  const handleReloadWeather = async () => {
-    setShowConfirmReload(false);
-    if (!selectedLocation || !bestDate) return;
-
-    const spendResult = await spend("best_day_reload", "Обновление погоды грибного дня");
-    if (!spendResult.success) {
-      setError(spendResult.error || "Недостаточно токенов");
-      return;
-    }
-    toast.success(`Списан ${TOKEN_COSTS.best_day_reload} токен`);
-
-    setLoadingWeather(true);
-    setError("");
-    try {
-      const res = await fetch(
-        `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${bestDate}&days=14`
-      );
-      const data = await res.json();
-      if (data.error) setError(data.error);
-      else if (data.days) setWeatherDays(data.days);
-    } catch {
-      setError("Ошибка загрузки данных о погоде");
-    } finally {
-      setLoadingWeather(false);
-    }
-  };
 
   const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -231,8 +204,6 @@ export default function EditBestDayPage() {
 
   const handleSave = async () => {
     if (!name.trim()) { setError("Введите название"); return; }
-    if (!selectedLocId) { setError("Выберите локацию"); return; }
-    if (!bestDate) { setError("Укажите дату"); return; }
     if (!mushroom) { setError("Выберите гриб"); return; }
 
     setSaving(true);
@@ -272,8 +243,6 @@ export default function EditBestDayPage() {
       .from("best_days")
       .update({
         name: name.trim(),
-        location_id: selectedLocId,
-        best_date: bestDate,
         mushroom_id: mushroomDbId,
         weather_data: weatherDays.length > 0 ? weatherDays : undefined,
         photos,
@@ -351,6 +320,13 @@ export default function EditBestDayPage() {
         </div>
       )}
 
+      {/* Chat with buyer/seller */}
+      {chatListingId && (
+        <div className="mb-5">
+          <ListingChat listingId={chatListingId} />
+        </div>
+      )}
+
       {/* Marketplace sell/delist (hidden for purchased days) */}
       {!bestDay?.purchased_from_listing_id && (
         <div className="mb-5">
@@ -415,51 +391,23 @@ export default function EditBestDayPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="bd-location" className="mb-1 block text-xs font-medium text-muted-foreground">Локация</label>
-              <div className="relative">
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  id="bd-location"
-                  value={selectedLocId}
-                  onChange={(e) => {
-                    if (e.target.value === "__new__") {
-                      setShowNewLocation(true);
-                      return;
-                    }
-                    setSelectedLocId(e.target.value);
-                  }}
-                  className="w-full appearance-none rounded-xl border border-border bg-white py-2.5 pl-9 pr-8 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  <option value="" disabled>Выберите</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                  <option value="__new__">+ Новая</option>
-                </select>
-                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Локация</label>
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm text-foreground/70">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
+                {selectedLocation?.name || "—"}
               </div>
             </div>
             <div>
-              <label htmlFor="bd-date" className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
                 {bestDay?.purchased_from_listing_id ? "Сезон" : "Дата лучшего дня"}
               </label>
-              {bestDay?.purchased_from_listing_id ? (
-                <div className="w-full rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm">
-                  {getSeasonLabel(getSeason(bestDate))}
-                </div>
-              ) : (
-                <input
-                  id="bd-date"
-                  type="date"
-                  value={bestDate}
-                  onChange={(e) => setBestDate(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              )}
+              <div className="rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm text-foreground/70">
+                {bestDay?.purchased_from_listing_id
+                  ? getSeasonLabel(getSeason(bestDate))
+                  : bestDate
+                    ? new Date(bestDate).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+                    : "—"}
+              </div>
             </div>
           </div>
 
@@ -469,29 +417,9 @@ export default function EditBestDayPage() {
           </div>
         </div>
 
-        <NewLocationModal
-          open={showNewLocation}
-          onClose={() => setShowNewLocation(false)}
-          onCreated={(loc) => {
-            addLocation(loc);
-            setSelectedLocId(loc.id);
-          }}
-        />
-
-        {/* Weather: reload button + charts + table */}
+        {/* Weather pattern */}
         <div className="glass rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium">Погодный паттерн</p>
-            <button
-              type="button"
-              onClick={requestReloadWeather}
-              disabled={loadingWeather || !selectedLocation || !bestDate}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loadingWeather ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Thermometer className="h-3.5 w-3.5" />}
-              Обновить погоду · {TOKEN_COSTS.best_day_reload} ток.
-            </button>
-          </div>
+          <p className="mb-3 text-sm font-medium">Погодный паттерн</p>
           {weatherDays.length > 0 && <WeatherChart data={weatherDays} />}
         </div>
 
@@ -683,16 +611,6 @@ export default function EditBestDayPage() {
         </div>
       </div>
 
-      <TokenConfirmModal
-        open={showConfirmReload}
-        title="Обновить погоду"
-        description="Система заново загрузит данные о погоде за 14 дней для этого грибного дня."
-        cost={TOKEN_COSTS.best_day_reload}
-        balance={balance}
-        loading={loadingWeather}
-        onConfirm={handleReloadWeather}
-        onCancel={() => setShowConfirmReload(false)}
-      />
     </div>
   );
 }
