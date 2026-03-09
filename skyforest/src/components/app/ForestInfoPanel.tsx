@@ -234,29 +234,33 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded }: Pro
         </SourceSection>
       )}
 
-      {/* iNaturalist Section */}
-      {inatSpecies.length > 0 && (
-        <SourceSection
-          icon={<Globe className="h-3.5 w-3.5" />}
-          title="iNaturalist"
-          color="green"
-          action={
-            <a
-              href={`https://www.inaturalist.org/observations?subview=map&lat=${lat}&lng=${lng}&radius=5&taxon_id=47126&quality_grade=research`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-green-400 hover:text-green-300"
-            >
-              Открыть карту
-              <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          }
-        >
+      {/* iNaturalist Section — always visible */}
+      <SourceSection
+        icon={<Globe className="h-3.5 w-3.5" />}
+        title="iNaturalist"
+        color="green"
+        action={
+          <a
+            href={`https://www.inaturalist.org/observations?subview=map&lat=${lat}&lng=${lng}&radius=5&taxon_id=47126&quality_grade=research`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-green-400 hover:text-green-300"
+          >
+            Открыть карту
+            <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        }
+      >
+        {inatSpecies.length > 0 ? (
           <p className="text-xs text-muted-foreground mb-2">
             {inatSpecies.length} видов деревьев в радиусе 5 км (research grade)
           </p>
-        </SourceSection>
-      )}
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Данные о видах в радиусе 5 км не найдены
+          </p>
+        )}
+      </SourceSection>
 
       {/* All Species Combined */}
       {allSpecies.length > 0 && (
@@ -305,7 +309,7 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded }: Pro
         {info.modis && <Badge color="purple">MODIS</Badge>}
         {info.fgis_lk && info.fgis_lk.length > 0 && <Badge color="amber">ФГИС ЛК</Badge>}
         {osmTagEntries.length > 0 && <Badge color="blue">OSM</Badge>}
-        {inatSpecies.length > 0 && <Badge color="green">iNat: {inatSpecies.length}</Badge>}
+        <Badge color="green">iNat{inatSpecies.length > 0 ? `: ${inatSpecies.length}` : ""}</Badge>
         {fgisSpecies.length > 0 && <Badge color="amber">{fgisSpecies.length} выд.</Badge>}
         {info.fetched_at && (
           <span className="ml-auto">
