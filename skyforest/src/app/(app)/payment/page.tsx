@@ -260,7 +260,7 @@ function PaymentContent() {
                 min={301}
                 max={100000}
                 value={customTokens}
-                onChange={(e) => setCustomTokens(Math.max(301, parseInt(e.target.value) || 301))}
+                onChange={(e) => setCustomTokens(parseInt(e.target.value) || 0)}
                 onClick={(e) => e.stopPropagation()}
                 className="w-full rounded-xl border border-border bg-white px-4 py-2.5 pl-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
