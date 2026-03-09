@@ -87,7 +87,7 @@ export function CTASection() {
                 Найдите идеальный момент, чтобы отправиться в лес
               </h2>
               <p className="mb-8 text-lg text-white/60 leading-relaxed">
-                SkyForest AI анализирует погодные данные и подскажет, когда
+                SkyForest AI 2.0 анализирует погодные данные и подскажет, когда
                 условия максимально совпадают с вашими лучшими грибными днями.
                 Работает в любом браузере — установка не требуется.
               </p>
@@ -107,7 +107,7 @@ export function CTASection() {
         <div className="bg-gradient-to-r from-primary-dark via-primary to-primary-dark py-12 sm:py-16">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-              Найдите идеальный момент, чтобы отправиться в лес с SkyForest AI
+              Найдите идеальный момент, чтобы отправиться в лес с SkyForest AI 2.0
             </h2>
             <p className="mb-8 text-white/80">
               Регистрация бесплатна. Первые токены — в подарок.

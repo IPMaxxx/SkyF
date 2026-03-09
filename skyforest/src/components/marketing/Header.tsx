@@ -7,11 +7,12 @@ import { Menu, X, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href: string; external?: boolean }[] = [
   { label: "Начало", href: "/" },
   { label: "О сервисе", href: "/#about" },
   { label: "Тарифы", href: "/#tariffs" },
   { label: "FAQ", href: "/#faq" },
+  { label: "SkyForest 1.0", href: "https://app.skyforest.by", external: true },
 ];
 
 export function Header() {
@@ -47,18 +48,33 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                "text-white/80 hover:text-white hover:bg-white/10"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.external ? (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                  "text-white/80 hover:text-white hover:bg-white/10"
+                )}
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                  "text-white/80 hover:text-white hover:bg-white/10"
+                )}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -101,16 +117,29 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-white/10 bg-black/80 backdrop-blur-xl px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 pt-2">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) =>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
             {loggedIn ? (
               <Link
                 href="/dashboard"

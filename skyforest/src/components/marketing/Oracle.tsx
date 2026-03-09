@@ -10,7 +10,7 @@ export function Oracle() {
           <AlertTriangle className="h-6 w-6 text-primary-light" />
         </div>
         <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-          SkyForest AI — не оракул
+          SkyForest AI 2.0 — не оракул
         </h2>
         <p className="text-lg leading-relaxed text-white/70">
           Это инструмент на основе данных и науки. Мы не гарантируем, что грибы

@@ -66,12 +66,12 @@ export function Bridge() {
               Как это работает
             </p>
             <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl">
-              SkyForest AI — мост между погодными данными и вашей грибной охотой
+              SkyForest AI 2.0 — мост между погодными данными и вашей грибной охотой
             </h2>
             <p className="mb-8 text-white/60 leading-relaxed">
               Наша технология собирает и анализирует метеорологические данные,
               чтобы помочь вам определить идеальный момент для похода в лес.
-              Вот что делает SkyForest AI:
+              Вот что делает SkyForest AI 2.0:
             </p>
             <ul className="space-y-4">
               {CAPABILITIES.map((cap) => (

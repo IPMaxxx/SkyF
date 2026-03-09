@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, X, CloudSun, Database, MapPin } from "lucide-react";
+import { ExternalLink, CloudSun, Database, MapPin } from "lucide-react";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 
 const FEATURES = [
@@ -25,7 +24,6 @@ const FEATURES = [
 ];
 
 export function Hero() {
-  const [videoOpen, setVideoOpen] = useState(false);
   const loggedIn = useIsLoggedIn();
 
   return (
@@ -65,14 +63,15 @@ export function Hero() {
               {loggedIn ? "Перейти в кабинет" : "Попробовать бесплатно"}
             </Link>
 
-            <button
-              type="button"
-              onClick={() => setVideoOpen(true)}
+            <a
+              href="https://app.skyforest.by"
+              target="_blank"
+              rel="noopener noreferrer"
               className="glass flex items-center gap-2 rounded-xl px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/15"
             >
-              <Play className="h-5 w-5" />
-              Смотреть видео
-            </button>
+              <ExternalLink className="h-5 w-5" />
+              Старая версия
+            </a>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -96,35 +95,6 @@ export function Hero() {
         </div>
       </section>
 
-      {videoOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
-          onClick={() => setVideoOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setVideoOpen(false)}
-              className="absolute -top-12 right-0 text-white transition-colors hover:text-white/70"
-              aria-label="Закрыть видео"
-            >
-              <X className="h-8 w-8" />
-            </button>
-            <div className="relative overflow-hidden rounded-2xl pt-[56.25%]">
-              <iframe
-                className="absolute inset-0 h-full w-full"
-                src="https://www.youtube.com/embed/53tUadA5u0s?autoplay=1"
-                title="SkyForest — демо"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

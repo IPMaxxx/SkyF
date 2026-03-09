@@ -48,6 +48,7 @@ const NAV_LINKS = [
   { label: "Тарифы", href: "/#tariffs" },
   { label: "FAQ", href: "/#faq" },
   { label: "Магазин", href: "https://shop.skyforest.by/", external: true },
+  { label: "SkyForest 1.0", href: "https://app.skyforest.by", external: true },
 ];
 
 const LEGAL_LINKS = [
