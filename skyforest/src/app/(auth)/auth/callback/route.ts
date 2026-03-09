@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-const ALLOWED_REDIRECTS = ["/dashboard", "/payment", "/account"];
+const ALLOWED_REDIRECTS = ["/dashboard", "/payment", "/account", "/reset-password"];
 
 function sanitizeRedirect(redirect: string): string {
   if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
