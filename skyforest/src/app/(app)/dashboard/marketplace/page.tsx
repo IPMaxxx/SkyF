@@ -346,7 +346,7 @@ export default function MarketplacePage() {
             <input
               type="range"
               min={10}
-              max={150}
+              max={1000}
               step={5}
               value={radiusKm}
               onChange={(e) => setRadiusKm(parseInt(e.target.value))}
@@ -368,7 +368,7 @@ export default function MarketplacePage() {
             ) : (
               <Search className="h-4 w-4" />
             )}
-            Найти грибные дни
+            Найти грибные локации
           </button>
         </div>
 
@@ -628,7 +628,7 @@ export default function MarketplacePage() {
         <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
           <MapPin className="mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            Поставьте точку на карте и нажмите «Найти грибные дни»
+            Поставьте точку на карте и нажмите «Найти грибные локации»
           </p>
           <p className="mt-1 text-xs text-muted-foreground/60">
             Мы покажем доступные предложения в вашем радиусе
