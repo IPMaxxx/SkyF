@@ -920,6 +920,9 @@ export default function MarketplacePage() {
                     src={previewPhoto}
                     alt=""
                     className="h-48 w-full rounded-xl object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 </div>
               )}
