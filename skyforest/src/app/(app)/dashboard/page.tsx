@@ -72,6 +72,22 @@ export default function DashboardPage() {
         <p className="mt-1 text-muted-foreground">
           Узнайте, когда погода идеальна для грибов. Добавьте локацию, запишите удачный день — и система подскажет, когда условия повторятся.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/locations/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
+          >
+            <Plus className="h-4 w-4" />
+            Добавить локацию
+          </Link>
+          <Link
+            href="/dashboard/best-day/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+          >
+            <Plus className="h-4 w-4" />
+            Добавить грибной день
+          </Link>
+        </div>
       </div>
 
       {(!hasLocations || !hasBestDays) && !loading && (
