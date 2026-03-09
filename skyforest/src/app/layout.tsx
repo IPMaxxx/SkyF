@@ -84,7 +84,7 @@ const jsonLd = {
       url: "https://skyforest.by",
       logo: {
         "@type": "ImageObject",
-        url: "https://skyforest.by/images/logo.png",
+        url: "https://skyforest.by/images/logo-square.png",
       },
       contactPoint: {
         "@type": "ContactPoint",

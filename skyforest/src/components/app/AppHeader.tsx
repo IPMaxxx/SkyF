@@ -31,11 +31,11 @@ export function AppHeader() {
     <header className="glass-strong sticky top-0 z-50 flex h-14 items-center justify-between px-4">
       <Link href="/" className="flex-shrink-0">
         <Image
-          src="/images/logo.png"
-          alt="Skyforest"
-          width={120}
-          height={38}
-          className="h-8 w-auto"
+          src="/images/logo-square.png"
+          alt="SkyForest"
+          width={40}
+          height={40}
+          className="h-8 w-8 rounded-lg"
         />
       </Link>
 

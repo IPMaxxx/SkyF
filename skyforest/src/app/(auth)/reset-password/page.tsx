@@ -51,11 +51,11 @@ export default function ResetPasswordPage() {
         <div className="mb-8 text-center">
           <Link href="/">
             <Image
-              src="/images/logo.png"
-              alt="Skyforest"
-              width={160}
-              height={50}
-              className="mx-auto mb-4 h-12 w-auto"
+              src="/images/logo-square.png"
+              alt="SkyForest"
+              width={64}
+              height={64}
+              className="mx-auto mb-4 h-16 w-16 rounded-xl"
             />
           </Link>
           <h1 className="text-2xl font-bold">Новый пароль</h1>
