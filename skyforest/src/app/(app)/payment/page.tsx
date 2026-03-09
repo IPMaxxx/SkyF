@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Coins, Loader2, Zap, Check, Gift, Tag } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
-import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel } from "@/lib/tokens";
+import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel, BULK_RATE } from "@/lib/tokens";
 
 export default function PaymentPage() {
   return (
@@ -18,6 +18,7 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   const { balance, loading: balanceLoading, refresh } = useTokens();
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
+  const [customTokens, setCustomTokens] = useState<number>(500);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState("");
   const [hasReferrer, setHasReferrer] = useState(false);
@@ -69,9 +70,18 @@ function PaymentContent() {
     }
   };
 
-  const selected = TOKEN_PACKAGES.find((p) => p.id === selectedPack)!;
+  const isCustom = selectedPack === "custom";
+  const selected = TOKEN_PACKAGES.find((p) => p.id === selectedPack);
+  const purchaseTokens = isCustom ? customTokens : (selected?.tokens ?? 0);
+  const purchasePrice = isCustom
+    ? parseFloat((customTokens * BULK_RATE).toFixed(2))
+    : (selected?.price ?? 0);
 
   const handlePurchase = async () => {
+    if (isCustom && customTokens < 301) {
+      setError("Минимальное количество для произвольной покупки — 301 токен");
+      return;
+    }
     setPurchasing(true);
     setError("");
 
@@ -79,11 +89,11 @@ function PaymentContent() {
       const res = await fetch("/api/payment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          package_id: selectedPack,
-          tokens: selected.tokens,
-          amount: selected.price,
-        }),
+        body: JSON.stringify(
+          isCustom
+            ? { package_id: "custom", tokens: customTokens, amount: purchasePrice }
+            : { package_id: selectedPack, tokens: selected!.tokens, amount: selected!.price }
+        ),
       });
       const data = await res.json();
 
@@ -214,6 +224,59 @@ function PaymentContent() {
             </button>
           ))}
         </div>
+
+        {/* Custom amount */}
+        <button
+          type="button"
+          onClick={() => setSelectedPack("custom")}
+          className={`mt-3 w-full relative rounded-2xl p-5 text-left transition-all ${
+            isCustom
+              ? "glass border-amber-400/50 ring-1 ring-amber-400/30 bg-amber-500/10"
+              : "glass hover:bg-white/8"
+          }`}
+        >
+          <div className="mb-2 flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-400" />
+            <span className="text-lg font-bold">Своё количество</span>
+            <span className="text-xs text-muted-foreground">от 301 токена</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Лучший курс: {BULK_RATE} BYN за токен
+          </p>
+          {isCustom && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <Check className="h-5 w-5 text-amber-400" />
+            </div>
+          )}
+        </button>
+
+        {isCustom && (
+          <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/5 p-4">
+            <label className="mb-1.5 block text-sm font-medium">Количество токенов</label>
+            <div className="relative">
+              <Coins className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
+              <input
+                type="number"
+                min={301}
+                max={100000}
+                value={customTokens}
+                onChange={(e) => setCustomTokens(Math.max(301, parseInt(e.target.value) || 301))}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full rounded-xl border border-border bg-white px-4 py-2.5 pl-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Итого:</span>
+              <span className="font-bold text-primary-light">{purchasePrice.toFixed(2)} BYN</span>
+            </div>
+            {hasReferrer && (
+              <div className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-emerald-400">+10% бонус:</span>
+                <span className="font-semibold text-emerald-400">+{Math.max(1, Math.round(customTokens * 0.1))} токенов</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cost table */}
@@ -266,7 +329,7 @@ function PaymentContent() {
         ) : (
           <Coins className="h-5 w-5" />
         )}
-        Купить {selected.tokens}{hasReferrer ? ` + ${Math.max(1, Math.round(selected.tokens * 0.1))}` : ""} токенов за {selected.price} BYN
+        Купить {purchaseTokens}{hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} токенов за {purchasePrice.toFixed(2)} BYN
       </button>
 
       <div className="mt-6 space-y-4">

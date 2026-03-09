@@ -16,6 +16,8 @@ export const TOKEN_PACKAGES = [
   { id: "pack_300", tokens: 300, price: 90, label: "300 токенов", popular: false },
 ] as const;
 
+export const BULK_RATE = 0.3; // BYN per token for 300+ tokens (same as pack_300)
+
 export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
   switch (action) {
     case "weather_check": return "Проверка погоды (14 дней)";

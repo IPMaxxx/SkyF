@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Пользователь</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${user.email}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">ID пользователя</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${user.id}</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Сумма вывода</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} токенов</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Сумма вывода</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} токенов (~${(numAmount * 0.3).toFixed(2)} BYN)</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Текущий баланс</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} токенов</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Способ вывода</td><td style="padding:8px;border-bottom:1px solid #eee;">${method}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Реквизиты</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${details}</td></tr>

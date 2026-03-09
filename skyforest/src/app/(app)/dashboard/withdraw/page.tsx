@@ -24,6 +24,7 @@ const METHODS = [
 
 const MIN_WITHDRAW = 10;
 const MIN_REMAINING = 50;
+const TOKEN_RATE_BYN = 0.3;
 
 export default function WithdrawPage() {
   const { balance, refresh } = useTokens();
@@ -104,7 +105,8 @@ export default function WithdrawPage() {
           </div>
           <h1 className="mb-2 text-xl font-bold">Заявка отправлена</h1>
           <p className="mb-1 text-muted-foreground">
-            Вы запросили вывод <strong className="text-amber-400">{withdrawn} токенов</strong>
+            Вы запросили вывод <strong className="text-amber-400">{withdrawn} токенов</strong>{" "}
+            (~{(withdrawn * TOKEN_RATE_BYN).toFixed(2)} BYN)
           </p>
           <p className="mb-6 text-sm text-muted-foreground">
             Мы свяжемся с вами по email для уточнения деталей. Обычно обработка занимает 1–3 рабочих дня.
@@ -151,14 +153,20 @@ export default function WithdrawPage() {
       <div className="glass mb-6 rounded-2xl p-5">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Ваш баланс</span>
-          <span className="flex items-center gap-1.5 text-lg font-bold text-amber-400">
-            <Coins className="h-5 w-5" />
-            {totalBalance} токенов
-          </span>
+          <div className="text-right">
+            <span className="flex items-center gap-1.5 text-lg font-bold text-amber-400">
+              <Coins className="h-5 w-5" />
+              {totalBalance} токенов
+            </span>
+            <p className="text-xs text-muted-foreground">~{(totalBalance * TOKEN_RATE_BYN).toFixed(2)} BYN</p>
+          </div>
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>Минимальный остаток: {MIN_REMAINING} токенов</span>
-          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong></span>
+          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
+        </div>
+        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
+          Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_RATE_BYN} BYN</strong>
         </div>
       </div>
 
@@ -209,6 +217,12 @@ export default function WithdrawPage() {
                 Максимум ({maxAmount})
               </button>
             </div>
+            {amount >= MIN_WITHDRAW && (
+              <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center text-sm">
+                <span className="text-muted-foreground">Сумма к выплате: </span>
+                <strong className="text-emerald-400">{(amount * TOKEN_RATE_BYN).toFixed(2)} BYN</strong>
+              </div>
+            )}
           </div>
 
           {/* Method */}
@@ -302,7 +316,7 @@ export default function WithdrawPage() {
             ) : (
               <ArrowDownToLine className="h-4 w-4" />
             )}
-            Запросить вывод {amount} токенов
+            Запросить вывод {amount} токенов (~{(amount * TOKEN_RATE_BYN).toFixed(2)} BYN)
           </button>
         </div>
       )}
