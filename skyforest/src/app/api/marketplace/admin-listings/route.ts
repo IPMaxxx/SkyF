@@ -18,8 +18,13 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
+  console.log("[admin-listings] profile check:", { userId: user.id, account_type: profile?.account_type });
+
   if (profile?.account_type !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Forbidden", _debug: { account_type: profile?.account_type ?? null } },
+      { status: 403 }
+    );
   }
 
   const adminSupabase = createServerClient(
@@ -44,8 +49,10 @@ export async function GET() {
 
   if (error) {
     console.error("Admin listings error:", error);
-    return NextResponse.json({ error: "Ошибка загрузки" }, { status: 500 });
+    return NextResponse.json({ error: "Ошибка загрузки", details: error.message }, { status: 500 });
   }
+
+  console.log("[admin-listings] raw count:", data?.length ?? 0);
 
   const listings = (data || []).map((item: Record<string, unknown>) => {
     const bd = Array.isArray(item.best_day) ? item.best_day[0] : item.best_day;
@@ -65,7 +72,7 @@ export async function GET() {
   });
 
   return NextResponse.json(
-    { listings },
+    { listings, _debug: { raw_count: data?.length ?? 0 } },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }

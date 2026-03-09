@@ -309,6 +309,12 @@ export default function MarketplacePage() {
     try {
       const res = await fetch("/api/marketplace/admin-listings");
       const data = await res.json();
+      if (!res.ok) {
+        const debugInfo = data._debug ? ` (account_type: ${data._debug.account_type})` : "";
+        toast.error((data.error || `Ошибка ${res.status}`) + debugInfo);
+        setAdminLoading(false);
+        return;
+      }
       setAdminListings(data.listings ?? []);
       setShowAdminPanel(true);
     } catch {
