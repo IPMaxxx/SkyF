@@ -9,27 +9,14 @@ import type { WeatherDay } from "@/lib/supabase/types";
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
-  // #region agent log
-  const _dl = (msg: string, data: Record<string, unknown> = {}, hid = "general") => { console.log(`[DEBUG:${hid}] ${msg}`, JSON.stringify(data)); return fetch('http://127.0.0.1:7883/ingest/0c42df6e-6ed3-4d9d-ac34-d78fd2413c96',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d49892'},body:JSON.stringify({sessionId:'d49892',location:'cron/compare/route.ts',message:msg,data,timestamp:Date.now(),hypothesisId:hid})}).catch(()=>{}); };
-  // #endregion
-
   const cronSecret = process.env.CRON_SECRET;
-  // #region agent log
-  await _dl('cron_entry', { hasCronSecret: !!cronSecret, cronSecretLen: cronSecret?.length ?? 0, hasSmtp: !!process.env.SMTP_USER, hasSmtpPass: !!process.env.SMTP_PASS }, 'H1');
-  // #endregion
   if (!cronSecret || cronSecret.length < 16) {
     console.error("CRON_SECRET is not configured or too short");
-    // #region agent log
-    await _dl('cron_secret_missing', { cronSecretLen: cronSecret?.length ?? 0 }, 'H1');
-    // #endregion
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${cronSecret}`) {
-    // #region agent log
-    await _dl('cron_auth_failed', { hasAuthHeader: !!authHeader }, 'H1');
-    // #endregion
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -49,10 +36,6 @@ export async function GET(request: NextRequest) {
     `)
     .eq("enabled", true);
 
-  // #region agent log
-  await _dl('auto_compares_loaded', { count: autoCompares?.length ?? 0, error: acError?.message ?? null }, 'H4');
-  // #endregion
-
   if (acError || !autoCompares) {
     return NextResponse.json({ error: acError?.message || "No data", processed: 0 });
   }
@@ -65,9 +48,6 @@ export async function GET(request: NextRequest) {
       const bestDay = ac.best_day;
       const loc = ac.location;
       const profile = ac.profile;
-      // #region agent log
-      await _dl('processing_compare', { id: ac.id, hasWeatherData: !!bestDay?.weather_data, hasLoc: !!loc, email: profile?.email ?? null, profileObj: JSON.stringify(profile) }, 'H3');
-      // #endregion
       if (!bestDay?.weather_data || !loc || !profile?.email) continue;
 
       const userEmail = profile.email;
@@ -181,45 +161,25 @@ export async function GET(request: NextRequest) {
         year: "numeric",
       });
 
-      // #region agent log
-      await _dl('sending_email', { to: userEmail, score: Math.round(result.overall), name: ac.name || bestDay.name }, 'H2');
-      // #endregion
-      try {
-        await sendEmail(
-          userEmail,
-          `Skyforest: совпадение ${Math.round(result.overall)}% — ${ac.name || bestDay.name} → ${loc.name}`,
-          buildCompareEmail({
-            bestDayName: bestDay.name,
-            locationName: loc.name,
-            compareDate,
-            bestDate,
-            overallScore: result.overall,
-            byParameter: result.byParameter,
-          })
-        );
-        // #region agent log
-        await _dl('email_sent_ok', { to: userEmail }, 'H2');
-        // #endregion
-      } catch (emailErr) {
-        // #region agent log
-        await _dl('email_send_failed', { to: userEmail, error: String(emailErr) }, 'H2');
-        // #endregion
-        console.error("Email send error:", emailErr);
-      }
+      await sendEmail(
+        userEmail,
+        `Skyforest: совпадение ${Math.round(result.overall)}% — ${ac.name || bestDay.name} → ${loc.name}`,
+        buildCompareEmail({
+          bestDayName: bestDay.name,
+          locationName: loc.name,
+          compareDate,
+          bestDate,
+          overallScore: result.overall,
+          byParameter: result.byParameter,
+        })
+      );
 
       processed++;
     } catch (err) {
-      // #region agent log
-      await _dl('compare_error', { id: ac.id, error: String(err) }, 'H5');
-      // #endregion
       console.error("Auto-compare error:", err);
       errors++;
     }
   }
-
-  // #region agent log
-  await _dl('cron_complete', { processed, errors, total: autoCompares.length }, 'H5');
-  // #endregion
 
   return NextResponse.json({
     processed,
