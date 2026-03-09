@@ -42,7 +42,7 @@ export async function GET() {
         location:locations ( id, name, lat, lng, forest_info ),
         mushroom:mushroom_species ( id, latin_name, common_name, image_url )
       ),
-      seller:profiles ( id, full_name, email, account_type )
+      seller:profiles!marketplace_listings_seller_id_fkey ( id, full_name, email, account_type )
     `)
     .eq("status", "active")
     .order("created_at", { ascending: false });
