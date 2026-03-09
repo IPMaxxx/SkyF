@@ -100,9 +100,63 @@ export default function DashboardPage() {
         <OnboardingSteps hasLocations={hasLocations} hasBestDays={hasBestDays} />
       )}
 
-      {/* Main cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {mainCards.map((card) => {
+      {/* Hero card: Погода */}
+      {(() => {
+        const weatherCard = mainCards[0];
+        const blocked = weatherCard.needsLocation && !hasLocations;
+
+        if (blocked) {
+          return (
+            <div className="mb-4 relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-6">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white opacity-30 shadow-lg shadow-blue-500/20">
+                <weatherCard.icon className="h-7 w-7" />
+              </div>
+              <h2 className="mb-2 text-xl font-bold text-foreground/40">{weatherCard.title}</h2>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground/50">{weatherCard.desc}</p>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+                <p className="mb-2 text-xs leading-relaxed text-amber-400/80">
+                  {(weatherCard as Record<string, unknown>).blockedHint as string}
+                </p>
+                <Link
+                  href="/dashboard/locations/new"
+                  className="inline-flex items-center gap-1 rounded-lg bg-amber-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-500"
+                >
+                  <Plus className="h-3 w-3" />
+                  Добавить локацию
+                </Link>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            href={weatherCard.href}
+            className="group relative mb-4 flex items-center gap-5 overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 via-cyan-500/5 to-transparent p-6 transition-all duration-300 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5"
+          >
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl transition-all group-hover:bg-blue-500/20" />
+            <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-cyan-500/5 blur-xl" />
+            <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/25">
+              <weatherCard.icon className="h-7 w-7" />
+            </div>
+            <div className="relative min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2">
+                <h2 className="text-xl font-bold">{weatherCard.title}</h2>
+                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                  Главный
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">{weatherCard.desc}</p>
+            </div>
+            <ChevronRight className="relative h-6 w-6 flex-shrink-0 text-blue-400/50 transition-all group-hover:text-blue-400 group-hover:translate-x-1" />
+          </Link>
+        );
+      })()}
+
+      {/* Other cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {mainCards.slice(1).map((card) => {
           const blocked =
             (card.needsLocation && !hasLocations) ||
             (card.needsBestDay && !hasBestDays);

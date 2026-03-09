@@ -318,7 +318,9 @@ export default function MarketplacePage() {
           <li>Нажмите <strong>«Продать на маркетплейсе»</strong> и укажите цену</li>
         </ol>
         <p className="mt-2 text-xs text-muted-foreground/70">
-          Комиссия за размещение — <strong className="text-amber-400">10 токенов</strong>. Цена продажи устанавливается вами и начисляется после покупки.
+          Комиссия за размещение — <strong className="text-amber-400">10 токенов</strong> (списывается сразу).
+          Комиссия площадки с продажи — <strong className="text-amber-400">20%</strong> (удерживается при покупке).
+          Цена продажи устанавливается вами, вы получаете 80% от указанной цены.
         </p>
       </div>
 
@@ -988,7 +990,7 @@ export default function MarketplacePage() {
               )}
             </div>
             <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-              После покупки вы получите полные данные: точные координаты, дату и
+              После покупки вы получите полные данные: точные координаты и
               погодный паттерн. Грибной день будет добавлен в ваш профиль.
             </p>
             <div className="flex gap-3">

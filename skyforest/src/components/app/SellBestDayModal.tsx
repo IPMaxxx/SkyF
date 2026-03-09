@@ -153,20 +153,32 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
             />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Токены будут начислены вам после покупки
+            Токены будут начислены вам после покупки (за вычетом комиссии)
           </p>
         </div>
 
-        {/* Listing fee */}
-        <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3">
+        {/* Fees breakdown */}
+        <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Комиссия за размещение:</span>
             <span className="flex items-center gap-1 font-semibold text-amber-400">
               10 <Coins className="h-3 w-3" />
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground/70">
-            Списывается при публикации, не возвращается при снятии с продажи
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Комиссия с продажи (20%):</span>
+            <span className="flex items-center gap-1 font-semibold text-amber-400">
+              {Math.max(1, Math.floor(price * 0.2))} <Coins className="h-3 w-3" />
+            </span>
+          </div>
+          <div className="border-t border-white/10 pt-2 flex items-center justify-between text-sm">
+            <span className="font-medium">Вы получите:</span>
+            <span className="flex items-center gap-1 font-bold text-emerald-400">
+              {price - Math.max(1, Math.floor(price * 0.2))} <Coins className="h-3 w-3" />
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground/70">
+            Комиссия за размещение списывается сразу, комиссия с продажи — при покупке
           </p>
         </div>
 

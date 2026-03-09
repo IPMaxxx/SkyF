@@ -385,30 +385,58 @@ export default function WeatherPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-xl bg-white/5 p-1">
+      <div className="mb-6 grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => setTab("weather")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+          className={`group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-200 ${
             tab === "weather"
-              ? "bg-white/10 text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "border-blue-500/40 bg-gradient-to-br from-blue-500/15 to-cyan-500/5 shadow-lg shadow-blue-500/10"
+              : "border-white/10 bg-white/5 hover:border-blue-500/20 hover:bg-blue-500/5"
           }`}
         >
-          <CloudSun className="h-4 w-4" />
-          Проверить погоду
+          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+            tab === "weather"
+              ? "bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-md shadow-blue-500/25"
+              : "bg-white/10 text-muted-foreground group-hover:bg-blue-500/20 group-hover:text-blue-400"
+          }`}>
+            <CloudSun className="h-5 w-5" />
+          </div>
+          <div>
+            <p className={`text-sm font-semibold transition-colors ${
+              tab === "weather" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+            }`}>Проверить погоду</p>
+            <p className="text-xs text-muted-foreground/70">14 дней · {TOKEN_COSTS.weather_check} токена</p>
+          </div>
+          {tab === "weather" && (
+            <div className="absolute -top-px left-4 right-4 h-0.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+          )}
         </button>
         <button
           type="button"
           onClick={() => setTab("rain-map")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+          className={`group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-200 ${
             tab === "rain-map"
-              ? "bg-white/10 text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "border-sky-500/40 bg-gradient-to-br from-sky-500/15 to-blue-500/5 shadow-lg shadow-sky-500/10"
+              : "border-white/10 bg-white/5 hover:border-sky-500/20 hover:bg-sky-500/5"
           }`}
         >
-          <CloudRain className="h-4 w-4" />
-          Карта осадков
+          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+            tab === "rain-map"
+              ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25"
+              : "bg-white/10 text-muted-foreground group-hover:bg-sky-500/20 group-hover:text-sky-400"
+          }`}>
+            <CloudRain className="h-5 w-5" />
+          </div>
+          <div>
+            <p className={`text-sm font-semibold transition-colors ${
+              tab === "rain-map" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+            }`}>Карта осадков</p>
+            <p className="text-xs text-muted-foreground/70">Тепловая карта дождей</p>
+          </div>
+          {tab === "rain-map" && (
+            <div className="absolute -top-px left-4 right-4 h-0.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-500" />
+          )}
         </button>
       </div>
 

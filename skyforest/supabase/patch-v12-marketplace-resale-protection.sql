@@ -25,6 +25,8 @@ declare
   v_new_location_id uuid;
   v_new_bestday_id uuid;
   v_season_date date;
+  v_commission integer;
+  v_seller_amount integer;
 begin
   select * into v_listing
     from marketplace_listings
@@ -80,21 +82,24 @@ begin
             'Покупка Best Day: ' || v_best_day.name,
             v_buyer_balance - v_listing.price);
 
-  -- Credit seller
+  -- Credit seller (minus 20% platform commission)
+  v_commission := greatest(1, floor(v_listing.price * 0.20));
+  v_seller_amount := v_listing.price - v_commission;
+
   update token_balances
-    set balance = balance + v_listing.price,
-        total_earned = total_earned + v_listing.price,
+    set balance = balance + v_seller_amount,
+        total_earned = total_earned + v_seller_amount,
         updated_at = now()
     where user_id = v_listing.seller_id;
 
   if not found then
     insert into token_balances (user_id, balance, total_purchased, total_spent, total_earned)
-      values (v_listing.seller_id, v_listing.price, 0, 0, v_listing.price);
+      values (v_listing.seller_id, v_seller_amount, 0, 0, v_seller_amount);
   end if;
 
   insert into token_transactions (user_id, amount, type, description)
-    values (v_listing.seller_id, v_listing.price, 'bonus',
-            'Продажа Best Day: ' || v_best_day.name);
+    values (v_listing.seller_id, v_seller_amount, 'bonus',
+            'Продажа Best Day: ' || v_best_day.name || ' (комиссия ' || v_commission || ' ток.)');
 
   -- Clone location for buyer
   if v_location.id is not null then
