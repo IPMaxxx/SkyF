@@ -500,7 +500,7 @@ export default function MarketplacePage() {
                 <div className="p-3 pb-0">
                   <div className="flex gap-2 overflow-x-auto">
                     {bd.photos.map((photo, i) => (
-                      <img key={i} src={photo} alt="" className="h-40 rounded-xl object-cover flex-shrink-0" />
+                      <img key={i} src={photo} alt="" referrerPolicy="no-referrer" className="h-40 rounded-xl object-cover flex-shrink-0" />
                     ))}
                   </div>
                 </div>
@@ -919,6 +919,7 @@ export default function MarketplacePage() {
                   <img
                     src={previewPhoto}
                     alt=""
+                    referrerPolicy="no-referrer"
                     className="h-48 w-full rounded-xl object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
