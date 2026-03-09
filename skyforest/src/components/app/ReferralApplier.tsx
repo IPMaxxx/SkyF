@@ -12,8 +12,12 @@ export function ReferralApplier() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
     })
-      .then(() => {
-        // Remove only after the server responded (success or API-level error)
+      .then((res) => {
+        if (res.status >= 500) {
+          // Server error — keep code in localStorage so next load retries
+          return;
+        }
+        // Any 2xx / 4xx = definitive answer, remove code from localStorage
         localStorage.removeItem("skyforest_ref");
       })
       .catch(() => {

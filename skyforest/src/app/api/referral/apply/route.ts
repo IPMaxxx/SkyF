@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("Referral apply error:", error);
+    // Unique constraint violation (23505) = already linked (race condition)
+    if (error.code === "23505") {
+      return NextResponse.json({ status: "already_linked" });
+    }
     return NextResponse.json({ error: "Processing error" }, { status: 500 });
   }
 
