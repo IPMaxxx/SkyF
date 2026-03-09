@@ -38,11 +38,11 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex-shrink-0">
           <Image
-            src="/images/logo.png"
+            src="/images/logo-square.png"
             alt="SkyForest"
-            width={160}
-            height={50}
-            className="h-10 w-auto sm:h-12"
+            width={48}
+            height={48}
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg"
             priority
           />
         </Link>

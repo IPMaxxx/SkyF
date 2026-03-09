@@ -33,11 +33,11 @@ export function Hero() {
 
         <div className="relative z-10 mx-auto max-w-5xl">
           <Image
-            src="/images/logo.png"
+            src="/images/logo-square.png"
             alt="SkyForest"
-            width={200}
-            height={120}
-            className="mx-auto mb-8 h-24 w-auto sm:h-32"
+            width={160}
+            height={160}
+            className="mx-auto mb-8 h-28 w-28 sm:h-36 sm:w-36 rounded-2xl"
             priority
           />
 
@@ -60,7 +60,7 @@ export function Hero() {
               href={loggedIn ? "/dashboard" : "/register"}
               className="rounded-xl bg-primary px-10 py-4 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40"
             >
-              {loggedIn ? "Перейти в кабинет" : "Попробовать бесплатно"}
+              SkyForest AI 2.0
             </Link>
 
             <a
@@ -70,7 +70,7 @@ export function Hero() {
               className="glass flex items-center gap-2 rounded-xl px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/15"
             >
               <ExternalLink className="h-5 w-5" />
-              Старая версия
+              Старая версия SkyForest AI 1.0
             </a>
           </div>
 

@@ -88,11 +88,11 @@ export function Footer() {
           {/* Logo & description */}
           <div>
             <Image
-              src="/images/logo.png"
+              src="/images/logo-square.png"
               alt="SkyForest"
-              width={140}
-              height={44}
-              className="mb-4 h-10 w-auto"
+              width={48}
+              height={48}
+              className="mb-4 h-12 w-12 rounded-lg"
             />
             <p className="mb-4 text-sm text-white/50">
               Сервис анализа погодных условий для грибников
