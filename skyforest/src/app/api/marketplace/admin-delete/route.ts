@@ -29,7 +29,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "listing_id required" }, { status: 400 });
   }
 
-  const { data: listing, error: fetchErr } = await supabase
+  const adminSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: listing, error: fetchErr } = await adminSupabase
     .from("marketplace_listings")
     .select("id, seller_id, status")
     .eq("id", listing_id)
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Листинг уже неактивен" }, { status: 400 });
   }
 
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await adminSupabase
     .from("marketplace_listings")
     .update({ status: "cancelled" })
     .eq("id", listing_id);
@@ -52,12 +58,6 @@ export async function POST(request: NextRequest) {
     console.error("Admin delete listing error:", updateErr);
     return NextResponse.json({ error: "Ошибка удаления" }, { status: 500 });
   }
-
-  const adminSupabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  );
 
   const { error: refundErr } = await adminSupabase.rpc("add_tokens", {
     p_user_id: listing.seller_id,
