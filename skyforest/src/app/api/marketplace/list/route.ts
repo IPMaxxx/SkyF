@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
   const { best_day_id, price } = await request.json();
   const numericPrice = Number(price);
 
-  if (!best_day_id || !Number.isFinite(numericPrice) || numericPrice < 1 || numericPrice > 10000) {
+  if (!best_day_id || !Number.isFinite(numericPrice) || numericPrice < 1) {
     return NextResponse.json(
-      { error: "Цена должна быть от 1 до 10 000 токенов" },
+      { error: "Цена должна быть не менее 1 токена" },
       { status: 400 }
     );
   }
