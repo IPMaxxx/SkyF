@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
   const { amount, method, details, comment } = await request.json();
   const numAmount = Number(amount);
 
-  if (!Number.isFinite(numAmount) || numAmount < 10) {
+  if (!Number.isFinite(numAmount) || numAmount < 100) {
     return NextResponse.json(
-      { error: "Минимальная сумма вывода — 10 токенов" },
+      { error: "Минимальная сумма вывода — 100 токенов" },
       { status: 400 }
     );
   }

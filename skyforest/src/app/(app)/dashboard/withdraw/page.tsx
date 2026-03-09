@@ -22,7 +22,7 @@ const METHODS = [
   { id: "other", label: "Другой способ", icon: MessageSquare, placeholder: "Укажите способ и реквизиты" },
 ] as const;
 
-const MIN_WITHDRAW = 10;
+const MIN_WITHDRAW = 100;
 const MIN_REMAINING = 50;
 const TOKEN_RATE_BYN = 0.3;
 
