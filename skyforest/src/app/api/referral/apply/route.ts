@@ -28,5 +28,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Processing error" }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  const result = data as { success: boolean; error?: string };
+
+  if (!result.success) {
+    const statusMap: Record<string, string> = {
+      invalid_code: "not_found",
+      self_referral: "self_referral",
+      already_linked: "already_linked",
+    };
+    return NextResponse.json({
+      status: statusMap[result.error ?? ""] ?? "error",
+    });
+  }
+
+  return NextResponse.json({ status: "linked" });
 }

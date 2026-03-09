@@ -1,23 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Coins, Loader2, Zap, Check, Gift } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Coins, Loader2, Zap, Check, Gift, Tag } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel } from "@/lib/tokens";
 
 export default function PaymentPage() {
+  const searchParams = useSearchParams();
   const { balance, loading: balanceLoading, refresh } = useTokens();
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState("");
   const [hasReferrer, setHasReferrer] = useState(false);
+  const [refCode, setRefCode] = useState("");
+  const [refApplying, setRefApplying] = useState(false);
+  const [refResult, setRefResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/referral/has-referrer")
       .then((r) => r.json())
-      .then((d) => setHasReferrer(d.has_referrer))
+      .then((d) => {
+        setHasReferrer(d.has_referrer);
+        if (!d.has_referrer) {
+          const urlRef = searchParams.get("ref");
+          if (urlRef) setRefCode(urlRef);
+        }
+      })
       .catch(() => {});
-  }, []);
+  }, [searchParams]);
+
+  const handleApplyRef = async () => {
+    const code = refCode.trim();
+    if (!code) return;
+    setRefApplying(true);
+    setRefResult(null);
+    try {
+      const res = await fetch("/api/referral/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.status === "linked") {
+        setHasReferrer(true);
+        setRefResult({ ok: true, msg: "Промокод активирован! +10% к каждой покупке" });
+      } else if (data?.status === "already_linked") {
+        setRefResult({ ok: false, msg: "У вас уже активирован промокод" });
+      } else if (data?.status === "self_referral") {
+        setRefResult({ ok: false, msg: "Нельзя использовать собственный код" });
+      } else if (data?.status === "not_found") {
+        setRefResult({ ok: false, msg: "Промокод не найден" });
+      } else {
+        setRefResult({ ok: false, msg: data?.error || "Ошибка применения кода" });
+      }
+    } catch {
+      setRefResult({ ok: false, msg: "Ошибка сети" });
+    } finally {
+      setRefApplying(false);
+    }
+  };
 
   const selected = TOKEN_PACKAGES.find((p) => p.id === selectedPack)!;
 
@@ -75,11 +117,48 @@ export default function PaymentPage() {
         <p className="mt-1 text-sm text-muted-foreground">токенов</p>
       </div>
 
-      {hasReferrer && (
+      {hasReferrer ? (
         <div className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3">
           <Gift className="h-5 w-5 flex-shrink-0 text-emerald-400" />
           <p className="text-sm text-emerald-300">
             У вас активирован промокод — <strong>+10% токенов</strong> к каждой покупке
+          </p>
+        </div>
+      ) : (
+        <div className="glass mb-6 rounded-2xl p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Tag className="h-4 w-4 text-emerald-400" />
+            Есть промокод?
+          </h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={refCode}
+              onChange={(e) => {
+                setRefCode(e.target.value.toUpperCase());
+                setRefResult(null);
+              }}
+              placeholder="Введите код"
+              maxLength={12}
+              className="flex-1 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-mono tracking-wider outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+            <button
+              type="button"
+              onClick={handleApplyRef}
+              disabled={refApplying || !refCode.trim()}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {refApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Применить
+            </button>
+          </div>
+          {refResult && (
+            <p className={`mt-2 text-xs ${refResult.ok ? "text-emerald-400" : "text-red-400"}`}>
+              {refResult.msg}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground/70">
+            Активируйте промокод и получайте +10% токенов к каждой покупке
           </p>
         </div>
       )}

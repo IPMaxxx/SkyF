@@ -37,7 +37,7 @@ export default function ReferralPage() {
   }, []);
 
   const referralUrl = stats
-    ? `https://skyforest.by/register?ref=${stats.code}`
+    ? `https://skyforest.by/ref/${stats.code}`
     : "";
 
   const drawQR = useCallback(async () => {
@@ -222,7 +222,7 @@ export default function ReferralPage() {
               2
             </div>
             <p className="text-sm text-muted-foreground">
-              Друг регистрируется и получает <strong className="text-emerald-400">+10% токенов</strong> к каждой покупке — навсегда
+              Друг регистрируется или вводит код на странице покупки токенов и получает <strong className="text-emerald-400">+10% токенов</strong> к каждой покупке — навсегда
             </p>
           </div>
           <div className="flex items-start gap-3">
