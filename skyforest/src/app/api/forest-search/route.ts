@@ -502,7 +502,7 @@ export async function POST(request: NextRequest) {
     p_amount: tokenCost,
     p_description: `Поиск леса (${clampedRadius} км)`,
   });
-  if (spendErr || !spent) {
+  if (spendErr || !spent?.success) {
     return NextResponse.json(
       { error: `Недостаточно токенов (нужно ${tokenCost})` },
       { status: 402 }

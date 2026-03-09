@@ -199,7 +199,7 @@ export default function WeatherPage() {
       setError(spendResult.error || "Недостаточно токенов");
       return;
     }
-    toast.success(`Списан ${TOKEN_COSTS.weather_check} токен`);
+    toast.success(`Списано ${TOKEN_COSTS.weather_check} токена`);
 
     setLoading(true);
     setError("");
@@ -285,7 +285,7 @@ export default function WeatherPage() {
     if (centerLat === null || centerLng === null) return;
     const points = generateGridPoints(centerLat, centerLng, radius, step);
 
-    const spendResult = await spend("rain_map_per_batch", `Карта осадков (${points.length} точек)`);
+    const spendResult = await spend("rain_map_per_batch", `Карта осадков (${points.length} точек)`, batchCount);
     if (!spendResult.success) {
       setRainError(spendResult.error || "Недостаточно токенов");
       return;
@@ -491,7 +491,7 @@ export default function WeatherPage() {
 
               <div>
                 <label htmlFor="date" className="mb-1.5 block text-sm font-medium">
-                  Дата (день 1 из 14)
+                  Конечная дата (день 14 из 14)
                 </label>
                 <input
                   id="date"
@@ -501,7 +501,7 @@ export default function WeatherPage() {
                   className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Будут загружены данные за 14 дней в прошлое от этой даты
+                  Загрузятся данные за 14 дней до этой даты включительно
                 </p>
               </div>
             </div>

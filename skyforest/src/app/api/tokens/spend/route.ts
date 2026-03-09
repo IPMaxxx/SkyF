@@ -14,13 +14,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { action, description } = await request.json();
+  const { action, description, multiplier } = await request.json();
 
   if (!action || !VALID_ACTIONS.has(action)) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
-  const amount = VALID_ACTIONS.get(action)!;
+  const baseAmount = VALID_ACTIONS.get(action)!;
+  const safeMultiplier = Number.isInteger(multiplier) && multiplier >= 1 && multiplier <= 1000
+    ? multiplier
+    : 1;
+  const amount = baseAmount * safeMultiplier;
   const sanitizedDescription = (description || "")
     .toString()
     .slice(0, 200)

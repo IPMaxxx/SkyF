@@ -292,7 +292,7 @@ function PaymentContent() {
             <div key={key} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5">
               <span className="text-sm">{getTokenCostLabel(key)}</span>
               <span className="flex items-center gap-1 text-sm font-semibold text-amber-400">
-                {cost} <Coins className="h-3 w-3" />
+                {key === "forest_search" ? "1–10" : cost} <Coins className="h-3 w-3" />
               </span>
             </div>
           ))}

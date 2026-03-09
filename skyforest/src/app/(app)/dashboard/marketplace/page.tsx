@@ -14,7 +14,6 @@ import {
   Store,
   Coins,
   MapPin,
-  Trees,
   User,
   X,
   ShoppingCart,
@@ -48,20 +47,6 @@ const SEASON_COLORS: Record<string, string> = {
   spring: "bg-green-500/15 text-green-400 border-green-500/20",
   summer: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
   autumn: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-};
-
-const FOREST_TYPE_FILTERS: { value: string; label: string }[] = [
-  { value: "all", label: "Любой лес" },
-  { value: "coniferous", label: "Хвойный" },
-  { value: "broadleaved", label: "Лиственный" },
-  { value: "mixed", label: "Смешанный" },
-];
-
-const FOREST_TYPE_LABELS: Record<string, string> = {
-  coniferous: "Хвойный",
-  broadleaved: "Лиственный",
-  mixed: "Смешанный",
-  unknown: "Не определён",
 };
 
 interface MushroomOption {
@@ -105,7 +90,6 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(false);
   const [seasonFilter, setSeasonFilter] = useState<Season | "all">("all");
   const [mushroomFilter, setMushroomFilter] = useState<string>("all");
-  const [forestFilter, setForestFilter] = useState<string>("all");
   const [buying, setBuying] = useState<string | null>(null);
   const [buyConfirm, setBuyConfirm] = useState<MarketplaceListing | null>(
     null
@@ -155,9 +139,15 @@ export default function MarketplacePage() {
     setSuccess("");
     setSearched(true);
     try {
-      const res = await fetch(
-        `/api/marketplace/listings?lat=${centerLat}&lng=${centerLng}&radius_km=${radiusKm}`
-      );
+      const res = await fetch("/api/marketplace/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat: centerLat,
+          lng: centerLng,
+          radius_km: radiusKm,
+        }),
+      });
       const data = await res.json();
       setListings(data.listings ?? []);
     } catch {
@@ -208,18 +198,13 @@ export default function MarketplacePage() {
         l.best_day?.mushroom?.id !== mushroomFilter
       )
         return false;
-      if (forestFilter !== "all") {
-        const ft = l.best_day?.location?.forest_info?.forest_type;
-        if (ft !== forestFilter) return false;
-      }
       return true;
     });
-  }, [listings, seasonFilter, mushroomFilter, forestFilter]);
+  }, [listings, seasonFilter, mushroomFilter]);
 
   const activeFilterCount =
     (seasonFilter !== "all" ? 1 : 0) +
-    (mushroomFilter !== "all" ? 1 : 0) +
-    (forestFilter !== "all" ? 1 : 0);
+    (mushroomFilter !== "all" ? 1 : 0);
 
   const openMushroomPreview = async (m: MushroomOption) => {
     setMushroomPreview(m);
@@ -241,7 +226,6 @@ export default function MarketplacePage() {
   const clearFilters = () => {
     setSeasonFilter("all");
     setMushroomFilter("all");
-    setForestFilter("all");
   };
 
   const confirmBuy = async () => {
@@ -507,7 +491,7 @@ export default function MarketplacePage() {
                 </div>
               )}
 
-              {/* Season + Forest type */}
+              {/* Season */}
               <div className="flex flex-wrap items-end gap-6">
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-muted-foreground">
@@ -524,27 +508,6 @@ export default function MarketplacePage() {
                             : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
                         }`}
                       >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                    Тип леса
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {FOREST_TYPE_FILTERS.map((f) => (
-                      <button
-                        key={f.value}
-                        onClick={() => setForestFilter(f.value)}
-                        className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                          forestFilter === f.value
-                            ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40"
-                            : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
-                        }`}
-                      >
-                        {f.value !== "all" && <Trees className="h-3 w-3" />}
                         {f.label}
                       </button>
                     ))}
@@ -654,9 +617,8 @@ export default function MarketplacePage() {
       {/* Listing detail preview modal */}
       {listingPreview && (() => {
         const bd = listingPreview.best_day;
-        const loc = bd?.location;
         const mushroom = bd?.mushroom;
-        const seller = listingPreview.seller;
+        const previewPhoto = bd?.photos?.[0] ?? null;
         return (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div
@@ -664,17 +626,14 @@ export default function MarketplacePage() {
               onClick={() => setListingPreview(null)}
             />
             <div className="relative z-[10000] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a2a1f]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
-              {/* Photos */}
-              {bd?.photos && bd.photos.length > 0 && (
-                <div className="flex gap-1 overflow-x-auto p-3 pb-0">
-                  {bd.photos.map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt=""
-                      className="h-40 w-auto flex-shrink-0 rounded-xl object-cover"
-                    />
-                  ))}
+              {/* Photo preview */}
+              {previewPhoto && (
+                <div className="p-3 pb-0">
+                  <img
+                    src={previewPhoto}
+                    alt=""
+                    className="h-48 w-full rounded-xl object-cover"
+                  />
                 </div>
               )}
 
@@ -709,36 +668,27 @@ export default function MarketplacePage() {
                 {/* Info rows */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Продавец:</span>
-                    <span className="font-medium">{seller?.full_name || "Пользователь"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">Сезон:</span>
                     <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEASON_COLORS[listingPreview.season] ?? ""}`}>
                       {getSeasonLabel(listingPreview.season)}
                     </span>
                   </div>
-                  {loc?.forest_info?.forest_type && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Trees className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Тип леса:</span>
-                      <span className="font-medium">
-                        {FOREST_TYPE_LABELS[loc.forest_info.forest_type] ?? "Не определён"}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Продавец:</span>
+                    <span className="font-medium">{listingPreview.seller?.full_name || "Пользователь"}</span>
+                  </div>
                 </div>
 
-                {/* Blurred: Location */}
+                {/* Hidden: Location */}
                 <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 mb-3 overflow-hidden">
                   <div className="blur-[6px] select-none pointer-events-none">
                     <div className="flex items-center gap-2 text-sm mb-1">
                       <MapPin className="h-4 w-4" />
-                      <span className="font-medium">53.XXXX, 27.XXXX</span>
+                      <span className="font-medium">XX.XXXX, XX.XXXX</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {loc?.name || "Локация"} · точные координаты
+                      Координаты и название скрыты до покупки
                     </p>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
@@ -753,11 +703,11 @@ export default function MarketplacePage() {
                   <div className="blur-[6px] select-none pointer-events-none">
                     <p className="text-sm font-medium mb-2">Погодный паттерн (14 дней)</p>
                     <div className="flex gap-1">
-                      {Array.from({ length: 14 }).map((_, i) => (
+                      {[28, 22, 35, 18, 40, 25, 30, 22, 38, 20, 32, 27, 35, 24].map((h, i) => (
                         <div
                           key={i}
                           className="flex-1 rounded bg-blue-500/30"
-                          style={{ height: `${20 + Math.random() * 30}px` }}
+                          style={{ height: `${h}px` }}
                         />
                       ))}
                     </div>
@@ -964,21 +914,28 @@ export default function MarketplacePage() {
                 {buyConfirm.best_day?.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                {buyConfirm.best_day?.location?.name} ·{" "}
-                {getSeasonLabel(buyConfirm.season)}
+                Анонимная локация · {getSeasonLabel(buyConfirm.season)}
               </p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-lg font-bold text-amber-400">
-                  {buyConfirm.price}
-                </span>
-                <Coins className="h-4 w-4 text-amber-400" />
-                <span className="text-xs text-muted-foreground">токенов</span>
+              <div className="mt-2 space-y-1.5 rounded-lg bg-white/5 p-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Стоимость</span>
+                  <span className="flex items-center gap-1 font-semibold text-amber-400">
+                    -{buyConfirm.price} <Coins className="h-3 w-3" />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Текущий баланс</span>
+                  <span className="font-semibold">{balance ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-white/10 pt-1.5">
+                  <span className="text-muted-foreground">После операции</span>
+                  <span className={`font-bold ${(balance ?? 0) - buyConfirm.price < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                    {(balance ?? 0) - buyConfirm.price}
+                  </span>
+                </div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Ваш баланс: <strong>{balance ?? 0}</strong> токенов
-              </p>
               {(balance ?? 0) < buyConfirm.price && (
-                <p className="mt-1 text-xs text-red-400">
+                <p className="mt-2 text-xs text-red-400">
                   Недостаточно токенов.{" "}
                   <Link
                     href="/payment"

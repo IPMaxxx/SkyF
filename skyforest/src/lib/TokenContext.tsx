@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 interface TokenContextType {
   balance: number | null;
   loading: boolean;
-  spend: (action: string, description?: string) => Promise<{ success: boolean; balance: number; error?: string }>;
+  spend: (action: string, description?: string, multiplier?: number) => Promise<{ success: boolean; balance: number; error?: string }>;
   refresh: () => Promise<void>;
 }
 
@@ -36,12 +36,12 @@ export function TokenProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const spend = async (action: string, description?: string) => {
+  const spend = async (action: string, description?: string, multiplier?: number) => {
     try {
       const res = await fetch("/api/tokens/spend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, description }),
+        body: JSON.stringify({ action, description, multiplier }),
       });
       const data = await res.json();
 

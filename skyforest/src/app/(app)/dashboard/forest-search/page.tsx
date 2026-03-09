@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
+import { TOKEN_COSTS } from "@/lib/tokens";
+import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { toast } from "sonner";
 import type { WeatherDay } from "@/lib/supabase/types";
 import type { ForestMatch, ForestPattern, ScoreBreakdown } from "@/app/api/forest-search/route";
 
@@ -61,7 +64,7 @@ function generaToRu(genera: string[]): string {
 }
 
 export default function ForestSearchPage() {
-  const { refresh: refreshTokens } = useTokens();
+  const { balance, spend, refresh: refreshTokens } = useTokens();
   const [step, setStep] = useState<Step>("reference");
 
   const [refLat, setRefLat] = useState<number | null>(null);
@@ -91,6 +94,9 @@ export default function ForestSearchPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  const [showSearchConfirm, setShowSearchConfirm] = useState(false);
+  const [weatherConfirmIdx, setWeatherConfirmIdx] = useState<number | null>(null);
 
   const tokenCost = Math.max(1, Math.ceil(Math.min(radiusKm, 20) / 2));
 
@@ -150,6 +156,7 @@ export default function ForestSearchPage() {
 
   const runSearch = async () => {
     if (refLat === null || refLng === null || searchLat === null || searchLng === null) return;
+    setShowSearchConfirm(false);
     setSearching(true);
     setError("");
     setMatches([]);
@@ -191,21 +198,27 @@ export default function ForestSearchPage() {
       return;
     }
     if (!weatherLoadedSet.has(idx)) {
-      const ok = window.confirm("Узнать погоду за 14 дней? Спишется 2 токена.");
-      if (!ok) return;
-      const spendRes = await fetch("/api/tokens/spend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "weather_check" }),
-      });
-      if (!spendRes.ok) {
-        const err = await spendRes.json();
-        setError(err.error || "Недостаточно токенов");
+      setWeatherConfirmIdx(idx);
+      return;
+    }
+    await doFetchWeather(idx);
+  };
+
+  const doFetchWeather = async (idx: number) => {
+    const m = matches[idx];
+    if (!m) return;
+
+    if (!weatherLoadedSet.has(idx)) {
+      const spendResult = await spend("weather_check", `Погода массива #${idx + 1}`);
+      if (!spendResult.success) {
+        setError(spendResult.error || "Недостаточно токенов");
         return;
       }
+      toast.success(`Списано ${TOKEN_COSTS.weather_check} токена`);
       setWeatherLoadedSet((prev) => new Set(prev).add(idx));
       refreshTokens();
     }
+
     setSelectedIdx(idx);
     setWeather(null);
     setWeatherLoading(true);
@@ -498,10 +511,7 @@ export default function ForestSearchPage() {
             <div className="rounded-xl border border-border bg-white/5 p-4">
               <p className="mb-2 text-sm"><Crosshair className="mr-1 inline h-3.5 w-3.5 text-blue-400" />Центр поиска: {searchLat.toFixed(5)}, {searchLng.toFixed(5)}</p>
               <button
-                onClick={() => {
-                  const ok = window.confirm(`Поиск леса в радиусе ${radiusKm} км спишет ${tokenCost} ${tokenCost === 1 ? "токен" : tokenCost < 5 ? "токена" : "токенов"}. Анализ может занять 30-60 секунд. Продолжить?`);
-                  if (ok) runSearch();
-                }}
+                onClick={() => setShowSearchConfirm(true)}
                 disabled={searching}
                 className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
               >
@@ -659,6 +669,32 @@ export default function ForestSearchPage() {
       )}
 
       {error && <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>}
+
+      <TokenConfirmModal
+        open={showSearchConfirm}
+        title="Поиск похожего леса"
+        description={`Система проанализирует до 10 лесных массивов в радиусе ${radiusKm} км. Анализ занимает 30–60 секунд.`}
+        cost={tokenCost}
+        balance={balance}
+        loading={searching}
+        onConfirm={runSearch}
+        onCancel={() => setShowSearchConfirm(false)}
+      />
+
+      <TokenConfirmModal
+        open={weatherConfirmIdx !== null}
+        title="Погода для лесного массива"
+        description="Система загрузит погодные данные за последние 14 дней для выбранного лесного массива."
+        cost={TOKEN_COSTS.weather_check}
+        balance={balance}
+        loading={weatherLoading}
+        onConfirm={() => {
+          const idx = weatherConfirmIdx!;
+          setWeatherConfirmIdx(null);
+          doFetchWeather(idx);
+        }}
+        onCancel={() => setWeatherConfirmIdx(null)}
+      />
     </div>
   );
 }
@@ -701,7 +737,7 @@ function WeatherRow({ day }: { day: WeatherDay }) {
       </div>
       <div className={`px-2 py-1 border-t border-border/30 text-center ${rainBg}`}>{day.rain_sum > 0 ? `${day.rain_sum.toFixed(1)} мм` : "—"}</div>
       <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.relative_humidity_mean != null ? `${Math.round(day.relative_humidity_mean)}%` : "—"}</div>
-      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${day.wind_speed_max.toFixed(0)} м/с` : "—"}</div>
+      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${day.wind_speed_max.toFixed(0)} км/ч` : "—"}</div>
     </>
   );
 }
