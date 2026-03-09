@@ -34,7 +34,7 @@ const steps = [
     icon: GitCompareArrows,
     href: "/dashboard/compare",
     color: "from-violet-500 to-purple-600",
-    cost: "2 токена",
+    cost: "3 токена",
   },
 ];
 

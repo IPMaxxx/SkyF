@@ -191,7 +191,7 @@ export default function ForestSearchPage() {
       return;
     }
     if (!weatherLoadedSet.has(idx)) {
-      const ok = window.confirm("Узнать погоду за 14 дней? Спишется 1 токен.");
+      const ok = window.confirm("Узнать погоду за 14 дней? Спишется 2 токена.");
       if (!ok) return;
       const spendRes = await fetch("/api/tokens/spend", {
         method: "POST",
@@ -325,7 +325,7 @@ export default function ForestSearchPage() {
               <h3 className="font-semibold text-foreground mb-1 text-xs">Стоимость</h3>
               <div className="space-y-1 text-xs text-muted-foreground">
                 <p><Search className="inline h-3 w-3 mr-1" />Поиск: ½ радиуса в км (1 км = 1, 5 км = 3, 10 км = 5, 20 км = 10)</p>
-                <p><CloudSun className="inline h-3 w-3 mr-1" />Погода: 1 токен | <Save className="inline h-3 w-3 mr-1" />Сохранить: бесплатно</p>
+                <p><CloudSun className="inline h-3 w-3 mr-1" />Погода: 2 токена | <Save className="inline h-3 w-3 mr-1" />Сохранить: бесплатно</p>
               </div>
             </div>
           </div>
@@ -618,7 +618,7 @@ export default function ForestSearchPage() {
                           className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors ${isSelected && weather ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-white/5 border border-border text-foreground/80 hover:bg-white/10"}`}>
                           {weatherLoading && selectedIdx === globalIdx ? <><Loader2 className="h-4 w-4 animate-spin" /> Загрузка...</>
                             : isSelected && weather ? <><ChevronUp className="h-4 w-4" /> Скрыть погоду</>
-                            : <><CloudSun className="h-4 w-4" /> Узнать погоду{!weatherLoadedSet.has(globalIdx) ? " · 1 токен" : ""}</>}
+                            : <><CloudSun className="h-4 w-4" /> Узнать погоду{!weatherLoadedSet.has(globalIdx) ? " · 2 токена" : ""}</>}
                         </button>
                       </div>
 

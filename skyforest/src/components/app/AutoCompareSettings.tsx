@@ -111,7 +111,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
       </div>
 
       <p className="mb-5 text-sm text-muted-foreground">
-        Ежедневно сравниваем текущую погоду с вашим эталоном и отправляем результат на email. Стоимость: 2 токена/день.
+        Ежедневно сравниваем текущую погоду с вашим эталоном и отправляем результат на email. Стоимость: 3 токена/день.
       </p>
 
       <div className="space-y-4">

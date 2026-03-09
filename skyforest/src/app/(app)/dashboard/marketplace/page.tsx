@@ -354,7 +354,7 @@ export default function MarketplacePage() {
             />
             <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
               <span>10 км</span>
-              <span>150 км</span>
+              <span>1000 км</span>
             </div>
           </div>
 

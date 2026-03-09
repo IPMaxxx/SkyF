@@ -308,8 +308,8 @@ export default function ComparePage() {
           Когда совпадение высокое — самое время идти в лес! Можно включить автоматическое сравнение каждый день.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 2 токена</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 2 токена/день</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 3 токена</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 3 токена/день</span>
         </div>
       </div>
 
