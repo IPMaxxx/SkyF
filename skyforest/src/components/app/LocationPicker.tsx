@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useState, useEffect, useRef } from "react";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -29,13 +29,30 @@ function ClickHandler({
   return null;
 }
 
+function FlyTo({ lat, lng, zoom }: { lat: number; lng: number; zoom?: number }) {
+  const map = useMap();
+  const prevRef = useRef<string>("");
+
+  useEffect(() => {
+    const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    if (key === prevRef.current) return;
+    prevRef.current = key;
+    map.flyTo([lat, lng], zoom ?? 14, { duration: 1 });
+  }, [map, lat, lng, zoom]);
+
+  return null;
+}
+
 interface Props {
   lat: number | null;
   lng: number | null;
+  flyToLat?: number | null;
+  flyToLng?: number | null;
+  flyToZoom?: number;
   onSelect: (lat: number, lng: number) => void;
 }
 
-export function LocationPicker({ lat, lng, onSelect }: Props) {
+export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSelect }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -63,6 +80,9 @@ export function LocationPicker({ lat, lng, onSelect }: Props) {
           <Marker position={[lat, lng]} icon={pinIcon} />
         )}
         <ClickHandler onSelect={onSelect} />
+        {flyToLat != null && flyToLng != null && (
+          <FlyTo lat={flyToLat} lng={flyToLng} zoom={flyToZoom} />
+        )}
       </MapContainer>
     </div>
   );

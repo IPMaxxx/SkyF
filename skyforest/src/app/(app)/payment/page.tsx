@@ -2,9 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Coins, Loader2, Zap, Check, Gift, Tag } from "lucide-react";
+import { Coins, Loader2, Zap, Check, Gift, Tag, History } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel, BULK_RATE } from "@/lib/tokens";
+import { TransactionHistory } from "@/components/app/TransactionHistory";
 
 export default function PaymentPage() {
   return (
@@ -365,6 +366,15 @@ function PaymentContent() {
             Поддержка в Telegram
           </a>
         </div>
+      </div>
+
+      {/* Transaction history */}
+      <div className="glass mt-8 rounded-2xl p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+          <History className="h-5 w-5 text-muted-foreground" />
+          История операций
+        </h2>
+        <TransactionHistory limit={20} />
       </div>
     </div>
   );

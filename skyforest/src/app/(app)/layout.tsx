@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppHeader } from "@/components/app/AppHeader";
 import { Footer } from "@/components/marketing/Footer";
 import { TokenProvider } from "@/lib/TokenContext";
+import { AppDataProvider } from "@/lib/AppDataContext";
 import { ReferralApplier } from "@/components/app/ReferralApplier";
 import { Toaster } from "sonner";
 
@@ -16,6 +17,7 @@ export default function AppLayout({
 }) {
   return (
     <TokenProvider>
+    <AppDataProvider>
       <div className="relative flex min-h-screen flex-col">
         {/* Video background */}
         <div className="fixed inset-0 -z-10">
@@ -48,6 +50,7 @@ export default function AppLayout({
           },
         }}
       />
+    </AppDataProvider>
     </TokenProvider>
   );
 }

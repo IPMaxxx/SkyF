@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -9,41 +8,20 @@ import {
   ChevronRight,
   Plus,
   GitCompareArrows,
-  AlertCircle,
   Trees,
   Store,
+  Coins,
+  History,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import type { Location, BestDay } from "@/lib/supabase/types";
 import { OnboardingSteps } from "@/components/app/OnboardingSteps";
+import { useAppData } from "@/lib/AppDataContext";
+import { useTokens } from "@/lib/TokenContext";
+import { TransactionHistory } from "@/components/app/TransactionHistory";
 
 export default function DashboardPage() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [bestDays, setBestDays] = useState<BestDay[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-
-    const [locRes, bdRes] = await Promise.all([
-      supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase
-        .from("best_days")
-        .select("*, location:locations(*), mushroom:mushroom_species(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(5),
-    ]);
-    if (locRes.data) setLocations(locRes.data);
-    if (bdRes.data) setBestDays(bdRes.data);
-    setLoading(false);
-  };
+  const { locations, bestDays: allBestDays, loading } = useAppData();
+  const { balance, loading: balanceLoading } = useTokens();
+  const bestDays = allBestDays.slice(0, 5);
 
   const hasLocations = locations.length > 0;
   const hasBestDays = bestDays.length > 0;
@@ -220,6 +198,37 @@ export default function DashboardPage() {
             </Link>
           );
         })}
+      </div>
+
+      {/* Token balance + recent transactions */}
+      <div className="mt-10">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Coins className="h-5 w-5 text-amber-400" />
+            Токены
+          </h2>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-2xl font-bold text-amber-400">
+                {balanceLoading ? "..." : balance ?? 0}
+              </span>
+            </div>
+            <Link
+              href="/payment"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Пополнить
+            </Link>
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <History className="h-4 w-4" />
+            Последние операции
+          </h3>
+          <TransactionHistory compact limit={10} />
+        </div>
       </div>
 
       {/* Best days */}

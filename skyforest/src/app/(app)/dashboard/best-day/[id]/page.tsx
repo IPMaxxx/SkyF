@@ -11,6 +11,7 @@ import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, BestDay, WeatherDay, ForestInfo } from "@/lib/supabase/types";
 import { getSeason, getSeasonLabel } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
+import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
@@ -45,9 +46,9 @@ export default function EditBestDayPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { locations, addLocation } = useAppData();
 
   const [bestDay, setBestDay] = useState<BestDay | null>(null);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocId, setSelectedLocId] = useState("");
   const [name, setName] = useState("");
   const [bestDate, setBestDate] = useState("");
@@ -76,18 +77,15 @@ export default function EditBestDayPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const [bdRes, locRes] = await Promise.all([
-        supabase
-          .from("best_days")
-          .select("*, location:locations(*), mushroom:mushroom_species(*)")
-          .eq("id", id)
-          .eq("user_id", user.id)
-          .single(),
-        supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      ]);
+      const { data: bdRes } = await supabase
+        .from("best_days")
+        .select("*, location:locations(*), mushroom:mushroom_species(*)")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
 
-      if (bdRes.data) {
-        const bd = bdRes.data as BestDay;
+      if (bdRes) {
+        const bd = bdRes as BestDay;
         setBestDay(bd);
         setName(bd.name);
         setBestDate(bd.best_date);
@@ -103,7 +101,6 @@ export default function EditBestDayPage() {
           });
         }
       }
-      if (locRes.data) setLocations(locRes.data);
 
       const { data: listingData } = await supabase
         .from("marketplace_listings")
@@ -476,7 +473,7 @@ export default function EditBestDayPage() {
           open={showNewLocation}
           onClose={() => setShowNewLocation(false)}
           onCreated={(loc) => {
-            setLocations((prev) => [loc, ...prev]);
+            addLocation(loc);
             setSelectedLocId(loc.id);
           }}
         />
@@ -592,9 +589,8 @@ export default function EditBestDayPage() {
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° мин</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Droplets className="mr-0.5 inline h-3 w-3" /> Осадки
+                      <Droplets className="mr-0.5 inline h-3 w-3" /> Дождь
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дождь</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° ср.</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Влажн.</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
@@ -615,7 +611,6 @@ export default function EditBestDayPage() {
                       <td className="px-3 py-2 text-blue-400">
                         {d.temperature_min !== null ? `${d.temperature_min.toFixed(1)}°` : "—"}
                       </td>
-                      <td className="px-3 py-2">{d.precipitation_sum.toFixed(1)} мм</td>
                       <td className="px-3 py-2">{d.rain_sum.toFixed(1)} мм</td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.temperature_mean !== null ? `${d.temperature_mean.toFixed(1)}°` : "—"}

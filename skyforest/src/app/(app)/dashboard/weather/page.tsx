@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { useTokens } from "@/lib/TokenContext";
+import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
@@ -117,14 +118,14 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
 
 export default function WeatherPage() {
   const [tab, setTab] = useState<Tab>("weather");
+  const { locations, loading: appLoading } = useAppData();
 
   // --- Weather state ---
-  const [locations, setLocations] = useState<Location[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [weatherDays, setWeatherDays] = useState<WeatherDay[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingLocs, setLoadingLocs] = useState(true);
+  const [pageDataLoaded, setPageDataLoaded] = useState(false);
   const [error, setError] = useState("");
   const { balance, spend } = useTokens();
   const [savedList, setSavedList] = useState<{ id: string; check_date: string; location: unknown; created_at: string }[]>([]);
@@ -143,21 +144,23 @@ export default function WeatherPage() {
   const [savedRainList, setSavedRainList] = useState<{ id: string; center_lat: number; center_lng: number; radius_km: number; step_km: number; days: number; created_at: string }[]>([]);
 
   useEffect(() => {
+    if (!appLoading && locations.length > 0 && !selectedId) {
+      setSelectedId(locations[0].id);
+    }
+  }, [appLoading, locations, selectedId]);
+
+  useEffect(() => {
+    if (pageDataLoaded) return;
     const load = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setPageDataLoaded(true); return; }
 
-      const [locRes, savedRes, lastRes, rainRes] = await Promise.all([
-        supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      const [savedRes, lastRes, rainRes] = await Promise.all([
         supabase.from("saved_weather").select("id, check_date, created_at, location:locations(name)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
-        supabase.from("saved_weather").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
-        supabase.from("saved_rain_maps").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+        supabase.from("saved_weather").select("location_id, check_date, weather_data").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
+        supabase.from("saved_rain_maps").select("id, center_lat, center_lng, radius_km, step_km, days, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
       ]);
-      if (locRes.data) {
-        setLocations(locRes.data);
-        if (locRes.data.length > 0) setSelectedId(locRes.data[0].id);
-      }
       if (savedRes.data) setSavedList(savedRes.data as never[]);
 
       if (lastRes.data) {
@@ -174,14 +177,16 @@ export default function WeatherPage() {
         setRadius(last.radius_km);
         setStep(last.step_km);
         setDays(last.days);
-        setGridData(last.grid_data);
+        const { data: fullLast } = await supabase.from("saved_rain_maps").select("grid_data").eq("id", last.id).single();
+        if (fullLast) setGridData(fullLast.grid_data);
       }
 
-      setLoadingLocs(false);
+      setPageDataLoaded(true);
     };
     load();
-  }, []);
+  }, [pageDataLoaded]);
 
+  const loadingLocs = appLoading || !pageDataLoaded;
   const selectedLocation = locations.find((l) => l.id === selectedId);
 
   // --- Weather handlers ---
@@ -334,7 +339,7 @@ export default function WeatherPage() {
 
   const loadSavedMap = async (id: string) => {
     const supabase = createClient();
-    const { data } = await supabase.from("saved_rain_maps").select("*").eq("id", id).single();
+    const { data } = await supabase.from("saved_rain_maps").select("center_lat, center_lng, radius_km, step_km, days, grid_data").eq("id", id).single();
     if (data) {
       setCenterLat(data.center_lat);
       setCenterLng(data.center_lng);
@@ -565,13 +570,8 @@ export default function WeatherPage() {
                         </Tooltip>
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text="Сумма всех осадков за сутки в мм (дождь + снег). Осадки за 7–14 дней до сбора — главный фактор появления грибов.">
+                        <Tooltip text="Сумма жидких осадков (дождь) за сутки в мм. Осадки за 7–14 дней до сбора — главный фактор появления грибов.">
                           <Droplets className="h-3.5 w-3.5" />
-                          Осадки
-                        </Tooltip>
-                      </th>
-                      <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text="Сумма жидких осадков (только дождь, без снега) за сутки в мм. Дождь эффективнее снега для увлажнения почвы и роста грибницы.">
                           Дождь
                         </Tooltip>
                       </th>
@@ -612,9 +612,6 @@ export default function WeatherPage() {
                           {day.temperature_max !== null
                             ? `${day.temperature_max.toFixed(1)}°`
                             : "—"}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {day.precipitation_sum.toFixed(1)} мм
                         </td>
                         <td className="px-4 py-2.5">
                           {day.rain_sum.toFixed(1)} мм

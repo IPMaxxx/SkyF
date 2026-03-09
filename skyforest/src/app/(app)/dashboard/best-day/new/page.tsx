@@ -11,6 +11,7 @@ import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, WeatherDay, ForestInfo } from "@/lib/supabase/types";
 import { checkPhotoLocation } from "@/lib/photo-geo";
 import { useTokens } from "@/lib/TokenContext";
+import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
@@ -37,7 +38,7 @@ interface MushroomResult {
 
 export default function NewBestDayPage() {
   const router = useRouter();
-  const [locations, setLocations] = useState<Location[]>([]);
+  const { locations, loading: appLoading, addLocation, addBestDay } = useAppData();
   const [selectedLocId, setSelectedLocId] = useState("");
   const [name, setName] = useState("");
   const [bestDate, setBestDate] = useState("");
@@ -49,32 +50,18 @@ export default function NewBestDayPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [geoWarnings, setGeoWarnings] = useState<string[]>([]);
-  const [loadingLocs, setLoadingLocs] = useState(true);
   const { balance, spend } = useTokens();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedBestDayId, setSavedBestDayId] = useState<string | null>(null);
   const [showNewLocation, setShowNewLocation] = useState(false);
   const [showConfirmGetData, setShowConfirmGetData] = useState(false);
+  const loadingLocs = appLoading;
 
   useEffect(() => {
-    const load = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingLocs(false); return; }
-
-      const { data } = await supabase
-        .from("locations")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (data) {
-        setLocations(data);
-        if (data.length > 0) setSelectedLocId(data[0].id);
-      }
-      setLoadingLocs(false);
-    };
-    load();
-  }, []);
+    if (!appLoading && locations.length > 0 && !selectedLocId) {
+      setSelectedLocId(locations[0].id);
+    }
+  }, [appLoading, locations, selectedLocId]);
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
 
@@ -245,7 +232,7 @@ export default function NewBestDayPage() {
       mushroomDbId = newMushroom.id;
     }
 
-    const { error: bdErr } = await supabase.from("best_days").insert({
+    const { data: newBd, error: bdErr } = await supabase.from("best_days").insert({
       user_id: user.id,
       location_id: selectedLocId,
       mushroom_id: mushroomDbId,
@@ -253,12 +240,17 @@ export default function NewBestDayPage() {
       best_date: bestDate,
       weather_data: weatherDays,
       photos,
-    });
+    }).select("id, name, best_date, location_id, created_at").single();
 
     if (bdErr) {
       setError(bdErr.message);
       setSaving(false);
       return;
+    }
+
+    if (newBd) {
+      const loc = locations.find((l) => l.id === selectedLocId);
+      addBestDay({ ...newBd, location: loc } as never);
     }
 
     router.push("/dashboard");
@@ -380,7 +372,7 @@ export default function NewBestDayPage() {
           open={showNewLocation}
           onClose={() => setShowNewLocation(false)}
           onCreated={(loc) => {
-            setLocations((prev) => [loc, ...prev]);
+            addLocation(loc);
             setSelectedLocId(loc.id);
           }}
         />
@@ -515,9 +507,8 @@ export default function NewBestDayPage() {
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° мин</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Droplets className="mr-0.5 inline h-3 w-3" /> Осадки
+                      <Droplets className="mr-0.5 inline h-3 w-3" /> Дождь
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дождь</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° ср.</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Влажн.</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
@@ -541,7 +532,6 @@ export default function NewBestDayPage() {
                       <td className="px-3 py-2 text-blue-400">
                         {d.temperature_min !== null ? `${d.temperature_min.toFixed(1)}°` : "—"}
                       </td>
-                      <td className="px-3 py-2">{d.precipitation_sum.toFixed(1)} мм</td>
                       <td className="px-3 py-2">{d.rain_sum.toFixed(1)} мм</td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.temperature_mean !== null ? `${d.temperature_mean.toFixed(1)}°` : "—"}

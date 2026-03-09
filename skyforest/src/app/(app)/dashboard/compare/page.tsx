@@ -7,6 +7,7 @@ import { CompareChart } from "@/components/app/CompareChart";
 import { NewLocationModal } from "@/components/app/NewLocationModal";
 import type { BestDay, Location, WeatherDay } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
+import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
@@ -79,9 +80,8 @@ const DEFAULT_WEIGHTS: Record<keyof WeightConfig, number> = {
 const paramKeys = Object.keys(DEFAULT_WEIGHTS) as (keyof WeightConfig)[];
 
 export default function ComparePage() {
+  const { locations, bestDays, loading: appLoading, addLocation } = useAppData();
   const [comparisons, setComparisons] = useState<Comparison[]>([]);
-  const [bestDays, setBestDays] = useState<BestDay[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { balance, spend } = useTokens();
@@ -102,25 +102,24 @@ export default function ComparePage() {
   const [confirmCompare, setConfirmCompare] = useState<Comparison | null>(null);
   const [confirmAutoToggle, setConfirmAutoToggle] = useState<Comparison | null>(null);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (bestDays.length > 0 && !newBdId) setNewBdId(bestDays[0].id);
+    if (locations.length > 0 && !newLocId) setNewLocId(locations[0].id);
+  }, [bestDays, locations, newBdId, newLocId]);
 
-  const loadAll = async () => {
+  useEffect(() => { loadComparisons(); }, []);
+
+  const loadComparisons = async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
 
-    const [cmpRes, bdRes, locRes] = await Promise.all([
-      supabase.from("auto_compares").select("*, best_day:best_days(*, location:locations(*), mushroom:mushroom_species(*)), location:locations(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("best_days").select("*, location:locations(*), mushroom:mushroom_species(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("locations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    ]);
-    if (bdRes.data) { setBestDays(bdRes.data); if (bdRes.data.length > 0) setNewBdId(bdRes.data[0].id); }
-    if (locRes.data) { setLocations(locRes.data); if (locRes.data.length > 0) setNewLocId(locRes.data[0].id); }
-    if (cmpRes.data) {
-      setComparisons(cmpRes.data.map((c: Record<string, unknown>) => ({
+    const { data: cmpRes } = await supabase.from("auto_compares").select("id, user_id, best_day_id, location_id, name, enabled, run_time, weights, last_run_at, last_score, last_result, best_day:best_days(id, name, best_date, weather_data, location:locations(id, name, lat, lng), mushroom:mushroom_species(id, latin_name, common_name, image_url)), location:locations(id, name, lat, lng)").eq("user_id", user.id).order("created_at", { ascending: false });
+    if (cmpRes) {
+      setComparisons(cmpRes.map((c: Record<string, unknown>) => ({
         ...c,
         weights: (c.weights as Record<keyof WeightConfig, number>) || DEFAULT_WEIGHTS,
-      })) as Comparison[]);
+      })) as unknown as Comparison[]);
     }
     setLoading(false);
   };
@@ -159,10 +158,10 @@ export default function ComparePage() {
       enabled: newAuto,
       run_time: newTime + ":00",
       weights: DEFAULT_WEIGHTS,
-    }).select("*, best_day:best_days(*, location:locations(*), mushroom:mushroom_species(*)), location:locations(*)").single();
+    }).select("id, user_id, best_day_id, location_id, name, enabled, run_time, weights, last_run_at, last_score, last_result, best_day:best_days(id, name, best_date, weather_data, location:locations(id, name, lat, lng), mushroom:mushroom_species(id, latin_name, common_name, image_url)), location:locations(id, name, lat, lng)").single();
 
     if (dbErr) { setError(dbErr.message); setCreating(false); return; }
-    if (data) setComparisons((prev) => [{ ...data, weights: DEFAULT_WEIGHTS } as Comparison, ...prev]);
+    if (data) setComparisons((prev) => [{ ...data, weights: DEFAULT_WEIGHTS } as unknown as Comparison, ...prev]);
     setShowCreate(false);
     setCreating(false);
   };
@@ -276,7 +275,7 @@ export default function ComparePage() {
 
   const openCmp = openId ? comparisons.find((c) => c.id === openId) : null;
 
-  if (loading) {
+  if (loading || appLoading) {
     return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
@@ -368,7 +367,7 @@ export default function ComparePage() {
         </div>
       )}
 
-      <NewLocationModal open={showNewLocation} onClose={() => setShowNewLocation(false)} onCreated={(loc) => { setLocations((prev) => [loc, ...prev]); setNewLocId(loc.id); }} />
+      <NewLocationModal open={showNewLocation} onClose={() => setShowNewLocation(false)} onCreated={(loc) => { addLocation(loc); setNewLocId(loc.id); }} />
 
       {/* Empty state */}
       {comparisons.length === 0 && !showCreate && (
@@ -557,8 +556,8 @@ export default function ComparePage() {
                                 <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Совп.</th>
                                 <th className="whitespace-nowrap px-3 py-2 text-xs font-medium"><Thermometer className="mr-0.5 inline h-3 w-3" /> t° эталон</th>
                                 <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° текущ.</th>
-                                <th className="whitespace-nowrap px-3 py-2 text-xs font-medium"><Droplets className="mr-0.5 inline h-3 w-3" /> Осад. эт.</th>
-                                <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Осад. тек.</th>
+                                <th className="whitespace-nowrap px-3 py-2 text-xs font-medium"><Droplets className="mr-0.5 inline h-3 w-3" /> Дождь эт.</th>
+                                <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дождь тек.</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -572,8 +571,8 @@ export default function ComparePage() {
                                     <td className="px-3 py-2"><span className={`font-bold ${getMatchColor(dayScore)}`}>{Math.round(dayScore)}%</span></td>
                                     <td className="px-3 py-2">{ref.temperature_mean !== null ? `${ref.temperature_mean.toFixed(1)}°` : "—"}</td>
                                     <td className="px-3 py-2">{cur.temperature_mean !== null ? `${cur.temperature_mean.toFixed(1)}°` : "—"}</td>
-                                    <td className="px-3 py-2">{ref.precipitation_sum.toFixed(1)} мм</td>
-                                    <td className="px-3 py-2">{cur.precipitation_sum.toFixed(1)} мм</td>
+                                    <td className="px-3 py-2">{ref.rain_sum.toFixed(1)} мм</td>
+                                    <td className="px-3 py-2">{cur.rain_sum.toFixed(1)} мм</td>
                                   </tr>
                                 );
                               })}

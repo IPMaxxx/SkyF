@@ -639,7 +639,7 @@ export default function ForestSearchPage() {
                             <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-0 text-[11px]">
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5">Дата</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />t°C</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />Осадки</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />Дождь</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center">Влажн.</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Wind className="inline h-3 w-3 mr-0.5" />Ветер</div>
                               {weather.map((d) => <WeatherRow key={d.date} day={d} />)}
