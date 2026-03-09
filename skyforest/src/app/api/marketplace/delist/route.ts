@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -17,12 +18,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "listing_id required" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const adminSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: listing } = await adminSupabase
     .from("marketplace_listings")
-    .update({ status: "cancelled" })
+    .select("id, seller_id")
     .eq("id", listing_id)
     .eq("seller_id", user.id)
-    .eq("status", "active");
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!listing) {
+    return NextResponse.json({ error: "Листинг не найден или недоступен" }, { status: 404 });
+  }
+
+  const { error } = await adminSupabase
+    .from("marketplace_listings")
+    .update({ status: "cancelled" })
+    .eq("id", listing_id);
 
   if (error) {
     console.error("Delist error:", error);
