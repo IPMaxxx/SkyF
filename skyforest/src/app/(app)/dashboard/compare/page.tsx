@@ -310,12 +310,17 @@ export default function ComparePage() {
         </button>
       </div>
 
-      <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
+      <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Мониторинг сравнивает текущую погоду с погодой ваших успешных грибных дней.
-          Когда совпадение высокое — самое время идти в лес! Можно включить автоматическое сравнение каждый день.
+          <strong className="text-foreground">Как работает:</strong> система сравнивает текущую погоду за последние 14 дней с погодой вашего лучшего грибного дня. Чем выше процент совпадения — тем больше шансов на удачный поход.
         </p>
-        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          <strong className="text-foreground">Автосравнение:</strong> включите тумблер и задайте время — каждый день в указанный час система проведёт сравнение и отправит результат на вашу почту. Например, если вы установите 08:00 — письмо придёт утром, и вы сразу узнаете, стоит ли сегодня ехать за грибами.
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground/70 italic">
+          Пример: вы нашли белые грибы 15 августа при +18°C и дождях. Мониторинг каждый день проверяет, повторяются ли такие условия. Когда совпадение 80%+ — пора в лес!
+        </p>
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/80">
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 3 токена</span>
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 3 токена/день</span>
         </div>
