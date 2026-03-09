@@ -41,8 +41,7 @@ export async function GET() {
         id, name, best_date, photos, weather_data,
         location:locations ( id, name, lat, lng, forest_info ),
         mushroom:mushroom_species ( id, latin_name, common_name, image_url )
-      ),
-      seller:profiles!marketplace_listings_seller_id_fkey ( id, full_name, email, account_type )
+      )
     `)
     .eq("status", "active")
     .order("created_at", { ascending: false });
@@ -52,11 +51,18 @@ export async function GET() {
     return NextResponse.json({ error: "Ошибка загрузки", details: error.message }, { status: 500 });
   }
 
-  console.log("[admin-listings] raw count:", data?.length ?? 0);
+  const sellerIds = [...new Set((data || []).map((d) => d.seller_id).filter(Boolean))];
+  const { data: sellers } = sellerIds.length > 0
+    ? await adminSupabase
+        .from("profiles")
+        .select("id, full_name, email, account_type")
+        .in("id", sellerIds)
+    : { data: [] };
+
+  const sellerMap = new Map((sellers || []).map((s: Record<string, unknown>) => [s.id, s]));
 
   const listings = (data || []).map((item: Record<string, unknown>) => {
     const bd = Array.isArray(item.best_day) ? item.best_day[0] : item.best_day;
-    const seller = Array.isArray(item.seller) ? item.seller[0] : item.seller;
 
     return {
       id: item.id,
@@ -67,12 +73,12 @@ export async function GET() {
       status: item.status,
       created_at: item.created_at,
       best_day: bd ?? null,
-      seller: seller ?? null,
+      seller: sellerMap.get(item.seller_id) ?? null,
     };
   });
 
   return NextResponse.json(
-    { listings, _debug: { raw_count: data?.length ?? 0 } },
+    { listings },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 }
