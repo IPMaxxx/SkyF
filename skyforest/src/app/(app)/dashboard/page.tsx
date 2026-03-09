@@ -168,36 +168,6 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Quick action buttons */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/dashboard/locations/new"
-          className="glass inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-glass-hover"
-        >
-          <MapPin className="h-4 w-4 text-emerald-400" />
-          Добавить локацию
-          {hasLocations && (
-            <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-xs text-emerald-400">
-              {locations.length}
-            </span>
-          )}
-        </Link>
-        <Link
-          href="/dashboard/best-day/new"
-          className={`glass inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:bg-glass-hover ${
-            !hasLocations ? "opacity-40 pointer-events-none" : ""
-          }`}
-        >
-          <Star className="h-4 w-4 text-amber-400" />
-          Добавить грибной день
-          {hasBestDays && (
-            <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
-              {bestDays.length}
-            </span>
-          )}
-        </Link>
-      </div>
-
       {/* Best days */}
       {hasBestDays && (
         <div className="mt-10">
