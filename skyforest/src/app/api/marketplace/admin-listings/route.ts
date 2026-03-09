@@ -37,7 +37,7 @@ export async function GET() {
     .from("marketplace_listings")
     .select(`
       id, seller_id, best_day_id, price, season, status, created_at,
-      best_day:best_days (
+      best_day:best_days!marketplace_listings_best_day_id_fkey (
         id, name, best_date, photos, weather_data,
         location:locations ( id, name, lat, lng, forest_info ),
         mushroom:mushroom_species ( id, latin_name, common_name, image_url )
