@@ -18,6 +18,12 @@ export default function RefRedirectPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
+        // Apply referral automatically for already-logged-in users
+        await fetch("/api/referral/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        }).catch(() => {});
         router.replace(`/payment?ref=${code}`);
       } else {
         localStorage.setItem("skyforest_ref", code);

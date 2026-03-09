@@ -160,6 +160,13 @@ begin
     return null;
   end if;
 
+  -- Idempotency: skip if this payment was already processed
+  if p_payment_id is not null and exists(
+    select 1 from public.referral_bonuses where payment_id = p_payment_id
+  ) then
+    return null;
+  end if;
+
   v_buyer_bonus := greatest(1, round(p_purchased_tokens * 0.10));
   v_referrer_bonus := greatest(1, round(p_purchased_tokens * 0.10));
 
