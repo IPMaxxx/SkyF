@@ -26,7 +26,7 @@ const ALLOWED_TABLES: Record<
   },
   marketplace_listings: {
     select:
-      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, best_day:best_days(name, best_date)",
+      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, best_day:best_days!marketplace_listings_best_day_id_fkey(name, best_date)",
     defaultSort: "created_at",
   },
   marketplace_messages: {
