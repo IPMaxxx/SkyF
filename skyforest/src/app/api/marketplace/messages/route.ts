@@ -96,7 +96,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Ошибка загрузки" }, { status: 500 });
   }
 
-  const { data: partnerProfile } = await supabase
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
+  const { data: partnerProfile } = await admin
     .from("profiles")
     .select("full_name, account_type")
     .eq("id", partnerId)

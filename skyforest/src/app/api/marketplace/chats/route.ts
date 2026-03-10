@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 
 interface Thread {
   partner_id: string;
@@ -68,14 +69,20 @@ export async function GET() {
     ),
   ];
 
+  const admin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+
   const [listingsRes, profilesRes] = await Promise.all([
-    supabase
+    admin
       .from("marketplace_listings")
       .select(
         "id, seller_id, status, best_day:best_days!marketplace_listings_best_day_id_fkey(name)"
       )
       .in("id", listingIds),
-    supabase
+    admin
       .from("profiles")
       .select("id, full_name, account_type")
       .in("id", partnerIds),
