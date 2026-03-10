@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ошибка отправки" }, { status: 500 });
   }
 
-  // Send email notification (fire-and-forget)
+  // Send email notification (throttled: max once per hour per conversation)
   try {
     const adminSupabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -207,42 +207,54 @@ export async function POST(request: NextRequest) {
       { cookies: { getAll: () => [], setAll: () => {} } }
     );
 
-    const [recipientRes, senderRes, listingInfoRes] = await Promise.all([
-      adminSupabase
-        .from("profiles")
-        .select("email, full_name")
-        .eq("id", resolvedRecipientId)
-        .single(),
-      adminSupabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .single(),
-      adminSupabase
-        .from("marketplace_listings")
-        .select(
-          "id, best_day:best_days!marketplace_listings_best_day_id_fkey(name)"
-        )
-        .eq("id", listingId)
-        .single(),
-    ]);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await adminSupabase
+      .from("marketplace_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", listingId)
+      .eq("sender_id", user.id)
+      .eq("recipient_id", resolvedRecipientId)
+      .gte("created_at", oneHourAgo)
+      .neq("id", msg.id);
 
-    const recipientEmail = recipientRes.data?.email;
-    if (recipientEmail) {
-      const senderName = senderRes.data?.full_name || "Пользователь";
-      const bd = listingInfoRes.data?.best_day as
-        | { name: string }
-        | { name: string }[]
-        | null;
-      const listingName = Array.isArray(bd)
-        ? bd[0]?.name
-        : bd?.name ?? "Листинг";
+    if ((recentCount ?? 0) === 0) {
+      const [recipientRes, senderRes, listingInfoRes] = await Promise.all([
+        adminSupabase
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", resolvedRecipientId)
+          .single(),
+        adminSupabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single(),
+        adminSupabase
+          .from("marketplace_listings")
+          .select(
+            "id, best_day:best_days!marketplace_listings_best_day_id_fkey(name)"
+          )
+          .eq("id", listingId)
+          .single(),
+      ]);
 
-      await sendEmail(
-        recipientEmail,
-        `Новое сообщение от ${senderName} — Skyforest`,
-        buildNewMessageEmail(senderName, listingName, message)
-      );
+      const recipientEmail = recipientRes.data?.email;
+      if (recipientEmail) {
+        const senderName = senderRes.data?.full_name || "Пользователь";
+        const bd = listingInfoRes.data?.best_day as
+          | { name: string }
+          | { name: string }[]
+          | null;
+        const listingName = Array.isArray(bd)
+          ? bd[0]?.name
+          : bd?.name ?? "Листинг";
+
+        await sendEmail(
+          recipientEmail,
+          `Новое сообщение от ${senderName} — Skyforest`,
+          buildNewMessageEmail(senderName, listingName, message)
+        );
+      }
     }
   } catch (emailErr) {
     console.error("Email notification error:", emailErr);
