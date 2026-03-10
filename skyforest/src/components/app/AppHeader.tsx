@@ -18,6 +18,7 @@ import {
   Trees,
   GitCompareArrows,
   CloudSun,
+  Shield,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -35,12 +36,28 @@ export function AppHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { balance, loading: balanceLoading } = useTokens();
 
   useEffect(() => {
     setMobileNav(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const check = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("id", user.id)
+        .single();
+      if (data?.account_type === "admin") setIsAdmin(true);
+    };
+    check();
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -121,6 +138,16 @@ export function AppHeader() {
                   onClick={() => setMenuOpen(false)}
                 />
                 <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-[#1a2e1f]/98 py-1 shadow-2xl backdrop-blur-xl">
+                  {isAdmin && (
+                    <Link
+                      href="/dashboard/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Админ-панель
+                    </Link>
+                  )}
                   <Link
                     href="/account"
                     onClick={() => setMenuOpen(false)}
@@ -220,6 +247,21 @@ export function AppHeader() {
             </Link>
 
             <div className="my-2 border-t border-white/10" />
+
+            {isAdmin && (
+              <Link
+                href="/dashboard/admin"
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                  pathname.startsWith("/dashboard/admin")
+                    ? "bg-purple-500/20 text-purple-300"
+                    : "text-purple-400 hover:bg-purple-500/10"
+                )}
+              >
+                <Shield className="h-5 w-5" />
+                Админ-панель
+              </Link>
+            )}
 
             <Link
               href="/account"
