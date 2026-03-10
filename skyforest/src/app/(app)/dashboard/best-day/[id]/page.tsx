@@ -44,7 +44,7 @@ export default function EditBestDayPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { locations } = useAppData();
+  const { locations, removeBestDay } = useAppData();
 
   const [bestDay, setBestDay] = useState<BestDay | null>(null);
   const [selectedLocId, setSelectedLocId] = useState("");
@@ -299,7 +299,7 @@ export default function EditBestDayPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const supabase = createClient();
-    if (photos.length > 0) {
+    if (photos.length > 0 && !bestDay?.purchased_from_listing_id) {
       const paths = photos
         .map((url) => url.split("/best-day-photos/")[1])
         .filter(Boolean);
@@ -308,6 +308,7 @@ export default function EditBestDayPage() {
       }
     }
     await supabase.from("best_days").delete().eq("id", id);
+    removeBestDay(id);
     router.push("/dashboard");
     router.refresh();
   };

@@ -56,6 +56,7 @@ const LEGAL_LINKS = [
   { label: "Конфиденциальность", href: "/privacy" },
   { label: "Способы оплаты", href: "/payment_method" },
   { label: "Возврат товара", href: "/return_goods" },
+  { label: "Инструкция", href: "/instruction" },
 ];
 
 const CONTACTS = [

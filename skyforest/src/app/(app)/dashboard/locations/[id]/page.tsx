@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Location, ForestInfo } from "@/lib/supabase/types";
 import { MapPin, Save, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
+import { useAppData } from "@/lib/AppDataContext";
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
@@ -25,6 +26,7 @@ export default function EditLocationPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { removeLocation, refreshBestDays } = useAppData();
 
   const [location, setLocation] = useState<Location | null>(null);
   const [name, setName] = useState("");
@@ -80,6 +82,8 @@ export default function EditLocationPage() {
     setDeleting(true);
     const supabase = createClient();
     await supabase.from("locations").delete().eq("id", id);
+    removeLocation(id);
+    await refreshBestDays();
     router.push("/dashboard");
     router.refresh();
   };
