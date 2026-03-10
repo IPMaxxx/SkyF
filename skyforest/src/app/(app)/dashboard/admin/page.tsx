@@ -476,43 +476,6 @@ const TABLES: TableConfig[] = [
     ],
   },
   {
-    key: "referral_links",
-    label: "Реф. связи",
-    icon: Gift,
-    columns: [
-      {
-        key: "referrer",
-        label: "Реферер",
-        render: (_v, row) => {
-          const p = row.referrer as Record<string, string> | null;
-          if (p) return <span className="text-xs">{p.full_name || p.email || "—"}</span>;
-          return <span className="text-[10px] font-mono text-muted-foreground">{(row.referrer_id as string)?.slice(0, 8)}…</span>;
-        },
-      },
-      {
-        key: "referred_user",
-        label: "Приглашённый",
-        render: (_v, row) => {
-          const p = row.referred_user as Record<string, string> | null;
-          if (p) return <span className="text-xs">{p.full_name || p.email || "—"}</span>;
-          return <span className="text-[10px] font-mono text-muted-foreground">{(row.referred_user_id as string)?.slice(0, 8)}…</span>;
-        },
-      },
-      { key: "created_at", label: "Дата", type: "date" },
-    ],
-  },
-  {
-    key: "referral_bonuses",
-    label: "Реф. бонусы",
-    icon: Gift,
-    columns: [
-      { key: "purchase_tokens", label: "Покупка", type: "number" },
-      { key: "buyer_bonus", label: "Бонус покуп.", type: "number" },
-      { key: "referrer_bonus", label: "Бонус рефер.", type: "number" },
-      { key: "created_at", label: "Дата", type: "date" },
-    ],
-  },
-  {
     key: "auto_compares",
     label: "Авто-мониторинг",
     icon: GitCompareArrows,
@@ -622,8 +585,6 @@ const TAB_GROUPS = [
     label: "Рефералы",
     items: [
       TABLES.find((t) => t.key === "referral_codes")!,
-      TABLES.find((t) => t.key === "referral_links")!,
-      TABLES.find((t) => t.key === "referral_bonuses")!,
     ],
   },
   {
@@ -1023,7 +984,7 @@ export default function AdminPage() {
                     <StatCard label="Продано листингов" value={stats.counts.listings_sold} icon={Store} color="bg-blue-500/20 text-blue-400" />
                     <StatCard label="Отменено листингов" value={stats.counts.listings_cancelled} icon={Store} color="bg-red-500/20 text-red-400" />
                     <StatCard label="Транзакций" value={stats.counts.token_transactions} icon={Coins} color="bg-amber-500/20 text-amber-400" />
-                    <StatCard label="Реф. связей" value={stats.counts.referral_links} icon={Gift} color="bg-cyan-500/20 text-cyan-400" />
+                    <StatCard label="Реф. кодов" value={stats.counts.referral_codes} icon={Gift} color="bg-cyan-500/20 text-cyan-400" />
                     <StatCard label="Авто-мониторинг" value={stats.counts.auto_compares} icon={GitCompareArrows} color="bg-indigo-500/20 text-indigo-400" />
                     <StatCard label="Поисков леса" value={stats.counts.forest_searches} icon={Trees} color="bg-green-500/20 text-green-400" />
                     <StatCard label="Сообщений" value={stats.counts.marketplace_messages} icon={MessageSquare} color="bg-teal-500/20 text-teal-400" />

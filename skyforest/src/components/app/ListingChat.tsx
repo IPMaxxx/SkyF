@@ -19,36 +19,51 @@ interface Partner {
 
 interface ListingChatProps {
   listingId: string;
+  sellerId?: string;
+  recipientId?: string;
+  compact?: boolean;
+  defaultExpanded?: boolean;
 }
 
-export function ListingChat({ listingId }: ListingChatProps) {
+export function ListingChat({
+  listingId,
+  sellerId,
+  recipientId,
+  compact,
+  defaultExpanded,
+}: ListingChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const loadMessages = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/marketplace/messages?listing_id=${listingId}`
-      );
-      if (!res.ok) return;
+      const params = new URLSearchParams({ listing_id: listingId });
+      if (recipientId) params.set("partner_id", recipientId);
+      const res = await fetch(`/api/marketplace/messages?${params}`);
+      if (!res.ok) {
+        setLoading(false);
+        return;
+      }
       const data = await res.json();
-      setMessages(data.messages ?? []);
-      setPartner(data.partner ?? null);
-      setRole(data.role ?? "buyer");
+      if (data.mode === "conversation") {
+        setMessages(data.messages ?? []);
+        setPartner(data.partner ?? null);
+        setRole(data.role ?? "buyer");
+      }
     } catch {
       /* noop */
     } finally {
       setLoading(false);
     }
-  }, [listingId]);
+  }, [listingId, recipientId]);
 
   useEffect(() => {
     loadMessages();
@@ -78,10 +93,17 @@ export function ListingChat({ listingId }: ListingChatProps) {
     setError("");
 
     try {
+      const body: Record<string, string> = {
+        listing_id: listingId,
+        message: trimmed,
+      };
+      if (recipientId) body.recipient_id = recipientId;
+      else if (sellerId) body.recipient_id = sellerId;
+
       const res = await fetch("/api/marketplace/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listing_id: listingId, message: trimmed }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -100,7 +122,7 @@ export function ListingChat({ listingId }: ListingChatProps) {
 
   if (loading) {
     return (
-      <div className="glass rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className={`${compact ? "" : "glass"} rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground`}>
         <Loader2 className="h-4 w-4 animate-spin" />
         Загрузка чата...
       </div>
@@ -108,11 +130,11 @@ export function ListingChat({ listingId }: ListingChatProps) {
   }
 
   const partnerLabel =
-    role === "buyer" ? "Продавец" : "Покупатель";
+    role === "buyer" ? "продавцом" : "покупателем";
 
   return (
-    <div className="glass rounded-2xl overflow-hidden">
-      {/* Header — always visible */}
+    <div className={`${compact ? "border border-white/10 bg-white/5" : "glass"} rounded-2xl overflow-hidden`}>
+      {/* Header */}
       <button
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/5"
@@ -120,7 +142,7 @@ export function ListingChat({ listingId }: ListingChatProps) {
         <div className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-blue-400" />
           <span className="text-sm font-medium">
-            Чат с {partnerLabel.toLowerCase()}
+            Чат с {partnerLabel}
             {partner && (
               <>
                 {": "}
@@ -147,8 +169,7 @@ export function ListingChat({ listingId }: ListingChatProps) {
       {/* Expanded chat body */}
       {expanded && (
         <div className="border-t border-white/10">
-          {/* Messages list */}
-          <div className="max-h-80 overflow-y-auto px-4 py-3 space-y-2">
+          <div className={`${compact ? "max-h-52" : "max-h-80"} overflow-y-auto px-4 py-3 space-y-2`}>
             {messages.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">
                 Нет сообщений. Напишите первым!

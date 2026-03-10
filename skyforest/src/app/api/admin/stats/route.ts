@@ -37,7 +37,6 @@ export async function GET() {
     listingsCancelledRes,
     transactionsRes,
     referralCodesRes,
-    referralLinksRes,
     forestSearchRes,
     autoComparesRes,
     messagesRes,
@@ -61,7 +60,6 @@ export async function GET() {
       .from("token_transactions")
       .select("id", { count: "exact", head: true }),
     admin.from("referral_codes").select("id", { count: "exact", head: true }),
-    admin.from("referral_links").select("id", { count: "exact", head: true }),
     admin
       .from("forest_search_history")
       .select("id", { count: "exact", head: true }),
@@ -109,7 +107,6 @@ export async function GET() {
         listings_cancelled: listingsCancelledRes.count ?? 0,
         token_transactions: transactionsRes.count ?? 0,
         referral_codes: referralCodesRes.count ?? 0,
-        referral_links: referralLinksRes.count ?? 0,
         forest_searches: forestSearchRes.count ?? 0,
         auto_compares: autoComparesRes.count ?? 0,
         marketplace_messages: messagesRes.count ?? 0,

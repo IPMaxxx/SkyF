@@ -14,19 +14,19 @@ const ALLOWED_TABLES: Record<
   },
   locations: {
     select:
-      "id, user_id, name, lat, lng, created_at, profile:profiles!locations_user_id_fkey(full_name, email)",
+      "id, user_id, name, lat, lng, created_at, profile:profiles!user_id(full_name, email)",
     searchColumns: ["name"],
     defaultSort: "created_at",
   },
   best_days: {
     select:
-      "id, user_id, location_id, mushroom_id, name, best_date, photos, purchased_from_listing_id, created_at, profile:profiles!best_days_user_id_fkey(full_name, email), location:locations(name, lat, lng), mushroom:mushroom_species(latin_name, common_name, image_url)",
+      "id, user_id, location_id, mushroom_id, name, best_date, photos, purchased_from_listing_id, created_at, profile:profiles!user_id(full_name, email), location:locations(name, lat, lng), mushroom:mushroom_species(latin_name, common_name, image_url)",
     searchColumns: ["name"],
     defaultSort: "created_at",
   },
   marketplace_listings: {
     select:
-      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, seller:profiles!marketplace_listings_seller_id_fkey(full_name, email), best_day:best_days!marketplace_listings_best_day_id_fkey(name, best_date)",
+      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, seller:profiles!seller_id(full_name, email), best_day:best_days!best_day_id(name, best_date)",
     defaultSort: "created_at",
   },
   marketplace_messages: {
@@ -36,13 +36,13 @@ const ALLOWED_TABLES: Record<
   },
   token_transactions: {
     select:
-      "id, user_id, amount, type, description, payment_id, balance_after, created_at, profile:profiles!token_transactions_user_id_fkey(full_name, email)",
+      "id, user_id, amount, type, description, payment_id, balance_after, created_at, profile:profiles!user_id(full_name, email)",
     searchColumns: ["description", "payment_id"],
     defaultSort: "created_at",
   },
   token_balances: {
     select:
-      "user_id, balance, total_purchased, total_spent, total_earned, updated_at, profile:profiles!token_balances_user_id_fkey(full_name, email)",
+      "user_id, balance, total_purchased, total_spent, total_earned, updated_at, profile:profiles!user_id(full_name, email)",
     defaultSort: "updated_at",
   },
   referral_codes: {
@@ -50,24 +50,15 @@ const ALLOWED_TABLES: Record<
     searchColumns: ["code"],
     defaultSort: "created_at",
   },
-  referral_links: {
-    select: "id, referral_code_id, referrer_id, referred_user_id, created_at",
-    defaultSort: "created_at",
-  },
-  referral_bonuses: {
-    select:
-      "id, referral_link_id, purchase_tokens, buyer_bonus, referrer_bonus, payment_id, created_at",
-    defaultSort: "created_at",
-  },
   auto_compares: {
     select:
-      "id, user_id, name, enabled, run_time, last_run_at, last_score, created_at, profile:profiles!auto_compares_user_id_fkey(full_name, email)",
+      "id, user_id, name, enabled, run_time, last_run_at, last_score, created_at, profile:profiles!user_id(full_name, email)",
     searchColumns: ["name"],
     defaultSort: "created_at",
   },
   forest_search_history: {
     select:
-      "id, user_id, ref_lat, ref_lng, search_lat, search_lng, radius_km, token_cost, created_at, profile:profiles!forest_search_history_user_id_fkey(full_name, email)",
+      "id, user_id, ref_lat, ref_lng, search_lat, search_lng, radius_km, token_cost, created_at, profile:profiles!user_id(full_name, email)",
     defaultSort: "created_at",
   },
 };
@@ -154,7 +145,6 @@ export async function GET(request: NextRequest) {
 
   const ENRICH_USER_FIELDS: Record<string, string[]> = {
     referral_codes: ["user_id"],
-    referral_links: ["referrer_id", "referred_user_id"],
     marketplace_messages: ["sender_id"],
   };
 

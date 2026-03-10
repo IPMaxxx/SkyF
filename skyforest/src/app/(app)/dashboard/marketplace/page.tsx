@@ -26,7 +26,11 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
+  Trees,
+  Leaf,
+  MessageCircle,
 } from "lucide-react";
+import { ListingChat } from "@/components/app/ListingChat";
 
 const MarketplaceSearchMap = dynamic(
   () =>
@@ -869,6 +873,17 @@ export default function MarketplacePage() {
                           >
                             {getSeasonLabel(listing.season)}
                           </span>
+                          {(() => {
+                            const fi = bd?.forest_info as { forest_type?: string } | null;
+                            if (!fi?.forest_type || fi.forest_type === "unknown") return null;
+                            const labels: Record<string, string> = { coniferous: "Хвойный", broadleaved: "Лиственный", mixed: "Смешанный" };
+                            return (
+                              <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
+                                <Trees className="h-2.5 w-2.5" />
+                                {labels[fi.forest_type] || fi.forest_type}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                       <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-sm font-bold text-amber-400">
@@ -971,7 +986,64 @@ export default function MarketplacePage() {
                   </div>
                 </div>
 
-                {/* Hidden: Location */}
+                {/* Forest type (visible before purchase) */}
+                {(() => {
+                  const fi = bd?.forest_info as { forest_type?: string; leaf_cycle?: string; forest_name?: string | null; dominant_species?: { latin_name: string; common_name: string | null; image_url: string | null; source: string }[] } | null;
+                  if (!fi) return null;
+                  const FOREST_TYPE_LABELS: Record<string, string> = {
+                    coniferous: "Хвойный лес",
+                    broadleaved: "Лиственный лес",
+                    mixed: "Смешанный лес",
+                    unknown: "Лесная зона",
+                  };
+                  const FOREST_TYPE_COLORS: Record<string, string> = {
+                    coniferous: "from-emerald-600 to-green-700",
+                    broadleaved: "from-lime-500 to-green-600",
+                    mixed: "from-teal-500 to-emerald-600",
+                    unknown: "from-gray-500 to-gray-600",
+                  };
+                  const LEAF_CYCLE_LABELS: Record<string, string> = {
+                    deciduous: "Листопадный",
+                    evergreen: "Вечнозелёный",
+                    mixed: "Смешанный",
+                  };
+                  const species = fi.dominant_species?.slice(0, 4) ?? [];
+                  return (
+                    <div className="rounded-xl border border-emerald-500/20 overflow-hidden mb-3">
+                      <div className={`flex items-center gap-2 bg-gradient-to-r ${FOREST_TYPE_COLORS[fi.forest_type ?? "unknown"]} px-3 py-2.5`}>
+                        <Trees className="h-4 w-4 text-white/90" />
+                        <span className="text-sm font-semibold text-white">
+                          {FOREST_TYPE_LABELS[fi.forest_type ?? "unknown"]}
+                        </span>
+                        {fi.leaf_cycle && fi.leaf_cycle !== "unknown" && (
+                          <span className="flex items-center gap-1 text-[11px] text-white/70">
+                            <Leaf className="h-3 w-3" />
+                            {LEAF_CYCLE_LABELS[fi.leaf_cycle] ?? ""}
+                          </span>
+                        )}
+                      </div>
+                      {species.length > 0 && (
+                        <div className="px-3 py-2 bg-emerald-500/5 space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                            Породы деревьев
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {species.map((sp, i) => (
+                              <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1">
+                                {sp.image_url && (
+                                  <img src={sp.image_url} alt="" className="h-5 w-5 rounded object-cover" />
+                                )}
+                                <span className="text-xs">{sp.common_name || sp.latin_name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Hidden: Location coordinates */}
                 <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 mb-3 overflow-hidden">
                   <div className="blur-[6px] select-none pointer-events-none">
                     <div className="flex items-center gap-2 text-sm mb-1">
@@ -984,7 +1056,7 @@ export default function MarketplacePage() {
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
                     <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-amber-400 backdrop-blur-sm">
-                      🔒 Откроется после покупки
+                      🔒 Координаты откроются после покупки
                     </div>
                   </div>
                 </div>
@@ -1013,6 +1085,15 @@ export default function MarketplacePage() {
                       🔒 Откроется после покупки
                     </div>
                   </div>
+                </div>
+
+                {/* Pre-purchase chat */}
+                <div className="mb-4">
+                  <ListingChat
+                    listingId={listingPreview.id}
+                    sellerId={listingPreview.seller_id}
+                    compact
+                  />
                 </div>
 
                 {/* Buy button */}

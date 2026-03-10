@@ -69,6 +69,7 @@ export interface BestDay {
   // joined
   location?: Location;
   mushroom?: MushroomSpecies;
+  forest_info?: ForestInfo | null;
 }
 
 export interface WeatherDay {
