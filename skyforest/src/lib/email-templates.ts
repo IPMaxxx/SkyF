@@ -114,6 +114,50 @@ export function buildCompareEmail(data: CompareEmailData): string {
 </html>`;
 }
 
+export function buildNewMessageEmail(
+  senderName: string,
+  listingName: string,
+  messagePreview: string,
+): string {
+  const preview =
+    messagePreview.length > 120
+      ? messagePreview.slice(0, 120) + "…"
+      : messagePreview;
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0a0f0b;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:24px 16px;">
+    <div style="text-align:center;padding:20px 0;">
+      <h1 style="margin:0;font-size:20px;color:#e8f0ea;">Skyforest</h1>
+      <p style="margin:4px 0 0;font-size:12px;color:#64748b;">Новое сообщение</p>
+    </div>
+
+    <div style="background:#0f1a12;border:1px solid #1a2e1d;border-radius:16px;padding:24px;margin-bottom:20px;">
+      <p style="margin:0 0 12px;font-size:14px;color:#94a3b8;">
+        <strong style="color:#e8f0ea;">${senderName || "Пользователь"}</strong> написал вам сообщение
+      </p>
+      <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
+        Листинг: <strong style="color:#e8f0ea;">${listingName || "—"}</strong>
+      </p>
+      <div style="background:#0a0f0b;border:1px solid #1a2e1d;border-radius:12px;padding:16px;margin-top:12px;">
+        <p style="margin:0;font-size:14px;color:#e8f0ea;line-height:1.5;white-space:pre-wrap;">${preview}</p>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${APP_URL}/dashboard/marketplace" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Ответить</a>
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:#475569;">
+      Вы получили это письмо, потому что вам пришло сообщение на маркетплейсе Skyforest.
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 export function buildInsufficientTokensEmail(bestDayName: string, balance: number): string {
   return `
 <!DOCTYPE html>

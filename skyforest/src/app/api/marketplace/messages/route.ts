@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { sendEmail } from "@/lib/email";
+import { buildNewMessageEmail } from "@/lib/email-templates";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -194,6 +197,55 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error("Send message error:", error);
     return NextResponse.json({ error: "Ошибка отправки" }, { status: 500 });
+  }
+
+  // Send email notification (fire-and-forget)
+  try {
+    const adminSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => [], setAll: () => {} } }
+    );
+
+    const [recipientRes, senderRes, listingInfoRes] = await Promise.all([
+      adminSupabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", resolvedRecipientId)
+        .single(),
+      adminSupabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single(),
+      adminSupabase
+        .from("marketplace_listings")
+        .select(
+          "id, best_day:best_days!marketplace_listings_best_day_id_fkey(name)"
+        )
+        .eq("id", listingId)
+        .single(),
+    ]);
+
+    const recipientEmail = recipientRes.data?.email;
+    if (recipientEmail) {
+      const senderName = senderRes.data?.full_name || "Пользователь";
+      const bd = listingInfoRes.data?.best_day as
+        | { name: string }
+        | { name: string }[]
+        | null;
+      const listingName = Array.isArray(bd)
+        ? bd[0]?.name
+        : bd?.name ?? "Листинг";
+
+      await sendEmail(
+        recipientEmail,
+        `Новое сообщение от ${senderName} — Skyforest`,
+        buildNewMessageEmail(senderName, listingName, message)
+      );
+    }
+  } catch (emailErr) {
+    console.error("Email notification error:", emailErr);
   }
 
   return NextResponse.json({ message: msg });

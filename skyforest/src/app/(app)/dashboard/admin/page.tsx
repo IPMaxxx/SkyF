@@ -1109,8 +1109,13 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Chat view for messages */}
+          {activeTab === "marketplace_messages" && (
+            <AdminChatsView />
+          )}
+
           {/* Table view */}
-          {activeTab !== "overview" && activeTableConfig && (
+          {activeTab !== "overview" && activeTab !== "marketplace_messages" && activeTableConfig && (
             <div>
               {/* Header */}
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1435,6 +1440,323 @@ export default function AdminPage() {
               <X className="h-4 w-4" />
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ───────────── Admin Chats View ───────────── */
+
+interface ChatThread {
+  listing_id: string;
+  user_a: string;
+  user_b: string;
+  message_count: number;
+  last_message: string;
+  last_message_at: string;
+  last_sender_id: string;
+}
+
+interface ChatMessage {
+  id: string;
+  listing_id: string;
+  sender_id: string;
+  recipient_id: string;
+  message: string;
+  created_at: string;
+}
+
+interface ChatProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  account_type: string;
+}
+
+interface ChatListing {
+  id: string;
+  seller_id: string;
+  status: string;
+  best_day: { name: string } | { name: string }[] | null;
+}
+
+function AdminChatsView() {
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ChatProfile>>({});
+  const [listings, setListings] = useState<Record<string, ChatListing>>({});
+  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [activeThread, setActiveThread] = useState<ChatThread | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [msgProfiles, setMsgProfiles] = useState<Record<string, ChatProfile>>({});
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [msgSearch, setMsgSearch] = useState("");
+
+  const loadThreads = useCallback(async (search?: string) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ mode: "threads" });
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/admin/chats?${params}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setThreads(data.threads ?? []);
+      setProfiles(data.profiles ?? {});
+      setListings(data.listings ?? {});
+    } catch {
+      toast.error("Ошибка загрузки чатов");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadThreads();
+  }, [loadThreads]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setSearchQuery(val);
+      loadThreads(val);
+    }, 400);
+  };
+
+  const openThread = async (thread: ChatThread) => {
+    setActiveThread(thread);
+    setMsgLoading(true);
+    setMsgSearch("");
+    try {
+      const params = new URLSearchParams({
+        mode: "conversation",
+        listing_id: thread.listing_id,
+        user_a: thread.user_a,
+        user_b: thread.user_b,
+      });
+      const res = await fetch(`/api/admin/chats?${params}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setMessages(data.messages ?? []);
+      setMsgProfiles(data.profiles ?? {});
+    } catch {
+      toast.error("Ошибка загрузки сообщений");
+    } finally {
+      setMsgLoading(false);
+    }
+  };
+
+  const filteredMessages = msgSearch
+    ? messages.filter((m) =>
+        m.message.toLowerCase().includes(msgSearch.toLowerCase())
+      )
+    : messages;
+
+  const getName = (id: string, pMap?: Record<string, ChatProfile>) => {
+    const p = (pMap ?? profiles)[id];
+    return p?.full_name || p?.email || id.slice(0, 8) + "…";
+  };
+
+  const getListingName = (id: string) => {
+    const l = listings[id];
+    if (!l) return id.slice(0, 8) + "…";
+    const bd = l.best_day;
+    const name = Array.isArray(bd) ? bd[0]?.name : bd?.name;
+    return name || id.slice(0, 8) + "…";
+  };
+
+  if (activeThread) {
+    const listing = listings[activeThread.listing_id];
+    const sellerId = listing?.seller_id;
+    return (
+      <div>
+        {/* Back + header */}
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            onClick={() => setActiveThread(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-muted-foreground hover:bg-white/5"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold truncate">
+                {getName(activeThread.user_a, msgProfiles)} ↔ {getName(activeThread.user_b, msgProfiles)}
+              </h2>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Листинг: {getListingName(activeThread.listing_id)}
+                {listing && (
+                  <span className={`ml-2 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${BADGE_COLORS[listing.status] ?? ""}`}>
+                    {listing.status}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs text-muted-foreground">{messages.length} сообщений</span>
+        </div>
+
+        {/* Message search */}
+        <div className="mb-4 relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={msgSearch}
+            onChange={(e) => setMsgSearch(e.target.value)}
+            placeholder="Поиск по сообщениям..."
+            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-xs outline-none placeholder:text-muted-foreground/50 focus:border-blue-500/30"
+          />
+        </div>
+
+        {/* Messages */}
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+          {msgLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              {msgSearch ? "Сообщения не найдены" : "Нет сообщений"}
+            </div>
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto px-4 py-4 space-y-3">
+              {filteredMessages.map((msg) => {
+                const isSeller = msg.sender_id === sellerId;
+                const senderProfile = msgProfiles[msg.sender_id];
+                return (
+                  <div key={msg.id} className={`flex ${isSeller ? "justify-start" : "justify-end"}`}>
+                    <div className={`max-w-[70%] ${isSeller ? "order-1" : "order-1"}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[10px] font-medium ${isSeller ? "text-pink-400" : "text-blue-400"}`}>
+                          {senderProfile?.full_name || senderProfile?.email || msg.sender_id.slice(0, 8)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/50">
+                          {new Date(msg.created_at).toLocaleString("ru-RU", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div
+                        className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                          isSeller
+                            ? "bg-pink-600/20 text-foreground rounded-tl-md border border-pink-500/20"
+                            : "bg-blue-600/20 text-foreground rounded-tr-md border border-blue-500/20"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{msg.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold">Чаты</h1>
+            <p className="text-xs text-muted-foreground">{threads.length} диалогов</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-64 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Поиск по сообщениям..."
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-xs outline-none placeholder:text-muted-foreground/50 focus:border-blue-500/30"
+            />
+          </div>
+          <button
+            onClick={() => loadThreads(searchQuery)}
+            disabled={loading}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-50"
+            title="Обновить"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Thread list */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : threads.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] py-12">
+          <MessageSquare className="mb-3 h-12 w-12 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">
+            {searchQuery ? "Чаты не найдены" : "Нет чатов"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {threads.map((thread) => {
+            const listing = listings[thread.listing_id];
+            return (
+              <button
+                key={`${thread.listing_id}:${thread.user_a}:${thread.user_b}`}
+                onClick={() => openThread(thread)}
+                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:bg-white/[0.06]"
+              >
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-medium truncate">
+                      {getName(thread.user_a)} ↔ {getName(thread.user_b)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-1">
+                    <span className="truncate max-w-[200px]">
+                      Листинг: {getListingName(thread.listing_id)}
+                    </span>
+                    {listing && (
+                      <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${BADGE_COLORS[listing.status] ?? ""}`}>
+                        {listing.status}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground/70 truncate max-w-[300px]">
+                    {getName(thread.last_sender_id)}: {thread.last_message}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-medium text-blue-400">
+                    {thread.message_count}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {formatDate(thread.last_message_at)}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
