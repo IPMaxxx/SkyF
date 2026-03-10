@@ -118,11 +118,13 @@ export function buildNewMessageEmail(
   senderName: string,
   listingName: string,
   messagePreview: string,
+  chatUrl?: string,
 ): string {
   const preview =
     messagePreview.length > 120
       ? messagePreview.slice(0, 120) + "…"
       : messagePreview;
+  const replyUrl = chatUrl || `${APP_URL}/dashboard/marketplace/chats`;
   return `
 <!DOCTYPE html>
 <html>
@@ -139,7 +141,7 @@ export function buildNewMessageEmail(
         <strong style="color:#e8f0ea;">${senderName || "Пользователь"}</strong> написал вам сообщение
       </p>
       <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
-        Листинг: <strong style="color:#e8f0ea;">${listingName || "—"}</strong>
+        Грибной день: <strong style="color:#e8f0ea;">${listingName || "—"}</strong>
       </p>
       <div style="background:#0a0f0b;border:1px solid #1a2e1d;border-radius:12px;padding:16px;margin-top:12px;">
         <p style="margin:0;font-size:14px;color:#e8f0ea;line-height:1.5;white-space:pre-wrap;">${preview}</p>
@@ -147,7 +149,7 @@ export function buildNewMessageEmail(
     </div>
 
     <div style="text-align:center;margin-bottom:24px;">
-      <a href="${APP_URL}/dashboard/marketplace" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Ответить</a>
+      <a href="${replyUrl}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Ответить</a>
     </div>
 
     <p style="text-align:center;font-size:11px;color:#475569;">

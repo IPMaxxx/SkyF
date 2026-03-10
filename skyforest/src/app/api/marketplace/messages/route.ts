@@ -249,10 +249,14 @@ export async function POST(request: NextRequest) {
           ? bd[0]?.name
           : bd?.name ?? "Листинг";
 
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://skyforest.by";
+        const chatUrl = `${appUrl}/dashboard/marketplace/chats?listing=${listingId}&partner=${user.id}`;
+
         await sendEmail(
           recipientEmail,
           `Новое сообщение от ${senderName} — Skyforest`,
-          buildNewMessageEmail(senderName, listingName, message)
+          buildNewMessageEmail(senderName, listingName, message, chatUrl)
         );
       }
     }

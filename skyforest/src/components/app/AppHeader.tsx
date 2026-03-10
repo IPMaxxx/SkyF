@@ -19,8 +19,9 @@ import {
   GitCompareArrows,
   CloudSun,
   Shield,
+  MessageCircle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -37,12 +38,24 @@ export function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadChats, setUnreadChats] = useState(0);
   const { balance, loading: balanceLoading } = useTokens();
+  const unreadTimer = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
     setMobileNav(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/marketplace/unread");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadChats(data.count ?? 0);
+      }
+    } catch { /* noop */ }
+  }, []);
 
   useEffect(() => {
     const check = async () => {
@@ -57,7 +70,10 @@ export function AppHeader() {
       if (data?.account_type === "admin") setIsAdmin(true);
     };
     check();
-  }, []);
+    fetchUnread();
+    unreadTimer.current = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(unreadTimer.current);
+  }, [fetchUnread]);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -119,6 +135,19 @@ export function AppHeader() {
               <span className="inline-block h-3 w-6 animate-pulse rounded bg-amber-500/20" />
             ) : (
               <span>{balance ?? 0}</span>
+            )}
+          </Link>
+
+          <Link
+            href="/dashboard/marketplace/chats"
+            className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-foreground/70 transition-colors hover:bg-white/15 hover:text-foreground"
+            title="Сообщения"
+          >
+            <MessageCircle className="h-4 w-4" />
+            {unreadChats > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unreadChats > 9 ? "9+" : unreadChats}
+              </span>
             )}
           </Link>
 
@@ -194,7 +223,7 @@ export function AppHeader() {
           </div>
         </div>
 
-        {/* Mobile: balance + burger */}
+        {/* Mobile: balance + chat + burger */}
         <div className="flex items-center gap-2 lg:hidden">
           <Link
             href="/payment"
@@ -202,6 +231,17 @@ export function AppHeader() {
           >
             <Coins className="h-4 w-4" />
             {balanceLoading ? "..." : balance ?? 0}
+          </Link>
+          <Link
+            href="/dashboard/marketplace/chats"
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground"
+          >
+            <MessageCircle className="h-4 w-4" />
+            {unreadChats > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unreadChats > 9 ? "9+" : unreadChats}
+              </span>
+            )}
           </Link>
           <button
             type="button"
