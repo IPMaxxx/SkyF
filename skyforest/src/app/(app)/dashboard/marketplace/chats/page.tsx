@@ -141,6 +141,30 @@ export default function ChatsPage() {
     []
   );
 
+  const markAsRead = useCallback(
+    async (listingId: string, partnerId: string) => {
+      try {
+        await fetch("/api/marketplace/chats/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listing_id: listingId, partner_id: partnerId }),
+        });
+      } catch { /* noop */ }
+
+      setConversations((prev) =>
+        prev.map((g) => ({
+          ...g,
+          threads: g.threads.map((t) =>
+            g.listing_id === listingId && t.partner_id === partnerId
+              ? { ...t, is_unread: false }
+              : t
+          ),
+        }))
+      );
+    },
+    []
+  );
+
   const openChat = useCallback(
     async (
       listingId: string,
@@ -155,8 +179,9 @@ export default function ChatsPage() {
       setText("");
       await loadMessages(listingId, partnerId);
       setMsgLoading(false);
+      markAsRead(listingId, partnerId);
     },
-    [loadMessages]
+    [loadMessages, markAsRead]
   );
 
   // Poll active chat

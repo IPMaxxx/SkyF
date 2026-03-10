@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
       {/* Best days */}
       {hasBestDays && (
-        <div className="mt-10">
+        <div id="best-days" className="mt-10 scroll-mt-20">
           <div className="mb-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Мои грибные дни</h2>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
 
       {/* Locations — compact chips */}
       {hasLocations && (
-        <div className="mt-10">
+        <div id="locations" className="mt-10 scroll-mt-20">
           <div className="mb-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Мои локации</h2>

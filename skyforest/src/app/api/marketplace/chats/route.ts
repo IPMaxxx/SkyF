@@ -75,7 +75,7 @@ export async function GET() {
     { cookies: { getAll: () => [], setAll: () => {} } }
   );
 
-  const [listingsRes, profilesRes] = await Promise.all([
+  const [listingsRes, profilesRes, readsRes] = await Promise.all([
     admin
       .from("marketplace_listings")
       .select(
@@ -86,7 +86,16 @@ export async function GET() {
       .from("profiles")
       .select("id, full_name, account_type")
       .in("id", partnerIds),
+    supabase
+      .from("marketplace_chat_reads")
+      .select("listing_id, partner_id, read_at")
+      .eq("user_id", user.id),
   ]);
+
+  const readMap = new Map<string, string>();
+  for (const r of readsRes.data ?? []) {
+    readMap.set(`${r.listing_id}:${r.partner_id}`, r.read_at);
+  }
 
   const listingMap = new Map<
     string,
@@ -122,6 +131,12 @@ export async function GET() {
     const last = thread.msgs[0];
     const profile = profileMap.get(thread.partnerId);
 
+    const key = `${thread.listingId}:${thread.partnerId}`;
+    const readAt = readMap.get(key);
+    const isFromPartner = last.sender_id !== user.id;
+    const isUnread =
+      isFromPartner && (!readAt || new Date(last.created_at) > new Date(readAt));
+
     const t: Thread = {
       partner_id: thread.partnerId,
       partner_name: profile?.full_name ?? null,
@@ -130,7 +145,7 @@ export async function GET() {
       last_message_at: last.created_at,
       last_sender_id: last.sender_id,
       message_count: thread.msgs.length,
-      is_unread: last.sender_id !== user.id,
+      is_unread: isUnread,
     };
 
     if (!groupedByListing.has(thread.listingId)) {

@@ -11,7 +11,7 @@ import {
   Coins,
   LayoutDashboard,
   Gift,
-  ArrowDownToLine,
+
   Menu,
   X,
   Store,
@@ -20,6 +20,8 @@ import {
   CloudSun,
   Shield,
   MessageCircle,
+  MapPin,
+  CalendarDays,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -90,7 +92,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0d1a12]/95 backdrop-blur-md">
       <div className="flex h-14 items-center justify-between px-4">
-        <Link href="/dashboard" className="flex-shrink-0">
+        <Link href="/" className="flex-shrink-0">
           <Image
             src="/images/logo-square.png"
             alt="SkyForest"
@@ -186,12 +188,28 @@ export function AppHeader() {
                     Мой аккаунт
                   </Link>
                   <Link
+                    href="/dashboard#locations"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Мои локации
+                  </Link>
+                  <Link
+                    href="/dashboard#best-days"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    Мои грибные дни
+                  </Link>
+                  <Link
                     href="/payment"
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <Coins className="h-4 w-4" />
-                    Купить токены
+                    Токены
                   </Link>
                   <Link
                     href="/dashboard/referral"
@@ -200,14 +218,6 @@ export function AppHeader() {
                   >
                     <Gift className="h-4 w-4" />
                     Пригласить друга
-                  </Link>
-                  <Link
-                    href="/dashboard/withdraw"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
-                  >
-                    <ArrowDownToLine className="h-4 w-4" />
-                    Вывод токенов
                   </Link>
                   <button
                     type="button"
@@ -311,18 +321,25 @@ export function AppHeader() {
               Мой аккаунт
             </Link>
             <Link
+              href="/dashboard#locations"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <MapPin className="h-5 w-5" />
+              Мои локации
+            </Link>
+            <Link
+              href="/dashboard#best-days"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+            >
+              <CalendarDays className="h-5 w-5" />
+              Мои грибные дни
+            </Link>
+            <Link
               href="/dashboard/referral"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <Gift className="h-5 w-5" />
               Пригласить друга
-            </Link>
-            <Link
-              href="/dashboard/withdraw"
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
-            >
-              <ArrowDownToLine className="h-5 w-5" />
-              Вывод токенов
             </Link>
 
             <div className="my-2 border-t border-white/10" />

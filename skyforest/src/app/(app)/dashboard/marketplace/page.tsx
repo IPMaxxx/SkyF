@@ -291,7 +291,7 @@ export default function MarketplacePage() {
       <div className="mb-6 rounded-xl border border-pink-500/20 bg-pink-500/5 p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Здесь вы можете купить проверенные грибные локации других пользователей.
-          Каждый лот содержит координаты, дату находки, вид грибов и погодные данные того дня.
+          Каждый лот содержит координаты, сезон, вид грибов, тип леса и погодные данные.
           Стоимость устанавливается продавцом.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
@@ -304,7 +304,7 @@ export default function MarketplacePage() {
       <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
         <p className="mb-2 text-sm font-semibold text-emerald-400">Хотите продавать свои локации?</p>
         <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-          <li>Создайте <strong>грибной день</strong> — укажите дату, локацию и вид гриба</li>
+          <li>Создайте <strong>грибной день</strong> — укажите локацию, сезон и вид гриба</li>
           <li>Загрузите хотя бы одно <strong>фото</strong></li>
           <li>Нажмите <strong>«Продать на маркетплейсе»</strong> и укажите цену</li>
         </ol>
