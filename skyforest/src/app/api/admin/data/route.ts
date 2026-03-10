@@ -26,7 +26,7 @@ const ALLOWED_TABLES: Record<
   },
   marketplace_listings: {
     select:
-      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, seller:profiles!seller_id(full_name, email), best_day:best_days!best_day_id(name, best_date)",
+      "id, seller_id, best_day_id, price, season, status, buyer_id, sold_at, created_at, best_day:best_days(name, best_date)",
     defaultSort: "created_at",
   },
   marketplace_messages: {
@@ -146,6 +146,7 @@ export async function GET(request: NextRequest) {
   const ENRICH_USER_FIELDS: Record<string, string[]> = {
     referral_codes: ["user_id"],
     marketplace_messages: ["sender_id"],
+    marketplace_listings: ["seller_id"],
   };
 
   const fieldsToEnrich = ENRICH_USER_FIELDS[table];
