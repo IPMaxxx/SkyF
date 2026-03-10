@@ -55,19 +55,19 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <div className="mb-6 sm:mb-8 text-center">
           <Link href="/">
             <Image
               src="/images/logo-square.png"
               alt="SkyForest"
               width={64}
               height={64}
-              className="mx-auto mb-4 h-16 w-16 rounded-xl"
+              className="mx-auto mb-4 h-14 w-14 sm:h-16 sm:w-16 rounded-xl"
             />
           </Link>
-          <h1 className="text-2xl font-bold">Вход в аккаунт</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Вход в аккаунт</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Войдите, чтобы получить доступ к сервису
           </p>
@@ -75,7 +75,7 @@ function LoginForm() {
 
         <form
           onSubmit={handleLogin}
-          className="rounded-2xl border border-border bg-card p-8 shadow-sm"
+          className="rounded-2xl border border-border bg-card p-5 sm:p-8 shadow-sm"
         >
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">

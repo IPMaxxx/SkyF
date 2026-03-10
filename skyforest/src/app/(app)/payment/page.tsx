@@ -219,24 +219,24 @@ function PaymentContent() {
   const costEntries = Object.entries(TOKEN_COSTS) as [keyof typeof TOKEN_COSTS, number][];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
       {/* Header */}
-      <div className="mb-6 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15">
-          <Coins className="h-8 w-8 text-amber-400" />
+      <div className="mb-4 sm:mb-6 text-center">
+        <div className="mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-amber-500/15">
+          <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-amber-400" />
         </div>
-        <h1 className="text-2xl font-bold">Токены</h1>
-        <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-          Токены — внутренняя валюта сервиса. Вы платите только за то, что используете — без абонентской платы и скрытых списаний.
+        <h1 className="text-xl sm:text-2xl font-bold">Токены</h1>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          Внутренняя валюта сервиса. Платите только за то, что используете.
         </p>
       </div>
 
       {/* Balance */}
-      <div className="glass mb-6 rounded-2xl p-6 text-center">
+      <div className="glass mb-4 sm:mb-6 rounded-2xl p-4 sm:p-6 text-center">
         <p className="mb-1 text-sm text-muted-foreground">Ваш баланс</p>
         <div className="flex items-center justify-center gap-2">
-          <Coins className="h-8 w-8 text-amber-400" />
-          <span className="text-5xl font-bold text-amber-400">
+          <Coins className="h-6 w-6 sm:h-8 sm:w-8 text-amber-400" />
+          <span className="text-4xl sm:text-5xl font-bold text-amber-400">
             {balanceLoading ? "..." : balance ?? 0}
           </span>
         </div>
@@ -465,30 +465,37 @@ function PaymentContent() {
             type="button"
             onClick={handlePurchase}
             disabled={purchasing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-4 text-base font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-50"
           >
             {purchasing ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <Coins className="h-5 w-5" />
             )}
-            Купить {purchaseTokens}{hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} токенов за {purchasePrice.toFixed(2)} BYN
+            <span className="sm:hidden">
+              {purchaseTokens}{hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} за {purchasePrice.toFixed(2)} BYN
+            </span>
+            <span className="hidden sm:inline">
+              Купить {purchaseTokens}{hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} токенов за {purchasePrice.toFixed(2)} BYN
+            </span>
           </button>
 
           <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                 <svg className="h-4 w-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 <span className="text-xs font-medium">Безопасная оплата</span>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                Visa
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                MasterCard
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                Белкарт
+              <div className="flex gap-2">
+                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+                  Visa
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+                  MasterCard
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
+                  Белкарт
+                </div>
               </div>
             </div>
             <div className="text-center">
@@ -717,7 +724,8 @@ function PaymentContent() {
                     ) : (
                       <ArrowDownToLine className="h-4 w-4" />
                     )}
-                    Запросить вывод {wAmount} токенов (~{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)
+                    <span className="sm:hidden">Вывод {wAmount} ток. (~{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
+                    <span className="hidden sm:inline">Запросить вывод {wAmount} токенов (~{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
                   </button>
                 </div>
               )}

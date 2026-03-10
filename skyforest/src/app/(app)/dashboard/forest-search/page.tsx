@@ -260,30 +260,29 @@ export default function ForestSearchPage() {
   const visibleMatches = expanded ? matches : matches.slice(0, 6);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <Link href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
+      <Link href="/dashboard" className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Назад
       </Link>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
           <Trees className="h-5 w-5" />
         </div>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">Поиск леса</h1>
-          <p className="text-sm text-muted-foreground">
-            {step === "reference" && "Шаг 1: Укажите эталонную точку леса"}
-            {step === "search" && "Шаг 2: Укажите зону поиска и радиус"}
-            {step === "results" && `Найдено ${matches.length} похожих массивов`}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg sm:text-xl font-bold">Поиск леса</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            {step === "reference" && "Шаг 1: Укажите эталонную точку"}
+            {step === "search" && "Шаг 2: Зона поиска и радиус"}
+            {step === "results" && `Найдено ${matches.length} массивов`}
           </p>
         </div>
         {history.length > 0 && (
           <button
             onClick={() => setShowHistory((v) => !v)}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${showHistory ? "bg-blue-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20 hover:text-foreground"}`}
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-sm font-medium transition-colors flex-shrink-0 ${showHistory ? "bg-blue-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20 hover:text-foreground"}`}
           >
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">История</span>
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">{history.length}</span>
           </button>
         )}
@@ -368,21 +367,20 @@ export default function ForestSearchPage() {
                 const bestMatch = item.matches.length > 0 ? item.matches[0].similarity : 0;
                 const rp = item.ref_pattern;
                 return (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-3 group">
+                  <div key={item.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 group">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                         <span className="font-medium">{rp.dominant_species || FOREST_LABELS[rp.forest_type]}</span>
-                        <span className="text-xs text-muted-foreground">· R={item.radius_km}км · {item.matches.length} результ.</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground">R={item.radius_km}км · {item.matches.length} рез.</span>
                         {bestMatch > 0 && (
-                          <span className={`text-xs font-bold ${bestMatch >= 70 ? "text-emerald-400" : bestMatch >= 40 ? "text-amber-400" : "text-gray-400"}`}>
-                            лучший {bestMatch}%
+                          <span className={`text-[11px] sm:text-xs font-bold ${bestMatch >= 70 ? "text-emerald-400" : bestMatch >= 40 ? "text-amber-400" : "text-gray-400"}`}>
+                            {bestMatch}%
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        <MapPin className="inline h-3 w-3 mr-0.5" />Эталон: {item.ref_lat.toFixed(3)}, {item.ref_lng.toFixed(3)}
-                        <span className="ml-2">{dateStr} {timeStr}</span>
-                        <span className="ml-2">{item.token_cost} ток.</span>
+                      <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                        <span>{dateStr}</span>
+                        <span className="ml-1.5 sm:ml-2">{item.token_cost} ток.</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -557,23 +555,22 @@ export default function ForestSearchPage() {
                   return (
                     <div key={`${m.lat}-${m.lng}-${i}`}>
                       {/* Main row */}
-                      <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${isSelected ? "bg-white/5" : ""}`}>
+                      <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 transition-colors ${isSelected ? "bg-white/5" : ""}`}>
                         <button onClick={() => setDetailIdx(isDetailOpen ? null : globalIdx)}
-                          className={`flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0 cursor-pointer transition-transform hover:scale-110 ${m.similarity >= 70 ? "bg-emerald-500/20" : m.similarity >= 40 ? "bg-amber-500/20" : "bg-gray-500/20"}`}
+                          className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 cursor-pointer transition-transform hover:scale-110 ${m.similarity >= 70 ? "bg-emerald-500/20" : m.similarity >= 40 ? "bg-amber-500/20" : "bg-gray-500/20"}`}
                           title="Показать детали">
-                          <span className={`text-sm font-bold ${m.similarity >= 70 ? "text-emerald-400" : m.similarity >= 40 ? "text-amber-400" : "text-gray-400"}`}>{m.similarity}%</span>
+                          <span className={`text-xs sm:text-sm font-bold ${m.similarity >= 70 ? "text-emerald-400" : m.similarity >= 40 ? "text-amber-400" : "text-gray-400"}`}>{m.similarity}%</span>
                         </button>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">{p.dominant_species || m.name || `Массив #${i + 1}`}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {m.lat.toFixed(4)}, {m.lng.toFixed(4)}
+                          <p className="text-xs sm:text-sm font-medium truncate">{p.dominant_species || m.name || `Массив #${i + 1}`}</p>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+                            {m.lat.toFixed(3)}, {m.lng.toFixed(3)}
                             {p.genera.length > 0 && <span className="ml-1 text-green-400">· {p.genera.length} родов</span>}
-                            {p.modis_class && <span className="ml-1 text-purple-400">· {p.modis_class}</span>}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {p.dominant_species && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400">ФГИС</span>}
-                          {p.modis_class && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-purple-500/15 text-purple-400">MODIS</span>}
+                        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                          {p.dominant_species && <span className="hidden sm:inline rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400">ФГИС</span>}
+                          {p.modis_class && <span className="hidden sm:inline rounded px-1.5 py-0.5 text-[10px] font-medium bg-purple-500/15 text-purple-400">MODIS</span>}
                           <button onClick={() => saveAsLocation(globalIdx)} disabled={isSaved || saving}
                             className={`rounded-lg p-1.5 transition-colors ${isSaved ? "text-emerald-400" : "text-muted-foreground hover:bg-white/10 hover:text-foreground"}`}
                             title={isSaved ? "Сохранено" : "Сохранить"}>
@@ -634,9 +631,9 @@ export default function ForestSearchPage() {
 
                       {/* Weather table */}
                       {isSelected && weather && (
-                        <div className="px-4 pb-3">
-                          <div className="rounded-lg border border-border/50 overflow-hidden">
-                            <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-0 text-[11px]">
+                        <div className="px-2 sm:px-4 pb-3">
+                          <div className="rounded-lg border border-border/50 overflow-x-auto">
+                            <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-0 text-[10px] sm:text-[11px] min-w-[360px]">
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5">Дата</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />t°C</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />Дождь</div>

@@ -237,12 +237,12 @@ export default function ChatsPage() {
   /* ─── Active Chat View ─── */
   if (activeChat) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-2xl px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
           <button
             onClick={closeChat}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-muted-foreground hover:bg-white/5"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/10 text-muted-foreground hover:bg-white/5 flex-shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -266,7 +266,7 @@ export default function ChatsPage() {
 
         {/* Messages */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
-          <div className="max-h-[60vh] overflow-y-auto px-4 py-4 space-y-2">
+          <div className="max-h-[calc(100vh-220px)] sm:max-h-[60vh] overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-2">
             {msgLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -316,7 +316,7 @@ export default function ChatsPage() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-white/10 px-4 py-3">
+          <div className="border-t border-white/10 px-3 sm:px-4 py-2.5 sm:py-3">
             <div className="flex items-end gap-2">
               <textarea
                 value={text}
@@ -351,9 +351,9 @@ export default function ChatsPage() {
 
   /* ─── Conversations List ─── */
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-2xl px-3 sm:px-4 py-4 sm:py-6">
       {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
         <Link
           href="/dashboard/marketplace"
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -363,8 +363,8 @@ export default function ChatsPage() {
         </Link>
       </div>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
           <MessageCircle className="h-5 w-5" />
         </div>
         <div>

@@ -104,22 +104,22 @@ export default function EditLocationPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад
       </Link>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white">
           <MapPin className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Редактировать локацию</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-lg sm:text-xl font-bold">Редактировать локацию</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Создана {new Date(location.created_at).toLocaleDateString("ru-RU")}
           </p>
         </div>

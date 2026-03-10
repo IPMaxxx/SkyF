@@ -289,23 +289,23 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <Link href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
+      <Link href="/dashboard" className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Назад
       </Link>
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
             <GitCompareArrows className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Мониторинг погоды</h1>
-            <p className="text-sm text-muted-foreground">Система следит за погодой и оповещает, когда условия совпадают с вашими лучшими грибными днями</p>
+            <h1 className="text-lg sm:text-xl font-bold">Мониторинг погоды</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Сравнение текущей погоды с вашими лучшими днями</p>
           </div>
         </div>
         <button type="button" onClick={() => setShowCreate(true)} disabled={bestDays.length === 0}
-          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+          className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
           <Plus className="h-4 w-4" /> Новое сравнение
         </button>
       </div>
@@ -445,11 +445,11 @@ export default function ComparePage() {
         const weightsValid = totalW === 100;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-12 pb-12">
+          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-2 sm:p-4 pt-4 sm:pt-12 pb-4 sm:pb-12">
             <div className="fixed inset-0 bg-black/70" onClick={() => setOpenId(null)} />
-            <div className="relative z-10 w-full max-w-3xl rounded-2xl border border-white/10 bg-[var(--color-glass-bg,#1a1a2e)] shadow-2xl">
+            <div className="relative z-10 w-full max-w-3xl rounded-2xl border border-white/10 bg-[#1a2a1f]/95 backdrop-blur-xl shadow-2xl">
               {/* Header */}
-              <div className="flex items-center gap-3 border-b border-white/5 px-6 py-4">
+              <div className="flex items-center gap-3 border-b border-white/5 px-4 sm:px-6 py-4">
                 <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-white font-bold ${
                   cmp.last_score != null ? `bg-gradient-to-br ${getMatchBgGradient(cmp.last_score)}` : "bg-white/10 text-muted-foreground"
                 }`}>
@@ -468,32 +468,38 @@ export default function ComparePage() {
               </div>
 
               {/* Body */}
-              <div className="max-h-[calc(100vh-160px)] overflow-y-auto px-6 py-5 space-y-5">
+              <div className="max-h-[calc(100vh-160px)] overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5">
                 {/* Actions bar */}
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                   <button type="button" onClick={() => requestCompare(cmp)} disabled={isRunning || !bd?.weather_data}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
                     {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     Сравнить сейчас · {TOKEN_COSTS.compare} ток.
                   </button>
 
-                  <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
-                    <button type="button" onClick={() => requestToggleAuto(cmp)}
-                      className={`relative h-6 w-11 rounded-full transition-colors ${cmp.enabled ? "bg-primary" : "bg-white/15"}`}>
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${cmp.enabled ? "left-[22px]" : "left-0.5"}`} />
+                  <div className="flex items-center justify-between sm:justify-start gap-2 rounded-xl bg-white/5 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => requestToggleAuto(cmp)}
+                        className={`relative h-6 w-11 rounded-full transition-colors ${cmp.enabled ? "bg-primary" : "bg-white/15"}`}>
+                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${cmp.enabled ? "left-[22px]" : "left-0.5"}`} />
+                      </button>
+                      <span className="text-xs">{cmp.enabled ? "Авто вкл." : "Авто выкл."}</span>
+                      {cmp.enabled && (
+                        <div className="flex items-center gap-1 ml-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <input type="time" value={cmp.run_time?.slice(0, 5) || "08:00"} onChange={(e) => handleTimeChange(cmp, e.target.value)}
+                            className="rounded border border-border bg-white px-1.5 py-0.5 text-xs text-gray-900 outline-none focus:border-primary" />
+                        </div>
+                      )}
+                    </div>
+                    <button type="button" onClick={() => { handleDelete(cmp.id); }}
+                      className="sm:hidden flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                    <span className="text-xs">{cmp.enabled ? "Авто вкл." : "Авто выкл."}</span>
-                    {cmp.enabled && (
-                      <div className="flex items-center gap-1 ml-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <input type="time" value={cmp.run_time?.slice(0, 5) || "08:00"} onChange={(e) => handleTimeChange(cmp, e.target.value)}
-                          className="rounded border border-border bg-white px-1.5 py-0.5 text-xs text-gray-900 outline-none focus:border-primary" />
-                      </div>
-                    )}
                   </div>
 
                   <button type="button" onClick={() => { handleDelete(cmp.id); }}
-                    className="ml-auto flex items-center gap-1 rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-500/10">
+                    className="hidden sm:flex ml-auto items-center gap-1 rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-500/10">
                     <Trash2 className="h-3.5 w-3.5" /> Удалить
                   </button>
                 </div>
@@ -533,8 +539,8 @@ export default function ComparePage() {
                 {/* Result */}
                 {result ? (
                   <>
-                    <div className={`rounded-2xl bg-gradient-to-br ${getMatchBgGradient(result.overall)} p-6 text-center text-white`}>
-                      <p className="text-5xl font-bold">{Math.round(result.overall)}%</p>
+                    <div className={`rounded-2xl bg-gradient-to-br ${getMatchBgGradient(result.overall)} p-4 sm:p-6 text-center text-white`}>
+                      <p className="text-4xl sm:text-5xl font-bold">{Math.round(result.overall)}%</p>
                       <p className="mt-1 text-sm font-medium opacity-90">{getMatchLabel(result.overall)}</p>
                     </div>
 

@@ -267,23 +267,23 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад
       </Link>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white">
           <Store className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Маркетплейс</h1>
-          <p className="text-sm text-muted-foreground">
-            Покупайте проверенные грибные места других пользователей
+          <h1 className="text-lg sm:text-xl font-bold">Маркетплейс</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Покупайте проверенные грибные места
           </p>
         </div>
       </div>
@@ -317,7 +317,7 @@ export default function MarketplacePage() {
 
 
       {/* Search: map + controls */}
-      <div className="glass rounded-2xl p-5 mb-6">
+      <div className="glass rounded-2xl p-3 sm:p-5 mb-4 sm:mb-6">
         <p className="mb-3 text-sm font-medium">
           Поставьте точку на карте и выберите радиус поиска
         </p>
@@ -429,10 +429,10 @@ export default function MarketplacePage() {
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
                     Гриб
                   </p>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
                     <button
                       onClick={() => setMushroomFilter("all")}
-                      className={`flex h-[72px] items-center rounded-2xl px-5 text-sm font-medium transition-all ${
+                      className={`flex h-14 sm:h-[72px] items-center rounded-2xl px-4 sm:px-5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         mushroomFilter === "all"
                           ? "bg-amber-500/20 text-amber-300 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10"
                           : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
@@ -445,7 +445,7 @@ export default function MarketplacePage() {
                       return (
                         <div
                           key={m.id}
-                          className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2 transition-all cursor-pointer ${
+                          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl px-2.5 sm:px-3 py-2 transition-all cursor-pointer flex-shrink-0 ${
                             isActive
                               ? "bg-amber-500/20 text-amber-300 ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/10"
                               : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
@@ -466,11 +466,11 @@ export default function MarketplacePage() {
                               <img
                                 src={m.image_url}
                                 alt={m.latin_name}
-                                className="h-14 w-14 rounded-xl object-cover transition-transform group-hover:scale-105"
+                                className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl object-cover transition-transform group-hover:scale-105"
                               />
                             </button>
                           ) : (
-                            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">
+                            <div className="flex h-10 w-10 sm:h-14 sm:w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">
                               ★
                             </div>
                           )}
@@ -500,7 +500,7 @@ export default function MarketplacePage() {
               )}
 
               {/* Season */}
-              <div className="flex flex-wrap items-end gap-6">
+              <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-muted-foreground">
                     Сезон
@@ -510,7 +510,7 @@ export default function MarketplacePage() {
                       <button
                         key={f.value}
                         onClick={() => setSeasonFilter(f.value)}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                        className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
                           seasonFilter === f.value
                             ? `bg-gradient-to-r ${f.color} text-white shadow-md`
                             : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
@@ -521,7 +521,7 @@ export default function MarketplacePage() {
                     ))}
                   </div>
                 </div>
-                <div className="ml-auto flex items-center gap-3">
+                <div className="flex items-center gap-3 sm:ml-auto">
                   {activeFilterCount > 0 && (
                     <button
                       onClick={clearFilters}

@@ -332,22 +332,22 @@ export default function EditBestDayPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад
       </Link>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white">
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Редактировать грибной день</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-lg sm:text-xl font-bold">Редактировать грибной день</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Создан {new Date(bestDay.created_at).toLocaleDateString("ru-RU")}
           </p>
         </div>
@@ -355,11 +355,11 @@ export default function EditBestDayPage() {
 
       {/* Purchased badge */}
       {bestDay?.purchased_from_listing_id && (
-        <div className="mb-5 space-y-3">
-          <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3">
-            <ShoppingCart className="h-4 w-4 text-blue-400" />
-            <span className="text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
-            <span className="ml-auto text-xs text-muted-foreground">Перепродажа недоступна</span>
+        <div className="mb-4 sm:mb-5 space-y-3">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 sm:px-4 py-3">
+            <ShoppingCart className="h-4 w-4 text-blue-400 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
+            <span className="ml-auto text-[11px] sm:text-xs text-muted-foreground">Перепродажа недоступна</span>
           </div>
           <button
             onClick={handleCreateMonitor}
@@ -383,11 +383,11 @@ export default function EditBestDayPage() {
       {!bestDay?.purchased_from_listing_id && (
         <div className="mb-5">
           {activeListing ? (
-            <div className="glass flex items-center justify-between rounded-xl p-4">
+            <div className="glass flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 sm:p-4">
               <div className="flex items-center gap-2">
-                <Store className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm font-medium text-emerald-400">
-                  Выставлен на маркетплейсе
+                <Store className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-emerald-400">
+                  На маркетплейсе
                 </span>
               </div>
               <button
@@ -404,7 +404,7 @@ export default function EditBestDayPage() {
               </button>
             </div>
           ) : (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setShowSellModal(true)}
                 className="glass flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
@@ -513,7 +513,7 @@ export default function EditBestDayPage() {
           </label>
 
           {photos.length > 0 && (
-            <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {photos.map((url) => (
                 <div key={url} className="group relative aspect-square overflow-hidden rounded-xl">
                   <img src={url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />

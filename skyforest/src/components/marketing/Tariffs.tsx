@@ -92,7 +92,7 @@ export function Tariffs() {
               key={plan.name}
               className={`relative flex flex-col overflow-hidden rounded-2xl transition-all ${
                 plan.highlight
-                  ? "glass-strong ring-1 ring-primary/40 scale-[1.02]"
+                  ? "glass-strong ring-1 ring-primary/40 sm:scale-[1.02]"
                   : "glass"
               }`}
             >

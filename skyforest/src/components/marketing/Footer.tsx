@@ -189,8 +189,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex items-center justify-between border-t border-white/10 pt-6">
-          <p className="text-xs text-white/40">
+        <div className="mt-10 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
+          <p className="text-xs text-white/40 text-center sm:text-left">
             &copy; {new Date().getFullYear()} SkyForest. ИП Горбацевич М.С. УНП
             191145831
           </p>

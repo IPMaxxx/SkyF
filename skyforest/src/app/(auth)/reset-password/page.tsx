@@ -48,23 +48,23 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <div className="mb-6 sm:mb-8 text-center">
           <Link href="/">
             <Image
               src="/images/logo-square.png"
               alt="SkyForest"
               width={64}
               height={64}
-              className="mx-auto mb-4 h-16 w-16 rounded-xl"
+              className="mx-auto mb-3 sm:mb-4 h-12 w-12 sm:h-16 sm:w-16 rounded-xl"
             />
           </Link>
-          <h1 className="text-2xl font-bold">Новый пароль</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">Новый пароль</h1>
+          <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">
             Придумайте новый пароль для вашего аккаунта
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-8 shadow-sm">
           {done ? (
             <div className="text-center">
               <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />

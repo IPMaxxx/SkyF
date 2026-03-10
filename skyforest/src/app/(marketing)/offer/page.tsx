@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function OfferPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-6 lg:px-8">
-      <h1 className="mb-8 text-3xl font-bold">Договор-оферта</h1>
+    <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+      <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">Договор-оферта</h1>
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground">
         <p className="text-muted-foreground">

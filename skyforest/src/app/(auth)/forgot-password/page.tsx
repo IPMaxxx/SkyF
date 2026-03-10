@@ -32,9 +32,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
+        <div className="mb-6 sm:mb-8 text-center">
           <Link href="/">
             <Image
               src="/images/logo-square.png"
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-8 shadow-sm">
           {sent ? (
             <div className="text-center">
               <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />

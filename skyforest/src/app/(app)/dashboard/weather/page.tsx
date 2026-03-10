@@ -357,22 +357,22 @@ export default function WeatherPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад
       </Link>
 
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
+      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white flex-shrink-0">
           <CloudSun className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Погода</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-lg sm:text-xl font-bold">Погода</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Проверьте погоду для ваших грибных мест
           </p>
         </div>
@@ -390,28 +390,28 @@ export default function WeatherPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 grid grid-cols-2 gap-3">
+      <div className="mb-4 sm:mb-6 grid grid-cols-2 gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => setTab("weather")}
-          className={`group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-200 ${
+          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 ${
             tab === "weather"
               ? "border-blue-500/40 bg-gradient-to-br from-blue-500/15 to-cyan-500/5 shadow-lg shadow-blue-500/10"
               : "border-white/10 bg-white/5 hover:border-blue-500/20 hover:bg-blue-500/5"
           }`}
         >
-          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+          <div className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
             tab === "weather"
               ? "bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-md shadow-blue-500/25"
               : "bg-white/10 text-muted-foreground group-hover:bg-blue-500/20 group-hover:text-blue-400"
           }`}>
-            <CloudSun className="h-5 w-5" />
+            <CloudSun className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div>
-            <p className={`text-sm font-semibold transition-colors ${
+          <div className="min-w-0">
+            <p className={`text-xs sm:text-sm font-semibold transition-colors ${
               tab === "weather" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-            }`}>Проверить погоду</p>
-            <p className="text-xs text-muted-foreground/70">14 дней · {TOKEN_COSTS.weather_check} токена</p>
+            }`}>Погода</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">{TOKEN_COSTS.weather_check} токена</p>
           </div>
           {tab === "weather" && (
             <div className="absolute -top-px left-4 right-4 h-0.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
@@ -420,24 +420,24 @@ export default function WeatherPage() {
         <button
           type="button"
           onClick={() => setTab("rain-map")}
-          className={`group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-200 ${
+          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 ${
             tab === "rain-map"
               ? "border-sky-500/40 bg-gradient-to-br from-sky-500/15 to-blue-500/5 shadow-lg shadow-sky-500/10"
               : "border-white/10 bg-white/5 hover:border-sky-500/20 hover:bg-sky-500/5"
           }`}
         >
-          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+          <div className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
             tab === "rain-map"
               ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25"
               : "bg-white/10 text-muted-foreground group-hover:bg-sky-500/20 group-hover:text-sky-400"
           }`}>
-            <CloudRain className="h-5 w-5" />
+            <CloudRain className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div>
-            <p className={`text-sm font-semibold transition-colors ${
+          <div className="min-w-0">
+            <p className={`text-xs sm:text-sm font-semibold transition-colors ${
               tab === "rain-map" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
             }`}>Карта осадков</p>
-            <p className="text-xs text-muted-foreground/70">Тепловая карта дождей</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">Тепловая карта</p>
           </div>
           {tab === "rain-map" && (
             <div className="absolute -top-px left-4 right-4 h-0.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-500" />
@@ -448,7 +448,7 @@ export default function WeatherPage() {
       {/* ===== WEATHER TAB ===== */}
       {tab === "weather" && (
         <>
-          <div className="mb-6 glass rounded-2xl p-6">
+          <div className="mb-4 sm:mb-6 glass rounded-2xl p-4 sm:p-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Локация</label>
@@ -670,53 +670,62 @@ export default function WeatherPage() {
       {tab === "rain-map" && (
         <>
           {/* Top bar: controls + stats + legend */}
-          <div className="mb-3 glass rounded-2xl px-4 py-3">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="mb-3 glass rounded-2xl px-3 sm:px-4 py-3">
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
               {/* Inputs */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <label htmlFor="radius" className="text-xs font-medium text-muted-foreground">Радиус</label>
-                  <input
-                    id="radius"
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={radius}
-                    onChange={(e) => setRadius(parseInt(e.target.value) || 30)}
-                    className="w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  />
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
+                <div>
+                  <label htmlFor="radius" className="mb-1 block text-[10px] sm:hidden font-medium text-muted-foreground">Радиус</label>
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="radius" className="hidden sm:block text-xs font-medium text-muted-foreground">Радиус</label>
+                    <input
+                      id="radius"
+                      type="number"
+                      min={5}
+                      max={100}
+                      value={radius}
+                      onChange={(e) => setRadius(parseInt(e.target.value) || 30)}
+                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <label htmlFor="step" className="text-xs font-medium text-muted-foreground">Шаг</label>
-                  <input
-                    id="step"
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={step}
-                    onChange={(e) => setStep(parseInt(e.target.value) || 5)}
-                    className="w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  />
+                <div>
+                  <label htmlFor="step" className="mb-1 block text-[10px] sm:hidden font-medium text-muted-foreground">Шаг</label>
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="step" className="hidden sm:block text-xs font-medium text-muted-foreground">Шаг</label>
+                    <input
+                      id="step"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={step}
+                      onChange={(e) => setStep(parseInt(e.target.value) || 5)}
+                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <label htmlFor="rain-days" className="text-xs font-medium text-muted-foreground">Дней</label>
-                  <input
-                    id="rain-days"
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={days}
-                    onChange={(e) => setDays(parseInt(e.target.value) || 14)}
-                    className="w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  />
+                <div>
+                  <label htmlFor="rain-days" className="mb-1 block text-[10px] sm:hidden font-medium text-muted-foreground">Дней</label>
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="rain-days" className="hidden sm:block text-xs font-medium text-muted-foreground">Дней</label>
+                    <input
+                      id="rain-days"
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={days}
+                      onChange={(e) => setDays(parseInt(e.target.value) || 14)}
+                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Stats badges */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {centerLat !== null && centerLng !== null ? (
                   <>
-                    <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[11px]">
+                    <span className="hidden sm:flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[11px]">
                       <MapPin className="h-3 w-3 text-muted-foreground" />
                       {centerLat.toFixed(4)}, {centerLng.toFixed(4)}
                     </span>
@@ -740,7 +749,7 @@ export default function WeatherPage() {
               </div>
 
               {/* Buttons */}
-              <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:ml-auto">
                 {gridData.length > 0 && (
                   <button
                     type="button"
@@ -751,17 +760,18 @@ export default function WeatherPage() {
                       setShowConfirm(false);
                       setRainError("");
                     }}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/10 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+                    className="flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 sm:px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Новое измерение
+                    <span className="hidden sm:inline">Новое измерение</span>
+                    <span className="sm:hidden">Сбросить</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleRequestGenerate}
                   disabled={rainLoading || centerLat === null || tooManyPoints || notEnoughTokens || gridData.length > 0}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-5 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 sm:px-5 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {rainLoading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -844,7 +854,7 @@ export default function WeatherPage() {
           </div>
 
           {/* Map — full width */}
-          <div style={{ height: "calc(100vh - 320px)", minHeight: 350 }}>
+          <div style={{ height: "calc(100vh - 360px)", minHeight: 300 }}>
             <RainMapView
               centerLat={centerLat}
               centerLng={centerLng}

@@ -188,30 +188,30 @@ export default function NewLocationPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад
       </Link>
 
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <div className="mb-2 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white">
             <MapPin className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Добавить локацию</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-lg sm:text-xl font-bold">Добавить локацию</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Укажите место, где вы ходите за грибами
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+      <div className="mb-4 sm:mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Локация — это точка на карте, где вы обычно ходите за грибами.
           Добавьте её один раз, и потом сможете отслеживать погоду и сравнивать условия.

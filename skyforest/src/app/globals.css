@@ -93,3 +93,29 @@ input[type="range"] {
 table th {
   color: #94a3b8 !important;
 }
+
+/* Mobile safe area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 640px) {
+  select,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Hide horizontal scrollbar on filter areas */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 0;
+  }
+}
