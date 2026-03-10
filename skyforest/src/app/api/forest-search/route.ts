@@ -38,9 +38,18 @@ const URBAN_TAGS = new Set(["park", "garden", "playground", "recreation_ground"]
 
 // ─── Utilities ───
 
-function fetchInsecure(url: string, timeoutMs = 15000): Promise<string> {
+// Dedicated agent for FGIS LK only — their TLS cert is not in the
+// default CA bundle. The agent is scoped so the bypass never leaks
+// to other outbound requests.
+const fgisAgent = new https.Agent({
+  rejectUnauthorized: false,
+  maxSockets: 4,
+  timeout: 15000,
+});
+
+function fetchFgis(url: string, timeoutMs = 15000): Promise<string> {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { rejectUnauthorized: false, timeout: timeoutMs }, (res) => {
+    const req = https.get(url, { agent: fgisAgent, timeout: timeoutMs }, (res) => {
       const chunks: Buffer[] = [];
       res.on("data", (c: Buffer) => chunks.push(c));
       res.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
@@ -99,7 +108,7 @@ async function queryFgisLkPoint(lat: number, lng: number): Promise<string | null
       BBOX: bbox, WIDTH: "256", HEIGHT: "256", X: "128", Y: "128",
       FEATURE_COUNT: "1",
     });
-    const raw = await fetchInsecure(`${FGIS_LK_WMS}?${params}`, 10000);
+    const raw = await fetchFgis(`${FGIS_LK_WMS}?${params}`, 10000);
     const data = JSON.parse(raw);
     return data.features?.[0]?.properties?.tree_species || null;
   } catch {

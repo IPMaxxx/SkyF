@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { verifyBePaidWebhook } from "@/lib/payment";
-import { TOKEN_PACKAGES } from "@/lib/tokens";
+import { TOKEN_PACKAGES, BULK_RATE } from "@/lib/tokens";
+
+const MAX_CUSTOM_TOKENS = 100000;
+
+function isValidTokenAmount(tokens: number): boolean {
+  if (TOKEN_PACKAGES.some((p) => p.tokens === tokens)) return true;
+  return Number.isInteger(tokens) && tokens >= 301 && tokens <= MAX_CUSTOM_TOKENS;
+}
+
+function getExpectedPriceCents(tokens: number): number {
+  const pkg = TOKEN_PACKAGES.find((p) => p.tokens === tokens);
+  if (pkg) return Math.round(pkg.price * 100);
+  return Math.round(tokens * BULK_RATE * 100);
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -40,10 +53,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid tracking_id" }, { status: 400 });
   }
 
-  const validPackage = TOKEN_PACKAGES.find((p) => p.tokens === tokens);
-  if (!validPackage) {
-    console.error("Webhook: token amount does not match any package:", tokens);
+  if (!isValidTokenAmount(tokens)) {
+    console.error("Webhook: invalid token amount:", tokens);
     return NextResponse.json({ error: "Invalid token amount" }, { status: 400 });
+  }
+
+  const paidCents = transaction.amount;
+  const expectedCents = getExpectedPriceCents(tokens);
+  if (typeof paidCents === "number" && paidCents < expectedCents) {
+    console.error(`Webhook: paid ${paidCents} < expected ${expectedCents} for ${tokens} tokens`);
+    return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
   }
 
   const supabase = createServerClient(
