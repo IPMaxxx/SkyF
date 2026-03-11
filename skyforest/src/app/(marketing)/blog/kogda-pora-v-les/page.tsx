@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Когда пора в лес: 7 признаков, что грибы пошли",
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
     url: "https://skyforest.by/blog/kogda-pora-v-les",
     siteName: "SkyForest",
     type: "article",
+    images: [{ url: "/images/blog/blog-kogda-pora-v-les.jpg", width: 1792, height: 1024, alt: "Подосиновики в осеннем лесу утром с туманом и росой" }],
   },
   alternates: { canonical: "https://skyforest.by/blog/kogda-pora-v-les" },
 };
@@ -142,9 +144,20 @@ export default function KogdaPoraVLesPage() {
           Когда пора в лес: 7&nbsp;признаков, что грибы пошли
         </h1>
 
-        <p className="mb-10 text-sm text-white/50">
+        <p className="mb-8 text-sm text-white/50">
           10 сентября 2025 · 6 мин чтения
         </p>
+
+        <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/images/blog/blog-kogda-pora-v-les.jpg"
+            alt="Подосиновики в осеннем лесу ранним утром — туман, роса на паутине, золотой свет"
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+          />
+        </div>
 
         {/* ── Intro ── */}
         <section className="space-y-5">

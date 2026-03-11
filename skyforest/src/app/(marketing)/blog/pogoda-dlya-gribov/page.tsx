@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     url: "https://skyforest.by/blog/pogoda-dlya-gribov",
     siteName: "SkyForest",
     type: "article",
+    images: [{ url: "/images/blog/blog-pogoda-dlya-gribov.jpg", width: 1792, height: 1024, alt: "Погода для грибов — боровики в лесу после дождя" }],
   },
   alternates: { canonical: "https://skyforest.by/blog/pogoda-dlya-gribov" },
 };
@@ -76,9 +78,20 @@ export default function PogodaDlyaGribovPage() {
           грибы
         </h1>
 
-        <p className="mb-10 text-sm text-white/40">
+        <p className="mb-8 text-sm text-white/40">
           Обновлено: 1 сентября 2025 · Время чтения: 12 мин
         </p>
+
+        <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/images/blog/blog-pogoda-dlya-gribov.jpg"
+            alt="Боровики растут на мшистой поляне в лесу после дождя — лучи солнца пробиваются сквозь тучи"
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+          />
+        </div>
 
         {/* --- INTRO --- */}
         <p className="mb-5 text-lg leading-relaxed text-white/80">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
     url: "https://skyforest.by/blog/v-kakom-lesu-iskat-griby",
     siteName: "SkyForest",
     type: "article",
+    images: [{ url: "/images/blog/blog-v-kakom-lesu-iskat-griby.jpg", width: 1792, height: 1024, alt: "Разные типы леса — сосновый, берёзовый и смешанный с грибами" }],
   },
   alternates: {
     canonical: "https://skyforest.by/blog/v-kakom-lesu-iskat-griby",
@@ -123,9 +125,20 @@ export default function VKakomLesuIskatGribyPage() {
           В&nbsp;каком лесу искать грибы: хвойный, лиственный
           или&nbsp;смешанный
         </h1>
-        <p className="mb-12 text-sm text-white/40">
+        <p className="mb-8 text-sm text-white/40">
           Обновлено: 15 сентября 2025 · 10 мин чтения
         </p>
+
+        <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/images/blog/blog-v-kakom-lesu-iskat-griby.jpg"
+            alt="Грибы в разных типах леса — маслята под соснами, подберёзовики у берёз, боровики в смешанном лесу"
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+          />
+        </div>
 
         {/* === Intro === */}
         <p className="mb-6 text-lg leading-relaxed text-white/80">

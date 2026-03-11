@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   CloudSun,
   Droplets,
@@ -42,7 +43,8 @@ const ARTICLES = [
     description:
       "Разбираемся, какие погодные условия идеальны для роста грибов. Температура, влажность воздуха и почвы — что важно знать перед походом в лес.",
     icon: CloudSun,
-    readTime: "5 мин",
+    image: "/images/blog/blog-pogoda-dlya-gribov.jpg",
+    readTime: "12 мин",
     gradient: "from-amber-500/30 to-orange-600/20",
   },
   {
@@ -51,7 +53,8 @@ const ARTICLES = [
     description:
       "Узнайте оптимальные сроки после осадков для разных видов грибов. Белые, подберёзовики, лисички — у каждого свои «окна» после дождя.",
     icon: Droplets,
-    readTime: "4 мин",
+    image: "/images/blog/blog-griby-posle-dozhdya.jpg",
+    readTime: "8 мин",
     gradient: "from-sky-500/30 to-blue-600/20",
   },
   {
@@ -60,6 +63,7 @@ const ARTICLES = [
     description:
       "Практические признаки, по которым опытные грибники понимают, что сезон начался. Температура почвы, трава, первые находки и другие подсказки.",
     icon: TreePine,
+    image: "/images/blog/blog-kogda-pora-v-les.jpg",
     readTime: "6 мин",
     gradient: "from-emerald-500/30 to-green-600/20",
   },
@@ -69,7 +73,8 @@ const ARTICLES = [
     description:
       "Какие грибы где растут: белые в сосняках, подберёзовики у берёз, маслята в молодых ельниках. Гид по типам лесов и их обитателям.",
     icon: Trees,
-    readTime: "7 мин",
+    image: "/images/blog/blog-v-kakom-lesu-iskat-griby.jpg",
+    readTime: "10 мин",
     gradient: "from-lime-500/30 to-green-600/20",
   },
   {
@@ -78,7 +83,8 @@ const ARTICLES = [
     description:
       "Регионы, леса и конкретные места для тихой охоты. Карта грибных мест, сезонность по регионам и советы по планированию поездок.",
     icon: MapPin,
-    readTime: "8 мин",
+    image: "/images/blog/blog-gde-rastut-griby.jpg",
+    readTime: "12 мин",
     gradient: "from-rose-500/30 to-pink-600/20",
   },
 ] as const;
@@ -107,24 +113,36 @@ export default function BlogPage() {
               <Link
                 key={article.href}
                 href={article.href}
-                className="group flex flex-col rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/10"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/10"
               >
-                <div
-                  className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${article.gradient}`}
-                >
-                  <article.icon className="h-6 w-6 text-white" />
+                <div className="relative aspect-[16/9] w-full overflow-hidden">
+                  <Image
+                    src={article.image}
+                    alt={article.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <div
+                    className={`absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${article.gradient} backdrop-blur-sm`}
+                  >
+                    <article.icon className="h-5 w-5 text-white" />
+                  </div>
                 </div>
-                <h2 className="mb-3 text-lg font-semibold text-white transition-colors group-hover:text-primary-light">
-                  {article.title}
-                </h2>
-                <p className="mb-4 flex-1 text-sm leading-relaxed text-white/70">
-                  {article.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">{article.readTime}</span>
-                  <span className="text-sm font-medium text-primary-light transition-colors group-hover:text-primary-light/90">
-                    Читать →
-                  </span>
+                <div className="flex flex-1 flex-col p-5">
+                  <h2 className="mb-2 text-lg font-semibold leading-snug text-white transition-colors group-hover:text-primary-light">
+                    {article.title}
+                  </h2>
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-white/70">
+                    {article.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/50">{article.readTime}</span>
+                    <span className="text-sm font-medium text-primary-light transition-colors group-hover:text-primary-light/90">
+                      Читать →
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

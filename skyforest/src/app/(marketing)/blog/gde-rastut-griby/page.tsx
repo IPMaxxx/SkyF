@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title:
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
     url: "https://skyforest.by/blog/gde-rastut-griby",
     siteName: "SkyForest",
     type: "article",
+    images: [{ url: "/images/blog/blog-gde-rastut-griby.jpg", width: 1792, height: 1024, alt: "Панорама грибных мест — разнообразие грибов на фоне осеннего леса" }],
   },
   alternates: { canonical: "https://skyforest.by/blog/gde-rastut-griby" },
 };
@@ -115,9 +117,20 @@ export default function GdeRastutGribyPage() {
           Где растут грибы в&nbsp;России и&nbsp;Беларуси: полный гид
           по&nbsp;видам и&nbsp;местам
         </h1>
-        <p className="mb-12 text-sm text-white/40">
+        <p className="mb-8 text-sm text-white/40">
           Обновлено: 20 сентября 2025 · 12 мин чтения
         </p>
+
+        <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/images/blog/blog-gde-rastut-griby.jpg"
+            alt="Панорама грибных мест России и Беларуси — разнообразие грибов на фоне осеннего пейзажа"
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+          />
+        </div>
 
         {/* === Intro === */}
         <p className="mb-6 text-lg leading-relaxed text-white/80">

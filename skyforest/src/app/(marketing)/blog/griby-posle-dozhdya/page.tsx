@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Через сколько дней после дождя появляются грибы — подробный гид",
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
     url: "https://skyforest.by/blog/griby-posle-dozhdya",
     siteName: "SkyForest",
     type: "article",
+    images: [{ url: "/images/blog/blog-griby-posle-dozhdya.jpg", width: 1792, height: 1024, alt: "Грибы после дождя — лисички и боровики под каплями дождя" }],
   },
   alternates: { canonical: "https://skyforest.by/blog/griby-posle-dozhdya" },
 };
@@ -125,9 +127,20 @@ export default function GribyPosleDozhdyaPage() {
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
           Через сколько дней после дождя появляются грибы
         </h1>
-        <p className="mb-12 text-sm text-white/40">
+        <p className="mb-8 text-sm text-white/40">
           Обновлено: 5 сентября 2025 · 8 мин чтения
         </p>
+
+        <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/images/blog/blog-griby-posle-dozhdya.jpg"
+            alt="Лисички и боровики пробиваются сквозь мокрую лесную подстилку под каплями дождя"
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+          />
+        </div>
 
         {/* === Intro === */}
         <p className="mb-6 text-lg leading-relaxed text-white/80">
