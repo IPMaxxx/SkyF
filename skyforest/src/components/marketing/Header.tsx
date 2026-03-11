@@ -11,6 +11,7 @@ const NAV_LINKS: { label: string; href: string; external?: boolean }[] = [
   { label: "Начало", href: "/" },
   { label: "О сервисе", href: "/#about" },
   { label: "Тарифы", href: "/#tariffs" },
+  { label: "Блог", href: "/blog" },
   { label: "FAQ", href: "/#faq" },
   { label: "SkyForest 1.0", href: "https://app.skyforest.by", external: true },
 ];
