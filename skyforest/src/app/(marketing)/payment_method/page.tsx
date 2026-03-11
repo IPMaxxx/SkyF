@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Способы оплаты",
   description:
     "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
-  alternates: { canonical: "https://skyforest.by/payment_method" },
+  alternates: { canonical: "https://www.skyforest.by/payment_method" },
 };
 
 export default function PaymentMethodPage() {

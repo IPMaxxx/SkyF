@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Инструкция — SkyForest",
   description:
     "Подробная инструкция по всем функциям SkyForest: создание локаций, запись грибных дней, проверка погоды, мониторинг, поиск леса, маркетплейс.",
-  alternates: { canonical: "https://skyforest.by/instruction" },
+  alternates: { canonical: "https://www.skyforest.by/instruction" },
 };
 
 const COST_TABLE = [

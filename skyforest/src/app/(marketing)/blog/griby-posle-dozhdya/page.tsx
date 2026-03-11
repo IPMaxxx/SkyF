@@ -27,30 +27,54 @@ export const metadata: Metadata = {
     title: "Через сколько дней после дождя появляются грибы — подробный гид",
     description:
       "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам.",
-    url: "https://skyforest.by/blog/griby-posle-dozhdya",
+    url: "https://www.skyforest.by/blog/griby-posle-dozhdya",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "/images/blog/blog-griby-posle-dozhdya.jpg", width: 1792, height: 1024, alt: "Грибы после дождя — лисички и боровики под каплями дождя" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-griby-posle-dozhdya.jpg", width: 1792, height: 1024, alt: "Грибы после дождя — лисички и боровики под каплями дождя" }],
+    publishedTime: "2025-09-05T00:00:00+03:00",
+    modifiedTime: "2025-09-05T00:00:00+03:00",
+    authors: ["SkyForest"],
+    section: "Грибы",
   },
-  alternates: { canonical: "https://skyforest.by/blog/griby-posle-dozhdya" },
+  alternates: { canonical: "https://www.skyforest.by/blog/griby-posle-dozhdya" },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline:
-    "Через сколько дней после дождя появляются грибы — подробный гид",
-  description:
-    "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам, научные данные и советы.",
-  author: { "@type": "Organization", name: "SkyForest" },
-  publisher: {
-    "@type": "Organization",
-    name: "SkyForest",
-    url: "https://skyforest.by",
-  },
-  datePublished: "2025-09-05",
-  mainEntityOfPage: "https://skyforest.by/blog/griby-posle-dozhdya",
-  inLanguage: "ru",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline:
+        "Через сколько дней после дождя появляются грибы — подробный гид",
+      description:
+        "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам, научные данные и советы.",
+      author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
+      publisher: {
+        "@type": "Organization",
+        name: "SkyForest",
+        url: "https://www.skyforest.by",
+        logo: { "@type": "ImageObject", url: "https://www.skyforest.by/images/logo-square.png" },
+      },
+      datePublished: "2025-09-05",
+      dateModified: "2025-09-05",
+      mainEntityOfPage: "https://www.skyforest.by/blog/griby-posle-dozhdya",
+      image: {
+        "@type": "ImageObject",
+        url: "https://www.skyforest.by/images/blog/blog-griby-posle-dozhdya.jpg",
+        width: 1792,
+        height: 1024,
+      },
+      inLanguage: "ru",
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Грибы после дождя" },
+      ],
+    },
+  ],
 };
 
 const FAQ_ITEMS = [

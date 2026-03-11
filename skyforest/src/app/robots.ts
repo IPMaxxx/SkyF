@@ -15,6 +15,28 @@ const AI_BOTS = [
   "CCBot",
   "Cohere-AI",
   "Meta-ExternalAgent",
+  "Google-InspectionTool",
+  "Amazonbot",
+  "FacebookExternalHit",
+  "YouBot",
+];
+
+const AI_ALLOWED_PATHS = [
+  "/",
+  "/blog",
+  "/blog/pogoda-dlya-gribov",
+  "/blog/griby-posle-dozhdya",
+  "/blog/kogda-pora-v-les",
+  "/blog/v-kakom-lesu-iskat-griby",
+  "/blog/gde-rastut-griby",
+  "/instruction",
+  "/llms.txt",
+  "/llms-full.txt",
+  "/offer",
+  "/privacy",
+  "/payment_method",
+  "/return_goods",
+  "/feed.xml",
 ];
 
 export default function robots(): MetadataRoute.Robots {
@@ -27,10 +49,10 @@ export default function robots(): MetadataRoute.Robots {
       },
       ...AI_BOTS.map((bot) => ({
         userAgent: bot,
-        allow: ["/", "/llms.txt", "/llms-full.txt", "/offer", "/privacy", "/payment_method", "/return_goods"],
+        allow: AI_ALLOWED_PATHS,
         disallow: PRIVATE_PATHS,
       })),
     ],
-    sitemap: "https://skyforest.by/sitemap.xml",
+    sitemap: "https://www.skyforest.by/sitemap.xml",
   };
 }

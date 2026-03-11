@@ -26,32 +26,56 @@ export const metadata: Metadata = {
     title: "Погода для грибов: при какой температуре и влажности растут грибы",
     description:
       "Узнайте, какая погода нужна для роста грибов. Оптимальная температура, влажность и осадки для белых грибов, опят, лисичек.",
-    url: "https://skyforest.by/blog/pogoda-dlya-gribov",
+    url: "https://www.skyforest.by/blog/pogoda-dlya-gribov",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "/images/blog/blog-pogoda-dlya-gribov.jpg", width: 1792, height: 1024, alt: "Погода для грибов — боровики в лесу после дождя" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-pogoda-dlya-gribov.jpg", width: 1792, height: 1024, alt: "Погода для грибов — боровики в лесу после дождя" }],
+    publishedTime: "2025-09-01T00:00:00+03:00",
+    modifiedTime: "2025-09-01T00:00:00+03:00",
+    authors: ["SkyForest"],
+    section: "Грибы",
   },
-  alternates: { canonical: "https://skyforest.by/blog/pogoda-dlya-gribov" },
+  alternates: { canonical: "https://www.skyforest.by/blog/pogoda-dlya-gribov" },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline:
-    "Погода для грибов: при какой температуре и влажности растут грибы",
-  description:
-    "Узнайте, какая погода нужна для роста грибов. Оптимальная температура, влажность и осадки для белых грибов, опят, лисичек. Научные данные и советы опытных грибников.",
-  author: { "@type": "Organization", name: "SkyForest" },
-  publisher: {
-    "@type": "Organization",
-    name: "SkyForest",
-    url: "https://skyforest.by",
-  },
-  datePublished: "2025-09-01",
-  dateModified: "2025-09-01",
-  mainEntityOfPage: "https://skyforest.by/blog/pogoda-dlya-gribov",
-  keywords:
-    "погода для грибов, при какой температуре растут грибы, влажность для грибов, условия роста грибов",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline:
+        "Погода для грибов: при какой температуре и влажности растут грибы",
+      description:
+        "Узнайте, какая погода нужна для роста грибов. Оптимальная температура, влажность и осадки для белых грибов, опят, лисичек. Научные данные и советы опытных грибников.",
+      author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
+      publisher: {
+        "@type": "Organization",
+        name: "SkyForest",
+        url: "https://www.skyforest.by",
+        logo: { "@type": "ImageObject", url: "https://www.skyforest.by/images/logo-square.png" },
+      },
+      datePublished: "2025-09-01",
+      dateModified: "2025-09-01",
+      mainEntityOfPage: "https://www.skyforest.by/blog/pogoda-dlya-gribov",
+      image: {
+        "@type": "ImageObject",
+        url: "https://www.skyforest.by/images/blog/blog-pogoda-dlya-gribov.jpg",
+        width: 1792,
+        height: 1024,
+      },
+      inLanguage: "ru",
+      keywords:
+        "погода для грибов, при какой температуре растут грибы, влажность для грибов, условия роста грибов",
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Погода для грибов" },
+      ],
+    },
+  ],
 };
 
 export default function PogodaDlyaGribovPage() {

@@ -24,32 +24,56 @@ export const metadata: Metadata = {
     title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
     description:
       "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
-    url: "https://skyforest.by/blog/v-kakom-lesu-iskat-griby",
+    url: "https://www.skyforest.by/blog/v-kakom-lesu-iskat-griby",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "/images/blog/blog-v-kakom-lesu-iskat-griby.jpg", width: 1792, height: 1024, alt: "Разные типы леса — сосновый, берёзовый и смешанный с грибами" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-v-kakom-lesu-iskat-griby.jpg", width: 1792, height: 1024, alt: "Разные типы леса — сосновый, берёзовый и смешанный с грибами" }],
+    publishedTime: "2025-09-15T00:00:00+03:00",
+    modifiedTime: "2025-09-15T00:00:00+03:00",
+    authors: ["SkyForest"],
+    section: "Грибы",
   },
   alternates: {
-    canonical: "https://skyforest.by/blog/v-kakom-lesu-iskat-griby",
+    canonical: "https://www.skyforest.by/blog/v-kakom-lesu-iskat-griby",
   },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline:
-    "В каком лесу искать грибы: хвойный, лиственный или смешанный",
-  description:
-    "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
-  author: { "@type": "Organization", name: "SkyForest" },
-  publisher: {
-    "@type": "Organization",
-    name: "SkyForest",
-    url: "https://skyforest.by",
-  },
-  datePublished: "2025-09-15",
-  mainEntityOfPage: "https://skyforest.by/blog/v-kakom-lesu-iskat-griby",
-  inLanguage: "ru",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline:
+        "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+      description:
+        "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
+      author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
+      publisher: {
+        "@type": "Organization",
+        name: "SkyForest",
+        url: "https://www.skyforest.by",
+        logo: { "@type": "ImageObject", url: "https://www.skyforest.by/images/logo-square.png" },
+      },
+      datePublished: "2025-09-15",
+      dateModified: "2025-09-15",
+      mainEntityOfPage: "https://www.skyforest.by/blog/v-kakom-lesu-iskat-griby",
+      image: {
+        "@type": "ImageObject",
+        url: "https://www.skyforest.by/images/blog/blog-v-kakom-lesu-iskat-griby.jpg",
+        width: 1792,
+        height: 1024,
+      },
+      inLanguage: "ru",
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "В каком лесу искать грибы" },
+      ],
+    },
+  ],
 };
 
 const COMPATIBILITY_TABLE = [

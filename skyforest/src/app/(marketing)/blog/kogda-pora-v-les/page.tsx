@@ -21,24 +21,53 @@ export const metadata: Metadata = {
     title: "Когда пора в лес: 7 признаков, что грибы пошли",
     description:
       "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
-    url: "https://skyforest.by/blog/kogda-pora-v-les",
+    url: "https://www.skyforest.by/blog/kogda-pora-v-les",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "/images/blog/blog-kogda-pora-v-les.jpg", width: 1792, height: 1024, alt: "Подосиновики в осеннем лесу утром с туманом и росой" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-kogda-pora-v-les.jpg", width: 1792, height: 1024, alt: "Подосиновики в осеннем лесу утром с туманом и росой" }],
+    publishedTime: "2025-09-10T00:00:00+03:00",
+    modifiedTime: "2025-09-10T00:00:00+03:00",
+    authors: ["SkyForest"],
+    section: "Грибы",
   },
-  alternates: { canonical: "https://skyforest.by/blog/kogda-pora-v-les" },
+  alternates: { canonical: "https://www.skyforest.by/blog/kogda-pora-v-les" },
 };
 
 const JSON_LD = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline: "Когда пора в лес: 7 признаков, что грибы пошли",
-  description:
-    "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
-  author: { "@type": "Organization", name: "SkyForest" },
-  publisher: { "@type": "Organization", name: "SkyForest" },
-  datePublished: "2025-09-10",
-  mainEntityOfPage: "https://skyforest.by/blog/kogda-pora-v-les",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline: "Когда пора в лес: 7 признаков, что грибы пошли",
+      description:
+        "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
+      author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
+      publisher: {
+        "@type": "Organization",
+        name: "SkyForest",
+        url: "https://www.skyforest.by",
+        logo: { "@type": "ImageObject", url: "https://www.skyforest.by/images/logo-square.png" },
+      },
+      datePublished: "2025-09-10",
+      dateModified: "2025-09-10",
+      mainEntityOfPage: "https://www.skyforest.by/blog/kogda-pora-v-les",
+      image: {
+        "@type": "ImageObject",
+        url: "https://www.skyforest.by/images/blog/blog-kogda-pora-v-les.jpg",
+        width: 1792,
+        height: 1024,
+      },
+      inLanguage: "ru",
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Когда пора в лес" },
+      ],
+    },
+  ],
 };
 
 const CALENDAR = [

@@ -27,30 +27,54 @@ export const metadata: Metadata = {
       "Где растут грибы в России и Беларуси — полный гид по видам и местам",
     description:
       "Подробный гид по грибным местам России и Беларуси. Лучшие регионы, какие грибы где растут, карта грибных мест.",
-    url: "https://skyforest.by/blog/gde-rastut-griby",
+    url: "https://www.skyforest.by/blog/gde-rastut-griby",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "/images/blog/blog-gde-rastut-griby.jpg", width: 1792, height: 1024, alt: "Панорама грибных мест — разнообразие грибов на фоне осеннего леса" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-gde-rastut-griby.jpg", width: 1792, height: 1024, alt: "Панорама грибных мест — разнообразие грибов на фоне осеннего леса" }],
+    publishedTime: "2025-09-20T00:00:00+03:00",
+    modifiedTime: "2025-09-20T00:00:00+03:00",
+    authors: ["SkyForest"],
+    section: "Грибы",
   },
-  alternates: { canonical: "https://skyforest.by/blog/gde-rastut-griby" },
+  alternates: { canonical: "https://www.skyforest.by/blog/gde-rastut-griby" },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline:
-    "Где растут грибы в России и Беларуси — полный гид по видам и местам",
-  description:
-    "Подробный гид по грибным местам России и Беларуси. Лучшие регионы, какие грибы где растут, карта грибных мест. Советы по поиску и безопасности.",
-  author: { "@type": "Organization", name: "SkyForest" },
-  publisher: {
-    "@type": "Organization",
-    name: "SkyForest",
-    url: "https://skyforest.by",
-  },
-  datePublished: "2025-09-20",
-  mainEntityOfPage: "https://skyforest.by/blog/gde-rastut-griby",
-  inLanguage: "ru",
+  "@graph": [
+    {
+      "@type": "Article",
+      headline:
+        "Где растут грибы в России и Беларуси — полный гид по видам и местам",
+      description:
+        "Подробный гид по грибным местам России и Беларуси. Лучшие регионы, какие грибы где растут, карта грибных мест. Советы по поиску и безопасности.",
+      author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
+      publisher: {
+        "@type": "Organization",
+        name: "SkyForest",
+        url: "https://www.skyforest.by",
+        logo: { "@type": "ImageObject", url: "https://www.skyforest.by/images/logo-square.png" },
+      },
+      datePublished: "2025-09-20",
+      dateModified: "2025-09-20",
+      mainEntityOfPage: "https://www.skyforest.by/blog/gde-rastut-griby",
+      image: {
+        "@type": "ImageObject",
+        url: "https://www.skyforest.by/images/blog/blog-gde-rastut-griby.jpg",
+        width: 1792,
+        height: 1024,
+      },
+      inLanguage: "ru",
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Где растут грибы" },
+      ],
+    },
+  ],
 };
 
 const FAQ_ITEMS = [

@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Политика конфиденциальности",
   description:
     "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
-  alternates: { canonical: "https://skyforest.by/privacy" },
+  alternates: { canonical: "https://www.skyforest.by/privacy" },
 };
 
 export default function PrivacyPage() {
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
           определяет порядок сбора, обработки, хранения, использования и
           защиты персональных данных пользователей сервиса SkyForest
           (далее&nbsp;— Сервис), расположенного по адресу
-          https://skyforest.by.
+          https://www.skyforest.by.
         </p>
         <p>
           1.2. Оператором персональных данных является ИП Горбацевич Максим
@@ -277,7 +277,7 @@ export default function PrivacyPage() {
         <p>
           11.1. Оператор вправе вносить изменения в настоящую Политику.
           Актуальная редакция размещается по адресу
-          https://skyforest.by/privacy.
+          https://www.skyforest.by/privacy.
         </p>
         <p>
           11.2. Продолжение использования Сервиса после публикации изменений

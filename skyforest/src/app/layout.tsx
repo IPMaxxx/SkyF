@@ -41,13 +41,13 @@ export const metadata: Metadata = {
     title: "Skyforest.by — знайте, когда идти за грибами",
     description:
       "Умный помощник для грибников в Беларуси. Анализ погоды, карта осадков, сравнение с лучшими грибными днями. Бесплатная регистрация.",
-    url: "https://skyforest.by",
+    url: "https://www.skyforest.by",
     siteName: "Skyforest",
     locale: "ru_BY",
     type: "website",
     images: [
       {
-        url: "/images/og-cover.png",
+        url: "https://www.skyforest.by/images/og-cover.png",
         width: 1200,
         height: 630,
         alt: "Skyforest — сервис поиска грибных локаций в Беларуси",
@@ -59,19 +59,19 @@ export const metadata: Metadata = {
     title: "Skyforest.by — знайте, когда идти за грибами",
     description:
       "Умный помощник для грибников. Анализ погоды, карта осадков, прогноз лучшего времени для сбора грибов.",
-    images: ["/images/og-cover.png"],
+    images: ["https://www.skyforest.by/images/og-cover.png"],
   },
   alternates: {
-    canonical: "https://skyforest.by",
+    canonical: "https://www.skyforest.by",
   },
-  metadataBase: new URL("https://skyforest.by"),
+  metadataBase: new URL("https://www.skyforest.by"),
   icons: { icon: "/favicon.png" },
   other: {
     "geo.region": "BY",
     "geo.placename": "Belarus",
     "content-language": "ru",
   },
-  category: "technology",
+  category: "lifestyle",
 };
 
 const jsonLd = {
@@ -79,12 +79,12 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://skyforest.by/#organization",
+      "@id": "https://www.skyforest.by/#organization",
       name: "Skyforest",
-      url: "https://skyforest.by",
+      url: "https://www.skyforest.by",
       logo: {
         "@type": "ImageObject",
-        url: "https://skyforest.by/images/logo-square.png",
+        url: "https://www.skyforest.by/images/logo-square.png",
       },
       contactPoint: {
         "@type": "ContactPoint",
@@ -101,9 +101,9 @@ const jsonLd = {
     },
     {
       "@type": "WebApplication",
-      "@id": "https://skyforest.by/#webapp",
+      "@id": "https://www.skyforest.by/#webapp",
       name: "Skyforest",
-      url: "https://skyforest.by",
+      url: "https://www.skyforest.by",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "All",
       description:
@@ -115,11 +115,11 @@ const jsonLd = {
         description: "Бесплатная регистрация, расширенные функции за токены",
       },
       provider: {
-        "@id": "https://skyforest.by/#organization",
+        "@id": "https://www.skyforest.by/#organization",
       },
       browserRequirements: "Requires JavaScript. Works in all modern browsers.",
       softwareVersion: "2.0",
-      screenshot: "https://skyforest.by/images/og-cover.png",
+      screenshot: "https://www.skyforest.by/images/og-cover.png",
       inLanguage: "ru",
       availableLanguage: ["ru"],
       featureList: [
@@ -131,30 +131,38 @@ const jsonLd = {
     },
     {
       "@type": "WebSite",
-      "@id": "https://skyforest.by/#website",
-      url: "https://skyforest.by",
+      "@id": "https://www.skyforest.by/#website",
+      url: "https://www.skyforest.by",
       name: "Skyforest",
       description: "Сервис поиска грибных локаций в Беларуси",
       publisher: {
-        "@id": "https://skyforest.by/#organization",
+        "@id": "https://www.skyforest.by/#organization",
       },
       inLanguage: "ru",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://www.skyforest.by/blog?q={search_term_string}",
+        },
+        "query-input": "required name=search_term_string",
+      },
     },
     {
       "@type": "BreadcrumbList",
-      "@id": "https://skyforest.by/#breadcrumb",
+      "@id": "https://www.skyforest.by/#breadcrumb",
       itemListElement: [
         {
           "@type": "ListItem",
           position: 1,
           name: "Главная",
-          item: "https://skyforest.by",
+          item: "https://www.skyforest.by",
         },
       ],
     },
     {
       "@type": "FAQPage",
-      "@id": "https://skyforest.by/#faq",
+      "@id": "https://www.skyforest.by/#faq",
       mainEntity: [
         {
           "@type": "Question",
@@ -221,8 +229,9 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <link rel="author" href="https://skyforest.by/llms.txt" />
-        <meta name="ai-content-declaration" content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt" />
+        <link rel="author" href="https://www.skyforest.by/llms.txt" />
+        <link rel="alternate" type="application/rss+xml" title="Skyforest.by — Блог для грибников" href="https://www.skyforest.by/feed.xml" />
+        <meta name="ai-content-declaration" content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml" />
       </head>
       <body className={`${roboto.variable} antialiased`}>{children}</body>
     </html>

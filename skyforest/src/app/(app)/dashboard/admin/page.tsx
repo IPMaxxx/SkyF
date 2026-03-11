@@ -31,6 +31,7 @@ import {
   MessageSquare,
   Eye,
   ExternalLink,
+  Activity,
 } from "lucide-react";
 
 /* ───────────── Types ───────────── */
@@ -550,6 +551,80 @@ const TABLES: TableConfig[] = [
       { key: "created_at", label: "Дата", type: "date" },
     ],
   },
+  {
+    key: "active_users",
+    label: "Активные юзеры",
+    icon: Activity,
+    columns: [
+      { key: "full_name", label: "Имя", type: "text" },
+      { key: "email", label: "Email", type: "text" },
+      {
+        key: "balance",
+        label: "Баланс",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="flex items-center gap-1 text-amber-400 font-semibold text-xs">
+            <Coins className="h-3 w-3" />
+            {row.balance as number}
+          </span>
+        ),
+      },
+      {
+        key: "total_purchased",
+        label: "Купл.",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="text-emerald-400 text-xs">{row.total_purchased as number}</span>
+        ),
+      },
+      {
+        key: "total_spent",
+        label: "Потр.",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="text-red-400 text-xs">{row.total_spent as number}</span>
+        ),
+      },
+      {
+        key: "locations_count",
+        label: "Локации",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const c = row.locations_count as number;
+          return <span className={`text-xs ${c > 0 ? "text-emerald-400" : "text-muted-foreground"}`}>{c}</span>;
+        },
+      },
+      {
+        key: "best_days_count",
+        label: "Гр. дни",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const c = row.best_days_count as number;
+          return <span className={`text-xs ${c > 0 ? "text-amber-400" : "text-muted-foreground"}`}>{c}</span>;
+        },
+      },
+      {
+        key: "compares_count",
+        label: "Монит.",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const c = row.compares_count as number;
+          return <span className={`text-xs ${c > 0 ? "text-violet-400" : "text-muted-foreground"}`}>{c}</span>;
+        },
+      },
+      {
+        key: "transactions_count",
+        label: "Транзакции",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const c = row.transactions_count as number;
+          return <span className={`text-xs font-medium ${c > 0 ? "text-foreground" : "text-muted-foreground"}`}>{c}</span>;
+        },
+      },
+      { key: "last_active_at", label: "Посл. актив.", type: "date" },
+      { key: "created_at", label: "Регистрация", type: "date" },
+    ],
+  },
 ];
 
 /* ───────────── Tab groups for sidebar ───────────── */
@@ -590,6 +665,7 @@ const TAB_GROUPS = [
   {
     label: "Активность",
     items: [
+      TABLES.find((t) => t.key === "active_users")!,
       TABLES.find((t) => t.key === "auto_compares")!,
       TABLES.find((t) => t.key === "forest_search_history")!,
     ],

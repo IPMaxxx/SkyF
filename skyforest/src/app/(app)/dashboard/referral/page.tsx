@@ -37,7 +37,7 @@ export default function ReferralPage() {
   }, []);
 
   const referralUrl = stats
-    ? `https://skyforest.by/ref/${stats.code}`
+    ? `https://www.skyforest.by/ref/${stats.code}`
     : "";
 
   const drawQR = useCallback(async () => {

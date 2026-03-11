@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
           : bd?.name ?? "Листинг";
 
         const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "https://skyforest.by";
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.skyforest.by";
         const chatUrl = `${appUrl}/dashboard/marketplace/chats?listing=${listingId}&partner=${user.id}`;
 
         await sendEmail(

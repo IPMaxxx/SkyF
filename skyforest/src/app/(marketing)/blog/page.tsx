@@ -29,11 +29,11 @@ export const metadata: Metadata = {
     title: "Блог о грибах — советы грибникам | Skyforest.by",
     description:
       "Полезные статьи для грибников: погода для грибов, когда идти в лес после дождя, в каком лесу искать грибы.",
-    url: "https://skyforest.by/blog",
+    url: "https://www.skyforest.by/blog",
     siteName: "SkyForest",
     type: "website",
   },
-  alternates: { canonical: "https://skyforest.by/blog" },
+  alternates: { canonical: "https://www.skyforest.by/blog" },
 };
 
 const ARTICLES = [

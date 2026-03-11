@@ -93,14 +93,13 @@ export async function GET(request: NextRequest) {
   const filterColumn = searchParams.get("filter_column");
   const filterValue = searchParams.get("filter_value");
 
-  if (!table || !ALLOWED_TABLES[table]) {
+  if (!table || (!ALLOWED_TABLES[table] && table !== "active_users")) {
     return NextResponse.json(
-      { error: "Invalid table", allowed: Object.keys(ALLOWED_TABLES) },
+      { error: "Invalid table", allowed: [...Object.keys(ALLOWED_TABLES), "active_users"] },
       { status: 400 }
     );
   }
 
-  const config = ALLOWED_TABLES[table];
   const admin = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -110,8 +109,86 @@ export async function GET(request: NextRequest) {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
+  if (table === "active_users") {
+    const [profilesRes, balancesRes, locsRes, bdsRes, acsRes, txRes] =
+      await Promise.all([
+        admin.from("profiles").select("id, email, full_name, created_at"),
+        admin.from("token_balances").select("user_id, balance, total_purchased, total_spent, total_earned, updated_at"),
+        admin.from("locations").select("user_id"),
+        admin.from("best_days").select("user_id"),
+        admin.from("auto_compares").select("user_id"),
+        admin.from("token_transactions").select("user_id, created_at").order("created_at", { ascending: false }),
+      ]);
+
+    const balanceMap = new Map(
+      (balancesRes.data || []).map((b: Record<string, unknown>) => [b.user_id as string, b])
+    );
+
+    const buildCountMap = (rows: { user_id: string }[] | null) => {
+      const m = new Map<string, number>();
+      for (const r of rows || []) m.set(r.user_id, (m.get(r.user_id) || 0) + 1);
+      return m;
+    };
+
+    const locMap = buildCountMap(locsRes.data);
+    const bdMap = buildCountMap(bdsRes.data);
+    const acMap = buildCountMap(acsRes.data);
+
+    const lastActivityMap = new Map<string, string>();
+    const txCountMap = new Map<string, number>();
+    for (const r of (txRes.data || []) as { user_id: string; created_at: string }[]) {
+      txCountMap.set(r.user_id, (txCountMap.get(r.user_id) || 0) + 1);
+      if (!lastActivityMap.has(r.user_id)) lastActivityMap.set(r.user_id, r.created_at);
+    }
+
+    let users = (profilesRes.data || []).map((p: Record<string, unknown>) => {
+      const uid = p.id as string;
+      const b = balanceMap.get(uid) as Record<string, unknown> | undefined;
+      return {
+        id: uid,
+        email: p.email,
+        full_name: p.full_name,
+        created_at: p.created_at,
+        balance: (b?.balance as number) ?? 0,
+        total_purchased: (b?.total_purchased as number) ?? 0,
+        total_spent: (b?.total_spent as number) ?? 0,
+        locations_count: locMap.get(uid) || 0,
+        best_days_count: bdMap.get(uid) || 0,
+        compares_count: acMap.get(uid) || 0,
+        transactions_count: txCountMap.get(uid) || 0,
+        last_active_at: lastActivityMap.get(uid) || (b?.updated_at as string) || null,
+      };
+    });
+
+    users.sort((a, b) => {
+      if (!a.last_active_at && !b.last_active_at) return 0;
+      if (!a.last_active_at) return 1;
+      if (!b.last_active_at) return -1;
+      return new Date(b.last_active_at).getTime() - new Date(a.last_active_at).getTime();
+    });
+
+    if (search) {
+      const q = search.toLowerCase();
+      users = users.filter(
+        (u) =>
+          (u.email as string | null)?.toLowerCase().includes(q) ||
+          (u.full_name as string | null)?.toLowerCase().includes(q)
+      );
+    }
+
+    const total = users.length;
+    const paginated = users.slice(from, to + 1);
+
+    return NextResponse.json(
+      { data: paginated, total, page, limit, total_pages: Math.ceil(total / limit) },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
+
+  const config = ALLOWED_TABLES[table!];
+
   let query = admin
-    .from(table)
+    .from(table!)
     .select(config.select, { count: "exact" });
 
   if (filterColumn && filterValue) {

@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Договор-оферта",
   description:
     "Публичный договор-оферта сервиса SkyForest.by — условия предоставления услуг по анализу и сравнению погодных данных.",
-  alternates: { canonical: "https://skyforest.by/offer" },
+  alternates: { canonical: "https://www.skyforest.by/offer" },
 };
 
 export default function OfferPage() {
@@ -36,7 +36,7 @@ export default function OfferPage() {
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>Сервис</strong>&nbsp;— программно-аппаратный комплекс,
-            размещённый по адресу https://skyforest.by, предоставляющий
+            размещённый по адресу https://www.skyforest.by, предоставляющий
             Пользователю информационные услуги по сбору, визуализации,
             сравнению и анализу общедоступных метеорологических данных.
           </li>
@@ -303,7 +303,7 @@ export default function OfferPage() {
         <p>
           Обработка персональных данных осуществляется в соответствии с
           Политикой конфиденциальности, размещённой по адресу
-          https://skyforest.by/privacy, и Законом Республики Беларусь от
+          https://www.skyforest.by/privacy, и Законом Республики Беларусь от
           7&nbsp;мая 2021&nbsp;г. №99-З «О защите персональных данных».
           Регистрируясь в Сервисе, Пользователь даёт согласие на обработку
           персональных данных в соответствии с указанной Политикой.
@@ -314,7 +314,7 @@ export default function OfferPage() {
         <p>
           12.1. Исполнитель вправе в одностороннем порядке вносить изменения
           в настоящую оферту. Изменения вступают в силу с момента публикации
-          новой редакции на сайте https://skyforest.by/offer.
+          новой редакции на сайте https://www.skyforest.by/offer.
         </p>
         <p>
           12.2. Продолжение использования Сервиса после публикации изменений

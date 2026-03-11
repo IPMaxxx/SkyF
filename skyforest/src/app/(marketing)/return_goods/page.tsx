@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Условия возврата средств",
   description:
     "Условия возврата средств за токены в сервисе SkyForest.by — порядок и сроки.",
-  alternates: { canonical: "https://skyforest.by/return_goods" },
+  alternates: { canonical: "https://www.skyforest.by/return_goods" },
 };
 
 export default function ReturnGoodsPage() {
