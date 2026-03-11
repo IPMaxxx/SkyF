@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 
 export const metadata: Metadata = {
   title:
@@ -100,24 +101,6 @@ const FAQ_ITEMS = [
   },
 ];
 
-const RELATED = [
-  {
-    href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
-  },
-  {
-    href: "/blog/griby-posle-dozhdya",
-    title: "Через сколько дней после дождя появляются грибы",
-  },
-  {
-    href: "/blog/kogda-pora-v-les",
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
-  },
-  {
-    href: "/blog/v-kakom-lesu-iskat-griby",
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
-  },
-];
 
 export default function GdeRastutGribyPage() {
   return (
@@ -663,21 +646,7 @@ export default function GdeRastutGribyPage() {
           ))}
         </div>
 
-        {/* === Related === */}
-        <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Читайте также
-        </h2>
-        <div className="mb-12 grid gap-3 sm:grid-cols-2">
-          {RELATED.map((r) => (
-            <Link
-              key={r.href}
-              href={r.href}
-              className="rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm leading-snug text-white/80 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-emerald-400"
-            >
-              {r.title}
-            </Link>
-          ))}
-        </div>
+        <RelatedArticles currentSlug="gde-rastut-griby" />
 
         {/* === CTA === */}
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl sm:px-10 sm:py-14">

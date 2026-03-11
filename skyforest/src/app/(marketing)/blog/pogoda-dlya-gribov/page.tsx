@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 
 export const metadata: Metadata = {
   title: "Погода для грибов: при какой температуре и влажности растут грибы",
@@ -563,56 +564,7 @@ export default function PogodaDlyaGribovPage() {
           </Link>
         </div>
 
-        {/* --- RELATED ARTICLES --- */}
-        <section>
-          <h2 className="mb-6 text-xl font-bold text-white">Читайте также</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Link
-              href="/blog/griby-posle-dozhdya"
-              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-white/20 hover:bg-white/10"
-            >
-              <h3 className="mb-2 font-semibold text-white transition-colors group-hover:text-emerald-400">
-                Через сколько дней после дождя появляются грибы
-              </h3>
-              <p className="text-sm text-white/50">
-                Оптимальные сроки после осадков для разных видов
-              </p>
-            </Link>
-            <Link
-              href="/blog/kogda-pora-v-les"
-              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-white/20 hover:bg-white/10"
-            >
-              <h3 className="mb-2 font-semibold text-white transition-colors group-hover:text-emerald-400">
-                Когда пора в лес: 7 признаков, что грибы пошли
-              </h3>
-              <p className="text-sm text-white/50">
-                Практические признаки начала сезона
-              </p>
-            </Link>
-            <Link
-              href="/blog/v-kakom-lesu-iskat-griby"
-              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-white/20 hover:bg-white/10"
-            >
-              <h3 className="mb-2 font-semibold text-white transition-colors group-hover:text-emerald-400">
-                В каком лесу искать грибы
-              </h3>
-              <p className="text-sm text-white/50">
-                Хвойный, лиственный или смешанный — где что растёт
-              </p>
-            </Link>
-            <Link
-              href="/blog/gde-rastut-griby"
-              className="group rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-white/20 hover:bg-white/10"
-            >
-              <h3 className="mb-2 font-semibold text-white transition-colors group-hover:text-emerald-400">
-                Где растут грибы в России и Беларуси
-              </h3>
-              <p className="text-sm text-white/50">
-                Полный гид по видам и местам
-              </p>
-            </Link>
-          </div>
-        </section>
+        <RelatedArticles currentSlug="pogoda-dlya-gribov" />
       </article>
     </>
   );

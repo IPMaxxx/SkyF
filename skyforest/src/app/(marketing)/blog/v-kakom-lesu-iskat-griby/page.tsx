@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 
 export const metadata: Metadata = {
   title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
@@ -110,24 +111,6 @@ const FAQ_ITEMS = [
   },
 ];
 
-const RELATED = [
-  {
-    href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
-  },
-  {
-    href: "/blog/griby-posle-dozhdya",
-    title: "Через сколько дней после дождя появляются грибы",
-  },
-  {
-    href: "/blog/kogda-pora-v-les",
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
-  },
-  {
-    href: "/blog/gde-rastut-griby",
-    title: "Где растут грибы в России и Беларуси: полный гид по видам и местам",
-  },
-];
 
 export default function VKakomLesuIskatGribyPage() {
   return (
@@ -560,21 +543,7 @@ export default function VKakomLesuIskatGribyPage() {
           </Link>
         </div>
 
-        {/* === Related === */}
-        <section>
-          <h2 className="mb-4 text-xl font-bold text-white">Читайте также</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {RELATED.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm leading-snug text-white/80 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-emerald-400"
-              >
-                {r.title}
-              </Link>
-            ))}
-          </div>
-        </section>
+        <RelatedArticles currentSlug="v-kakom-lesu-iskat-griby" />
       </article>
     </>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 
 export const metadata: Metadata = {
   title: "Когда пора в лес: 7 признаков, что грибы пошли",
@@ -131,25 +132,6 @@ const FAQ = [
   },
 ];
 
-const RELATED = [
-  {
-    href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
-  },
-  {
-    href: "/blog/griby-posle-dozhdya",
-    title: "Через сколько дней после дождя появляются грибы",
-  },
-  {
-    href: "/blog/v-kakom-lesu-iskat-griby",
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
-  },
-  {
-    href: "/blog/gde-rastut-griby",
-    title:
-      "Где растут грибы в России и Беларуси: полный гид по видам и местам",
-  },
-];
 
 export default function KogdaPoraVLesPage() {
   return (
@@ -554,23 +536,7 @@ export default function KogdaPoraVLesPage() {
           </Link>
         </div>
 
-        {/* ── Читайте также ── */}
-        <section className="mt-14">
-          <h2 className="mb-6 text-xl font-bold text-white">Читайте также</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {RELATED.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="rounded-xl border border-white/10 bg-white/5 p-5 transition-all hover:border-white/20 hover:bg-white/10"
-              >
-                <span className="text-sm font-medium leading-snug text-emerald-400">
-                  {a.title}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <RelatedArticles currentSlug="kogda-pora-v-les" />
       </article>
     </>
   );
