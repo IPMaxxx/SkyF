@@ -47,6 +47,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/blog/ezhovik-grebenchatyj`,
+      lastModified: new Date("2025-10-01"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/instruction`,
       lastModified: new Date("2025-06-01"),
       changeFrequency: "yearly",

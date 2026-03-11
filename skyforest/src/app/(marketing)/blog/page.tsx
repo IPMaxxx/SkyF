@@ -7,6 +7,7 @@ import {
   TreePine,
   Trees,
   MapPin,
+  Brain,
   ArrowRight,
 } from "lucide-react";
 
@@ -86,6 +87,16 @@ const ARTICLES = [
     image: "/images/blog/blog-gde-rastut-griby.jpg",
     readTime: "12 мин",
     gradient: "from-rose-500/30 to-pink-600/20",
+  },
+  {
+    href: "/blog/ezhovik-grebenchatyj",
+    title: "Ежовик гребенчатый: гриб для мозга — что говорит наука",
+    description:
+      "Разбираем клинические исследования Lion's Mane: эринацины vs герициноны, мицелий vs плодовое тело. Только данные из рецензированных журналов.",
+    icon: Brain,
+    image: "/images/blog/blog-ezhovik-grebenchatyj.jpg",
+    readTime: "15 мин",
+    gradient: "from-violet-500/30 to-purple-600/20",
   },
 ] as const;
 

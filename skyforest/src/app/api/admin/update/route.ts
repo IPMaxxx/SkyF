@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServerClient } from "@supabase/ssr";
 
 const EDITABLE_COLUMNS: Record<string, string[]> = {
-  profiles: ["full_name", "phone", "account_type"],
+  profiles: ["full_name", "phone"],
   locations: ["name"],
   best_days: ["name", "best_date"],
   marketplace_listings: ["price", "status"],

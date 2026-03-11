@@ -113,7 +113,7 @@ const TABLES: TableConfig[] = [
     key: "profiles",
     label: "Пользователи",
     icon: Users,
-    editable: ["full_name", "phone", "account_type"],
+    editable: ["full_name", "phone", "_balance"],
     columns: [
       { key: "email", label: "Email", type: "text" },
       { key: "full_name", label: "Имя", type: "text" },
@@ -125,10 +125,9 @@ const TABLES: TableConfig[] = [
         width: "w-20",
       },
       {
-        key: "token_balance",
+        key: "_balance",
         label: "Баланс",
         type: "number",
-        nested: "balance",
         render: (_v, row) => {
           const tb = row.token_balance as Record<string, number> | null;
           if (!tb) return <span className="text-muted-foreground">—</span>;
@@ -871,7 +870,12 @@ export default function AdminPage() {
   const startEdit = (row: Record<string, unknown>) => {
     const id = (row.id || row.user_id) as string;
     setEditingRow(id);
-    setEditValues({ ...row });
+    const values = { ...row };
+    if (activeTab === "profiles") {
+      const tb = row.token_balance as Record<string, number> | null;
+      values._balance = tb?.balance ?? 0;
+    }
+    setEditValues(values);
   };
 
   const cancelEdit = () => {
@@ -885,28 +889,49 @@ export default function AdminPage() {
     if (!tableConfig?.editable) return;
 
     const updates: Record<string, unknown> = {};
+    let balanceUpdate: number | undefined;
     for (const col of tableConfig.editable) {
       if (editValues[col] !== undefined) {
-        updates[col] = editValues[col];
+        if (col === "_balance") {
+          balanceUpdate = Number(editValues[col]);
+        } else {
+          updates[col] = editValues[col];
+        }
       }
     }
 
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          table: activeTab,
-          id: editingRow,
-          updates,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Ошибка обновления");
-        return;
+      if (Object.keys(updates).length > 0) {
+        const res = await fetch("/api/admin/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ table: activeTab, id: editingRow, updates }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          toast.error(data.error || "Ошибка обновления");
+          return;
+        }
       }
+
+      if (activeTab === "profiles" && balanceUpdate !== undefined) {
+        const res = await fetch("/api/admin/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            table: "token_balances",
+            id: editingRow,
+            updates: { balance: balanceUpdate },
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          toast.error(data.error || "Ошибка обновления баланса");
+          return;
+        }
+      }
+
       toast.success("Обновлено");
       cancelEdit();
       loadTableData(activeTab, tablePage, sortBy, sortDir, searchQuery, filterColumn, filterValue);
