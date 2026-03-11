@@ -54,5 +54,6 @@ export default function robots(): MetadataRoute.Robots {
       })),
     ],
     sitemap: "https://www.skyforest.by/sitemap.xml",
+    host: "https://www.skyforest.by",
   };
 }
