@@ -229,6 +229,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-TDWX0SFE2M" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TDWX0SFE2M');`,
+          }}
+        />
         <link rel="author" href="https://www.skyforest.by/llms.txt" />
         <link rel="alternate" type="application/rss+xml" title="Skyforest.by — Блог для грибников" href="https://www.skyforest.by/feed.xml" />
         <meta name="ai-content-declaration" content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml" />
