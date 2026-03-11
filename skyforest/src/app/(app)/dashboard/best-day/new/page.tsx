@@ -285,7 +285,7 @@ export default function NewBestDayPage() {
           Этот погодный «отпечаток» станет эталоном: система будет искать похожие условия и оповестит вас.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Загрузка погоды — 1 токен</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Загрузка погоды — 2 токена</span>
           <span className="flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-emerald-400">Сохранение — бесплатно</span>
         </div>
       </div>

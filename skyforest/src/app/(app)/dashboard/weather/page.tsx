@@ -384,8 +384,8 @@ export default function WeatherPage() {
           Это поможет понять, были ли дожди, достаточно ли влаги в лесу для грибов.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Проверка погоды — 2 токена</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Карта осадков — 5 токенов за 50 точек</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Проверка погоды — 4 токена</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Карта осадков — 10 токенов за 50 точек</span>
         </div>
       </div>
 

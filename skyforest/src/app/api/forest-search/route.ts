@@ -504,7 +504,7 @@ export async function POST(request: NextRequest) {
   }
 
   const clampedRadius = Math.min(radius_km, 20);
-  const tokenCost = Math.max(1, Math.ceil(clampedRadius / 2));
+  const tokenCost = Math.max(2, 2 * Math.ceil(clampedRadius / 2));
 
   const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
     p_user_id: user.id,

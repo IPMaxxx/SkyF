@@ -321,8 +321,8 @@ export default function ComparePage() {
           Пример: вы нашли белые грибы 15 августа при +18°C и дождях. Мониторинг каждый день проверяет, повторяются ли такие условия. Когда совпадение 80%+ — пора в лес!
         </p>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 3 токена</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 3 токена/день</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 6 токенов</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 6 токенов/день</span>
         </div>
       </div>
 

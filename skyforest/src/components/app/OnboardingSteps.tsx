@@ -21,11 +21,11 @@ const steps = [
   {
     num: 2,
     title: "Добавьте грибной день",
-    desc: "Вспомните дату удачного сбора. Мы загрузим погоду за тот период (1 токен). Сохранение бесплатно.",
+    desc: "Вспомните дату удачного сбора. Мы загрузим погоду за тот период (2 токена). Сохранение бесплатно.",
     icon: Star,
     href: "/dashboard/best-day/new",
     color: "from-amber-500 to-orange-600",
-    cost: "1 токен",
+    cost: "2 токена",
   },
   {
     num: 3,
@@ -34,7 +34,7 @@ const steps = [
     icon: GitCompareArrows,
     href: "/dashboard/compare",
     color: "from-violet-500 to-purple-600",
-    cost: "3 токена",
+    cost: "6 токенов",
   },
 ];
 

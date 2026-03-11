@@ -174,7 +174,7 @@ export function buildInsufficientTokensEmail(bestDayName: string, balance: numbe
       <p style="margin:0 0 8px;font-size:14px;color:#f59e0b;font-weight:600;">Недостаточно токенов</p>
       <p style="margin:0;font-size:13px;color:#94a3b8;">
         Автосравнение для «${bestDayName}» не выполнено.<br>
-        Текущий баланс: <strong style="color:#f59e0b;">${balance} токенов</strong>. Нужно: 2.
+        Текущий баланс: <strong style="color:#f59e0b;">${balance} токенов</strong>. Нужно: 6.
       </p>
     </div>
     <div style="text-align:center;">

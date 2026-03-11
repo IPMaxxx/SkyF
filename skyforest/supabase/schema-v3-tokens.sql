@@ -20,10 +20,10 @@ create or replace function public.handle_new_profile_tokens()
 returns trigger as $$
 begin
   insert into public.token_balances (user_id, balance, total_purchased, total_spent)
-  values (new.id, 50, 50, 0);
+  values (new.id, 20, 20, 0);
 
   insert into public.token_transactions (user_id, amount, type, description)
-  values (new.id, 50, 'bonus', 'Приветственный бонус');
+  values (new.id, 20, 'bonus', 'Приветственный бонус');
 
   return new;
 end;
