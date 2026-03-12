@@ -299,6 +299,13 @@ export default function EditBestDayPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const supabase = createClient();
+    try {
+      await fetch("/api/admin/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "best_day", id }),
+      });
+    } catch { /* archive is best-effort */ }
     if (photos.length > 0 && !bestDay?.purchased_from_listing_id) {
       const paths = photos
         .map((url) => url.split("/best-day-photos/")[1])

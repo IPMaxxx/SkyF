@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { UserName } from "@/components/app/UserName";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   Loader2,
@@ -32,7 +33,22 @@ import {
   Eye,
   ExternalLink,
   Activity,
+  Map,
+  Trash2,
+  Tag,
 } from "lucide-react";
+
+const AdminMapLazy = dynamic(
+  () => import("@/components/app/AdminMap").then((m) => ({ default: m.AdminMap })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[600px] items-center justify-center rounded-xl bg-white/5">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
+);
 
 /* ───────────── Types ───────────── */
 
@@ -551,6 +567,165 @@ const TABLES: TableConfig[] = [
     ],
   },
   {
+    key: "deleted_locations",
+    label: "Удал. локации",
+    icon: Trash2,
+    columns: [
+      { key: "name", label: "Название", type: "text" },
+      {
+        key: "coords",
+        label: "Координаты",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const lat = row.lat as number;
+          const lng = row.lng as number;
+          return (
+            <a
+              href={`https://www.google.com/maps?q=${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              {lat?.toFixed(4)}, {lng?.toFixed(4)}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          );
+        },
+      },
+      {
+        key: "profile",
+        label: "Пользователь",
+        type: "user",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const p = row.profile as Record<string, string> | null;
+          return (
+            <div className="text-xs">
+              <span className="font-medium">{p?.full_name || "—"}</span>
+              {p?.email && (
+                <span className="text-muted-foreground ml-1">({p.email})</span>
+              )}
+            </div>
+          );
+        },
+      },
+      { key: "original_created_at", label: "Создана", type: "date" },
+      { key: "deleted_at", label: "Удалена", type: "date" },
+    ],
+  },
+  {
+    key: "deleted_best_days",
+    label: "Удал. гр. дни",
+    icon: Trash2,
+    columns: [
+      { key: "name", label: "Название", type: "text" },
+      { key: "best_date", label: "Дата", type: "date" },
+      {
+        key: "mushroom_info",
+        label: "Гриб",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const name = (row.mushroom_common_name as string) || (row.mushroom_latin_name as string);
+          const img = row.mushroom_image_url as string | null;
+          if (!name) return <span className="text-muted-foreground text-xs">—</span>;
+          return (
+            <div className="flex items-center gap-2">
+              {img && (
+                <img src={img} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
+              )}
+              <span className="text-xs truncate max-w-[120px]">{name}</span>
+            </div>
+          );
+        },
+      },
+      { key: "location_name", label: "Локация", type: "text" },
+      {
+        key: "photos",
+        label: "Фото",
+        type: "photos",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const photos = row.photos as string[] | null;
+          if (!photos || photos.length === 0)
+            return <span className="text-muted-foreground text-xs">0</span>;
+          return <span className="text-xs text-emerald-400">{photos.length}</span>;
+        },
+      },
+      {
+        key: "profile",
+        label: "Пользователь",
+        type: "user",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const p = row.profile as Record<string, string> | null;
+          return <span className="text-xs">{p?.full_name || p?.email || "—"}</span>;
+        },
+      },
+      { key: "original_created_at", label: "Создан", type: "date" },
+      { key: "deleted_at", label: "Удалён", type: "date" },
+    ],
+  },
+  {
+    key: "admin_marks",
+    label: "Метки админа",
+    icon: Tag,
+    columns: [
+      {
+        key: "status",
+        label: "Статус",
+        type: "badge",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const s = row.status as string;
+          const cfg: Record<string, { label: string; cls: string }> = {
+            priority:    { label: "Приоритет",     cls: "bg-red-500/20 text-red-300 border-red-500/30" },
+            interesting: { label: "Интересно",     cls: "bg-violet-500/20 text-violet-300 border-violet-500/30" },
+            suspicious:  { label: "Подозрительно", cls: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+            secondary:   { label: "Второстепенно", cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
+            reviewed:    { label: "Просмотрено",   cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
+          };
+          const c = cfg[s] ?? { label: s, cls: "bg-gray-500/20 text-gray-300" };
+          return (
+            <span className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${c.cls}`}>
+              {c.label}
+            </span>
+          );
+        },
+      },
+      {
+        key: "target_type",
+        label: "Тип",
+        type: "badge",
+        render: (_v: unknown, row: Record<string, unknown>) => {
+          const t = row.target_type as string;
+          const labels: Record<string, string> = {
+            location: "Локация",
+            best_day: "Гр. день",
+            deleted_location: "Удал. локация",
+            deleted_best_day: "Удал. гр. день",
+          };
+          return <span className="text-xs">{labels[t] || t}</span>;
+        },
+      },
+      {
+        key: "target_id",
+        label: "ID объекта",
+        type: "text",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[80px] block">
+            {(row.target_id as string)?.slice(0, 12)}…
+          </span>
+        ),
+      },
+      {
+        key: "note",
+        label: "Заметка",
+        type: "text",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="text-xs truncate max-w-[150px] block text-muted-foreground">
+            {(row.note as string) || "—"}
+          </span>
+        ),
+      },
+      { key: "updated_at", label: "Обновлено", type: "date" },
+      { key: "created_at", label: "Создана", type: "date" },
+    ],
+  },
+  {
     key: "active_users",
     label: "Активные юзеры",
     icon: Activity,
@@ -631,7 +806,10 @@ const TABLES: TableConfig[] = [
 const TAB_GROUPS = [
   {
     label: "Обзор",
-    items: [{ key: "overview", label: "Дашборд", icon: BarChart3 }],
+    items: [
+      { key: "overview", label: "Дашборд", icon: BarChart3 },
+      { key: "admin_map", label: "Карта", icon: Map },
+    ],
   },
   {
     label: "Основное",
@@ -639,6 +817,14 @@ const TAB_GROUPS = [
       TABLES.find((t) => t.key === "profiles")!,
       TABLES.find((t) => t.key === "locations")!,
       TABLES.find((t) => t.key === "best_days")!,
+    ],
+  },
+  {
+    label: "Удалённые / Метки",
+    items: [
+      TABLES.find((t) => t.key === "deleted_locations")!,
+      TABLES.find((t) => t.key === "deleted_best_days")!,
+      TABLES.find((t) => t.key === "admin_marks")!,
     ],
   },
   {
@@ -822,6 +1008,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "overview") {
       loadStats();
+    } else if (activeTab === "admin_map") {
+      // map handles its own data loading
     } else {
       setSortBy(null);
       setSortDir("desc");
@@ -1089,6 +1277,9 @@ export default function AdminPage() {
                     <StatCard label="Авто-мониторинг" value={stats.counts.auto_compares} icon={GitCompareArrows} color="bg-indigo-500/20 text-indigo-400" />
                     <StatCard label="Поисков леса" value={stats.counts.forest_searches} icon={Trees} color="bg-green-500/20 text-green-400" />
                     <StatCard label="Сообщений" value={stats.counts.marketplace_messages} icon={MessageSquare} color="bg-teal-500/20 text-teal-400" />
+                    <StatCard label="Удал. локаций" value={stats.counts.deleted_locations ?? 0} icon={Trash2} color="bg-red-500/20 text-red-400" />
+                    <StatCard label="Удал. гр. дней" value={stats.counts.deleted_best_days ?? 0} icon={Trash2} color="bg-red-500/20 text-red-400" />
+                    <StatCard label="Меток админа" value={stats.counts.admin_marks ?? 0} icon={Tag} color="bg-violet-500/20 text-violet-400" />
                   </div>
 
                   {/* Token economy */}
@@ -1210,13 +1401,31 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Admin Map view */}
+          {activeTab === "admin_map" && (
+            <div>
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <Map className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Карта локаций и грибных дней</h1>
+                  <p className="text-xs text-muted-foreground">
+                    Все текущие и удалённые объекты на карте
+                  </p>
+                </div>
+              </div>
+              <AdminMapLazy />
+            </div>
+          )}
+
           {/* Chat view for messages */}
           {activeTab === "marketplace_messages" && (
             <AdminChatsView />
           )}
 
           {/* Table view */}
-          {activeTab !== "overview" && activeTab !== "marketplace_messages" && activeTableConfig && (
+          {activeTab !== "overview" && activeTab !== "admin_map" && activeTab !== "marketplace_messages" && activeTableConfig && (
             <div>
               {/* Header */}
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

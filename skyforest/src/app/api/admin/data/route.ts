@@ -61,6 +61,24 @@ const ALLOWED_TABLES: Record<
       "id, user_id, ref_lat, ref_lng, search_lat, search_lng, radius_km, token_cost, created_at, profile:profiles!user_id(full_name, email)",
     defaultSort: "created_at",
   },
+  deleted_locations: {
+    select:
+      "id, original_id, user_id, name, lat, lng, forest_info, original_created_at, deleted_at, deleted_by_user_id",
+    searchColumns: ["name"],
+    defaultSort: "deleted_at",
+  },
+  deleted_best_days: {
+    select:
+      "id, original_id, user_id, name, best_date, photos, location_name, location_lat, location_lng, mushroom_latin_name, mushroom_common_name, mushroom_image_url, original_created_at, deleted_at, deleted_by_user_id",
+    searchColumns: ["name", "location_name"],
+    defaultSort: "deleted_at",
+  },
+  admin_marks: {
+    select:
+      "id, admin_id, target_type, target_id, status, note, created_at, updated_at",
+    searchColumns: ["note"],
+    defaultSort: "updated_at",
+  },
 };
 
 export async function GET(request: NextRequest) {
@@ -224,6 +242,8 @@ export async function GET(request: NextRequest) {
     referral_codes: ["user_id"],
     marketplace_messages: ["sender_id"],
     marketplace_listings: ["seller_id"],
+    deleted_locations: ["user_id"],
+    deleted_best_days: ["user_id"],
   };
 
   const fieldsToEnrich = ENRICH_USER_FIELDS[table];

@@ -40,6 +40,9 @@ export async function GET() {
     forestSearchRes,
     autoComparesRes,
     messagesRes,
+    deletedLocationsRes,
+    deletedBestDaysRes,
+    adminMarksRes,
   ] = await Promise.all([
     admin.from("profiles").select("id", { count: "exact", head: true }),
     admin.from("locations").select("id", { count: "exact", head: true }),
@@ -67,6 +70,9 @@ export async function GET() {
     admin
       .from("marketplace_messages")
       .select("id", { count: "exact", head: true }),
+    admin.from("deleted_locations").select("id", { count: "exact", head: true }),
+    admin.from("deleted_best_days").select("id", { count: "exact", head: true }),
+    admin.from("admin_marks").select("id", { count: "exact", head: true }),
   ]);
 
   const { data: tokenAgg } = await admin.from("token_balances").select("balance, total_purchased, total_spent, total_earned");
@@ -110,6 +116,9 @@ export async function GET() {
         forest_searches: forestSearchRes.count ?? 0,
         auto_compares: autoComparesRes.count ?? 0,
         marketplace_messages: messagesRes.count ?? 0,
+        deleted_locations: deletedLocationsRes.count ?? 0,
+        deleted_best_days: deletedBestDaysRes.count ?? 0,
+        admin_marks: adminMarksRes.count ?? 0,
       },
       tokens: {
         total_balance: totalBalance,

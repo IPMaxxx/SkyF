@@ -81,6 +81,13 @@ export default function EditLocationPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const supabase = createClient();
+    try {
+      await fetch("/api/admin/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "location", id }),
+      });
+    } catch { /* archive is best-effort */ }
     await supabase.from("locations").delete().eq("id", id);
     removeLocation(id);
     await refreshBestDays();
