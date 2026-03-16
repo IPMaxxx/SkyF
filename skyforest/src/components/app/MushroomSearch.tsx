@@ -119,29 +119,29 @@ export function MushroomSearch({ value, onChange }: Props) {
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
-          {results.map((m) => (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[28rem] overflow-y-auto rounded-xl border border-white/15 bg-zinc-900 shadow-2xl">
+          {results.map((m, i) => (
             <button
               key={m.inaturalist_id}
               type="button"
               onClick={() => handleSelect(m)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+              className={`flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-white/10 ${i > 0 ? "border-t border-white/10" : ""}`}
             >
               {m.image_url ? (
                 <img
                   src={m.image_url}
                   alt={m.latin_name}
-                  className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+                  className="h-24 w-24 flex-shrink-0 rounded-xl object-cover"
                 />
               ) : (
-                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
+                <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-3xl">
                   🍄
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-sm font-medium italic">{m.latin_name}</p>
+                <p className="text-sm font-semibold italic text-white">{m.latin_name}</p>
                 {m.common_name && (
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="mt-0.5 truncate text-sm text-zinc-400">
                     {m.common_name}
                   </p>
                 )}
@@ -152,7 +152,7 @@ export function MushroomSearch({ value, onChange }: Props) {
       )}
 
       {open && query.length >= 2 && !loading && results.length === 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover p-4 text-center text-sm text-muted-foreground shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-white/15 bg-zinc-900 p-4 text-center text-sm text-zinc-400 shadow-2xl">
           Ничего не найдено
         </div>
       )}
