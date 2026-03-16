@@ -119,22 +119,22 @@ export function MushroomSearch({ value, onChange }: Props) {
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border bg-white shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
           {results.map((m) => (
             <button
               key={m.inaturalist_id}
               type="button"
               onClick={() => handleSelect(m)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               {m.image_url ? (
                 <img
                   src={m.image_url}
                   alt={m.latin_name}
-                  className="h-10 w-10 flex-shrink-0 rounded-lg object-cover"
+                  className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
                 />
               ) : (
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-lg">
+                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
                   🍄
                 </div>
               )}
@@ -152,7 +152,7 @@ export function MushroomSearch({ value, onChange }: Props) {
       )}
 
       {open && query.length >= 2 && !loading && results.length === 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-white p-4 text-center text-sm text-muted-foreground shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover p-4 text-center text-sm text-muted-foreground shadow-lg">
           Ничего не найдено
         </div>
       )}
