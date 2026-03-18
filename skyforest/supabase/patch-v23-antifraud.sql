@@ -159,7 +159,6 @@ DECLARE
   v_location locations;
   v_buyer_balance integer;
   v_buyer_bonus integer;
-  v_buyer_created_at timestamptz;
   v_buyer_ip text;
   v_seller_ip text;
   v_new_location_id uuid;
@@ -168,18 +167,14 @@ DECLARE
   v_commission integer;
   v_seller_amount integer;
 BEGIN
-  -- Check account existence and age (minimum 3 days)
-  SELECT p.created_at, p.signup_ip
-    INTO v_buyer_created_at, v_buyer_ip
+  -- Check account existence and get signup IP
+  SELECT p.signup_ip
+    INTO v_buyer_ip
     FROM profiles p
     WHERE p.id = p_buyer_id;
 
-  IF v_buyer_created_at IS NULL THEN
+  IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'no_account');
-  END IF;
-
-  IF (now() - v_buyer_created_at) < interval '3 days' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'account_too_new');
   END IF;
 
   -- Lock and validate listing

@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       own_listing: "Нельзя купить свой собственный Best Day",
       insufficient: "Недостаточно токенов. Для покупок на маркетплейсе используются только купленные токены (бонусные не подходят).",
       bestday_missing: "Best Day больше не существует",
-      account_too_new: "Покупки на маркетплейсе доступны через 3 дня после регистрации",
       ip_conflict: "Покупка невозможна",
       no_account: "Аккаунт не найден",
     };

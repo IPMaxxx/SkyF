@@ -16,7 +16,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.bepaid.by https://www.googletagmanager.com https://mc.yandex.ru",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://www.googletagmanager.com https://mc.yandex.ru",
+      "img-src 'self' data: blob: https://*.supabase.co https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://server.arcgisonline.com https://www.googletagmanager.com https://mc.yandex.ru",
       "connect-src 'self' https://*.supabase.co https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de https://api.inaturalist.org https://nominatim.openstreetmap.org https://checkout.bepaid.by https://www.google-analytics.com https://www.googletagmanager.com https://mc.yandex.ru",
       "media-src 'self'",
       "frame-src https://checkout.bepaid.by",
