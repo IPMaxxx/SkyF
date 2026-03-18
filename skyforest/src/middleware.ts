@@ -46,8 +46,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && (isProtected || isMfaPage)) {
-    const { data: { currentLevel, nextLevel } } =
+    const { data: aalData } =
       await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    const currentLevel = aalData?.currentLevel;
+    const nextLevel = aalData?.nextLevel;
 
     if (nextLevel === "aal2" && currentLevel === "aal1" && !isMfaPage) {
       return NextResponse.redirect(new URL("/verify-mfa", request.url));
