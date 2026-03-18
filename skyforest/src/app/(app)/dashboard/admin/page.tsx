@@ -129,7 +129,7 @@ const TABLES: TableConfig[] = [
     key: "profiles",
     label: "Пользователи",
     icon: Users,
-    editable: ["full_name", "phone", "_balance"],
+    editable: ["full_name", "phone", "_balance", "_bonus_balance"],
     columns: [
       { key: "email", label: "Email", type: "text" },
       { key: "full_name", label: "Имя", type: "text" },
@@ -142,7 +142,7 @@ const TABLES: TableConfig[] = [
       },
       {
         key: "_balance",
-        label: "Баланс",
+        label: "Реальн.",
         type: "number",
         render: (_v, row) => {
           const tb = row.token_balance as Record<string, number> | null;
@@ -151,6 +151,20 @@ const TABLES: TableConfig[] = [
             <span className="flex items-center gap-1 text-amber-400 font-semibold">
               <Coins className="h-3 w-3" />
               {tb.balance ?? 0}
+            </span>
+          );
+        },
+      },
+      {
+        key: "_bonus_balance",
+        label: "Бонус.",
+        type: "number",
+        render: (_v, row) => {
+          const tb = row.token_balance as Record<string, number> | null;
+          if (!tb) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span className="flex items-center gap-1 text-emerald-400 font-semibold text-xs">
+              {tb.bonus_balance ?? 0}
             </span>
           );
         },
@@ -441,7 +455,7 @@ const TABLES: TableConfig[] = [
     label: "Балансы",
     icon: Coins,
     pkColumn: "user_id",
-    editable: ["balance", "total_purchased", "total_spent", "total_earned"],
+    editable: ["balance", "bonus_balance", "total_purchased", "total_spent", "total_earned"],
     columns: [
       {
         key: "profile",
@@ -456,9 +470,14 @@ const TABLES: TableConfig[] = [
           );
         },
       },
-      { key: "balance", label: "Баланс", type: "number",
+      { key: "balance", label: "Реальн.", type: "number",
         render: (_v, row) => (
           <span className="font-semibold text-amber-400 text-xs">{row.balance as number}</span>
+        ),
+      },
+      { key: "bonus_balance", label: "Бонус.", type: "number",
+        render: (_v, row) => (
+          <span className="font-semibold text-emerald-400 text-xs">{row.bonus_balance as number ?? 0}</span>
         ),
       },
       { key: "total_purchased", label: "Куплено", type: "number",
@@ -734,12 +753,22 @@ const TABLES: TableConfig[] = [
       { key: "email", label: "Email", type: "text" },
       {
         key: "balance",
-        label: "Баланс",
+        label: "Реальн.",
         type: "number",
         render: (_v: unknown, row: Record<string, unknown>) => (
           <span className="flex items-center gap-1 text-amber-400 font-semibold text-xs">
             <Coins className="h-3 w-3" />
             {row.balance as number}
+          </span>
+        ),
+      },
+      {
+        key: "bonus_balance",
+        label: "Бонус.",
+        type: "number",
+        render: (_v: unknown, row: Record<string, unknown>) => (
+          <span className="text-emerald-400 font-semibold text-xs">
+            {(row.bonus_balance as number) ?? 0}
           </span>
         ),
       },
@@ -1062,6 +1091,7 @@ export default function AdminPage() {
     if (activeTab === "profiles") {
       const tb = row.token_balance as Record<string, number> | null;
       values._balance = tb?.balance ?? 0;
+      values._bonus_balance = tb?.bonus_balance ?? 0;
     }
     setEditValues(values);
   };
@@ -1078,10 +1108,13 @@ export default function AdminPage() {
 
     const updates: Record<string, unknown> = {};
     let balanceUpdate: number | undefined;
+    let bonusBalanceUpdate: number | undefined;
     for (const col of tableConfig.editable) {
       if (editValues[col] !== undefined) {
         if (col === "_balance") {
           balanceUpdate = Number(editValues[col]);
+        } else if (col === "_bonus_balance") {
+          bonusBalanceUpdate = Number(editValues[col]);
         } else {
           updates[col] = editValues[col];
         }
@@ -1103,14 +1136,17 @@ export default function AdminPage() {
         }
       }
 
-      if (activeTab === "profiles" && balanceUpdate !== undefined) {
+      if (activeTab === "profiles" && (balanceUpdate !== undefined || bonusBalanceUpdate !== undefined)) {
+        const balanceUpdates: Record<string, number> = {};
+        if (balanceUpdate !== undefined) balanceUpdates.balance = balanceUpdate;
+        if (bonusBalanceUpdate !== undefined) balanceUpdates.bonus_balance = bonusBalanceUpdate;
         const res = await fetch("/api/admin/update", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             table: "token_balances",
             id: editingRow,
-            updates: { balance: balanceUpdate },
+            updates: balanceUpdates,
           }),
         });
         if (!res.ok) {
@@ -1490,7 +1526,7 @@ export default function AdminPage() {
                           >
                             <button
                               onClick={() => {
-                                if (!col.render || col.key === "created_at" || col.key === "updated_at" || col.key === "best_date" || col.key === "sold_at" || col.key === "last_run_at" || ["price", "amount", "balance", "balance_after", "uses_count", "token_cost", "radius_km", "purchase_tokens", "buyer_bonus", "referrer_bonus", "total_purchased", "total_spent", "total_earned", "last_score"].includes(col.key)) {
+                                if (!col.render || col.key === "created_at" || col.key === "updated_at" || col.key === "best_date" || col.key === "sold_at" || col.key === "last_run_at" || ["price", "amount", "balance", "bonus_balance", "balance_after", "uses_count", "token_cost", "radius_km", "purchase_tokens", "buyer_bonus", "referrer_bonus", "total_purchased", "total_spent", "total_earned", "last_score"].includes(col.key)) {
                                   handleSort(col.key);
                                 }
                               }}

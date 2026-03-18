@@ -8,7 +8,7 @@ const ALLOWED_TABLES: Record<
 > = {
   profiles: {
     select:
-      "id, email, full_name, phone, account_type, created_at, updated_at, token_balance:token_balances(balance, total_purchased, total_spent, total_earned)",
+      "id, email, full_name, phone, account_type, created_at, updated_at, token_balance:token_balances(balance, bonus_balance, total_purchased, total_spent, total_earned)",
     searchColumns: ["email", "full_name", "phone"],
     defaultSort: "created_at",
   },
@@ -42,7 +42,7 @@ const ALLOWED_TABLES: Record<
   },
   token_balances: {
     select:
-      "user_id, balance, total_purchased, total_spent, total_earned, updated_at, profile:profiles!user_id(full_name, email)",
+      "user_id, balance, bonus_balance, total_purchased, total_spent, total_earned, updated_at, profile:profiles!user_id(full_name, email)",
     defaultSort: "updated_at",
   },
   referral_codes: {
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     const [profilesRes, balancesRes, locsRes, bdsRes, acsRes, txRes] =
       await Promise.all([
         admin.from("profiles").select("id, email, full_name, created_at"),
-        admin.from("token_balances").select("user_id, balance, total_purchased, total_spent, total_earned, updated_at"),
+        admin.from("token_balances").select("user_id, balance, bonus_balance, total_purchased, total_spent, total_earned, updated_at"),
         admin.from("locations").select("user_id"),
         admin.from("best_days").select("user_id"),
         admin.from("auto_compares").select("user_id"),
@@ -168,6 +168,7 @@ export async function GET(request: NextRequest) {
         full_name: p.full_name,
         created_at: p.created_at,
         balance: (b?.balance as number) ?? 0,
+        bonus_balance: (b?.bonus_balance as number) ?? 0,
         total_purchased: (b?.total_purchased as number) ?? 0,
         total_spent: (b?.total_spent as number) ?? 0,
         locations_count: locMap.get(uid) || 0,
