@@ -108,6 +108,7 @@ export default function MarketplacePage() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [locationPhotoIndex, setLocationPhotoIndex] = useState(0);
+  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { balance, realBalance, bonusBalance, refresh } = useTokens();
@@ -667,12 +668,13 @@ export default function MarketplacePage() {
             <div className="relative z-[10000] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a2a1f]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
               {/* Photo gallery */}
               {currentPhoto && (
-                <div className="relative">
+                <div className="relative bg-black/30">
                   <img
                     src={currentPhoto}
                     alt=""
                     referrerPolicy="no-referrer"
-                    className="h-56 w-full rounded-t-2xl object-cover"
+                    className="w-full max-h-[50vh] rounded-t-2xl object-contain cursor-pointer"
+                    onClick={() => setFullscreenPhoto(currentPhoto)}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
@@ -1128,6 +1130,28 @@ export default function MarketplacePage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen photo viewer */}
+      {fullscreenPhoto && (
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={() => setFullscreenPhoto(null)}
+        >
+          <button
+            onClick={() => setFullscreenPhoto(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={fullscreenPhoto}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

@@ -79,8 +79,9 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="Спутник">
             <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={19}
+              url="https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+              subdomains={["0", "1", "2", "3"]}
+              maxZoom={20}
             />
           </LayersControl.BaseLayer>
         </LayersControl>
