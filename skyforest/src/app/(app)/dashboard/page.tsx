@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   MapPin,
   CloudSun,
@@ -17,6 +18,18 @@ import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 import { useAppData } from "@/lib/AppDataContext";
 import { useTokens } from "@/lib/TokenContext";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
+
+const DashboardMap = dynamic(
+  () => import("@/components/app/DashboardMap").then((m) => m.DashboardMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] sm:h-[360px] items-center justify-center rounded-xl bg-muted">
+        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+      </div>
+    ),
+  }
+);
 
 export default function DashboardPage() {
   const { locations, bestDays: allBestDays, loading } = useAppData();
@@ -227,37 +240,12 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Token balance + recent transactions */}
-      <div className="mt-8 sm:mt-10">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
-            <Coins className="h-5 w-5 text-amber-400" />
-            Токены
-          </h2>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl sm:text-2xl font-bold text-amber-400">
-                {balanceLoading ? "..." : balance ?? 0}
-              </span>
-            </div>
-            <Link
-              href="/payment"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">Пополнить</span>
-              <span className="xs:hidden">+</span>
-            </Link>
-          </div>
+      {/* Map + Best days + Locations */}
+      {(hasLocations || hasBestDays) && !loading && (
+        <div className="mt-8 sm:mt-10">
+          <DashboardMap locations={locations} bestDays={allBestDays} />
         </div>
-        <div className="glass rounded-2xl p-4 sm:p-5">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <History className="h-4 w-4" />
-            Последние операции
-          </h3>
-          <TransactionHistory compact limit={10} />
-        </div>
-      </div>
+      )}
 
       {/* Best days */}
       {hasBestDays && (
@@ -350,6 +338,38 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Token balance + recent transactions */}
+      <div className="mt-8 sm:mt-10">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+            <Coins className="h-5 w-5 text-amber-400" />
+            Токены
+          </h2>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl sm:text-2xl font-bold text-amber-400">
+                {balanceLoading ? "..." : balance ?? 0}
+              </span>
+            </div>
+            <Link
+              href="/payment"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline">Пополнить</span>
+              <span className="xs:hidden">+</span>
+            </Link>
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-4 sm:p-5">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <History className="h-4 w-4" />
+            Последние операции
+          </h3>
+          <TransactionHistory compact limit={10} />
+        </div>
+      </div>
 
       {loading && (
         <div className="mt-12 flex justify-center">
