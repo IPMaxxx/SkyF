@@ -47,9 +47,10 @@ const fgisAgent = new https.Agent({
   timeout: 15000,
 });
 
-function fetchFgis(url: string, timeoutMs = 15000): Promise<string> {
+function fetchFgis(rawUrl: string, timeoutMs = 15000): Promise<string> {
+  const parsed = new URL(rawUrl);
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { agent: fgisAgent, timeout: timeoutMs }, (res) => {
+    const req = https.get(parsed, { agent: fgisAgent, timeout: timeoutMs }, (res) => {
       const chunks: Buffer[] = [];
       res.on("data", (c: Buffer) => chunks.push(c));
       res.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
@@ -109,6 +110,10 @@ async function queryFgisLkPoint(lat: number, lng: number): Promise<string | null
       FEATURE_COUNT: "1",
     });
     const raw = await fetchFgis(`${FGIS_LK_WMS}?${params}`, 10000);
+    const trimmed = raw.trimStart();
+    if (trimmed.startsWith("<") || !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+      return null;
+    }
     const data = JSON.parse(raw);
     return data.features?.[0]?.properties?.tree_species || null;
   } catch {

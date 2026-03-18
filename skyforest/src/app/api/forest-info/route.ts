@@ -9,9 +9,10 @@ const INAT_URL = "https://api.inaturalist.org/v1/observations/species_counts";
 const FGIS_LK_WMS = "https://pub.fgislk.gov.ru/map/geo/geoserver/wms";
 
 /** pub.fgislk.gov.ru has an invalid SSL cert — fetch via node:https with rejectUnauthorized: false */
-function fetchInsecure(url: string, timeoutMs = 15000): Promise<string> {
+function fetchInsecure(rawUrl: string, timeoutMs = 15000): Promise<string> {
+  const parsed = new URL(rawUrl);
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { rejectUnauthorized: false, timeout: timeoutMs }, (res) => {
+    const req = https.get(parsed, { rejectUnauthorized: false, timeout: timeoutMs }, (res) => {
       const chunks: Buffer[] = [];
       res.on("data", (c: Buffer) => chunks.push(c));
       res.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
@@ -379,6 +380,11 @@ async function fetchFgisLk(
     });
 
     const rawText = await fetchInsecure(`${FGIS_LK_WMS}?${params}`);
+    const trimmed = rawText.trimStart();
+    if (trimmed.startsWith("<") || !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+      console.warn("ФГИС ЛК returned non-JSON response (likely HTML error page), skipping");
+      return { species: [], raw: [] };
+    }
     const data = JSON.parse(rawText);
     const features: Array<{
       properties?: {

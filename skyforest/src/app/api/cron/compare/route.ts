@@ -8,6 +8,19 @@ import type { WeatherDay } from "@/lib/supabase/types";
 
 export const maxDuration = 60;
 
+async function fetchWithRetry(url: string, retries = 3, baseDelayMs = 1000): Promise<Response> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      return res;
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt));
+    }
+  }
+  throw new Error("fetchWithRetry: unreachable");
+}
+
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || cronSecret.length < 16) {
@@ -88,7 +101,7 @@ export async function GET(request: NextRequest) {
 
       const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&daily=temperature_2m_mean,temperature_2m_min,temperature_2m_max,precipitation_sum,rain_sum,relative_humidity_2m_mean,wind_speed_10m_max&start_date=${startDate.toISOString().split("T")[0]}&end_date=${today}&timezone=Europe/Minsk`;
 
-      const weatherRes = await fetch(weatherUrl);
+      const weatherRes = await fetchWithRetry(weatherUrl);
       const weatherRaw = await weatherRes.json();
 
       if (!weatherRaw.daily?.time) continue;
