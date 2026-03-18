@@ -114,6 +114,8 @@ export interface MarketplaceListing {
   buyer_id: string | null;
   sold_at: string | null;
   created_at: string;
+  display_lat: number | null;
+  display_lng: number | null;
   // joined
   best_day?: BestDay;
   seller?: Profile;

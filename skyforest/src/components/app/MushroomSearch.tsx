@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Search, Loader2, X } from "lucide-react";
 
 interface MushroomResult {
@@ -15,6 +16,41 @@ interface Props {
   onChange: (mushroom: MushroomResult | null) => void;
 }
 
+function DropdownPortal({
+  anchorRef,
+  children,
+}: {
+  anchorRef: React.RefObject<HTMLDivElement | null>;
+  children: React.ReactNode;
+}) {
+  const [style, setStyle] = useState<React.CSSProperties>({ display: "none" });
+
+  useEffect(() => {
+    const update = () => {
+      const el = anchorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    };
+
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [anchorRef]);
+
+  return createPortal(<div style={style}>{children}</div>, document.body);
+}
+
 export function MushroomSearch({ value, onChange }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MushroomResult[]>([]);
@@ -24,13 +60,17 @@ export function MushroomSearch({ value, onChange }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const searchMushrooms = useCallback(async (q: string) => {
@@ -101,6 +141,8 @@ export function MushroomSearch({ value, onChange }: Props) {
     );
   }
 
+  const showDropdown = open && (results.length > 0 || (query.length >= 2 && !loading));
+
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
@@ -112,49 +154,55 @@ export function MushroomSearch({ value, onChange }: Props) {
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder="Начните вводить название гриба (рус., лат., англ.)..."
           className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
         )}
       </div>
 
-      {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[28rem] overflow-y-auto rounded-xl border border-white/15 bg-zinc-900 shadow-2xl">
-          {results.map((m, i) => (
-            <button
-              key={m.inaturalist_id}
-              type="button"
-              onClick={() => handleSelect(m)}
-              className={`flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-white/10 ${i > 0 ? "border-t border-white/10" : ""}`}
-            >
-              {m.image_url ? (
-                <img
-                  src={m.image_url}
-                  alt={m.latin_name}
-                  className="h-24 w-24 flex-shrink-0 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-3xl">
-                  🍄
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-sm font-semibold italic text-white">{m.latin_name}</p>
-                {m.common_name && (
-                  <p className="mt-0.5 truncate text-sm text-zinc-400">
-                    {m.common_name}
-                  </p>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {open && query.length >= 2 && !loading && results.length === 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-white/15 bg-zinc-900 p-4 text-center text-sm text-zinc-400 shadow-2xl">
-          Ничего не найдено
-        </div>
+      {showDropdown && (
+        <DropdownPortal anchorRef={containerRef}>
+          {results.length > 0 ? (
+            <div className="max-h-[min(28rem,60vh)] overflow-y-auto overscroll-contain rounded-xl border border-white/15 bg-zinc-900 shadow-2xl">
+              {results.map((m, i) => (
+                <button
+                  key={m.inaturalist_id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelect(m)}
+                  className={`flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-white/10 active:bg-white/15 ${i > 0 ? "border-t border-white/10" : ""}`}
+                >
+                  {m.image_url ? (
+                    <img
+                      src={m.image_url}
+                      alt={m.latin_name}
+                      className="h-20 w-20 flex-shrink-0 rounded-xl object-cover sm:h-24 sm:w-24"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-3xl sm:h-24 sm:w-24">
+                      🍄
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold italic text-white">{m.latin_name}</p>
+                    {m.common_name && (
+                      <p className="mt-0.5 truncate text-sm text-zinc-400">
+                        {m.common_name}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-white/15 bg-zinc-900 p-4 text-center text-sm text-zinc-400 shadow-2xl">
+              Ничего не найдено
+            </div>
+          )}
+        </DropdownPortal>
       )}
     </div>
   );

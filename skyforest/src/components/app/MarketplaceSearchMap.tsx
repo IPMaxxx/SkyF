@@ -48,20 +48,35 @@ interface OwnedBestDay {
   name: string;
 }
 
+export interface ListingSpot {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string;
+  mushroomName?: string;
+  price: number;
+}
+
 interface Props {
   centerLat: number | null;
   centerLng: number | null;
   radiusKm: number;
   ownedDays: OwnedBestDay[];
+  listingSpots?: ListingSpot[];
   onSelect: (lat: number, lng: number) => void;
+  onSpotClick?: (id: string) => void;
 }
+
+const SPOT_CIRCLE_RADIUS = 10000; // 10 km = d20 km
 
 export function MarketplaceSearchMap({
   centerLat,
   centerLng,
   radiusKm,
   ownedDays,
+  listingSpots = [],
   onSelect,
+  onSpotClick,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -110,6 +125,37 @@ export function MarketplaceSearchMap({
           />
         </>
       )}
+
+      {listingSpots.map((spot) => (
+        <Circle
+          key={`spot-${spot.id}`}
+          center={[spot.lat, spot.lng]}
+          radius={SPOT_CIRCLE_RADIUS}
+          pathOptions={{
+            color: "#10b981",
+            fillColor: "#10b981",
+            fillOpacity: 0.12,
+            weight: 2,
+          }}
+          eventHandlers={onSpotClick ? {
+            click: () => onSpotClick(spot.id),
+          } : undefined}
+        >
+          <Popup>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+              <p style={{ fontWeight: 600, marginBottom: 2 }}>{spot.name}</p>
+              {spot.mushroomName && (
+                <p style={{ color: "#888", fontSize: 11, fontStyle: "italic", marginBottom: 4 }}>
+                  {spot.mushroomName}
+                </p>
+              )}
+              <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: 12 }}>
+                {spot.price} токенов
+              </p>
+            </div>
+          </Popup>
+        </Circle>
+      ))}
 
       {ownedDays.map((d, i) => (
         <Marker key={`owned-${i}`} position={[d.lat, d.lng]} icon={ownedIcon}>

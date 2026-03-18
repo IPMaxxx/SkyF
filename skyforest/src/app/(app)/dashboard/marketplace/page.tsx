@@ -88,13 +88,11 @@ interface OwnedBestDay {
 export default function MarketplacePage() {
   const [centerLat, setCenterLat] = useState<number | null>(null);
   const [centerLng, setCenterLng] = useState<number | null>(null);
-  const [radiusKm, setRadiusKm] = useState(50);
+  const [radiusKm, setRadiusKm] = useState(100);
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [ownedDays, setOwnedDays] = useState<OwnedBestDay[]>([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [remainingSearches, setRemainingSearches] = useState<number | null>(null);
-  const [rateLimitRetry, setRateLimitRetry] = useState<number | null>(null);
   const [seasonFilter, setSeasonFilter] = useState<Season | "all">("all");
   const [mushroomFilter, setMushroomFilter] = useState<string>("all");
   const [buying, setBuying] = useState<string | null>(null);
@@ -144,10 +142,6 @@ export default function MarketplacePage() {
       setError("Поставьте точку на карте");
       return;
     }
-    if (rateLimitRetry !== null && rateLimitRetry > 0) {
-      setError(`Лимит поиска исчерпан. Подождите ${Math.ceil(rateLimitRetry / 60)} мин.`);
-      return;
-    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -163,19 +157,7 @@ export default function MarketplacePage() {
         }),
       });
       const data = await res.json();
-
-      if (res.status === 429 || data.error === "rate_limit") {
-        setRemainingSearches(0);
-        setRateLimitRetry(data.retry_after_seconds ?? 60);
-        setError(`Лимит поиска исчерпан (5 в час). Подождите ${Math.ceil((data.retry_after_seconds ?? 60) / 60)} мин.`);
-        return;
-      }
-
       setListings(data.listings ?? []);
-      if (data.remaining_searches !== undefined && data.remaining_searches !== null) {
-        setRemainingSearches(data.remaining_searches);
-        setRateLimitRetry(null);
-      }
     } catch {
       setError("Ошибка поиска");
     } finally {
@@ -314,9 +296,9 @@ export default function MarketplacePage() {
           Стоимость устанавливается продавцом.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — 5 запросов в час</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — бесплатно</span>
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупка — только купленные токены</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупки доступны через 3 дня после регистрации</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Локация — зона ∅20 км (точные координаты после покупки)</span>
         </div>
       </div>
 
@@ -349,9 +331,26 @@ export default function MarketplacePage() {
             centerLng={centerLng}
             radiusKm={radiusKm}
             ownedDays={ownedDays}
+            listingSpots={listings
+              .filter((l) => l.display_lat != null && l.display_lng != null)
+              .map((l) => ({
+                id: l.id,
+                lat: l.display_lat!,
+                lng: l.display_lng!,
+                name: l.best_day?.name ?? "Грибное место",
+                mushroomName: l.best_day?.mushroom?.common_name || l.best_day?.mushroom?.latin_name,
+                price: l.price,
+              }))}
             onSelect={(lat, lng) => {
               setCenterLat(lat);
               setCenterLng(lng);
+            }}
+            onSpotClick={(id) => {
+              const listing = listings.find((l) => l.id === id);
+              if (listing) {
+                setLocationPhotoIndex(0);
+                setListingPreview(listing);
+              }
             }}
           />
         </div>
@@ -372,7 +371,7 @@ export default function MarketplacePage() {
             </label>
             <input
               type="range"
-              min={50}
+              min={30}
               max={1000}
               step={10}
               value={radiusKm}
@@ -380,14 +379,14 @@ export default function MarketplacePage() {
               className="w-full accent-primary h-2"
             />
             <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
-              <span>50 км</span>
+              <span>30 км</span>
               <span>1000 км</span>
             </div>
           </div>
 
           <button
             onClick={handleSearch}
-            disabled={loading || centerLat === null || remainingSearches === 0}
+            disabled={loading || centerLat === null}
             className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {loading ? (
@@ -395,7 +394,7 @@ export default function MarketplacePage() {
             ) : (
               <Search className="h-4 w-4" />
             )}
-            {remainingSearches === 0 ? "Лимит исчерпан" : "Найти грибные локации"}
+            Найти грибные локации
           </button>
         </div>
 
@@ -403,19 +402,6 @@ export default function MarketplacePage() {
           <p className="mt-3 text-xs text-muted-foreground">
             Центр: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} · Радиус:{" "}
             {radiusKm} км
-            {remainingSearches !== null && (
-              <span className={`ml-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
-                remainingSearches === 0
-                  ? "bg-red-500/15 text-red-400"
-                  : remainingSearches <= 2
-                  ? "bg-amber-500/15 text-amber-400"
-                  : "bg-emerald-500/15 text-emerald-400"
-              }`}>
-                {remainingSearches === 0
-                  ? "Лимит исчерпан"
-                  : `Осталось поисков: ${remainingSearches}/5`}
-              </span>
-            )}
           </p>
         )}
 

@@ -27,6 +27,8 @@ function sanitizeListings(data: unknown) {
       buyer_id: item?.buyer_id ?? null,
       sold_at: item?.sold_at ?? null,
       created_at: item?.created_at,
+      display_lat: item?.display_lat ?? null,
+      display_lng: item?.display_lng ?? null,
       best_day: item?.best_day
         ? {
             id: item.best_day.id,
@@ -55,27 +57,7 @@ function sanitizeListings(data: unknown) {
   });
 }
 
-export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-
-  const lat = request.nextUrl.searchParams.get("lat");
-  const lng = request.nextUrl.searchParams.get("lng");
-  const radiusKm = request.nextUrl.searchParams.get("radius_km");
-
-  if (!lat || !lng || !radiusKm) {
-    return NextResponse.json({ listings: [] });
-  }
-
-  const pLat = parseFloat(lat);
-  const pLng = parseFloat(lng);
-  const pRadius = parseFloat(radiusKm);
-
-  if (isNaN(pLat) || isNaN(pLng) || isNaN(pRadius) || pRadius <= 0 || pRadius > 1000) {
-    return NextResponse.json({ error: "Invalid params" }, { status: 400 });
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-
+export async function GET() {
   return noStoreJson({ error: "Use POST" }, 405);
 }
 
@@ -93,7 +75,7 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "Invalid params" }, 400);
   }
 
-  const MIN_RADIUS_KM = 50;
+  const MIN_RADIUS_KM = 30;
   const effectiveRadius = Math.max(pRadius, MIN_RADIUS_KM);
 
   const {
@@ -112,22 +94,7 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "Ошибка поиска" }, 500);
   }
 
-  if (data && typeof data === "object" && "error" in data && data.error === "rate_limit") {
-    return noStoreJson({
-      error: "rate_limit",
-      message: "Превышен лимит поиска (5 в час)",
-      remaining: 0,
-      retry_after_seconds: data.retry_after_seconds ?? 60,
-    }, 429);
-  }
+  const sanitizedListings = sanitizeListings(data);
 
-  const listings = data?.listings ?? data;
-  const remainingSearches = data?.remaining_searches ?? null;
-
-  const sanitizedListings = sanitizeListings(listings);
-
-  return noStoreJson({
-    listings: sanitizedListings,
-    remaining_searches: remainingSearches,
-  });
+  return noStoreJson({ listings: sanitizedListings });
 }

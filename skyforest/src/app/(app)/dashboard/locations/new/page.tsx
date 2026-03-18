@@ -67,6 +67,23 @@ export default function NewLocationPage() {
 
   const debouncedQuery = useDebounce(searchQuery.trim(), 400);
 
+  const parseCoordinates = useCallback((input: string): [number, number] | null => {
+    const cleaned = input.trim().replace(/\s+/g, " ");
+    const patterns = [
+      /^(-?\d+[.,]\d+)\s*[,;\s]\s*(-?\d+[.,]\d+)$/,
+    ];
+    for (const re of patterns) {
+      const m = cleaned.match(re);
+      if (m) {
+        const a = parseFloat(m[1].replace(",", "."));
+        const b = parseFloat(m[2].replace(",", "."));
+        if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return [a, b];
+        if (Math.abs(b) <= 90 && Math.abs(a) <= 180) return [b, a];
+      }
+    }
+    return null;
+  }, []);
+
   const searchGeo = useCallback(async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
@@ -95,13 +112,27 @@ export default function NewLocationPage() {
   }, []);
 
   useEffect(() => {
-    if (debouncedQuery.length >= 2) {
-      searchGeo(debouncedQuery);
-    } else {
+    if (debouncedQuery.length < 2) {
       setSearchResults([]);
       setShowResults(false);
+      return;
     }
-  }, [debouncedQuery, searchGeo]);
+
+    const coords = parseCoordinates(debouncedQuery);
+    if (coords) {
+      const [cLat, cLng] = coords;
+      setLat(cLat);
+      setLng(cLng);
+      setFlyLat(cLat);
+      setFlyLng(cLng);
+      setSearchResults([]);
+      setShowResults(false);
+      setSearchQuery("");
+      return;
+    }
+
+    searchGeo(debouncedQuery);
+  }, [debouncedQuery, searchGeo, parseCoordinates]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -225,7 +256,7 @@ export default function NewLocationPage() {
         {/* Geocoding search */}
         <div ref={searchRef} className="relative">
           <label className="mb-1.5 block text-sm font-medium">
-            Поиск по названию
+            Поиск по названию или координатам
           </label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -236,7 +267,7 @@ export default function NewLocationPage() {
               onFocus={() => {
                 if (searchResults.length > 0) setShowResults(true);
               }}
-              placeholder="Город, деревня, улица..."
+              placeholder="Город, деревня или 53.90, 27.56"
               className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
             {searchQuery && (

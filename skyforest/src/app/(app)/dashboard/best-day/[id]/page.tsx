@@ -528,9 +528,9 @@ export default function EditBestDayPage() {
                   <button
                     type="button"
                     onClick={() => handleRemovePhoto(url)}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white shadow-lg sm:h-6 sm:w-6 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                   </button>
                 </div>
               ))}
