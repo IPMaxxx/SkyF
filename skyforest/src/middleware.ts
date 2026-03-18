@@ -6,6 +6,7 @@ const PROTECTED_PATHS = ["/dashboard", "/payment", "/account"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  const isMfaPage = pathname === "/verify-mfa";
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -18,7 +19,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -42,6 +43,19 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/login" && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (user && (isProtected || isMfaPage)) {
+    const { data: { currentLevel, nextLevel } } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (nextLevel === "aal2" && currentLevel === "aal1" && !isMfaPage) {
+      return NextResponse.redirect(new URL("/verify-mfa", request.url));
+    }
+
+    if (isMfaPage && currentLevel === "aal2") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return supabaseResponse;

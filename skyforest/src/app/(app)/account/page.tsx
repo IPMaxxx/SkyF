@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, Coins, Lock } from "lucide-react";
+import { User, Mail, Coins, Lock, ShieldCheck } from "lucide-react";
 import { ChangePassword } from "@/components/app/ChangePassword";
+import { TwoFactorSetup } from "@/components/app/TwoFactorSetup";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { EditProfileName } from "@/components/app/EditProfileName";
 
@@ -66,6 +67,15 @@ export default async function AccountPage() {
           Изменить пароль
         </h2>
         <ChangePassword />
+      </div>
+
+      {/* Two-Factor Authentication */}
+      <div className="glass mb-6 rounded-2xl p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          Двухфакторная аутентификация
+        </h2>
+        <TwoFactorSetup />
       </div>
 
       {/* Token balance */}

@@ -50,7 +50,14 @@ function LoginForm() {
       return;
     }
 
-    router.push(redirect);
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const hasTotp = factors?.totp?.some((f) => f.status === "verified");
+
+    if (hasTotp) {
+      router.push("/verify-mfa");
+    } else {
+      router.push(redirect);
+    }
     router.refresh();
   };
 
