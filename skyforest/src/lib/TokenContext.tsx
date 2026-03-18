@@ -3,7 +3,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
 interface TokenContextType {
+  /** Total balance (real + bonus) for general display */
   balance: number | null;
+  /** Real balance only — the only tokens accepted on the marketplace */
+  realBalance: number | null;
+  /** Bonus tokens — usable for platform services, not marketplace or withdrawals */
+  bonusBalance: number | null;
   loading: boolean;
   spend: (action: string, description?: string, multiplier?: number) => Promise<{ success: boolean; balance: number; error?: string }>;
   refresh: () => Promise<void>;
@@ -11,6 +16,8 @@ interface TokenContextType {
 
 const TokenContext = createContext<TokenContextType>({
   balance: null,
+  realBalance: null,
+  bonusBalance: null,
   loading: true,
   spend: async () => ({ success: false, balance: 0, error: "No provider" }),
   refresh: async () => {},
@@ -18,15 +25,23 @@ const TokenContext = createContext<TokenContextType>({
 
 export function TokenProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState<number | null>(null);
+  const [realBalance, setRealBalance] = useState<number | null>(null);
+  const [bonusBalance, setBonusBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/tokens/balance");
       const data = await res.json();
-      setBalance(data.balance ?? 0);
+      const real = data.balance ?? 0;
+      const bonus = data.bonus_balance ?? 0;
+      setRealBalance(real);
+      setBonusBalance(bonus);
+      setBalance(real + bonus);
     } catch {
       setBalance(0);
+      setRealBalance(0);
+      setBonusBalance(0);
     } finally {
       setLoading(false);
     }
@@ -54,6 +69,8 @@ export function TokenProvider({ children }: { children: ReactNode }) {
       }
 
       setBalance(data.balance);
+      setRealBalance(data.real_balance ?? data.balance);
+      setBonusBalance(data.bonus_balance ?? 0);
       return { success: true, balance: data.balance };
     } catch {
       return { success: false, balance: balance ?? 0, error: "Ошибка сети" };
@@ -61,7 +78,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TokenContext.Provider value={{ balance, loading, spend, refresh }}>
+    <TokenContext.Provider value={{ balance, realBalance, bonusBalance, loading, spend, refresh }}>
       {children}
     </TokenContext.Provider>
   );

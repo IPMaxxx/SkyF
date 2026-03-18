@@ -27,7 +27,7 @@ const MIN_REMAINING = 50;
 const TOKEN_RATE_BYN = 0.3;
 
 export default function WithdrawPage() {
-  const { balance, refresh } = useTokens();
+  const { realBalance, bonusBalance, refresh } = useTokens();
   const [amount, setAmount] = useState<number>(MIN_WITHDRAW);
   const [method, setMethod] = useState<string>("card");
   const [details, setDetails] = useState("");
@@ -39,7 +39,7 @@ export default function WithdrawPage() {
   const [withdrawn, setWithdrawn] = useState(0);
 
   const currentMethod = METHODS.find((m) => m.id === method) ?? METHODS[0];
-  const totalBalance = balance ?? 0;
+  const totalBalance = realBalance ?? 0;
   const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
 
   useEffect(() => {
@@ -165,6 +165,11 @@ export default function WithdrawPage() {
           <span>Минимальный остаток: {MIN_REMAINING} токенов</span>
           <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
         </div>
+        {(bonusBalance ?? 0) > 0 && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            + {bonusBalance} бонусных токенов (не подлежат выводу)
+          </div>
+        )}
         <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
           Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_RATE_BYN} BYN</strong>
         </div>

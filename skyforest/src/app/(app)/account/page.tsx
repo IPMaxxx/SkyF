@@ -21,7 +21,7 @@ export default async function AccountPage() {
 
   const [profileRes, balanceRes, txRes] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
-    supabase.from("token_balances").select("*").eq("user_id", user.id).single(),
+    supabase.from("token_balances").select("balance, bonus_balance, total_purchased, total_spent, total_earned").eq("user_id", user.id).single(),
     supabase
       .from("token_transactions")
       .select("*")
@@ -74,14 +74,22 @@ export default async function AccountPage() {
           <Coins className="h-5 w-5 text-amber-400" />
           Токены
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-xl bg-amber-500/10 p-4 text-center">
-            <p className="text-2xl font-bold text-amber-400">{tokenBalance?.balance ?? 0}</p>
-            <p className="text-xs text-muted-foreground">Баланс</p>
+            <p className="text-2xl font-bold text-amber-400">{(tokenBalance?.balance ?? 0) + (tokenBalance?.bonus_balance ?? 0)}</p>
+            <p className="text-xs text-muted-foreground">Общий баланс</p>
+          </div>
+          <div className="rounded-xl bg-amber-500/10 p-4 text-center">
+            <p className="text-2xl font-bold text-amber-300">{tokenBalance?.balance ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Купленные</p>
+          </div>
+          <div className="rounded-xl bg-cyan-500/10 p-4 text-center">
+            <p className="text-2xl font-bold text-cyan-400">{tokenBalance?.bonus_balance ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Бонусные</p>
           </div>
           <div className="rounded-xl bg-green-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-green-400">{tokenBalance?.total_purchased ?? 0}</p>
-            <p className="text-xs text-muted-foreground">Куплено</p>
+            <p className="text-xs text-muted-foreground">Куплено всего</p>
           </div>
           <div className="rounded-xl bg-purple-500/10 p-4 text-center">
             <p className="text-2xl font-bold text-purple-400">{tokenBalance?.total_earned ?? 0}</p>
@@ -92,6 +100,9 @@ export default async function AccountPage() {
             <p className="text-xs text-muted-foreground">Потрачено</p>
           </div>
         </div>
+        <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+          Бонусные токены можно использовать для сервисов платформы (погода, поиск, сравнение). Для покупок на маркетплейсе и вывода средств подходят только купленные токены.
+        </p>
         <Link
           href="/payment"
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-sm font-medium text-white transition-all hover:shadow-lg hover:shadow-amber-500/20"

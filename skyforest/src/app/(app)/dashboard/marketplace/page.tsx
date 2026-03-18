@@ -93,6 +93,8 @@ export default function MarketplacePage() {
   const [ownedDays, setOwnedDays] = useState<OwnedBestDay[]>([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [remainingSearches, setRemainingSearches] = useState<number | null>(null);
+  const [rateLimitRetry, setRateLimitRetry] = useState<number | null>(null);
   const [seasonFilter, setSeasonFilter] = useState<Season | "all">("all");
   const [mushroomFilter, setMushroomFilter] = useState<string>("all");
   const [buying, setBuying] = useState<string | null>(null);
@@ -107,9 +109,10 @@ export default function MarketplacePage() {
     useState<MushroomDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [locationPhotoIndex, setLocationPhotoIndex] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { balance, refresh } = useTokens();
+  const { balance, realBalance, bonusBalance, refresh } = useTokens();
 
   useEffect(() => {
     const loadOwned = async () => {
@@ -141,6 +144,10 @@ export default function MarketplacePage() {
       setError("Поставьте точку на карте");
       return;
     }
+    if (rateLimitRetry !== null && rateLimitRetry > 0) {
+      setError(`Лимит поиска исчерпан. Подождите ${Math.ceil(rateLimitRetry / 60)} мин.`);
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -156,7 +163,19 @@ export default function MarketplacePage() {
         }),
       });
       const data = await res.json();
+
+      if (res.status === 429 || data.error === "rate_limit") {
+        setRemainingSearches(0);
+        setRateLimitRetry(data.retry_after_seconds ?? 60);
+        setError(`Лимит поиска исчерпан (5 в час). Подождите ${Math.ceil((data.retry_after_seconds ?? 60) / 60)} мин.`);
+        return;
+      }
+
       setListings(data.listings ?? []);
+      if (data.remaining_searches !== undefined && data.remaining_searches !== null) {
+        setRemainingSearches(data.remaining_searches);
+        setRateLimitRetry(null);
+      }
     } catch {
       setError("Ошибка поиска");
     } finally {
@@ -295,8 +314,9 @@ export default function MarketplacePage() {
           Стоимость устанавливается продавцом.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — бесплатно</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупка — цена продавца в токенах</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — 5 запросов в час</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупка — только купленные токены</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупки доступны через 3 дня после регистрации</span>
         </div>
       </div>
 
@@ -352,22 +372,22 @@ export default function MarketplacePage() {
             </label>
             <input
               type="range"
-              min={10}
+              min={50}
               max={1000}
-              step={5}
+              step={10}
               value={radiusKm}
               onChange={(e) => setRadiusKm(parseInt(e.target.value))}
               className="w-full accent-primary h-2"
             />
             <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
-              <span>10 км</span>
+              <span>50 км</span>
               <span>1000 км</span>
             </div>
           </div>
 
           <button
             onClick={handleSearch}
-            disabled={loading || centerLat === null}
+            disabled={loading || centerLat === null || remainingSearches === 0}
             className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {loading ? (
@@ -375,7 +395,7 @@ export default function MarketplacePage() {
             ) : (
               <Search className="h-4 w-4" />
             )}
-            Найти грибные локации
+            {remainingSearches === 0 ? "Лимит исчерпан" : "Найти грибные локации"}
           </button>
         </div>
 
@@ -383,6 +403,19 @@ export default function MarketplacePage() {
           <p className="mt-3 text-xs text-muted-foreground">
             Центр: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} · Радиус:{" "}
             {radiusKm} км
+            {remainingSearches !== null && (
+              <span className={`ml-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                remainingSearches === 0
+                  ? "bg-red-500/15 text-red-400"
+                  : remainingSearches <= 2
+                  ? "bg-amber-500/15 text-amber-400"
+                  : "bg-emerald-500/15 text-emerald-400"
+              }`}>
+                {remainingSearches === 0
+                  ? "Лимит исчерпан"
+                  : `Осталось поисков: ${remainingSearches}/5`}
+              </span>
+            )}
           </p>
         )}
 
@@ -545,7 +578,7 @@ export default function MarketplacePage() {
             <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
               <Store className="mb-3 h-12 w-12 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
-                Нет предложений в радиусе {radiusKm} км
+                Нет предложений в радиусе ~{radiusKm} км
               </p>
               <p className="mt-1 text-xs text-muted-foreground/60">
                 Попробуйте увеличить радиус или сместить точку
@@ -560,7 +593,7 @@ export default function MarketplacePage() {
                 return (
                   <button
                     key={listing.id}
-                    onClick={() => setListingPreview(listing)}
+                    onClick={() => { setLocationPhotoIndex(0); setListingPreview(listing); }}
                     className="glass text-left rounded-xl p-4 transition-all hover:bg-glass-hover hover:shadow-lg hover:shadow-black/10"
                   >
                     <div className="flex items-start gap-3">
@@ -637,7 +670,8 @@ export default function MarketplacePage() {
       {listingPreview && (() => {
         const bd = listingPreview.best_day;
         const mushroom = bd?.mushroom;
-        const previewPhoto = bd?.photos?.[0] ?? null;
+        const photos: string[] = Array.isArray(bd?.photos) ? bd.photos : [];
+        const currentPhoto = photos[locationPhotoIndex] || photos[0];
         return (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div
@@ -645,18 +679,58 @@ export default function MarketplacePage() {
               onClick={() => setListingPreview(null)}
             />
             <div className="relative z-[10000] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a2a1f]/95 border border-white/10 shadow-2xl backdrop-blur-xl">
-              {/* Photo preview */}
-              {previewPhoto && (
-                <div className="p-3 pb-0">
+              {/* Photo gallery */}
+              {currentPhoto && (
+                <div className="relative">
                   <img
-                    src={previewPhoto}
+                    src={currentPhoto}
                     alt=""
                     referrerPolicy="no-referrer"
-                    className="h-48 w-full rounded-xl object-cover"
+                    className="h-56 w-full rounded-t-2xl object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        onClick={() =>
+                          setLocationPhotoIndex((i) =>
+                            i > 0 ? i - 1 : photos.length - 1
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        onClick={() =>
+                          setLocationPhotoIndex((i) =>
+                            i < photos.length - 1 ? i + 1 : 0
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                      >
+                        ›
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                        {photos.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setLocationPhotoIndex(i)}
+                            className={`h-1.5 rounded-full transition-all ${
+                              i === locationPhotoIndex
+                                ? "w-4 bg-white"
+                                : "w-1.5 bg-white/50"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="absolute top-2 right-2 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white backdrop-blur-sm">
+                        {locationPhotoIndex + 1} / {photos.length}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1013,19 +1087,25 @@ export default function MarketplacePage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Текущий баланс</span>
-                  <span className="font-semibold">{balance ?? 0}</span>
+                  <span className="text-muted-foreground">Баланс (купленные)</span>
+                  <span className="font-semibold">{realBalance ?? 0}</span>
                 </div>
+                {(bonusBalance ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-muted-foreground/70">
+                    <span>Бонусные (не для маркетплейса)</span>
+                    <span>{bonusBalance}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-white/10 pt-1.5">
                   <span className="text-muted-foreground">После операции</span>
-                  <span className={`font-bold ${(balance ?? 0) - buyConfirm.price < 0 ? "text-red-400" : "text-emerald-400"}`}>
-                    {(balance ?? 0) - buyConfirm.price}
+                  <span className={`font-bold ${(realBalance ?? 0) - buyConfirm.price < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                    {(realBalance ?? 0) - buyConfirm.price}
                   </span>
                 </div>
               </div>
-              {(balance ?? 0) < buyConfirm.price && (
+              {(realBalance ?? 0) < buyConfirm.price && (
                 <p className="mt-2 text-xs text-red-400">
-                  Недостаточно токенов.{" "}
+                  Недостаточно купленных токенов. Бонусные токены нельзя использовать на маркетплейсе.{" "}
                   <Link
                     href="/payment"
                     className="underline hover:text-red-300"
@@ -1049,7 +1129,7 @@ export default function MarketplacePage() {
               <button
                 onClick={confirmBuy}
                 disabled={
-                  buying !== null || (balance ?? 0) < buyConfirm.price
+                  buying !== null || (realBalance ?? 0) < buyConfirm.price
                 }
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >

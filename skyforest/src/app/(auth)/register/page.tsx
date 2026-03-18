@@ -65,6 +65,10 @@ function RegisterForm() {
       return;
     }
 
+    try {
+      await fetch("/api/auth/log-signup-ip", { method: "POST" });
+    } catch { /* non-critical */ }
+
     setSuccess(true);
     setLoading(false);
   };

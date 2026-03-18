@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     p_user_id: user.id,
     p_amount: numAmount,
     p_description: `Вывод ${numAmount} токенов`,
+    p_use_bonus: false,
   });
 
   if (spendErr || !spendResult?.success) {

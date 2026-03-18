@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     p_user_id: user.id,
     p_amount: amount,
     p_description: sanitizedDescription || `API: ${action}`,
+    p_use_bonus: true,
   });
 
   if (error) {
@@ -41,7 +42,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ошибка списания" }, { status: 500 });
   }
 
-  const result = data as { success: boolean; error?: string; balance: number };
+  const result = data as {
+    success: boolean;
+    error?: string;
+    balance: number;
+    real_balance?: number;
+    bonus_balance?: number;
+  };
 
   if (!result.success) {
     return NextResponse.json(
@@ -53,5 +60,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ balance: result.balance });
+  return NextResponse.json({
+    balance: result.balance,
+    real_balance: result.real_balance ?? result.balance,
+    bonus_balance: result.bonus_balance ?? 0,
+  });
 }

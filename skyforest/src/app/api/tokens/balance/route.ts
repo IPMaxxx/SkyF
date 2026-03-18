@@ -11,12 +11,13 @@ export async function GET() {
 
   const { data } = await supabase
     .from("token_balances")
-    .select("balance, total_purchased, total_spent")
+    .select("balance, bonus_balance, total_purchased, total_spent")
     .eq("user_id", user.id)
     .single();
 
   return NextResponse.json({
     balance: data?.balance ?? 0,
+    bonus_balance: data?.bonus_balance ?? 0,
     total_purchased: data?.total_purchased ?? 0,
     total_spent: data?.total_spent ?? 0,
   });

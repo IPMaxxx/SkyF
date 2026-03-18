@@ -14,10 +14,8 @@ function sanitizeListings(data: unknown) {
   if (!Array.isArray(data)) return [];
 
   return data.map((item) => {
-    const previewPhoto =
-      Array.isArray(item?.best_day?.photos) && item.best_day.photos.length > 0
-        ? [item.best_day.photos[0]]
-        : [];
+    const photos =
+      Array.isArray(item?.best_day?.photos) ? item.best_day.photos : [];
 
     return {
       id: item?.id,
@@ -33,7 +31,7 @@ function sanitizeListings(data: unknown) {
         ? {
             id: item.best_day.id,
             name: item.best_day.name,
-            photos: previewPhoto,
+            photos,
             forest_info: item.best_day.location?.forest_info ?? null,
             mushroom: item.best_day.mushroom
               ? {
@@ -95,6 +93,9 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "Invalid params" }, 400);
   }
 
+  const MIN_RADIUS_KM = 50;
+  const effectiveRadius = Math.max(pRadius, MIN_RADIUS_KM);
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase.rpc("search_marketplace_listings", {
     p_lat: pLat,
     p_lng: pLng,
-    p_radius_km: pRadius,
+    p_radius_km: effectiveRadius,
     p_user_id: user?.id ?? null,
   });
 
@@ -111,7 +112,22 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "Ошибка поиска" }, 500);
   }
 
-  const sanitizedListings = sanitizeListings(data);
+  if (data && typeof data === "object" && "error" in data && data.error === "rate_limit") {
+    return noStoreJson({
+      error: "rate_limit",
+      message: "Превышен лимит поиска (5 в час)",
+      remaining: 0,
+      retry_after_seconds: data.retry_after_seconds ?? 60,
+    }, 429);
+  }
 
-  return noStoreJson({ listings: sanitizedListings });
+  const listings = data?.listings ?? data;
+  const remainingSearches = data?.remaining_searches ?? null;
+
+  const sanitizedListings = sanitizeListings(listings);
+
+  return noStoreJson({
+    listings: sanitizedListings,
+    remaining_searches: remainingSearches,
+  });
 }
