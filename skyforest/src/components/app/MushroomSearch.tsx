@@ -18,9 +18,11 @@ interface Props {
 
 function DropdownPortal({
   anchorRef,
+  portalRef,
   children,
 }: {
   anchorRef: React.RefObject<HTMLDivElement | null>;
+  portalRef?: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }) {
   const [style, setStyle] = useState<React.CSSProperties>({ display: "none" });
@@ -48,7 +50,7 @@ function DropdownPortal({
     };
   }, [anchorRef]);
 
-  return createPortal(<div style={style}>{children}</div>, document.body);
+  return createPortal(<div ref={portalRef} style={style}>{children}</div>, document.body);
 }
 
 export function MushroomSearch({ value, onChange }: Props) {
@@ -57,11 +59,15 @@ export function MushroomSearch({ value, onChange }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inContainer = containerRef.current?.contains(target);
+      const inDropdown = dropdownRef.current?.contains(target);
+      if (!inContainer && !inDropdown) {
         setOpen(false);
       }
     };
@@ -164,7 +170,7 @@ export function MushroomSearch({ value, onChange }: Props) {
       </div>
 
       {showDropdown && (
-        <DropdownPortal anchorRef={containerRef}>
+        <DropdownPortal anchorRef={containerRef} portalRef={dropdownRef}>
           {results.length > 0 ? (
             <div className="max-h-[min(28rem,60vh)] overflow-y-auto overscroll-contain rounded-xl border border-white/15 bg-zinc-900 shadow-2xl">
               {results.map((m, i) => (
