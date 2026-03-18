@@ -23,10 +23,19 @@ const searchIcon = new L.DivIcon({
   iconAnchor: [15, 15],
 });
 
-const ownedIcon = new L.DivIcon({
+const sellingIcon = new L.DivIcon({
   className: "",
   html: `<div style="width:24px;height:24px;background:#f59e0b;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+  </div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
+const purchasedIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:24px;height:24px;background:#10b981;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
   </div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
@@ -46,6 +55,7 @@ interface OwnedBestDay {
   lat: number;
   lng: number;
   name: string;
+  type?: "selling" | "purchased";
 }
 
 export interface ListingSpot {
@@ -157,31 +167,36 @@ export function MarketplaceSearchMap({
         </Circle>
       ))}
 
-      {ownedDays.map((d, i) => (
-        <Marker key={`owned-${i}`} position={[d.lat, d.lng]} icon={ownedIcon}>
-          <Popup>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
-              <p style={{ fontWeight: 600, marginBottom: 4 }}>★ {d.name}</p>
-              <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>Ваш грибной день</p>
-              <a
-                href={`/dashboard/best-day/${d.id}`}
-                style={{
-                  display: "inline-block",
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  background: "#f59e0b",
-                  color: "#fff",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-              >
-                Открыть →
-              </a>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {ownedDays.map((d, i) => {
+        const isSelling = d.type === "selling";
+        return (
+          <Marker key={`owned-${i}`} position={[d.lat, d.lng]} icon={isSelling ? sellingIcon : purchasedIcon}>
+            <Popup>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+                <p style={{ fontWeight: 600, marginBottom: 4 }}>{isSelling ? "★" : "✓"} {d.name}</p>
+                <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>
+                  {isSelling ? "Выставлено на продажу" : "Купленная локация"}
+                </p>
+                <a
+                  href={`/dashboard/best-day/${d.id}`}
+                  style={{
+                    display: "inline-block",
+                    padding: "4px 12px",
+                    borderRadius: 6,
+                    background: isSelling ? "#f59e0b" : "#10b981",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Открыть →
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }

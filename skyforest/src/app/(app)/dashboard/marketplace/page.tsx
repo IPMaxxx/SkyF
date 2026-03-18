@@ -83,6 +83,7 @@ interface OwnedBestDay {
   lat: number;
   lng: number;
   name: string;
+  type: "selling" | "purchased";
 }
 
 export default function MarketplacePage() {
@@ -121,19 +122,37 @@ export default function MarketplacePage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: bdData } = await supabase
-        .from("best_days")
-        .select("id, name, location:locations(lat, lng)")
-        .eq("user_id", user.id);
+      const days: OwnedBestDay[] = [];
 
-      if (bdData) {
-        const days: OwnedBestDay[] = [];
-        for (const d of bdData) {
-          const loc = d.location as unknown as { lat: number; lng: number } | null;
-          if (loc) days.push({ id: d.id, lat: loc.lat, lng: loc.lng, name: d.name });
+      const { data: sellingData } = await supabase
+        .from("marketplace_listings")
+        .select("best_day:best_days(id, name, location:locations(lat, lng))")
+        .eq("seller_id", user.id)
+        .eq("status", "active");
+
+      if (sellingData) {
+        for (const row of sellingData) {
+          const bd = row.best_day as unknown as { id: string; name: string; location: { lat: number; lng: number } | null } | null;
+          if (bd?.location) {
+            days.push({ id: bd.id, lat: bd.location.lat, lng: bd.location.lng, name: bd.name, type: "selling" });
+          }
         }
-        setOwnedDays(days);
       }
+
+      const { data: purchasedData } = await supabase
+        .from("best_days")
+        .select("id, name, purchased_from_listing_id, location:locations(lat, lng)")
+        .eq("user_id", user.id)
+        .not("purchased_from_listing_id", "is", null);
+
+      if (purchasedData) {
+        for (const d of purchasedData) {
+          const loc = d.location as unknown as { lat: number; lng: number } | null;
+          if (loc) days.push({ id: d.id, lat: loc.lat, lng: loc.lng, name: d.name, type: "purchased" });
+        }
+      }
+
+      setOwnedDays(days);
     };
     loadOwned();
   }, []);
