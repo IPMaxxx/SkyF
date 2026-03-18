@@ -132,10 +132,10 @@ export function MarketplaceSearchMap({
           center={[spot.lat, spot.lng]}
           radius={SPOT_CIRCLE_RADIUS}
           pathOptions={{
-            color: "#10b981",
-            fillColor: "#10b981",
-            fillOpacity: 0.12,
-            weight: 2,
+            color: "#059669",
+            fillColor: "#065f46",
+            fillOpacity: 0.35,
+            weight: 2.5,
           }}
           eventHandlers={onSpotClick ? {
             click: () => onSpotClick(spot.id),
