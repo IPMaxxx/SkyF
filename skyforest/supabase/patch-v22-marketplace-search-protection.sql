@@ -41,7 +41,7 @@ begin
       where user_id = p_user_id
         and searched_at > now() - interval '1 hour';
 
-    if v_search_count >= 5 then
+    if v_search_count >= 20 then
       return jsonb_build_object(
         'error', 'rate_limit',
         'remaining', 0,
@@ -112,7 +112,7 @@ begin
   if p_user_id is not null then
     return jsonb_build_object(
       'listings', v_result,
-      'remaining_searches', greatest(0, 5 - (coalesce(v_search_count, 0) + 1))
+      'remaining_searches', greatest(0, 20 - (coalesce(v_search_count, 0) + 1))
     );
   end if;
 
