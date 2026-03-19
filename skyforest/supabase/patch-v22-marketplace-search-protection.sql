@@ -67,6 +67,8 @@ begin
       ml.season,
       ml.status,
       ml.created_at,
+      loc.lat + (('x' || substr(md5(ml.id::text), 1, 4))::bit(16)::int::double precision / 65535.0 - 0.5) * 0.18 as display_lat,
+      loc.lng + (('x' || substr(md5(ml.id::text), 5, 4))::bit(16)::int::double precision / 65535.0 - 0.5) * 0.18 as display_lng,
       jsonb_build_object(
         'id', bd.id,
         'name', bd.name,
