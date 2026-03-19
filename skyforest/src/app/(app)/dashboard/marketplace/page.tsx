@@ -177,7 +177,16 @@ export default function MarketplacePage() {
         }),
       });
       const data = await res.json();
-      setListings(data.listings ?? []);
+      if (res.status === 429 && data.error === "rate_limit") {
+        const mins = Math.ceil((data.retry_after_seconds ?? 60) / 60);
+        setError(`Слишком много запросов. Попробуйте через ${mins} мин.`);
+        setListings([]);
+      } else if (!res.ok) {
+        setError(data.error || "Ошибка поиска");
+        setListings([]);
+      } else {
+        setListings(data.listings ?? []);
+      }
     } catch {
       setError("Ошибка поиска");
     } finally {

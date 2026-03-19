@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -34,7 +35,10 @@ const DashboardMap = dynamic(
 export default function DashboardPage() {
   const { locations, bestDays: allBestDays, loading } = useAppData();
   const { balance, loading: balanceLoading } = useTokens();
-  const bestDays = allBestDays.slice(0, 5);
+  const [showAllDays, setShowAllDays] = useState(false);
+  const DAYS_PREVIEW = 5;
+  const bestDays = showAllDays ? allBestDays : allBestDays.slice(0, DAYS_PREVIEW);
+  const hasMoreDays = allBestDays.length > DAYS_PREVIEW;
 
   const hasLocations = locations.length > 0;
   const hasBestDays = bestDays.length > 0;
@@ -300,6 +304,16 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+          {hasMoreDays && (
+            <button
+              onClick={() => setShowAllDays((v) => !v)}
+              className="mt-3 w-full rounded-xl border border-amber-500/20 bg-amber-500/5 py-2.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10"
+            >
+              {showAllDays
+                ? "Свернуть"
+                : `Показать все ${allBestDays.length} грибных дней`}
+            </button>
+          )}
         </div>
       )}
 

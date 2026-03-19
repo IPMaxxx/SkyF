@@ -94,7 +94,25 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "Ошибка поиска" }, 500);
   }
 
-  const sanitizedListings = sanitizeListings(data);
+  if (data && typeof data === "object" && !Array.isArray(data) && data.error === "rate_limit") {
+    return noStoreJson(
+      {
+        error: "rate_limit",
+        remaining: 0,
+        retry_after_seconds: data.retry_after_seconds ?? 60,
+      },
+      429,
+    );
+  }
 
-  return noStoreJson({ listings: sanitizedListings });
+  const listings = Array.isArray(data)
+    ? data
+    : data?.listings ?? [];
+
+  const sanitizedListings = sanitizeListings(listings);
+
+  return noStoreJson({
+    listings: sanitizedListings,
+    remaining_searches: data?.remaining_searches ?? null,
+  });
 }
