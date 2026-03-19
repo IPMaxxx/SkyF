@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useRouter } from "next/navigation";
 import type { Location } from "@/lib/supabase/types";
 import type { BestDaySummary } from "@/lib/AppDataContext";
 
@@ -55,7 +54,6 @@ interface Props {
 export function DashboardMap({ locations, bestDays }: Props) {
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
-  const router = useRouter();
 
   useEffect(() => setMounted(true), []);
 
@@ -111,7 +109,17 @@ export function DashboardMap({ locations, bestDays }: Props) {
         zoomControl={true}
         attributionControl={false}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Карта">
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Спутник">
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
         {showLocations &&
           locations.map((loc) => (
@@ -119,22 +127,28 @@ export function DashboardMap({ locations, bestDays }: Props) {
               key={`loc-${loc.id}`}
               position={[loc.lat, loc.lng]}
               icon={locationIcon}
-              eventHandlers={{
-                click: () => router.push(`/dashboard/locations/${loc.id}`),
-              }}
             >
               <Popup>
-                <div className="text-sm">
-                  <p className="font-semibold">{loc.name}</p>
-                  <p className="text-xs text-gray-500">
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+                  <p style={{ fontWeight: 600, marginBottom: 2 }}>{loc.name}</p>
+                  <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>
                     {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
                   </p>
-                  <button
-                    className="mt-1.5 text-xs font-medium text-emerald-600 hover:underline"
-                    onClick={() => router.push(`/dashboard/locations/${loc.id}`)}
+                  <a
+                    href={`/dashboard/locations/${loc.id}`}
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 12px",
+                      borderRadius: 6,
+                      background: "#10b981",
+                      color: "#fff",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
                   >
                     Открыть →
-                  </button>
+                  </a>
                 </div>
               </Popup>
             </Marker>
@@ -146,28 +160,34 @@ export function DashboardMap({ locations, bestDays }: Props) {
               key={`bd-${bd.id}`}
               position={[bd.lat, bd.lng]}
               icon={bestDayIcon}
-              eventHandlers={{
-                click: () => router.push(`/dashboard/best-day/${bd.id}`),
-              }}
             >
               <Popup>
-                <div className="text-sm">
-                  <p className="font-semibold">{bd.name}</p>
-                  <p className="text-xs text-gray-500">
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+                  <p style={{ fontWeight: 600, marginBottom: 2 }}>{bd.name}</p>
+                  <p style={{ color: "#888", fontSize: 11 }}>
                     {bd.location?.name} &middot;{" "}
                     {new Date(bd.best_date).toLocaleDateString("ru-RU")}
                   </p>
                   {bd.mushroom && (
-                    <p className="text-xs italic text-gray-400">
+                    <p style={{ color: "#aaa", fontSize: 11, fontStyle: "italic", marginBottom: 6 }}>
                       {bd.mushroom.latin_name}
                     </p>
                   )}
-                  <button
-                    className="mt-1.5 text-xs font-medium text-amber-600 hover:underline"
-                    onClick={() => router.push(`/dashboard/best-day/${bd.id}`)}
+                  <a
+                    href={`/dashboard/best-day/${bd.id}`}
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 12px",
+                      borderRadius: 6,
+                      background: "#f59e0b",
+                      color: "#fff",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
                   >
                     Открыть →
-                  </button>
+                  </a>
                 </div>
               </Popup>
             </Marker>
