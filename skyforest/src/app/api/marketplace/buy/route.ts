@@ -36,8 +36,9 @@ export async function POST(request: NextRequest) {
 
   if (!result.success) {
     const messages: Record<string, string> = {
-      not_found: "Листинг не найден или уже продан",
+      not_found: "Листинг не найден или снят с продажи",
       own_listing: "Нельзя купить свой собственный Best Day",
+      already_purchased: "Вы уже купили эту локацию",
       insufficient: "Недостаточно токенов. Для покупок на маркетплейсе используются только купленные токены (бонусные не подходят).",
       bestday_missing: "Best Day больше не существует",
       ip_conflict: "Покупка невозможна",
