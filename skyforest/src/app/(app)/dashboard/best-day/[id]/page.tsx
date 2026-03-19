@@ -392,24 +392,34 @@ export default function EditBestDayPage() {
       {!bestDay?.purchased_from_listing_id && (
         <div className="mb-5">
           {activeListing ? (
-            <div className="glass flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 sm:p-4">
-              <div className="flex items-center gap-2">
-                <Store className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium text-emerald-400">
-                  На маркетплейсе
-                </span>
+            <div className="space-y-2">
+              <div className="glass flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-emerald-400">
+                    На маркетплейсе
+                  </span>
+                </div>
+                <button
+                  onClick={handleDelist}
+                  disabled={delistLoading}
+                  className="flex items-center gap-1 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+                >
+                  {delistLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5" />
+                  )}
+                  Снять с продажи
+                </button>
               </div>
               <button
-                onClick={handleDelist}
-                disabled={delistLoading}
-                className="flex items-center gap-1 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+                onClick={handleCreateMonitor}
+                disabled={creatingMonitor}
+                className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
               >
-                {delistLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <XCircle className="h-3.5 w-3.5" />
-                )}
-                Снять с продажи
+                {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
+                Мониторинг погоды
               </button>
             </div>
           ) : (
