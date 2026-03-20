@@ -16,14 +16,17 @@ const locationIcon = new L.DivIcon({
   iconAnchor: [16, 16],
 });
 
-const bestDayIcon = new L.DivIcon({
-  className: "",
-  html: `<div style="width:32px;height:32px;background:#f59e0b;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-  </div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-});
+function makeBestDayIcon(count: number) {
+  return new L.DivIcon({
+    className: "",
+    html: `<div style="position:relative;width:32px;height:32px;background:#f59e0b;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      ${count > 1 ? `<div style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;background:#ef4444;border:2px solid #fff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;padding:0 3px">${count}</div>` : ""}
+    </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+}
 
 type Filter = "all" | "locations" | "bestDays";
 
@@ -73,6 +76,17 @@ export function DashboardMap({ locations, bestDays }: Props) {
         .filter(Boolean) as (BestDaySummary & { lat: number; lng: number })[],
     [bestDays, locMap]
   );
+
+  const groupedBestDays = useMemo(() => {
+    const groups = new Map<string, (BestDaySummary & { lat: number; lng: number })[]>();
+    for (const bd of bestDayMarkers) {
+      const key = bd.location_id;
+      const arr = groups.get(key) || [];
+      arr.push(bd);
+      groups.set(key, arr);
+    }
+    return Array.from(groups.values());
+  }, [bestDayMarkers]);
 
   const showLocations = filter === "all" || filter === "locations";
   const showBestDays = filter === "all" || filter === "bestDays";
@@ -155,43 +169,62 @@ export function DashboardMap({ locations, bestDays }: Props) {
           ))}
 
         {showBestDays &&
-          bestDayMarkers.map((bd) => (
-            <Marker
-              key={`bd-${bd.id}`}
-              position={[bd.lat, bd.lng]}
-              icon={bestDayIcon}
-            >
-              <Popup>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
-                  <p style={{ fontWeight: 600, marginBottom: 2 }}>{bd.name}</p>
-                  <p style={{ color: "#888", fontSize: 11 }}>
-                    {bd.location?.name} &middot;{" "}
-                    {new Date(bd.best_date).toLocaleDateString("ru-RU")}
-                  </p>
-                  {bd.mushroom && (
-                    <p style={{ color: "#aaa", fontSize: 11, fontStyle: "italic", marginBottom: 6 }}>
-                      {bd.mushroom.latin_name}
-                    </p>
-                  )}
-                  <a
-                    href={`/dashboard/best-day/${bd.id}`}
-                    style={{
-                      display: "inline-block",
-                      padding: "4px 12px",
-                      borderRadius: 6,
-                      background: "#f59e0b",
-                      color: "#fff",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Открыть →
-                  </a>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          groupedBestDays.map((group) => {
+            const first = group[0];
+            return (
+              <Marker
+                key={`bd-group-${first.location_id}`}
+                position={[first.lat, first.lng]}
+                icon={makeBestDayIcon(group.length)}
+              >
+                <Popup>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, maxHeight: 240, overflowY: "auto" }}>
+                    {group.map((bd, i) => (
+                      <div
+                        key={bd.id}
+                        style={{
+                          padding: "8px 0",
+                          borderTop: i > 0 ? "1px solid #e5e7eb" : "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          {bd.mushroom?.image_url ? (
+                            <img
+                              src={bd.mushroom.image_url}
+                              alt=""
+                              style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+                            />
+                          ) : null}
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>{bd.name}</p>
+                            <p style={{ color: "#888", fontSize: 11, margin: 0 }}>
+                              {new Date(bd.best_date).toLocaleDateString("ru-RU")}
+                              {bd.mushroom ? ` · ${bd.mushroom.common_name || bd.mushroom.latin_name}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={`/dashboard/best-day/${bd.id}`}
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 6,
+                            background: "#f59e0b",
+                            color: "#fff",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Открыть →
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
 
         {allPoints.length > 0 && <FitBounds points={allPoints} />}
       </MapContainer>
