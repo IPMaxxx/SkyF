@@ -36,6 +36,7 @@ import {
   Map,
   Trash2,
   Tag,
+  CreditCard,
 } from "lucide-react";
 
 const AdminMapLazy = dynamic(
@@ -447,6 +448,91 @@ const TABLES: TableConfig[] = [
           return <span className="text-xs">{p?.full_name || p?.email || "—"}</span>;
         },
       },
+      { key: "created_at", label: "Дата", type: "date" },
+    ],
+  },
+  {
+    key: "token_payments",
+    label: "Оплаты",
+    icon: CreditCard,
+    columns: [
+      {
+        key: "profile",
+        label: "Пользователь",
+        render: (_v, row) => {
+          const p = row.profile as Record<string, string> | null;
+          return (
+            <div className="text-xs">
+              <span className="font-medium">{p?.full_name || "—"}</span>
+              {p?.email && (
+                <span className="text-muted-foreground ml-1">({p.email})</span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        key: "amount",
+        label: "Токены",
+        type: "number",
+        render: (_v, row) => (
+          <span className="font-semibold text-xs text-emerald-400">+{row.amount as number}</span>
+        ),
+      },
+      {
+        key: "payment_amount_cents",
+        label: "Сумма (банк)",
+        render: (_v, row) => {
+          const cents = row.payment_amount_cents as number | null | undefined;
+          const cur = (row.payment_currency as string) || "BYN";
+          if (cents == null || Number.isNaN(cents)) {
+            return <span className="text-xs text-muted-foreground">—</span>;
+          }
+          const major = cents / 100;
+          return (
+            <span className="text-xs font-medium tabular-nums">
+              {major.toFixed(2)} {cur}
+            </span>
+          );
+        },
+      },
+      {
+        key: "payment_id",
+        label: "ID платежа (bePaid)",
+        render: (_v, row) => {
+          const id = row.payment_id as string | null;
+          if (!id) return <span className="text-xs text-muted-foreground">—</span>;
+          return (
+            <span className="text-[10px] font-mono text-muted-foreground break-all max-w-[140px] block" title={id}>
+              {id}
+            </span>
+          );
+        },
+      },
+      {
+        key: "payment_tracking_id",
+        label: "Tracking",
+        render: (_v, row) => {
+          const tr = row.payment_tracking_id as string | null;
+          if (!tr) return <span className="text-xs text-muted-foreground">—</span>;
+          return (
+            <span className="text-[10px] font-mono text-muted-foreground break-all max-w-[120px] block" title={tr}>
+              {tr}
+            </span>
+          );
+        },
+      },
+      {
+        key: "description",
+        label: "Описание",
+        type: "text",
+        render: (_v, row) => (
+          <span className="text-xs truncate max-w-[140px] block text-muted-foreground">
+            {(row.description as string) || "—"}
+          </span>
+        ),
+      },
+      { key: "balance_after", label: "Баланс после", type: "number" },
       { key: "created_at", label: "Дата", type: "date" },
     ],
   },
@@ -867,6 +953,7 @@ const TAB_GROUPS = [
     label: "Финансы",
     items: [
       TABLES.find((t) => t.key === "token_transactions")!,
+      TABLES.find((t) => t.key === "token_payments")!,
       TABLES.find((t) => t.key === "token_balances")!,
     ],
   },
@@ -1407,12 +1494,22 @@ export default function AdminPage() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        onClick={() => setActiveTab("token_transactions")}
-                        className="mt-3 text-xs text-amber-400 hover:underline"
-                      >
-                        Все транзакции →
-                      </button>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("token_transactions")}
+                          className="text-xs text-amber-400 hover:underline"
+                        >
+                          Все транзакции →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("token_payments")}
+                          className="text-xs text-emerald-400 hover:underline"
+                        >
+                          Оплаты (банк) →
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1526,7 +1623,7 @@ export default function AdminPage() {
                           >
                             <button
                               onClick={() => {
-                                if (!col.render || col.key === "created_at" || col.key === "updated_at" || col.key === "best_date" || col.key === "sold_at" || col.key === "last_run_at" || ["price", "amount", "balance", "bonus_balance", "balance_after", "uses_count", "token_cost", "radius_km", "purchase_tokens", "buyer_bonus", "referrer_bonus", "total_purchased", "total_spent", "total_earned", "last_score"].includes(col.key)) {
+                                if (!col.render || col.key === "created_at" || col.key === "updated_at" || col.key === "best_date" || col.key === "sold_at" || col.key === "last_run_at" || ["price", "amount", "balance", "bonus_balance", "balance_after", "uses_count", "token_cost", "radius_km", "purchase_tokens", "buyer_bonus", "referrer_bonus", "total_purchased", "total_spent", "total_earned", "last_score", "payment_amount_cents"].includes(col.key)) {
                                   handleSort(col.key);
                                 }
                               }}

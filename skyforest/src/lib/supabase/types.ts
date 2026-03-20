@@ -105,6 +105,11 @@ export interface TokenTransaction {
   description: string | null;
   payment_id: string | null;
   balance_after: number | null;
+  /** Minor units from payment gateway (e.g. kopecks for BYN) */
+  payment_amount_cents?: number | null;
+  payment_currency?: string | null;
+  /** Gateway order tracking_id */
+  payment_tracking_id?: string | null;
   created_at: string;
 }
 

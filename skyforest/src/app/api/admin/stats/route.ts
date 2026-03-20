@@ -36,6 +36,7 @@ export async function GET() {
     listingsSoldRes,
     listingsCancelledRes,
     transactionsRes,
+    tokenPaymentsRes,
     referralCodesRes,
     forestSearchRes,
     autoComparesRes,
@@ -62,6 +63,11 @@ export async function GET() {
     admin
       .from("token_transactions")
       .select("id", { count: "exact", head: true }),
+    admin
+      .from("token_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("type", "purchase")
+      .not("payment_id", "is", null),
     admin.from("referral_codes").select("id", { count: "exact", head: true }),
     admin
       .from("forest_search_history")
@@ -112,6 +118,7 @@ export async function GET() {
         listings_sold: listingsSoldRes.count ?? 0,
         listings_cancelled: listingsCancelledRes.count ?? 0,
         token_transactions: transactionsRes.count ?? 0,
+        token_payments: tokenPaymentsRes.count ?? 0,
         referral_codes: referralCodesRes.count ?? 0,
         forest_searches: forestSearchRes.count ?? 0,
         auto_compares: autoComparesRes.count ?? 0,

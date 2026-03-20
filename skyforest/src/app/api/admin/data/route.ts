@@ -36,8 +36,14 @@ const ALLOWED_TABLES: Record<
   },
   token_transactions: {
     select:
-      "id, user_id, amount, type, description, payment_id, balance_after, created_at, profile:profiles!user_id(full_name, email)",
-    searchColumns: ["description", "payment_id"],
+      "id, user_id, amount, type, description, payment_id, balance_after, payment_amount_cents, payment_currency, payment_tracking_id, created_at, profile:profiles!user_id(full_name, email)",
+    searchColumns: ["description", "payment_id", "payment_tracking_id"],
+    defaultSort: "created_at",
+  },
+  token_payments: {
+    select:
+      "id, user_id, amount, type, description, payment_id, balance_after, payment_amount_cents, payment_currency, payment_tracking_id, created_at, profile:profiles!user_id(full_name, email)",
+    searchColumns: ["description", "payment_id", "payment_tracking_id"],
     defaultSort: "created_at",
   },
   token_balances: {
@@ -111,9 +117,11 @@ export async function GET(request: NextRequest) {
   const filterColumn = searchParams.get("filter_column");
   const filterValue = searchParams.get("filter_value");
 
-  if (!table || (!ALLOWED_TABLES[table] && table !== "active_users")) {
+  const ALLOWED_TABLE_KEYS = [...Object.keys(ALLOWED_TABLES), "active_users"];
+
+  if (!table || !ALLOWED_TABLE_KEYS.includes(table)) {
     return NextResponse.json(
-      { error: "Invalid table", allowed: [...Object.keys(ALLOWED_TABLES), "active_users"] },
+      { error: "Invalid table", allowed: ALLOWED_TABLE_KEYS },
       { status: 400 }
     );
   }
@@ -204,11 +212,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const config = ALLOWED_TABLES[table!];
+  const physicalTable =
+    table === "token_payments" ? "token_transactions" : table!;
+  const config =
+    table === "token_payments"
+      ? ALLOWED_TABLES.token_payments
+      : ALLOWED_TABLES[table!];
 
   let query = admin
-    .from(table!)
+    .from(physicalTable)
     .select(config.select, { count: "exact" });
+
+  if (table === "token_payments") {
+    query = query.eq("type", "purchase").not("payment_id", "is", null);
+  }
 
   if (filterColumn && filterValue) {
     query = query.eq(filterColumn, filterValue);
@@ -247,7 +264,7 @@ export async function GET(request: NextRequest) {
     deleted_best_days: ["user_id"],
   };
 
-  const fieldsToEnrich = ENRICH_USER_FIELDS[table];
+  const fieldsToEnrich = ENRICH_USER_FIELDS[table!];
   if (fieldsToEnrich && enriched.length > 0) {
     const allIds = new Set<string>();
     for (const r of enriched) {

@@ -81,12 +81,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: "already_processed" });
   }
 
+  const currency =
+    typeof transaction.currency === "string" ? transaction.currency : "BYN";
+
   const { data, error } = await supabase.rpc("add_tokens", {
     p_user_id: userId,
     p_amount: tokens,
     p_type: "purchase",
     p_description: `Покупка ${tokens} токенов`,
     p_payment_id: paymentId,
+    p_payment_amount_cents:
+      typeof paidCents === "number" ? paidCents : null,
+    p_payment_currency: currency,
+    p_payment_tracking_id: trackingId,
   });
 
   if (error) {
