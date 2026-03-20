@@ -52,6 +52,7 @@ export default function NewBestDayPage() {
   const [geoWarnings, setGeoWarnings] = useState<string[]>([]);
   const { balance, spend } = useTokens();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [savedBestDayId, setSavedBestDayId] = useState<string | null>(null);
   const [showNewLocation, setShowNewLocation] = useState(false);
   const [showConfirmGetData, setShowConfirmGetData] = useState(false);
@@ -250,7 +251,18 @@ export default function NewBestDayPage() {
 
     if (newBd) {
       const loc = locations.find((l) => l.id === selectedLocId);
-      addBestDay({ ...newBd, location: loc } as never);
+      addBestDay({
+        ...newBd,
+        location: loc ? { id: loc.id, name: loc.name } : undefined,
+        mushroom: mushroom
+          ? {
+              id: mushroomDbId,
+              latin_name: mushroom.latin_name,
+              common_name: mushroom.common_name,
+              image_url: mushroom.image_url,
+            }
+          : undefined,
+      } as never);
     }
 
     router.push("/dashboard");
@@ -413,10 +425,16 @@ export default function NewBestDayPage() {
             <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {photos.map((url) => (
                 <div key={url} className="group relative aspect-square overflow-hidden rounded-xl">
-                  <img src={url} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full cursor-pointer object-cover transition-transform group-hover:scale-105"
+                    onClick={() => setFullscreenPhoto(url)}
+                  />
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(url)}
+                    onClick={(e) => { e.stopPropagation(); handleRemovePhoto(url); }}
                     className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white shadow-lg sm:h-6 sm:w-6 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
                   >
                     <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -565,6 +583,56 @@ export default function NewBestDayPage() {
           Сохранить грибной день · Бесплатно
         </button>
       </div>
+
+      {fullscreenPhoto && (
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={() => setFullscreenPhoto(null)}
+        >
+          <button
+            onClick={() => setFullscreenPhoto(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const idx = photos.indexOf(fullscreenPhoto);
+                  setFullscreenPhoto(photos[idx > 0 ? idx - 1 : photos.length - 1]);
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                ‹
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const idx = photos.indexOf(fullscreenPhoto);
+                  setFullscreenPhoto(photos[idx < photos.length - 1 ? idx + 1 : 0]);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                ›
+              </button>
+            </>
+          )}
+          <img
+            src={fullscreenPhoto}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {photos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-sm">
+              {photos.indexOf(fullscreenPhoto) + 1} / {photos.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
