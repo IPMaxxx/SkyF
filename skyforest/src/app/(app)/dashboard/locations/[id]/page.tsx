@@ -8,7 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { Location, ForestInfo } from "@/lib/supabase/types";
 import { MapPin, Save, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
+import { DifficultySelect } from "@/components/app/DifficultySelect";
 import { useAppData } from "@/lib/AppDataContext";
+import type { LocationDifficulty } from "@/lib/supabase/types";
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
@@ -32,6 +34,8 @@ export default function EditLocationPage() {
   const [name, setName] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<LocationDifficulty | null>(null);
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -55,6 +59,8 @@ export default function EditLocationPage() {
         setName(data.name);
         setLat(data.lat);
         setLng(data.lng);
+        setDifficulty(data.difficulty ?? null);
+        setDescription(data.description ?? "");
       }
       setLoading(false);
     };
@@ -70,7 +76,7 @@ export default function EditLocationPage() {
     const supabase = createClient();
     const { error: dbErr } = await supabase
       .from("locations")
-      .update({ name: name.trim(), lat, lng })
+      .update({ name: name.trim(), lat, lng, difficulty, description: description.trim() || null })
       .eq("id", id);
 
     if (dbErr) { setError(dbErr.message); setSaving(false); return; }
@@ -147,6 +153,22 @@ export default function EditLocationPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        <DifficultySelect value={difficulty} onChange={setDifficulty} />
+
+        <div>
+          <label htmlFor="loc-desc" className="mb-1.5 block text-sm font-medium">
+            Описание локации
+          </label>
+          <textarea
+            id="loc-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+            rows={3}
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
           />
         </div>
 

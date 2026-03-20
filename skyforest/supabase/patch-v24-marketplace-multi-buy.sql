@@ -222,7 +222,9 @@ BEGIN
         'location', CASE WHEN loc.id IS NOT NULL THEN jsonb_build_object(
           'id', loc.id,
           'name', loc.name,
-          'forest_info', loc.forest_info
+          'forest_info', loc.forest_info,
+          'difficulty', loc.difficulty,
+          'description', loc.description
         ) ELSE null END,
         'mushroom', CASE WHEN ms.id IS NOT NULL THEN jsonb_build_object(
           'id', ms.id,

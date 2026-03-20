@@ -35,6 +35,8 @@ function sanitizeListings(data: unknown) {
             name: item.best_day.name,
             photos,
             forest_info: item.best_day.location?.forest_info ?? null,
+            difficulty: item.best_day.location?.difficulty ?? null,
+            location_description: item.best_day.location?.description ?? null,
             mushroom: item.best_day.mushroom
               ? {
                   id: item.best_day.mushroom.id,

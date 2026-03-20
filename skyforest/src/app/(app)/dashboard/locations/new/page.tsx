@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import { MapPin, Save, Loader2, ArrowLeft, Search, X } from "lucide-react";
 import Link from "next/link";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
+import { DifficultySelect } from "@/components/app/DifficultySelect";
 import { useAppData } from "@/lib/AppDataContext";
+import type { LocationDifficulty } from "@/lib/supabase/types";
 
 const LocationPicker = dynamic(
   () =>
@@ -56,6 +58,8 @@ export default function NewLocationPage() {
   const [lng, setLng] = useState<number | null>(null);
   const [flyLat, setFlyLat] = useState<number | null>(null);
   const [flyLng, setFlyLng] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<LocationDifficulty | null>(null);
+  const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -203,8 +207,10 @@ export default function NewLocationPage() {
         name: name.trim(),
         lat,
         lng,
+        difficulty,
+        description: description.trim() || null,
       })
-      .select("id, name, lat, lng, created_at")
+      .select("id, name, lat, lng, difficulty, description, created_at")
       .single();
 
     if (dbError) {
@@ -329,6 +335,22 @@ export default function NewLocationPage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Например: Лес у деревни Заречье"
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        <DifficultySelect value={difficulty} onChange={setDifficulty} />
+
+        <div>
+          <label htmlFor="loc-desc" className="mb-1.5 block text-sm font-medium">
+            Описание локации
+          </label>
+          <textarea
+            id="loc-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+            rows={3}
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
           />
         </div>
 

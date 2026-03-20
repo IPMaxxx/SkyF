@@ -8,6 +8,8 @@ export interface Profile {
   updated_at: string;
 }
 
+export type LocationDifficulty = "easy" | "medium" | "hard";
+
 export interface Location {
   id: string;
   user_id: string;
@@ -15,6 +17,8 @@ export interface Location {
   lat: number;
   lng: number;
   forest_info: ForestInfo | null;
+  difficulty: LocationDifficulty | null;
+  description: string | null;
   created_at: string;
 }
 
@@ -70,6 +74,8 @@ export interface BestDay {
   location?: Location;
   mushroom?: MushroomSpecies;
   forest_info?: ForestInfo | null;
+  difficulty?: LocationDifficulty | null;
+  location_description?: string | null;
 }
 
 export interface WeatherDay {

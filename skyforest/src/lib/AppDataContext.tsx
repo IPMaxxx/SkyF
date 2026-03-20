@@ -67,9 +67,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const [locRes, bdRes] = await Promise.all([
       supabase
         .from("locations")
-        .select("id, name, lat, lng, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
+      .select("id, name, lat, lng, difficulty, description, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
       supabase
         .from("best_days")
         .select(
@@ -92,7 +92,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const { data } = await supabase
       .from("locations")
-      .select("id, name, lat, lng, created_at")
+      .select("id, name, lat, lng, difficulty, description, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (data) setLocations(data as Location[]);

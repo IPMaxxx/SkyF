@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import type { Location } from "@/lib/supabase/types";
 import { MapPin, Save, Loader2, X, Search } from "lucide-react";
+import { DifficultySelect } from "@/components/app/DifficultySelect";
+import type { LocationDifficulty } from "@/lib/supabase/types";
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
@@ -45,6 +47,8 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
   const [lng, setLng] = useState<number | null>(null);
   const [flyLat, setFlyLat] = useState<number | null>(null);
   const [flyLng, setFlyLng] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<LocationDifficulty | null>(null);
+  const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -119,7 +123,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
 
     const { data, error: dbError } = await supabase
       .from("locations")
-      .insert({ user_id: user.id, name: name.trim(), lat, lng })
+      .insert({ user_id: user.id, name: name.trim(), lat, lng, difficulty, description: description.trim() || null })
       .select("*")
       .single();
 
@@ -131,6 +135,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
 
     setName(""); setLat(null); setLng(null);
     setFlyLat(null); setFlyLng(null);
+    setDifficulty(null); setDescription("");
     setError(""); setSaving(false);
     onCreated(data as Location);
     onClose();
@@ -207,6 +212,22 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Например: Лес у деревни Заречье"
               className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          <DifficultySelect value={difficulty} onChange={setDifficulty} />
+
+          <div>
+            <label htmlFor="modal-loc-desc" className="mb-1.5 block text-sm font-medium">
+              Описание локации
+            </label>
+            <textarea
+              id="modal-loc-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+              rows={2}
+              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
 

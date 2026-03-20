@@ -347,6 +347,19 @@ export default function DashboardPage() {
                 <span className="text-xs text-muted-foreground">
                   {loc.lat.toFixed(2)}, {loc.lng.toFixed(2)}
                 </span>
+                {loc.difficulty && (() => {
+                  const labels: Record<string, string> = { easy: "Простая", medium: "Средняя", hard: "Тяжёлая" };
+                  const colors: Record<string, string> = {
+                    easy: "bg-emerald-500/15 text-emerald-400",
+                    medium: "bg-amber-500/15 text-amber-400",
+                    hard: "bg-red-500/15 text-red-400",
+                  };
+                  return (
+                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${colors[loc.difficulty]}`}>
+                      {labels[loc.difficulty]}
+                    </span>
+                  );
+                })()}
               </Link>
             ))}
           </div>

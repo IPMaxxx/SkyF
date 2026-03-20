@@ -649,6 +649,21 @@ export default function MarketplacePage() {
                               </span>
                             );
                           })()}
+                          {(() => {
+                            const diff = bd?.difficulty as string | null;
+                            if (!diff) return null;
+                            const labels: Record<string, string> = { easy: "Простая", medium: "Средняя", hard: "Тяжёлая" };
+                            const colors: Record<string, string> = {
+                              easy: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+                              medium: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+                              hard: "border-red-500/20 bg-red-500/10 text-red-400",
+                            };
+                            return (
+                              <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${colors[diff] ?? ""}`}>
+                                {labels[diff] ?? diff}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                       <span className="flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-sm font-bold text-amber-400">
@@ -845,6 +860,34 @@ export default function MarketplacePage() {
                             ))}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Difficulty & description (visible before purchase) */}
+                {(() => {
+                  const diff = bd?.difficulty as string | null;
+                  const locDesc = bd?.location_description as string | null;
+                  if (!diff && !locDesc) return null;
+                  const DIFF_LABELS: Record<string, string> = { easy: "Простая", medium: "Средняя", hard: "Тяжёлая" };
+                  const DIFF_COLORS: Record<string, string> = {
+                    easy: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+                    medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+                    hard: "bg-red-500/15 text-red-400 border-red-500/20",
+                  };
+                  return (
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3 space-y-2">
+                      {diff && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Сложность:</span>
+                          <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${DIFF_COLORS[diff] ?? ""}`}>
+                            {DIFF_LABELS[diff] ?? diff}
+                          </span>
+                        </div>
+                      )}
+                      {locDesc && (
+                        <p className="text-xs leading-relaxed text-muted-foreground">{locDesc}</p>
                       )}
                     </div>
                   );

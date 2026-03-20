@@ -76,7 +76,9 @@ begin
         'location', case when loc.id is not null then jsonb_build_object(
           'id', loc.id,
           'name', loc.name,
-          'forest_info', loc.forest_info
+          'forest_info', loc.forest_info,
+          'difficulty', loc.difficulty,
+          'description', loc.description
         ) else null end,
         'mushroom', case when ms.id is not null then jsonb_build_object(
           'id', ms.id,
