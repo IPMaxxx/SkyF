@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServerClient } from "@supabase/ssr";
+import type { PostgrestError } from "@supabase/supabase-js";
+
+/** Without patch-v26 payment columns — used as fallback if DB not migrated yet */
+const TOKEN_TX_SELECT_LEGACY =
+  "id, user_id, amount, type, description, payment_id, balance_after, created_at, profile:profiles!user_id(full_name, email)";
+
+const TOKEN_TX_SEARCH_LEGACY = ["description", "payment_id"] as const;
+
+function isMissingPaymentColumnsError(error: PostgrestError | null): boolean {
+  const m = (error?.message ?? "").toLowerCase();
+  return (
+    m.includes("payment_amount_cents") ||
+    m.includes("payment_currency") ||
+    m.includes("payment_tracking_id") ||
+    (m.includes("schema cache") && m.includes("column"))
+  );
+}
 
 const ALLOWED_TABLES: Record<
   string,
@@ -219,30 +236,41 @@ export async function GET(request: NextRequest) {
       ? ALLOWED_TABLES.token_payments
       : ALLOWED_TABLES[table!];
 
-  let query = admin
-    .from(physicalTable)
-    .select(config.select, { count: "exact" });
+  const buildTableQuery = (selectStr: string, searchCols: string[] | undefined) => {
+    let q = admin.from(physicalTable).select(selectStr, { count: "exact" });
+    if (table === "token_payments") {
+      q = q.eq("type", "purchase").filter("payment_id", "not.is", null);
+    }
+    if (filterColumn && filterValue) {
+      q = q.eq(filterColumn, filterValue);
+    }
+    if (search && searchCols && searchCols.length > 0) {
+      const orFilter = searchCols
+        .map((col) => `${col}.ilike.%${search}%`)
+        .join(",");
+      q = q.or(orFilter);
+    }
+    const sortColumn = sortBy || config.defaultSort || "created_at";
+    q = q.order(sortColumn, { ascending: sortDir });
+    q = q.range(from, to);
+    return q;
+  };
 
-  if (table === "token_payments") {
-    query = query.eq("type", "purchase").not("payment_id", "is", null);
+  let { data, count, error } = await buildTableQuery(
+    config.select,
+    config.searchColumns
+  );
+
+  if (
+    error &&
+    isMissingPaymentColumnsError(error) &&
+    (table === "token_transactions" || table === "token_payments")
+  ) {
+    ({ data, count, error } = await buildTableQuery(
+      TOKEN_TX_SELECT_LEGACY,
+      [...TOKEN_TX_SEARCH_LEGACY]
+    ));
   }
-
-  if (filterColumn && filterValue) {
-    query = query.eq(filterColumn, filterValue);
-  }
-
-  if (search && config.searchColumns && config.searchColumns.length > 0) {
-    const orFilter = config.searchColumns
-      .map((col) => `${col}.ilike.%${search}%`)
-      .join(",");
-    query = query.or(orFilter);
-  }
-
-  const sortColumn = sortBy || config.defaultSort || "created_at";
-  query = query.order(sortColumn, { ascending: sortDir });
-  query = query.range(from, to);
-
-  const { data, count, error } = await query;
 
   if (error) {
     console.error(`Admin data error [${table}]:`, error);
