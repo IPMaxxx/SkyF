@@ -36,7 +36,7 @@ export default function DashboardPage() {
   const { locations, bestDays: allBestDays, loading } = useAppData();
   const { balance, loading: balanceLoading } = useTokens();
   const [showAllDays, setShowAllDays] = useState(false);
-  const DAYS_PREVIEW = 5;
+  const DAYS_PREVIEW = 6;
   const bestDays = showAllDays ? allBestDays : allBestDays.slice(0, DAYS_PREVIEW);
   const hasMoreDays = allBestDays.length > DAYS_PREVIEW;
 
