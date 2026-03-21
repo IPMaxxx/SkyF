@@ -11,6 +11,7 @@ import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
+import { addCalendarDaysYmd, minskTodayYmd } from "@/lib/minsk-date";
 import {
   comparePatterns,
   WEIGHT_LABELS,
@@ -37,7 +38,20 @@ import {
   Play,
   X,
   Clock,
+  CalendarDays,
 } from "lucide-react";
+
+const FORECAST_FORWARD_DAYS = 5;
+const FORECAST_ANCHORS = FORECAST_FORWARD_DAYS + 1;
+const FORECAST_RANGE_BACK = 13;
+const FORECAST_RANGE_FORWARD = 5;
+
+function forecastAnchorLabel(offset: number): string {
+  if (offset === 0) return "Сегодня";
+  if (offset === 1) return "Завтра";
+  if (offset === 2) return "Послезавтра";
+  return `+${offset} дн.`;
+}
 
 interface LastResult {
   overall: number;
@@ -68,6 +82,15 @@ interface HistoryEntry {
   created_at: string;
 }
 
+type ForecastScoreRow = {
+  offset: number;
+  anchorDate: string;
+  label: string;
+  overall: number;
+};
+
+const FORECAST_RETENTION_DAYS = 5;
+
 const DEFAULT_WEIGHTS: Record<keyof WeightConfig, number> = {
   rain_sum: 30,
   temperature_mean: 25,
@@ -87,8 +110,14 @@ export default function ComparePage() {
   const { balance, spend } = useTokens();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
   const [newBdId, setNewBdId] = useState("");
   const [newLocId, setNewLocId] = useState("");
+  const [forecastBdId, setForecastBdId] = useState("");
+  const [forecastLocId, setForecastLocId] = useState("");
+  const [forecastRunning, setForecastRunning] = useState(false);
+  const [confirmForecast, setConfirmForecast] = useState(false);
+  const [forecastScores, setForecastScores] = useState<ForecastScoreRow[] | null>(null);
   const [newAuto, setNewAuto] = useState(false);
   const [newTime, setNewTime] = useState("08:00");
   const [creating, setCreating] = useState(false);
@@ -105,9 +134,41 @@ export default function ComparePage() {
   useEffect(() => {
     if (bestDays.length > 0 && !newBdId) setNewBdId(bestDays[0].id);
     if (locations.length > 0 && !newLocId) setNewLocId(locations[0].id);
-  }, [bestDays, locations, newBdId, newLocId]);
+    if (bestDays.length > 0 && !forecastBdId) setForecastBdId(bestDays[0].id);
+    if (locations.length > 0 && !forecastLocId) setForecastLocId(locations[0].id);
+  }, [bestDays, locations, newBdId, newLocId, forecastBdId, forecastLocId]);
 
   useEffect(() => { loadComparisons(); }, []);
+
+  const loadSavedForecast = async (bdId: string, locId: string) => {
+    if (!bdId || !locId) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - FORECAST_RETENTION_DAYS);
+    const { data } = await supabase
+      .from("saved_forecast_compares")
+      .select("scores, created_at")
+      .eq("user_id", user.id)
+      .eq("best_day_id", bdId)
+      .eq("location_id", locId)
+      .gte("created_at", cutoff.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const rows = data?.scores;
+    if (Array.isArray(rows) && rows.length === FORECAST_ANCHORS) {
+      setForecastScores(rows as ForecastScoreRow[]);
+    } else {
+      setForecastScores(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!showForecast || !forecastBdId || !forecastLocId) return;
+    void loadSavedForecast(forecastBdId, forecastLocId);
+  }, [showForecast, forecastBdId, forecastLocId]);
 
   useEffect(() => {
     if (!loading && comparisons.length > 0) {
@@ -173,6 +234,128 @@ export default function ComparePage() {
     if (data) setComparisons((prev) => [{ ...data, weights: DEFAULT_WEIGHTS } as unknown as Comparison, ...prev]);
     setShowCreate(false);
     setCreating(false);
+  };
+
+  const requestForecastRun = () => {
+    if (!forecastBdId || !forecastLocId) {
+      setError("Выберите грибной день и локацию");
+      return;
+    }
+    setError("");
+    setConfirmForecast(true);
+  };
+
+  const handleForecastRun = async () => {
+    setConfirmForecast(false);
+    if (!forecastBdId || !forecastLocId) return;
+    const loc = locations.find((l) => l.id === forecastLocId);
+    if (!loc) {
+      setError("Локация не найдена");
+      return;
+    }
+
+    const spendResult = await spend("compare_forecast", "Прогноз совпадения паттерна (6 дней)");
+    if (!spendResult.success) {
+      setError(spendResult.error || "Недостаточно токенов");
+      return;
+    }
+    toast.success(`Списано ${TOKEN_COSTS.compare_forecast} токенов`);
+
+    setForecastRunning(true);
+    setError("");
+    setForecastScores(null);
+
+    try {
+      const supabase = createClient();
+      const { data: bdRow, error: bdErr } = await supabase
+        .from("best_days")
+        .select("weather_data")
+        .eq("id", forecastBdId)
+        .single();
+
+      if (bdErr || !bdRow?.weather_data?.length) {
+        setError("Нет погодных данных у выбранного грибного дня");
+        setForecastRunning(false);
+        return;
+      }
+
+      const reference = bdRow.weather_data as WeatherDay[];
+      const todayMinsk = minskTodayYmd();
+      const startDate = addCalendarDaysYmd(todayMinsk, -FORECAST_RANGE_BACK);
+      const endDate = addCalendarDaysYmd(todayMinsk, FORECAST_RANGE_FORWARD);
+
+      const qs = new URLSearchParams({
+        lat: String(loc.lat),
+        lng: String(loc.lng),
+        start_date: startDate,
+        end_date: endDate,
+      });
+      const res = await fetch(`/api/weather?${qs}`);
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        setForecastRunning(false);
+        return;
+      }
+
+      const allDays: WeatherDay[] = data.days || [];
+      const expectedLen = FORECAST_RANGE_BACK + FORECAST_RANGE_FORWARD + 1;
+      if (allDays.length < expectedLen) {
+        setError(`Недостаточно данных погоды (${allDays.length} из ${expectedLen} дней). Попробуйте позже.`);
+        setForecastRunning(false);
+        return;
+      }
+
+      const cfg = {} as WeightConfig;
+      for (const k of paramKeys) cfg[k] = DEFAULT_WEIGHTS[k] / 100;
+
+      const scores: ForecastScoreRow[] = [];
+      for (let offset = 0; offset < FORECAST_ANCHORS; offset++) {
+        const windowDays = allDays.slice(offset, offset + 14);
+        if (windowDays.length < 14) break;
+        const cmpResult = comparePatterns(reference, windowDays, cfg);
+        scores.push({
+          offset,
+          anchorDate: addCalendarDaysYmd(todayMinsk, offset),
+          label: forecastAnchorLabel(offset),
+          overall: cmpResult.overall,
+        });
+      }
+
+      if (scores.length !== FORECAST_ANCHORS) {
+        setError("Не удалось посчитать все окна сравнения");
+        setForecastRunning(false);
+        return;
+      }
+
+      const { data: { user: saveUser } } = await supabase.auth.getUser();
+      if (saveUser) {
+        const { error: saveErr } = await supabase.from("saved_forecast_compares").insert({
+          user_id: saveUser.id,
+          best_day_id: forecastBdId,
+          location_id: forecastLocId,
+          run_minsk_date: todayMinsk,
+          weather_start: startDate,
+          weather_end: endDate,
+          scores,
+        });
+        if (!saveErr) {
+          const purgeBefore = new Date();
+          purgeBefore.setDate(purgeBefore.getDate() - FORECAST_RETENTION_DAYS);
+          await supabase
+            .from("saved_forecast_compares")
+            .delete()
+            .eq("user_id", saveUser.id)
+            .lt("created_at", purgeBefore.toISOString());
+        }
+      }
+
+      setForecastScores(scores);
+    } catch {
+      setError("Ошибка загрузки данных");
+    } finally {
+      setForecastRunning(false);
+    }
   };
 
   const requestCompare = (cmp: Comparison) => {
@@ -304,15 +487,39 @@ export default function ComparePage() {
             <p className="text-xs sm:text-sm text-muted-foreground">Сравнение текущей погоды с вашими лучшими днями</p>
           </div>
         </div>
-        <button type="button" onClick={() => setShowCreate(true)} disabled={bestDays.length === 0}
-          className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
-          <Plus className="h-4 w-4" /> Новое сравнение
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={() => {
+              setShowForecast(false);
+              setShowCreate(true);
+            }}
+            disabled={bestDays.length === 0}
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" /> Новое сравнение
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreate(false);
+              setForecastScores(null);
+              setShowForecast(true);
+            }}
+            disabled={bestDays.length === 0}
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-violet-400/40 bg-violet-500/10 px-4 py-2.5 text-sm font-medium text-violet-200 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+          >
+            <CalendarDays className="h-4 w-4" /> Прогноз
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
         <p className="text-sm leading-relaxed text-muted-foreground">
           <strong className="text-foreground">Как работает:</strong> система сравнивает текущую погоду за последние 14 дней с погодой вашего лучшего грибного дня. Чем выше процент совпадения — тем больше шансов на удачный поход.
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          <strong className="text-foreground">Прогноз:</strong> для выбранных эталона и локации считается шесть совпадений 14‑дневного паттерна: окно заканчивается сегодня, завтра и далее до +5 дней. Даты в будущем используют прогноз модели, а не «фактическую» погоду.
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
           <strong className="text-foreground">Автосравнение:</strong> включите тумблер и задайте время — каждый день в указанный час система проведёт сравнение и отправит результат на вашу почту. Например, если вы установите 08:00 — письмо придёт утром, и вы сразу узнаете, стоит ли сегодня ехать за грибами.
@@ -322,6 +529,7 @@ export default function ComparePage() {
         </p>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/80">
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Одно сравнение — 6 токенов</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Прогноз (6 якорей) — {TOKEN_COSTS.compare_forecast} токенов</span>
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Автосравнение — 6 токенов/день</span>
         </div>
       </div>
@@ -329,6 +537,122 @@ export default function ComparePage() {
       {error && <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
 
       {/* Create form */}
+      {showForecast && (
+        <div className="mb-6 glass rounded-2xl border border-cyan-500/25 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Прогноз совпадения</h3>
+            <button
+              type="button"
+              onClick={() => setShowForecast(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+            Шесть процентов: насколько 14‑дневный паттерн (заканчиваясь выбранным днём) похож на эталон. Первое окно — как в обычном сравнении; для следующих дней часть ряда — прогноз. Результаты сохраняются на {FORECAST_RETENTION_DAYS} дней для выбранной пары «грибной день + локация».
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium">Грибной день-эталон</label>
+              <div className="relative">
+                <Star className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
+                <select
+                  value={forecastBdId}
+                  onChange={(e) => setForecastBdId(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 outline-none focus:border-primary"
+                >
+                  <option value="" disabled>
+                    Выберите грибной день
+                  </option>
+                  {bestDays.map((bd) => (
+                    <option key={bd.id} value={bd.id}>
+                      {bd.name} — {bd.location?.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium">Локация</label>
+              <div className="relative">
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
+                <select
+                  value={forecastLocId}
+                  onChange={(e) => {
+                    if (e.target.value === "__new__") {
+                      setShowNewLocation(true);
+                      return;
+                    }
+                    setForecastLocId(e.target.value);
+                  }}
+                  className="w-full appearance-none rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 outline-none focus:border-primary"
+                >
+                  <option value="" disabled>
+                    Выберите локацию
+                  </option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                  <option value="__new__">+ Создать новую</option>
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={requestForecastRun}
+            disabled={forecastRunning || !forecastBdId || !forecastLocId}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 py-3 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {forecastRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarDays className="h-4 w-4" />}
+            Рассчитать · {TOKEN_COSTS.compare_forecast} ток.
+          </button>
+          {forecastScores && forecastScores.length > 0 && (
+            <div className="mt-6">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Совпадение по дням якоря (Минск)
+              </h4>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {forecastScores.map((row) => (
+                  <div
+                    key={row.offset}
+                    className="rounded-xl border border-white/10 bg-white/5 p-3 text-center"
+                  >
+                    <p className="text-[11px] font-medium text-muted-foreground">{row.label}</p>
+                    <p className="text-[10px] text-muted-foreground/70">
+                      {(() => {
+                        const [yy, mo, da] = row.anchorDate.split("-").map(Number);
+                        return new Date(yy, mo - 1, da).toLocaleDateString("ru-RU", {
+                          day: "numeric",
+                          month: "short",
+                        });
+                      })()}
+                    </p>
+                    <p className={`mt-2 text-2xl font-bold ${getMatchColor(row.overall)}`}>
+                      {Math.round(row.overall)}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/80">{getMatchLabel(row.overall)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {showCreate && (
         <div className="mb-6 glass rounded-2xl p-5 border border-violet-500/20">
           <div className="mb-4 flex items-center justify-between">
@@ -384,7 +708,7 @@ export default function ComparePage() {
       <NewLocationModal open={showNewLocation} onClose={() => setShowNewLocation(false)} onCreated={(loc) => { addLocation(loc); setNewLocId(loc.id); }} />
 
       {/* Empty state */}
-      {comparisons.length === 0 && !showCreate && (
+      {comparisons.length === 0 && !showCreate && !showForecast && (
         <div className="mt-12 text-center">
           <GitCompareArrows className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-muted-foreground">Нет сравнений</p>
@@ -648,6 +972,17 @@ export default function ComparePage() {
         loading={runningId !== null}
         onConfirm={() => confirmCompare && handleRunCompare(confirmCompare)}
         onCancel={() => setConfirmCompare(null)}
+      />
+
+      <TokenConfirmModal
+        open={confirmForecast}
+        title="Прогноз паттерна"
+        description="Один запрос погоды на 19 дней и шесть сравнений 14‑дневных окон с эталоном. Для будущих дат используются прогнозные значения модели."
+        cost={TOKEN_COSTS.compare_forecast}
+        balance={balance}
+        loading={forecastRunning}
+        onConfirm={handleForecastRun}
+        onCancel={() => setConfirmForecast(false)}
       />
 
       {confirmAutoToggle && (

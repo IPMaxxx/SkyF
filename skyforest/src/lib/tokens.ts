@@ -3,6 +3,8 @@ export const TOKEN_COSTS = {
   best_day_create: 2,
   best_day_reload: 2,
   compare: 6,
+  /** Rolling 14d pattern vs эталон: 6 якорей (сегодня … +5 дн.), один запрос погоды */
+  compare_forecast: 12,
   rain_map_per_batch: 10, // per 50 points
   forest_search: 2, // base; actual cost = 2 * ceil(radius_km / 2)
   marketplace_buy: 0, // dynamic — equals listing price; 0 is placeholder
@@ -24,6 +26,7 @@ export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
     case "best_day_create": return "Запись грибного дня";
     case "best_day_reload": return "Обновление погоды грибного дня";
     case "compare": return "Сравнение погодных условий";
+    case "compare_forecast": return "Прогноз совпадения паттерна (6 дней)";
     case "rain_map_per_batch": return "Карта осадков (за 50 точек)";
     case "forest_search": return "Поиск леса (≈ радиус в км)";
     case "marketplace_buy": return "Покупка грибного дня на маркетплейсе";
