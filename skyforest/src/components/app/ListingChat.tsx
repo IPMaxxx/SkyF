@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Loader2, Send, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { UserName } from "@/components/app/UserName";
 
@@ -32,6 +33,8 @@ export function ListingChat({
   compact,
   defaultExpanded,
 }: ListingChatProps) {
+  const t = useTranslations("marketplace");
+  const locale = useLocale();
   const [messages, setMessages] = useState<Message[]>([]);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
@@ -107,14 +110,14 @@ export function ListingChat({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Ошибка отправки");
+        setError(data.error || t("chatSendError"));
         setSending(false);
         return;
       }
       setMessages((prev) => [...prev, data.message]);
       setText("");
     } catch {
-      setError("Ошибка сети");
+      setError(t("errNetwork"));
     } finally {
       setSending(false);
     }
@@ -124,13 +127,12 @@ export function ListingChat({
     return (
       <div className={`${compact ? "" : "glass"} rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground`}>
         <Loader2 className="h-4 w-4 animate-spin" />
-        Загрузка чата...
+        {t("chatLoading")}
       </div>
     );
   }
 
-  const partnerLabel =
-    role === "buyer" ? "продавцом" : "покупателем";
+  const partnerRole = role === "buyer" ? t("rolePartnerSeller") : t("rolePartnerBuyer");
 
   return (
     <div className={`${compact ? "border border-white/10 bg-white/5" : "glass"} rounded-2xl overflow-hidden`}>
@@ -142,7 +144,7 @@ export function ListingChat({
         <div className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-blue-400" />
           <span className="text-sm font-medium">
-            Чат с {partnerLabel}
+            {t("chatWith", { role: partnerRole })}
             {partner && (
               <>
                 {": "}
@@ -172,7 +174,7 @@ export function ListingChat({
           <div className={`${compact ? "max-h-52" : "max-h-80"} overflow-y-auto px-4 py-3 space-y-2`}>
             {messages.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">
-                Нет сообщений. Напишите первым!
+                {t("chatNoMessages")}
               </p>
             ) : (
               messages.map((msg) => {
@@ -195,12 +197,15 @@ export function ListingChat({
                           isMine ? "text-blue-200/60" : "text-muted-foreground/50"
                         }`}
                       >
-                        {new Date(msg.created_at).toLocaleString("ru-RU", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(msg.created_at).toLocaleString(
+                          locale === "en" ? "en-US" : "ru-RU",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -225,7 +230,7 @@ export function ListingChat({
                     handleSend();
                   }
                 }}
-                placeholder="Написать сообщение..."
+                placeholder={t("chatPlaceholder")}
                 rows={1}
                 className="flex-1 resize-none rounded-xl border border-border bg-white/5 px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-muted-foreground/50"
               />

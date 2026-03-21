@@ -2,26 +2,21 @@
 
 import { useState, useEffect } from "react";
 import {
-  MapContainer, TileLayer, Marker, Circle, Popup, useMapEvents, useMap,
+  MapContainer,
+  TileLayer,
+  LayersControl,
+  Marker,
+  Circle,
+  Popup,
+  useMapEvents,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslations } from "next-intl";
 import type { ForestMatch } from "@/app/api/forest-search/route";
 
 const BELARUS_CENTER: [number, number] = [53.9, 27.56];
-
-const GENUS_RU: Record<string, string> = {
-  pinus: "Сосна", picea: "Ель", betula: "Берёза", quercus: "Дуб",
-  alnus: "Ольха", populus: "Тополь", acer: "Клён", tilia: "Липа",
-  salix: "Ива", fraxinus: "Ясень", ulmus: "Вяз", carpinus: "Граб",
-  corylus: "Лещина", sorbus: "Рябина", fagus: "Бук", larix: "Лиственница",
-  abies: "Пихта", juniperus: "Можжевельник", prunus: "Черёмуха",
-  malus: "Яблоня", robinia: "Робиния",
-};
-
-const FOREST_LABELS: Record<string, string> = {
-  coniferous: "Хвойный", broadleaved: "Лиственный", mixed: "Смешанный", unknown: "Не определён",
-};
 
 const refIcon = new L.DivIcon({
   className: "",
@@ -77,13 +72,14 @@ interface Props {
 export function ForestSearchMap({
   step, refLat, refLng, searchLat, searchLng, radiusKm, matches, onClick,
 }: Props) {
+  const t = useTranslations("forestSearch");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
     return (
       <div className="flex h-[500px] items-center justify-center rounded-xl bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{t("mapLoading")}</p>
       </div>
     );
   }
@@ -96,13 +92,27 @@ export function ForestSearchMap({
   return (
     <div className="overflow-hidden rounded-xl border border-border">
       <MapContainer center={center} zoom={zoom} className="h-[500px] w-full" zoomControl={true} attributionControl={false}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name={t("mapLayerMap")}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name={t("mapLayerSatellite")}>
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
         <ClickHandler onClick={onClick} />
 
         {refLat !== null && refLng !== null && (
           <>
             <Marker position={[refLat, refLng]} icon={refIcon}>
-              <Popup><strong>Эталон</strong><br />{refLat.toFixed(5)}, {refLng.toFixed(5)}</Popup>
+              <Popup>
+                <strong>{t("popupRef")}</strong>
+                <br />
+                {refLat.toFixed(5)}, {refLng.toFixed(5)}
+              </Popup>
             </Marker>
             {step === "reference" && <FlyTo lat={refLat} lng={refLng} zoom={13} />}
           </>
@@ -111,7 +121,11 @@ export function ForestSearchMap({
         {searchLat !== null && searchLng !== null && (
           <>
             <Marker position={[searchLat, searchLng]} icon={searchIcon}>
-              <Popup><strong>Центр поиска</strong><br />Радиус: {radiusKm} км</Popup>
+              <Popup>
+                <strong>{t("popupSearchCenter")}</strong>
+                <br />
+                {t("popupRadius", { km: radiusKm })}
+              </Popup>
             </Marker>
             <Circle
               center={[searchLat, searchLng]}
@@ -136,8 +150,12 @@ export function ForestSearchMap({
 }
 
 function ResultPopup({ match: m, index }: { match: ForestMatch; index: number }) {
+  const t = useTranslations("forestSearch");
   const simColor = m.similarity >= 70 ? "#10b981" : m.similarity >= 40 ? "#f59e0b" : "#6b7280";
   const p = m.pattern;
+
+  const genusLabel = (g: string) => t(`genus.${g}` as "genus.pinus");
+  const forestTypeLabel = (ft: string) => t(`forestType.${ft}` as "forestType.coniferous");
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: 1.5 }}>
@@ -150,8 +168,12 @@ function ResultPopup({ match: m, index }: { match: ForestMatch; index: number })
           {m.similarity}%
         </div>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{p.dominant_species || m.name || `Массив #${index + 1}`}</div>
-          <div style={{ fontSize: 11, color: "#888" }}>{m.lat.toFixed(5)}, {m.lng.toFixed(5)} · {p.points_sampled} точек</div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>
+            {p.dominant_species || m.name || t("popupMassif", { n: index + 1 })}
+          </div>
+          <div style={{ fontSize: 11, color: "#888" }}>
+            {m.lat.toFixed(5)}, {m.lng.toFixed(5)} · {t("popupPoints", { n: p.points_sampled })}
+          </div>
         </div>
       </div>
 
@@ -159,31 +181,31 @@ function ResultPopup({ match: m, index }: { match: ForestMatch; index: number })
         <tbody>
           {p.genera.length > 0 && (
             <>
-              <SectionHeader label="Рода деревьев" color="#22c55e" />
-              <PopupRow label="Виды" value={p.genera.map((g) => GENUS_RU[g] || g).join(", ")} bold />
+              <SectionHeader label={t("sectionGenera")} color="#22c55e" />
+              <PopupRow label={t("rowSpecies")} value={p.genera.map(genusLabel).join(", ")} bold />
             </>
           )}
           {p.fgis_species_list.length > 0 && (
             <>
-              <SectionHeader label="ФГИС ЛК" color="#f59e0b" />
-              <PopupRow label="Породы" value={p.fgis_species_list.join(", ")} bold />
-              {p.dominant_species && <PopupRow label="Доминирующая" value={p.dominant_species} />}
+              <SectionHeader label={t("sectionFgis")} color="#f59e0b" />
+              <PopupRow label={t("rowSpeciesFgis")} value={p.fgis_species_list.join(", ")} bold />
+              {p.dominant_species && <PopupRow label={t("rowDominant")} value={p.dominant_species} />}
             </>
           )}
-          <SectionHeader label="Тип леса" color="#3b82f6" />
-          <PopupRow label="Тип" value={FOREST_LABELS[p.forest_type] || p.forest_type} />
+          <SectionHeader label={t("sectionForestType")} color="#3b82f6" />
+          <PopupRow label={t("rowType")} value={forestTypeLabel(p.forest_type)} />
           {p.modis_class && (
             <>
-              <SectionHeader label="MODIS" color="#a855f7" />
-              <PopupRow label="Класс" value={p.modis_class} />
-              <PopupRow label="Лес" value={p.modis_is_forest ? "Да" : "Нет"} />
+              <SectionHeader label={t("sectionModis")} color="#a855f7" />
+              <PopupRow label={t("rowClass")} value={p.modis_class} />
+              <PopupRow label={t("rowForest")} value={p.modis_is_forest ? t("yes") : t("no")} />
             </>
           )}
-          <SectionHeader label="Детали оценки" color={simColor} />
-          <ScorePopupRow label="Рода" score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} />
-          <ScorePopupRow label="Порода" score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} />
-          <ScorePopupRow label="Тип" score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} />
-          <ScorePopupRow label="MODIS" score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} />
+          <SectionHeader label={t("sectionScore")} color={simColor} />
+          <ScorePopupRow label={t("breakdownGenera")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} />
+          <ScorePopupRow label={t("breakdownSpecies")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} />
+          <ScorePopupRow label={t("breakdownType")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} />
+          <ScorePopupRow label={t("breakdownModis")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} />
         </tbody>
       </table>
     </div>

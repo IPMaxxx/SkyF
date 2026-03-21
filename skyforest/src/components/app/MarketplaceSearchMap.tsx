@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   MapContainer,
   TileLayer,
@@ -88,13 +90,14 @@ export function MarketplaceSearchMap({
   onSelect,
   onSpotClick,
 }: Props) {
+  const t = useTranslations("marketplace");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
     return (
       <div className="flex h-[300px] items-center justify-center bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{t("mapLoading")}</p>
       </div>
     );
   }
@@ -117,8 +120,8 @@ export function MarketplaceSearchMap({
           <Marker position={[centerLat, centerLng]} icon={searchIcon}>
             <Popup>
               <div className="text-sm">
-                <p className="font-medium">Центр поиска</p>
-                <p className="text-gray-500">Радиус: {radiusKm} км</p>
+                <p className="font-medium">{t("mapSearchCenter")}</p>
+                <p className="text-gray-500">{t("mapRadius", { km: radiusKm })}</p>
               </div>
             </Popup>
           </Marker>
@@ -160,7 +163,7 @@ export function MarketplaceSearchMap({
                 </p>
               )}
               <p style={{ color: "#f59e0b", fontWeight: 600, fontSize: 12 }}>
-                {spot.price} токенов
+                {t("mapTokens", { n: spot.price })}
               </p>
             </div>
           </Popup>
@@ -175,9 +178,9 @@ export function MarketplaceSearchMap({
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
                 <p style={{ fontWeight: 600, marginBottom: 4 }}>{isSelling ? "★" : "✓"} {d.name}</p>
                 <p style={{ color: "#888", fontSize: 11, marginBottom: 6 }}>
-                  {isSelling ? "Выставлено на продажу" : "Купленная локация"}
+                  {isSelling ? t("mapListed") : t("mapPurchased")}
                 </p>
-                <a
+                <Link
                   href={`/dashboard/best-day/${d.id}`}
                   style={{
                     display: "inline-block",
@@ -190,8 +193,8 @@ export function MarketplaceSearchMap({
                     textDecoration: "none",
                   }}
                 >
-                  Открыть →
-                </a>
+                  {t("mapOpen")}
+                </Link>
               </div>
             </Popup>
           </Marker>

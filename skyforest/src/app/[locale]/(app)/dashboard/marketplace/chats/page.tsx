@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Loader2,
@@ -48,36 +49,49 @@ interface Partner {
   account_type: string;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  active: "Активный",
-  sold: "Продан",
-  cancelled: "Отменён",
-};
-
 const STATUS_COLOR: Record<string, string> = {
   active: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   sold: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   cancelled: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "только что";
-  if (mins < 60) return `${mins} мин`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} ч`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} д`;
-  return new Date(dateStr).toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
 /* ─── Main Page ─── */
 
 export default function ChatsPage() {
+  const t = useTranslations("marketplace");
+  const locale = useLocale();
+
+  const timeAgo = useCallback(
+    (dateStr: string) => {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return t("timeJustNow");
+      if (mins < 60) return t("timeMin", { n: mins });
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return t("timeHour", { n: hours });
+      const days = Math.floor(hours / 24);
+      if (days < 7) return t("timeDay", { n: days });
+      return new Date(dateStr).toLocaleDateString(
+        locale === "en" ? "en-US" : "ru-RU",
+        { day: "numeric", month: "short" }
+      );
+    },
+    [t, locale]
+  );
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return t("statusActive");
+      case "sold":
+        return t("statusSold");
+      case "cancelled":
+        return t("statusCancelled");
+      default:
+        return status;
+    }
+  };
+
   const [conversations, setConversations] = useState<ListingGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -259,7 +273,7 @@ export default function ChatsPage() {
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {activeChat.listingName || "Грибной день"}
+              {activeChat.listingName || t("defaultListingName")}
             </p>
           </div>
         </div>
@@ -273,7 +287,7 @@ export default function ChatsPage() {
               </div>
             ) : messages.length === 0 ? (
               <p className="py-12 text-center text-xs text-muted-foreground">
-                Нет сообщений. Напишите первым!
+                {t("chatNoMessages")}
               </p>
             ) : (
               messages.map((msg) => {
@@ -300,12 +314,15 @@ export default function ChatsPage() {
                             : "text-muted-foreground/50"
                         }`}
                       >
-                        {new Date(msg.created_at).toLocaleString("ru-RU", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(msg.created_at).toLocaleString(
+                          locale === "en" ? "en-US" : "ru-RU",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -327,7 +344,7 @@ export default function ChatsPage() {
                     handleSend();
                   }
                 }}
-                placeholder="Написать сообщение..."
+                placeholder={t("chatPlaceholder")}
                 rows={1}
                 className="flex-1 resize-none rounded-xl border border-border bg-white/5 px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-muted-foreground/50"
               />
@@ -359,7 +376,7 @@ export default function ChatsPage() {
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3 w-3" />
-          Маркетплейс
+          {t("chatsBreadcrumb")}
         </Link>
       </div>
 
@@ -368,14 +385,16 @@ export default function ChatsPage() {
           <MessageCircle className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg font-bold">Мои чаты</h1>
+          <h1 className="text-lg font-bold">{t("chatsTitle")}</h1>
           <p className="text-xs text-muted-foreground">
             {conversations.length === 0
-              ? "Нет диалогов"
-              : `${conversations.reduce((s, g) => s + g.threads.length, 0)} диалогов`}
+              ? t("chatsNoDialogs")
+              : t("chatsCount", {
+                  n: conversations.reduce((s, g) => s + g.threads.length, 0),
+                })}
             {totalUnread > 0 && (
               <span className="ml-1 text-blue-400">
-                ({totalUnread} неотвеченных)
+                {t("chatsUnread", { n: totalUnread })}
               </span>
             )}
           </p>
@@ -390,14 +409,14 @@ export default function ChatsPage() {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] py-16">
           <MessageCircle className="mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground mb-3">
-            У вас пока нет сообщений
+            {t("chatsEmpty")}
           </p>
           <Link
             href="/dashboard/marketplace"
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             <Store className="h-4 w-4" />
-            Перейти на маркетплейс
+            {t("chatsGoMarketplace")}
           </Link>
         </div>
       ) : (
@@ -415,7 +434,7 @@ export default function ChatsPage() {
                     {group.listing_name}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    {group.is_seller ? "Вы продавец" : "Вы покупатель"}
+                    {group.is_seller ? t("roleSeller") : t("roleBuyer")}
                   </p>
                 </div>
                 <span
@@ -423,7 +442,7 @@ export default function ChatsPage() {
                     STATUS_COLOR[group.listing_status] ?? ""
                   }`}
                 >
-                  {STATUS_LABEL[group.listing_status] ?? group.listing_status}
+                  {statusLabel(group.listing_status)}
                 </span>
               </div>
 
@@ -482,7 +501,7 @@ export default function ChatsPage() {
                       >
                         {thread.last_sender_id === thread.partner_id
                           ? ""
-                          : "Вы: "}
+                          : t("chatYouPrefix")}
                         {thread.last_message}
                       </p>
                     </div>

@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft, Trees, Search, Loader2, MapPin, Crosshair, Leaf, Satellite,
   Database, ChevronDown, ChevronUp, CloudSun, Save, Check,
@@ -30,40 +31,36 @@ interface HistoryItem {
   created_at: string;
 }
 
+function ForestSearchMapLoading() {
+  const t = useTranslations("forestSearch");
+  return (
+    <div className="flex h-[500px] items-center justify-center rounded-xl bg-white/5">
+      <p className="text-sm text-muted-foreground">{t("mapLoading")}</p>
+    </div>
+  );
+}
+
+function tokPlural(n: number, t: (key: string) => string, locale: string) {
+  if (locale === "en") return n === 1 ? t("tokenWord") : t("tokenWord5");
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return t("tokenWord");
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return t("tokenWord2");
+  return t("tokenWord5");
+}
+
 const ForestSearchMap = dynamic(
   () => import("@/components/app/ForestSearchMap").then((m) => m.ForestSearchMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[500px] items-center justify-center rounded-xl bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
-      </div>
-    ),
-  }
+  { ssr: false, loading: () => <ForestSearchMapLoading /> }
 );
 
 type Step = "reference" | "search" | "results";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 20];
 
-const GENUS_RU: Record<string, string> = {
-  pinus: "Сосна", picea: "Ель", betula: "Берёза", quercus: "Дуб",
-  alnus: "Ольха", populus: "Тополь", acer: "Клён", tilia: "Липа",
-  salix: "Ива", fraxinus: "Ясень", ulmus: "Вяз", carpinus: "Граб",
-  corylus: "Лещина", sorbus: "Рябина", fagus: "Бук", larix: "Лиственница",
-  abies: "Пихта", juniperus: "Можжевельник", prunus: "Черёмуха",
-  malus: "Яблоня", robinia: "Робиния",
-};
-
-const FOREST_LABELS: Record<string, string> = {
-  coniferous: "Хвойный", broadleaved: "Лиственный", mixed: "Смешанный", unknown: "Не определён",
-};
-
-function generaToRu(genera: string[]): string {
-  return genera.map((g) => GENUS_RU[g] || g).join(", ");
-}
-
 export default function ForestSearchPage() {
+  const t = useTranslations("forestSearch");
+  const locale = useLocale();
   const { balance, spend, refresh: refreshTokens } = useTokens();
   const [step, setStep] = useState<Step>("reference");
 
@@ -99,6 +96,10 @@ export default function ForestSearchPage() {
   const [weatherConfirmIdx, setWeatherConfirmIdx] = useState<number | null>(null);
 
   const tokenCost = Math.max(2, 2 * Math.ceil(Math.min(radiusKm, 20) / 2));
+
+  const genusLine = (genera: string[]) =>
+    genera.map((g) => t(`genus.${g}` as never)).join(", ");
+  const forestTypeLabel = (ft: string) => t(`forestType.${ft}` as never);
 
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -173,7 +174,7 @@ export default function ForestSearchPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Ошибка поиска");
+        setError(data.error || t("errSearch"));
         return;
       }
       setMatches(data.matches || []);
@@ -183,7 +184,7 @@ export default function ForestSearchPage() {
       refreshTokens();
       fetchHistory();
     } catch {
-      setError("Ошибка подключения");
+      setError(t("errConnection"));
     } finally {
       setSearching(false);
     }
@@ -209,12 +210,12 @@ export default function ForestSearchPage() {
     if (!m) return;
 
     if (!weatherLoadedSet.has(idx)) {
-      const spendResult = await spend("weather_check", `Погода массива #${idx + 1}`);
+      const spendResult = await spend("weather_check", t("spendWeatherMassif", { n: idx + 1 }));
       if (!spendResult.success) {
-        setError(spendResult.error || "Недостаточно токенов");
+        setError(spendResult.error || t("insufficientTokens"));
         return;
       }
-      toast.success(`Списано ${TOKEN_COSTS.weather_check} токена`);
+      toast.success(t("toastWeatherCharged", { amount: TOKEN_COSTS.weather_check }));
       setWeatherLoadedSet((prev) => new Set(prev).add(idx));
       refreshTokens();
     }
@@ -241,7 +242,7 @@ export default function ForestSearchPage() {
       if (!user) return;
       const name = m.pattern.dominant_species
         ? `${m.pattern.dominant_species} (${m.lat.toFixed(3)}, ${m.lng.toFixed(3)})`
-        : `Лес ${m.lat.toFixed(3)}, ${m.lng.toFixed(3)}`;
+        : t("saveLocationName", { lat: m.lat.toFixed(3), lng: m.lng.toFixed(3) });
       await supabase.from("locations").insert({ user_id: user.id, name, lat: m.lat, lng: m.lng });
       setSavedSet((prev) => new Set(prev).add(idx));
     } catch { /* ignore */ }
@@ -262,7 +263,7 @@ export default function ForestSearchPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
       <Link href="/dashboard" className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Назад
+        <ArrowLeft className="h-4 w-4" /> {t("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
@@ -270,11 +271,11 @@ export default function ForestSearchPage() {
           <Trees className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg sm:text-xl font-bold">Поиск леса</h1>
+          <h1 className="text-lg sm:text-xl font-bold">{t("title")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-            {step === "reference" && "Шаг 1: Укажите эталонную точку"}
-            {step === "search" && "Шаг 2: Зона поиска и радиус"}
-            {step === "results" && `Найдено ${matches.length} массивов`}
+            {step === "reference" && t("stepRef")}
+            {step === "search" && t("stepSearch")}
+            {step === "results" && t("stepResults", { count: matches.length })}
           </p>
         </div>
         {history.length > 0 && (
@@ -293,51 +294,51 @@ export default function ForestSearchPage() {
         <div className="flex items-start gap-2">
           <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="space-y-1.5 text-xs text-muted-foreground leading-relaxed">
-            <p><span className="text-foreground/80 font-medium">1.</span> Укажите эталонную точку — система соберёт паттерн из <b>10 точек</b> в радиусе 1 км, опросив все базы данных</p>
-            <p><span className="text-foreground/80 font-medium">2.</span> Укажите зону поиска — система найдёт до <b>10 лесных массивов</b>, для каждого соберёт паттерн из 10 точек и сравнит с эталоном</p>
+            <p><span className="text-foreground/80 font-medium">1.</span> {t("howStep1")}</p>
+            <p><span className="text-foreground/80 font-medium">2.</span> {t("howStep2")}</p>
           </div>
         </div>
         <button onClick={() => setShowDetails((v) => !v)} className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
           {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {showDetails ? "Скрыть подробности" : "Источники, оценка, стоимость"}
+          {showDetails ? t("detailsHide") : t("detailsShow")}
         </button>
         {showDetails && (
           <div className="space-y-4 pt-2 border-t border-border/30">
             <div>
-              <h3 className="font-semibold text-foreground mb-1 text-xs">Источники данных (на каждую точку)</h3>
+              <h3 className="font-semibold text-foreground mb-1 text-xs">{t("sourcesTitle")}</h3>
               <div className="grid gap-2 sm:grid-cols-2 text-xs">
                 <div className="rounded-lg bg-amber-500/10 border border-amber-500/15 p-2">
-                  <span className="font-semibold text-amber-400">ФГИС ЛК</span>
-                  <p className="text-muted-foreground mt-0.5">Преобладающая порода (Россия)</p>
+                  <span className="font-semibold text-amber-400">{t("sourceFgisTitle")}</span>
+                  <p className="text-muted-foreground mt-0.5">{t("sourceFgisDesc")}</p>
                 </div>
                 <div className="rounded-lg bg-green-500/10 border border-green-500/15 p-2">
                   <span className="font-semibold text-green-400">iNaturalist</span>
-                  <p className="text-muted-foreground mt-0.5">Виды деревьев (research-grade, R=2км)</p>
+                  <p className="text-muted-foreground mt-0.5">{t("sourceInatDesc")}</p>
                 </div>
                 <div className="rounded-lg bg-purple-500/10 border border-purple-500/15 p-2">
                   <span className="font-semibold text-purple-400">MODIS</span>
-                  <p className="text-muted-foreground mt-0.5">Спутниковый класс IGBP (центр массива)</p>
+                  <p className="text-muted-foreground mt-0.5">{t("sourceModisDesc")}</p>
                 </div>
                 <div className="rounded-lg bg-blue-500/10 border border-blue-500/15 p-2">
                   <span className="font-semibold text-blue-400">OpenStreetMap</span>
-                  <p className="text-muted-foreground mt-0.5">Лесные полигоны, кластеризация в массивы</p>
+                  <p className="text-muted-foreground mt-0.5">{t("sourceOsmDesc")}</p>
                 </div>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-foreground mb-1 text-xs">Оценка совпадения</h3>
+              <h3 className="font-semibold text-foreground mb-1 text-xs">{t("scoringTitle")}</h3>
               <div className="space-y-1 text-xs">
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">Совпадение родов деревьев (Jaccard)</span><span className="font-medium text-green-400">до 50</span></div>
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">Доминирующая порода</span><span className="font-medium">до 20</span></div>
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">Тип леса (хвойный/лиственный/смешанный)</span><span className="font-medium">до 20</span></div>
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">MODIS спутниковый класс</span><span className="font-medium">до 10</span></div>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">{t("scoreGenera")}</span><span className="font-medium text-green-400">{t("maxPoints", { n: 50 })}</span></div>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">{t("scoreDominant")}</span><span className="font-medium">{t("maxPoints", { n: 20 })}</span></div>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">{t("scoreForestType")}</span><span className="font-medium">{t("maxPoints", { n: 20 })}</span></div>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" /><span className="flex-1 text-muted-foreground">{t("scoreModis")}</span><span className="font-medium">{t("maxPoints", { n: 10 })}</span></div>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-foreground mb-1 text-xs">Стоимость</h3>
+              <h3 className="font-semibold text-foreground mb-1 text-xs">{t("costTitle")}</h3>
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p><Search className="inline h-3 w-3 mr-1" />Поиск: ≈ радиус в км (1 км = 2, 5 км = 6, 10 км = 10, 20 км = 20)</p>
-                <p><CloudSun className="inline h-3 w-3 mr-1" />Погода: 4 токена | <Save className="inline h-3 w-3 mr-1" />Сохранить: бесплатно</p>
+                <p><Search className="inline h-3 w-3 mr-1" />{t("costSearchLine")}</p>
+                <p><CloudSun className="inline h-3 w-3 mr-1" />{t("costWeatherLine")}</p>
               </div>
             </div>
           </div>
@@ -349,29 +350,29 @@ export default function ForestSearchPage() {
         <div className="mb-6 rounded-xl border border-blue-500/20 bg-blue-500/5 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-blue-500/15">
             <History className="h-4 w-4 text-blue-400" />
-            <span className="text-sm font-semibold text-blue-400 flex-1">История поисков</span>
-            <button onClick={() => setShowHistory(false)} className="text-xs text-muted-foreground hover:text-foreground">Скрыть</button>
+            <span className="text-sm font-semibold text-blue-400 flex-1">{t("historyTitle")}</span>
+            <button onClick={() => setShowHistory(false)} className="text-xs text-muted-foreground hover:text-foreground">{t("hide")}</button>
           </div>
           {historyLoading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : history.length === 0 ? (
-            <p className="px-4 py-4 text-sm text-muted-foreground text-center">Нет сохранённых поисков</p>
+            <p className="px-4 py-4 text-sm text-muted-foreground text-center">{t("historyEmpty")}</p>
           ) : (
             <div className="divide-y divide-blue-500/10 max-h-80 overflow-y-auto">
               {history.map((item) => {
                 const date = new Date(item.created_at);
-                const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
-                const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                const locTag = locale === "en" ? "en-US" : "ru-RU";
+                const dateStr = date.toLocaleDateString(locTag, { day: "numeric", month: "short", year: "numeric" });
                 const bestMatch = item.matches.length > 0 ? item.matches[0].similarity : 0;
                 const rp = item.ref_pattern;
                 return (
                   <div key={item.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 group">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                        <span className="font-medium">{rp.dominant_species || FOREST_LABELS[rp.forest_type]}</span>
-                        <span className="text-[11px] sm:text-xs text-muted-foreground">R={item.radius_km}км · {item.matches.length} рез.</span>
+                        <span className="font-medium">{rp.dominant_species || forestTypeLabel(rp.forest_type)}</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground">{t("historyMeta", { radius: item.radius_km, count: item.matches.length })}</span>
                         {bestMatch > 0 && (
                           <span className={`text-[11px] sm:text-xs font-bold ${bestMatch >= 70 ? "text-emerald-400" : bestMatch >= 40 ? "text-amber-400" : "text-gray-400"}`}>
                             {bestMatch}%
@@ -380,22 +381,22 @@ export default function ForestSearchPage() {
                       </div>
                       <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                         <span>{dateStr}</span>
-                        <span className="ml-1.5 sm:ml-2">{item.token_cost} ток.</span>
+                        <span className="ml-1.5 sm:ml-2">{t("tokensAbbr", { n: item.token_cost })}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => restoreFromHistory(item)}
                         className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
-                        title="Восстановить"
+                        title={t("restoreTitle")}
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Открыть</span>
+                        <span className="hidden sm:inline">{t("open")}</span>
                       </button>
                       <button
                         onClick={() => deleteHistoryItem(item.id)}
                         className="rounded-lg p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Удалить"
+                        title={t("deleteTitle")}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -421,9 +422,13 @@ export default function ForestSearchPage() {
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-500/15">
             <Leaf className="h-4 w-4 text-emerald-400" />
             <span className="text-sm font-semibold text-emerald-400 flex-1">
-              Эталон: {FOREST_LABELS[refPattern.forest_type]} · {refPattern.genera.length} родов · {refPattern.points_sampled} точек
+              {t("refSummary", {
+                type: forestTypeLabel(refPattern.forest_type),
+                genera: refPattern.genera.length,
+                points: refPattern.points_sampled,
+              })}
             </span>
-            <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">Сбросить</button>
+            <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">{t("reset")}</button>
           </div>
           <div className="px-4 py-3 space-y-2 text-xs">
             <div className="text-muted-foreground">
@@ -432,19 +437,19 @@ export default function ForestSearchPage() {
             {refPattern.genera.length > 0 && (
               <div className="flex items-start gap-2 rounded-lg bg-green-500/10 border border-green-500/15 p-2">
                 <Globe className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
-                <div><span className="font-medium text-green-400">Рода деревьев:</span> <span className="text-foreground/80">{generaToRu(refPattern.genera)}</span></div>
+                <div><span className="font-medium text-green-400">{t("generaLabel")}</span> <span className="text-foreground/80">{genusLine(refPattern.genera)}</span></div>
               </div>
             )}
             {refPattern.dominant_species && (
               <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/15 p-2">
                 <Database className="h-3.5 w-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <div><span className="font-medium text-amber-400">Доминирующая порода:</span> <span className="text-foreground/80 font-medium">{refPattern.dominant_species}</span></div>
+                <div><span className="font-medium text-amber-400">{t("dominantLabel")}</span> <span className="text-foreground/80 font-medium">{refPattern.dominant_species}</span></div>
               </div>
             )}
             {refPattern.modis_class && (
               <div className="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 p-2">
                 <Satellite className="h-3.5 w-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
-                <div><span className="font-medium text-purple-400">MODIS:</span> <span className="text-foreground/80">{refPattern.modis_class}</span></div>
+                <div><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{refPattern.modis_class}</span></div>
               </div>
             )}
           </div>
@@ -468,17 +473,17 @@ export default function ForestSearchPage() {
         <div className="space-y-3">
           {refLat !== null && refLng !== null ? (
             <div className="rounded-xl border border-border bg-white/5 p-4">
-              <p className="mb-2 text-sm"><MapPin className="mr-1 inline h-3.5 w-3.5 text-emerald-400" />Точка: {refLat.toFixed(5)}, {refLng.toFixed(5)}</p>
-              <p className="mb-3 text-xs text-muted-foreground">Нажмите чтобы собрать эталонный паттерн из 10 точек в радиусе 1 км</p>
+              <p className="mb-2 text-sm"><MapPin className="mr-1 inline h-3.5 w-3.5 text-emerald-400" />{t("pointCoords", { lat: refLat.toFixed(5), lng: refLng.toFixed(5) })}</p>
+              <p className="mb-3 text-xs text-muted-foreground">{t("refHint")}</p>
               <button
                 onClick={() => { setStep("search"); }}
                 className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
               >
-                <Trees className="h-4 w-4" /> Использовать как эталон
+                <Trees className="h-4 w-4" /> {t("useAsRef")}
               </button>
             </div>
           ) : (
-            <p className="text-center text-sm text-muted-foreground py-4">Кликните на карту, чтобы выбрать эталонную точку леса</p>
+            <p className="text-center text-sm text-muted-foreground py-4">{t("clickRefHint")}</p>
           )}
         </div>
       )}
@@ -488,8 +493,8 @@ export default function ForestSearchPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-white/5 p-4">
             <label className="mb-2 block text-sm font-medium">
-              Радиус поиска: {radiusKm} км
-              <span className="ml-2 text-xs text-muted-foreground font-normal">({tokenCost} {tokenCost === 1 ? "токен" : tokenCost < 5 ? "токена" : "токенов"})</span>
+              {t("radiusLabel", { km: radiusKm })}
+              <span className="ml-2 text-xs text-muted-foreground font-normal">{t("tokensInParens", { cost: tokenCost, tokens: tokPlural(tokenCost, t, locale) })}</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {RADIUS_OPTIONS.map((r) => {
@@ -498,7 +503,7 @@ export default function ForestSearchPage() {
                   <button key={r} onClick={() => setRadiusKm(r)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${radiusKm === r ? "bg-emerald-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20"}`}
                   >
-                    {r} км <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{cost}т</span>
+                    {r} км <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{t("tokenShort", { n: cost })}</span>
                   </button>
                 );
               })}
@@ -507,21 +512,21 @@ export default function ForestSearchPage() {
 
           {searchLat !== null && searchLng !== null ? (
             <div className="rounded-xl border border-border bg-white/5 p-4">
-              <p className="mb-2 text-sm"><Crosshair className="mr-1 inline h-3.5 w-3.5 text-blue-400" />Центр поиска: {searchLat.toFixed(5)}, {searchLng.toFixed(5)}</p>
+              <p className="mb-2 text-sm"><Crosshair className="mr-1 inline h-3.5 w-3.5 text-blue-400" />{t("searchCenter", { lat: searchLat.toFixed(5), lng: searchLng.toFixed(5) })}</p>
               <button
                 onClick={() => setShowSearchConfirm(true)}
                 disabled={searching}
                 className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
               >
                 {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                {searching ? "Анализ массивов..." : `Найти лес · ${tokenCost} ${tokenCost === 1 ? "токен" : tokenCost < 5 ? "токена" : "токенов"}`}
+                {searching ? t("analyzing") : t("findForest", { cost: tokenCost, tokens: tokPlural(tokenCost, t, locale) })}
               </button>
               {searching && (
-                <p className="mt-2 text-xs text-muted-foreground">Собираем паттерн эталона (10 точек), ищем массивы, анализируем каждый...</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t("searchProgress")}</p>
               )}
             </div>
           ) : (
-            <p className="text-center text-sm text-muted-foreground py-2">Кликните на карту, чтобы задать центр зоны поиска</p>
+            <p className="text-center text-sm text-muted-foreground py-2">{t("clickSearchHint")}</p>
           )}
         </div>
       )}
@@ -531,18 +536,18 @@ export default function ForestSearchPage() {
         <div className="space-y-4">
           {stats && (
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <span>OSM полигонов: {stats.polygons}</span>
-              <span>OSM массивов: {stats.osmMassifs}</span>
-              <span>Зон анализа: {stats.scanZones}</span>
-              <span>Результатов: {matches.length}</span>
-              <button onClick={() => setStep("search")} className="ml-auto text-blue-400 hover:text-blue-300">Новый поиск</button>
+              <span>{t("statPolygons", { n: stats.polygons })}</span>
+              <span>{t("statMassifs", { n: stats.osmMassifs })}</span>
+              <span>{t("statZones", { n: stats.scanZones })}</span>
+              <span>{t("statResults", { n: matches.length })}</span>
+              <button onClick={() => setStep("search")} className="ml-auto text-blue-400 hover:text-blue-300">{t("newSearch")}</button>
             </div>
           )}
 
           {matches.length > 0 ? (
             <div className="rounded-xl border border-border overflow-hidden">
               <div className="px-4 py-2.5 bg-white/5 border-b border-border text-xs text-muted-foreground">
-                Проанализировано {matches.length} лесных массивов. Каждый массив = 10 точек × запросы к ФГИС ЛК + iNaturalist + MODIS.
+                {t("analyzedLine", { count: matches.length })}
               </div>
               <div className="divide-y divide-border/50">
                 {visibleMatches.map((m, i) => {
@@ -558,22 +563,22 @@ export default function ForestSearchPage() {
                       <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 transition-colors ${isSelected ? "bg-white/5" : ""}`}>
                         <button onClick={() => setDetailIdx(isDetailOpen ? null : globalIdx)}
                           className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 cursor-pointer transition-transform hover:scale-110 ${m.similarity >= 70 ? "bg-emerald-500/20" : m.similarity >= 40 ? "bg-amber-500/20" : "bg-gray-500/20"}`}
-                          title="Показать детали">
+                          title={t("showDetails")}>
                           <span className={`text-xs sm:text-sm font-bold ${m.similarity >= 70 ? "text-emerald-400" : m.similarity >= 40 ? "text-amber-400" : "text-gray-400"}`}>{m.similarity}%</span>
                         </button>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium truncate">{p.dominant_species || m.name || `Массив #${i + 1}`}</p>
+                          <p className="text-xs sm:text-sm font-medium truncate">{p.dominant_species || m.name || t("massifFallback", { n: i + 1 })}</p>
                           <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
                             {m.lat.toFixed(3)}, {m.lng.toFixed(3)}
-                            {p.genera.length > 0 && <span className="ml-1 text-green-400">· {p.genera.length} родов</span>}
+                            {p.genera.length > 0 && <span className="ml-1 text-green-400">{t("generaCount", { n: p.genera.length })}</span>}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-                          {p.dominant_species && <span className="hidden sm:inline rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400">ФГИС</span>}
+                          {p.dominant_species && <span className="hidden sm:inline rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400">{t("fgisBadge")}</span>}
                           {p.modis_class && <span className="hidden sm:inline rounded px-1.5 py-0.5 text-[10px] font-medium bg-purple-500/15 text-purple-400">MODIS</span>}
                           <button onClick={() => saveAsLocation(globalIdx)} disabled={isSaved || saving}
                             className={`rounded-lg p-1.5 transition-colors ${isSaved ? "text-emerald-400" : "text-muted-foreground hover:bg-white/10 hover:text-foreground"}`}
-                            title={isSaved ? "Сохранено" : "Сохранить"}>
+                            title={isSaved ? t("saved") : t("save")}>
                             {isSaved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                           </button>
                         </div>
@@ -585,35 +590,35 @@ export default function ForestSearchPage() {
                           {/* Score breakdown */}
                           <div className="rounded-lg border border-border/50 bg-white/[0.02] overflow-hidden">
                             <div className="px-3 py-2 border-b border-border/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                              Оценка — {m.similarity}% ({p.points_sampled} точек)
+                              {t("scoreTitle", { pct: m.similarity, points: p.points_sampled })}
                             </div>
-                            <ScoreRow label="Рода деревьев (Jaccard)" score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} color="green" />
-                            <ScoreRow label="Доминирующая порода" score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} color="amber" />
-                            <ScoreRow label="Тип леса" score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} color="blue" />
-                            <ScoreRow label="MODIS спутник" score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} color="purple" />
+                            <ScoreRow label={t("scoreGeneraRow")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} color="green" />
+                            <ScoreRow label={t("scoreDominantRow")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} color="amber" />
+                            <ScoreRow label={t("scoreForestRow")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} color="blue" />
+                            <ScoreRow label={t("scoreModisRow")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} color="purple" />
                           </div>
 
                           {/* Data from all sources */}
                           {p.genera.length > 0 && (
                             <div className="flex items-start gap-2 rounded-lg bg-green-500/10 border border-green-500/15 p-2">
                               <Globe className="h-3.5 w-3.5 text-green-400 mt-0.5 flex-shrink-0" />
-                              <div className="text-xs"><span className="font-medium text-green-400">Рода:</span> <span className="text-foreground/80">{generaToRu(p.genera)}</span></div>
+                              <div className="text-xs"><span className="font-medium text-green-400">{t("generaShort")}</span> <span className="text-foreground/80">{genusLine(p.genera)}</span></div>
                             </div>
                           )}
                           {p.fgis_species_list.length > 0 && (
                             <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/15 p-2">
                               <Database className="h-3.5 w-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                              <div className="text-xs"><span className="font-medium text-amber-400">ФГИС породы:</span> <span className="text-foreground/80">{p.fgis_species_list.join(", ")}</span></div>
+                              <div className="text-xs"><span className="font-medium text-amber-400">{t("fgisSpecies")}</span> <span className="text-foreground/80">{p.fgis_species_list.join(", ")}</span></div>
                             </div>
                           )}
                           <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 border border-blue-500/15 p-2">
                             <MapPin className="h-3.5 w-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs"><span className="font-medium text-blue-400">Тип леса:</span> <span className="text-foreground/80">{FOREST_LABELS[p.forest_type]}</span></div>
+                            <div className="text-xs"><span className="font-medium text-blue-400">{t("forestTypeShort")}</span> <span className="text-foreground/80">{forestTypeLabel(p.forest_type)}</span></div>
                           </div>
                           {p.modis_class && (
                             <div className="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 p-2">
                               <Satellite className="h-3.5 w-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
-                              <div className="text-xs"><span className="font-medium text-purple-400">MODIS:</span> <span className="text-foreground/80">{p.modis_class}</span>{p.modis_is_forest && <span className="text-emerald-400 ml-1">· лес</span>}</div>
+                              <div className="text-xs"><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{p.modis_class}</span>{p.modis_is_forest && <span className="text-emerald-400 ml-1">{t("modisForest")}</span>}</div>
                             </div>
                           )}
                         </div>
@@ -623,9 +628,9 @@ export default function ForestSearchPage() {
                       <div className="px-4 pb-2">
                         <button onClick={() => fetchWeather(globalIdx)} disabled={weatherLoading && selectedIdx === globalIdx}
                           className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors ${isSelected && weather ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-white/5 border border-border text-foreground/80 hover:bg-white/10"}`}>
-                          {weatherLoading && selectedIdx === globalIdx ? <><Loader2 className="h-4 w-4 animate-spin" /> Загрузка...</>
-                            : isSelected && weather ? <><ChevronUp className="h-4 w-4" /> Скрыть погоду</>
-                            : <><CloudSun className="h-4 w-4" /> Узнать погоду{!weatherLoadedSet.has(globalIdx) ? " · 4 токена" : ""}</>}
+                          {weatherLoading && selectedIdx === globalIdx ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("weatherLoading")}</>
+                            : isSelected && weather ? <><ChevronUp className="h-4 w-4" /> {t("weatherHide")}</>
+                            : <><CloudSun className="h-4 w-4" /> {t("weatherShow")}{!weatherLoadedSet.has(globalIdx) ? t("weatherCost") : ""}</>}
                         </button>
                       </div>
 
@@ -634,12 +639,12 @@ export default function ForestSearchPage() {
                         <div className="px-2 sm:px-4 pb-3">
                           <div className="rounded-lg border border-border/50 overflow-x-auto">
                             <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-0 text-[10px] sm:text-[11px] min-w-[360px]">
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5">Дата</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />t°C</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />Дождь</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center">Влажн.</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Wind className="inline h-3 w-3 mr-0.5" />Ветер</div>
-                              {weather.map((d) => <WeatherRow key={d.date} day={d} />)}
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5">{t("colDate")}</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />{t("colTemp")}</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />{t("colRain")}</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center">{t("colHumidity")}</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Wind className="inline h-3 w-3 mr-0.5" />{t("colWind")}</div>
+                              {weather.map((d) => <WeatherRow key={d.date} day={d} locale={locale} t={t} />)}
                             </div>
                           </div>
                         </div>
@@ -651,15 +656,15 @@ export default function ForestSearchPage() {
               {matches.length > 6 && (
                 <button onClick={() => setExpanded((v) => !v)}
                   className="flex w-full items-center justify-center gap-1 py-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground border-t border-border/50">
-                  {expanded ? <><ChevronUp className="h-3.5 w-3.5" /> Свернуть</> : <><ChevronDown className="h-3.5 w-3.5" /> Ещё {matches.length - 6}</>}
+                  {expanded ? <><ChevronUp className="h-3.5 w-3.5" /> {t("expandLess")}</> : <><ChevronDown className="h-3.5 w-3.5" /> {t("expandMore", { n: matches.length - 6 })}</>}
                 </button>
               )}
             </div>
           ) : (
             <div className="rounded-xl border border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">Лесные массивы не найдены в OSM в радиусе {radiusKm} км</p>
-              <p className="mt-1 text-xs text-muted-foreground/60">Попробуйте увеличить радиус или выбрать другую зону поиска</p>
-              <button onClick={() => setStep("search")} className="mt-3 text-sm text-blue-400 hover:text-blue-300">Новый поиск</button>
+              <p className="text-sm text-muted-foreground">{t("noMassifs", { km: radiusKm })}</p>
+              <p className="mt-1 text-xs text-muted-foreground/60">{t("noMassifsHint")}</p>
+              <button onClick={() => setStep("search")} className="mt-3 text-sm text-blue-400 hover:text-blue-300">{t("newSearch")}</button>
             </div>
           )}
         </div>
@@ -669,8 +674,8 @@ export default function ForestSearchPage() {
 
       <TokenConfirmModal
         open={showSearchConfirm}
-        title="Поиск похожего леса"
-        description={`Система проанализирует до 10 лесных массивов в радиусе ${radiusKm} км. Анализ занимает 30–60 секунд.`}
+        title={t("confirmSearchTitle")}
+        description={t("confirmSearchDesc", { km: radiusKm })}
         cost={tokenCost}
         balance={balance}
         loading={searching}
@@ -680,8 +685,8 @@ export default function ForestSearchPage() {
 
       <TokenConfirmModal
         open={weatherConfirmIdx !== null}
-        title="Погода для лесного массива"
-        description="Система загрузит погодные данные за последние 14 дней для выбранного лесного массива."
+        title={t("confirmWeatherTitle")}
+        description={t("confirmWeatherDesc")}
         cost={TOKEN_COSTS.weather_check}
         balance={balance}
         loading={weatherLoading}
@@ -716,10 +721,19 @@ function ScoreRow({ label, score, max, reason, color }: {
   );
 }
 
-function WeatherRow({ day }: { day: WeatherDay }) {
+function WeatherRow({
+  day,
+  locale,
+  t,
+}: {
+  day: WeatherDay;
+  locale: string;
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
   const date = new Date(day.date);
-  const dayStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-  const weekday = date.toLocaleDateString("ru-RU", { weekday: "short" });
+  const locTag = locale === "en" ? "en-US" : "ru-RU";
+  const dayStr = date.toLocaleDateString(locTag, { day: "numeric", month: "short" });
+  const weekday = date.toLocaleDateString(locTag, { weekday: "short" });
   const tempColor = day.temperature_mean > 20 ? "text-red-400" : day.temperature_mean > 10 ? "text-amber-400" : day.temperature_mean > 0 ? "text-blue-300" : "text-blue-500";
   const rainBg = day.rain_sum > 5 ? "bg-blue-500/20" : day.rain_sum > 0 ? "bg-blue-500/10" : "";
   return (
@@ -732,9 +746,9 @@ function WeatherRow({ day }: { day: WeatherDay }) {
         {day.temperature_mean?.toFixed(1)}°
         <span className="text-[10px] text-muted-foreground ml-0.5">({day.temperature_min?.toFixed(0)}…{day.temperature_max?.toFixed(0)})</span>
       </div>
-      <div className={`px-2 py-1 border-t border-border/30 text-center ${rainBg}`}>{day.rain_sum > 0 ? `${day.rain_sum.toFixed(1)} мм` : "—"}</div>
+      <div className={`px-2 py-1 border-t border-border/30 text-center ${rainBg}`}>{day.rain_sum > 0 ? `${day.rain_sum.toFixed(1)} ${t("unitMm")}` : "—"}</div>
       <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.relative_humidity_mean != null ? `${Math.round(day.relative_humidity_mean)}%` : "—"}</div>
-      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${day.wind_speed_max.toFixed(0)} км/ч` : "—"}</div>
+      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${day.wind_speed_max.toFixed(0)} ${t("unitKmH")}` : "—"}</div>
     </>
   );
 }

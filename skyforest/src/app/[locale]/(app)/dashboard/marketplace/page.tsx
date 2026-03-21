@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { useTokens } from "@/lib/TokenContext";
-import { getSeasonLabel } from "@/lib/supabase/types";
 import type { MarketplaceListing, Season, BestDay } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -35,16 +35,12 @@ const MarketplaceSearchMap = dynamic(
   { ssr: false }
 );
 
-const SEASON_FILTERS: {
-  value: Season | "all";
-  label: string;
-  color: string;
-}[] = [
-  { value: "all", label: "Все", color: "from-gray-500 to-gray-600" },
-  { value: "winter", label: "Зима", color: "from-blue-400 to-blue-600" },
-  { value: "spring", label: "Весна", color: "from-green-400 to-green-600" },
-  { value: "summer", label: "Лето", color: "from-yellow-400 to-yellow-600" },
-  { value: "autumn", label: "Осень", color: "from-orange-400 to-orange-600" },
+const SEASON_FILTER_META: { value: Season | "all"; color: string }[] = [
+  { value: "all", color: "from-gray-500 to-gray-600" },
+  { value: "winter", color: "from-blue-400 to-blue-600" },
+  { value: "spring", color: "from-green-400 to-green-600" },
+  { value: "summer", color: "from-yellow-400 to-yellow-600" },
+  { value: "autumn", color: "from-orange-400 to-orange-600" },
 ];
 
 const SEASON_COLORS: Record<string, string> = {
@@ -87,6 +83,34 @@ interface OwnedBestDay {
 }
 
 export default function MarketplacePage() {
+  const t = useTranslations("marketplace");
+  const locale = useLocale();
+
+  const seasonLabel = (season: Season) => {
+    switch (season) {
+      case "winter":
+        return t("seasonWinter");
+      case "spring":
+        return t("seasonSpring");
+      case "summer":
+        return t("seasonSummer");
+      case "autumn":
+        return t("seasonAutumn");
+      default:
+        return String(season);
+    }
+  };
+  const seasonFilterLabel = (v: Season | "all") =>
+    v === "all" ? t("seasonAll") : seasonLabel(v);
+  const offerPlural = (n: number) => {
+    if (locale === "en") return n === 1 ? t("offerWord1") : t("offerWord5");
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return t("offerWord1");
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return t("offerWord2");
+    return t("offerWord5");
+  };
+
   const [centerLat, setCenterLat] = useState<number | null>(null);
   const [centerLng, setCenterLng] = useState<number | null>(null);
   const [radiusKm, setRadiusKm] = useState(100);
@@ -159,7 +183,7 @@ export default function MarketplacePage() {
 
   const handleSearch = async () => {
     if (centerLat === null || centerLng === null) {
-      setError("Поставьте точку на карте");
+      setError(t("errMapPin"));
       return;
     }
     setLoading(true);
@@ -179,16 +203,16 @@ export default function MarketplacePage() {
       const data = await res.json();
       if (res.status === 429 && data.error === "rate_limit") {
         const mins = Math.ceil((data.retry_after_seconds ?? 60) / 60);
-        setError(`Слишком много запросов. Попробуйте через ${mins} мин.`);
+        setError(t("errRateLimit", { mins }));
         setListings([]);
       } else if (!res.ok) {
-        setError(data.error || "Ошибка поиска");
+        setError(data.error || t("errSearch"));
         setListings([]);
       } else {
         setListings(data.listings ?? []);
       }
     } catch {
-      setError("Ошибка поиска");
+      setError(t("errSearch"));
     } finally {
       setLoading(false);
     }
@@ -201,7 +225,7 @@ export default function MarketplacePage() {
         setCenterLat(pos.coords.latitude);
         setCenterLng(pos.coords.longitude);
       },
-      () => setError("Не удалось определить местоположение")
+      () => setError(t("errGeolocate"))
     );
   };
 
@@ -278,19 +302,21 @@ export default function MarketplacePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Ошибка покупки");
+        setError(data.error || t("errBuy"));
         setBuying(null);
         setBuyConfirm(null);
         return;
       }
-      const msg = `Грибной день «${buyConfirm.best_day?.name}» успешно куплен! Он уже в вашем профиле.`;
+      const msg = t("successBuy", {
+        name: buyConfirm.best_day?.name ?? t("defaultSpotName"),
+      });
       setSuccess(msg);
       toast.success(msg);
       setBuyConfirm(null);
       await refresh();
       if (centerLat !== null && centerLng !== null) await handleSearch();
     } catch {
-      setError("Ошибка сети");
+      setError(t("errNetwork"));
     } finally {
       setBuying(null);
     }
@@ -303,7 +329,7 @@ export default function MarketplacePage() {
         className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад
+        {t("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
@@ -311,38 +337,34 @@ export default function MarketplacePage() {
           <Store className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">Маркетплейс</h1>
+          <h1 className="text-lg sm:text-xl font-bold">{t("title")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Покупайте проверенные грибные места
+            {t("subtitle")}
           </p>
         </div>
       </div>
 
       <div className="mb-6 rounded-xl border border-pink-500/20 bg-pink-500/5 p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Здесь вы можете купить проверенные грибные локации других пользователей.
-          Каждый лот содержит координаты, сезон, вид грибов, тип леса и погодные данные.
-          Стоимость устанавливается продавцом.
+          {t("intro")}
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Поиск — бесплатно</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Покупка — только купленные токены</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Локация — зона ∅20 км (точные координаты после покупки)</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("badgeSearchFree")}</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("badgePurchaseTokens")}</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("badgeLocationZone")}</span>
         </div>
       </div>
 
       {/* How to sell */}
       <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-        <p className="mb-2 text-sm font-semibold text-emerald-400">Хотите продавать свои локации?</p>
+        <p className="mb-2 text-sm font-semibold text-emerald-400">{t("sellTitle")}</p>
         <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-          <li>Создайте <strong>грибной день</strong> — укажите локацию, сезон и вид гриба</li>
-          <li>Загрузите хотя бы одно <strong>фото</strong></li>
-          <li>Нажмите <strong>«Продать на маркетплейсе»</strong> и укажите цену</li>
+          <li>{t("sellStep1")}</li>
+          <li>{t("sellStep2")}</li>
+          <li>{t("sellStep3")}</li>
         </ol>
         <p className="mt-2 text-xs text-muted-foreground/70">
-          Комиссия за размещение — <strong className="text-amber-400">10 токенов</strong> (списывается сразу).
-          Комиссия площадки с продажи — <strong className="text-amber-400">20%</strong> (удерживается при покупке).
-          Цена продажи устанавливается вами, вы получаете 80% от указанной цены.
+          {t("sellFees")}
         </p>
       </div>
 
@@ -350,7 +372,7 @@ export default function MarketplacePage() {
       {/* Search: map + controls */}
       <div className="glass rounded-2xl p-3 sm:p-5 mb-4 sm:mb-6">
         <p className="mb-3 text-sm font-medium">
-          Поставьте точку на карте и выберите радиус поиска
+          {t("mapInstructions")}
         </p>
 
         {/* Map */}
@@ -366,7 +388,7 @@ export default function MarketplacePage() {
                 id: l.id,
                 lat: l.display_lat!,
                 lng: l.display_lng!,
-                name: l.best_day?.name ?? "Грибное место",
+                name: l.best_day?.name ?? t("defaultSpotName"),
                 mushroomName: l.best_day?.mushroom?.common_name || l.best_day?.mushroom?.latin_name,
                 price: l.price,
               }))}
@@ -391,12 +413,12 @@ export default function MarketplacePage() {
             className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
           >
             <Crosshair className="h-3.5 w-3.5" />
-            Моё местоположение
+            {t("geolocate")}
           </button>
 
           <div className="flex-1 min-w-[180px]">
             <label className="mb-1.5 block text-xs text-muted-foreground">
-              Радиус поиска: <strong className="text-foreground">{radiusKm} км</strong>
+              {t("radiusLabel")} <strong className="text-foreground">{t("radiusKm", { n: radiusKm })}</strong>
             </label>
             <input
               type="range"
@@ -408,8 +430,8 @@ export default function MarketplacePage() {
               className="w-full accent-primary h-2"
             />
             <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
-              <span>30 км</span>
-              <span>1000 км</span>
+              <span>{t("radiusMin")}</span>
+              <span>{t("radiusMax")}</span>
             </div>
           </div>
 
@@ -423,21 +445,24 @@ export default function MarketplacePage() {
             ) : (
               <Search className="h-4 w-4" />
             )}
-            Найти грибные локации
+            {t("findButton")}
           </button>
         </div>
 
         {centerLat !== null && centerLng !== null && (
           <p className="mt-3 text-xs text-muted-foreground">
-            Центр: {centerLat.toFixed(4)}, {centerLng.toFixed(4)} · Радиус:{" "}
-            {radiusKm} км
+            {t("centerHint", {
+              lat: centerLat.toFixed(4),
+              lng: centerLng.toFixed(4),
+              r: radiusKm,
+            })}
           </p>
         )}
 
         {ownedDays.length > 0 && (
           <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-400/70">
             <Star className="h-3 w-3" />
-            Ваши грибные дни отмечены на карте золотыми маркерами
+            {t("ownedHint")}
           </p>
         )}
       </div>
@@ -475,7 +500,7 @@ export default function MarketplacePage() {
               {mushroomOptions.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
-                    Гриб
+                    {t("mushroomFilter")}
                   </p>
                   <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
                     <button
@@ -486,7 +511,7 @@ export default function MarketplacePage() {
                           : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
                       }`}
                     >
-                      Все грибы
+                      {t("allMushrooms")}
                     </button>
                     {mushroomOptions.map((m) => {
                       const isActive = mushroomFilter === m.id;
@@ -532,12 +557,7 @@ export default function MarketplacePage() {
                               </p>
                             )}
                             <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {m.count}{" "}
-                              {m.count === 1
-                                ? "предложение"
-                                : m.count < 5
-                                ? "предложения"
-                                : "предложений"}
+                              {m.count} {offerPlural(m.count)}
                             </p>
                           </div>
                         </div>
@@ -551,10 +571,10 @@ export default function MarketplacePage() {
               <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                    Сезон
+                    {t("season")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {SEASON_FILTERS.map((f) => (
+                    {SEASON_FILTER_META.map((f) => (
                       <button
                         key={f.value}
                         onClick={() => setSeasonFilter(f.value)}
@@ -564,7 +584,7 @@ export default function MarketplacePage() {
                             : "glass text-muted-foreground hover:text-foreground hover:bg-white/10"
                         }`}
                       >
-                        {f.label}
+                        {seasonFilterLabel(f.value)}
                       </button>
                     ))}
                   </div>
@@ -576,12 +596,12 @@ export default function MarketplacePage() {
                       className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <X className="h-3 w-3" />
-                      Сбросить ({activeFilterCount})
+                      {t("resetFilters", { n: activeFilterCount })}
                     </button>
                   )}
                   <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Store className="h-3.5 w-3.5" />
-                    {filteredListings.length} предложений
+                    {filteredListings.length} {offerPlural(filteredListings.length)}
                   </span>
                 </div>
               </div>
@@ -593,10 +613,10 @@ export default function MarketplacePage() {
             <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
               <Store className="mb-3 h-12 w-12 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
-                Нет предложений в радиусе ~{radiusKm} км
+                {t("noResults", { r: radiusKm })}
               </p>
               <p className="mt-1 text-xs text-muted-foreground/60">
-                Попробуйте увеличить радиус или сместить точку
+                {t("noResultsHint")}
               </p>
             </div>
           ) : (
@@ -636,23 +656,21 @@ export default function MarketplacePage() {
                               SEASON_COLORS[listing.season] ?? ""
                             }`}
                           >
-                            {getSeasonLabel(listing.season)}
+                            {seasonLabel(listing.season)}
                           </span>
                           {(() => {
                             const fi = bd?.forest_info as { forest_type?: string } | null;
                             if (!fi?.forest_type || fi.forest_type === "unknown") return null;
-                            const labels: Record<string, string> = { coniferous: "Хвойный", broadleaved: "Лиственный", mixed: "Смешанный" };
                             return (
                               <span className="flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
                                 <Trees className="h-2.5 w-2.5" />
-                                {labels[fi.forest_type] || fi.forest_type}
+                                {t(`forestShort.${fi.forest_type}` as "forestShort.coniferous")}
                               </span>
                             );
                           })()}
                           {(() => {
                             const diff = bd?.difficulty as string | null;
                             if (!diff) return null;
-                            const labels: Record<string, string> = { easy: "Простая", medium: "Средняя", hard: "Тяжёлая" };
                             const colors: Record<string, string> = {
                               easy: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
                               medium: "border-amber-500/20 bg-amber-500/10 text-amber-400",
@@ -660,7 +678,7 @@ export default function MarketplacePage() {
                             };
                             return (
                               <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${colors[diff] ?? ""}`}>
-                                {labels[diff] ?? diff}
+                                {t(`difficulty.${diff}` as "difficulty.easy")}
                               </span>
                             );
                           })()}
@@ -688,10 +706,10 @@ export default function MarketplacePage() {
         <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
           <MapPin className="mb-3 h-12 w-12 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            Поставьте точку на карте и нажмите «Найти грибные локации»
+            {t("initialTitle")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground/60">
-            Мы покажем доступные предложения в вашем радиусе
+            {t("initialHint")}
           </p>
         </div>
       )}
@@ -796,14 +814,14 @@ export default function MarketplacePage() {
                 {/* Info rows */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Сезон:</span>
+                    <span className="text-muted-foreground">{t("seasonColon")}</span>
                     <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEASON_COLORS[listingPreview.season] ?? ""}`}>
-                      {getSeasonLabel(listingPreview.season)}
+                      {seasonLabel(listingPreview.season)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Продавец:</span>
+                    <span className="text-muted-foreground">{t("seller")}</span>
                     <UserName name={listingPreview.seller?.full_name} accountType={listingPreview.seller?.account_type} className="font-medium" />
                   </div>
                 </div>
@@ -812,22 +830,11 @@ export default function MarketplacePage() {
                 {(() => {
                   const fi = bd?.forest_info as { forest_type?: string; leaf_cycle?: string; forest_name?: string | null; dominant_species?: { latin_name: string; common_name: string | null; image_url: string | null; source: string }[] } | null;
                   if (!fi) return null;
-                  const FOREST_TYPE_LABELS: Record<string, string> = {
-                    coniferous: "Хвойный лес",
-                    broadleaved: "Лиственный лес",
-                    mixed: "Смешанный лес",
-                    unknown: "Лесная зона",
-                  };
                   const FOREST_TYPE_COLORS: Record<string, string> = {
                     coniferous: "from-emerald-600 to-green-700",
                     broadleaved: "from-lime-500 to-green-600",
                     mixed: "from-teal-500 to-emerald-600",
                     unknown: "from-gray-500 to-gray-600",
-                  };
-                  const LEAF_CYCLE_LABELS: Record<string, string> = {
-                    deciduous: "Листопадный",
-                    evergreen: "Вечнозелёный",
-                    mixed: "Смешанный",
                   };
                   const species = fi.dominant_species?.slice(0, 4) ?? [];
                   return (
@@ -835,19 +842,19 @@ export default function MarketplacePage() {
                       <div className={`flex items-center gap-2 bg-gradient-to-r ${FOREST_TYPE_COLORS[fi.forest_type ?? "unknown"]} px-3 py-2.5`}>
                         <Trees className="h-4 w-4 text-white/90" />
                         <span className="text-sm font-semibold text-white">
-                          {FOREST_TYPE_LABELS[fi.forest_type ?? "unknown"]}
+                          {t(`forestLong.${fi.forest_type ?? "unknown"}` as "forestLong.coniferous")}
                         </span>
                         {fi.leaf_cycle && fi.leaf_cycle !== "unknown" && (
                           <span className="flex items-center gap-1 text-[11px] text-white/70">
                             <Leaf className="h-3 w-3" />
-                            {LEAF_CYCLE_LABELS[fi.leaf_cycle] ?? ""}
+                            {t(`leafCycle.${fi.leaf_cycle}` as "leafCycle.deciduous")}
                           </span>
                         )}
                       </div>
                       {species.length > 0 && (
                         <div className="px-3 py-2 bg-emerald-500/5 space-y-1">
                           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                            Породы деревьев
+                            {t("treeSpecies")}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {species.map((sp, i) => (
@@ -870,7 +877,6 @@ export default function MarketplacePage() {
                   const diff = bd?.difficulty as string | null;
                   const locDesc = bd?.location_description as string | null;
                   if (!diff && !locDesc) return null;
-                  const DIFF_LABELS: Record<string, string> = { easy: "Простая", medium: "Средняя", hard: "Тяжёлая" };
                   const DIFF_COLORS: Record<string, string> = {
                     easy: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
                     medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
@@ -880,9 +886,9 @@ export default function MarketplacePage() {
                     <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3 space-y-2">
                       {diff && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Сложность:</span>
+                          <span className="text-xs text-muted-foreground">{t("difficultyLabel")}</span>
                           <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${DIFF_COLORS[diff] ?? ""}`}>
-                            {DIFF_LABELS[diff] ?? diff}
+                            {t(`difficulty.${diff}` as "difficulty.easy")}
                           </span>
                         </div>
                       )}
@@ -901,12 +907,12 @@ export default function MarketplacePage() {
                       <span className="font-medium">XX.XXXX, XX.XXXX</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Координаты и название скрыты до покупки
+                      {t("hiddenCoords")}
                     </p>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
                     <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-amber-400 backdrop-blur-sm">
-                      🔒 Координаты откроются после покупки
+                      {t("coordsUnlock")}
                     </div>
                   </div>
                 </div>
@@ -914,7 +920,7 @@ export default function MarketplacePage() {
                 {/* Blurred: Weather pattern */}
                 <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 mb-4 overflow-hidden">
                   <div className="blur-[6px] select-none pointer-events-none">
-                    <p className="text-sm font-medium mb-2">Погодный паттерн (14 дней)</p>
+                    <p className="text-sm font-medium mb-2">{t("weatherPattern")}</p>
                     <div className="flex gap-1">
                       {[28, 22, 35, 18, 40, 25, 30, 22, 38, 20, 32, 27, 35, 24].map((h, i) => (
                         <div
@@ -926,13 +932,13 @@ export default function MarketplacePage() {
                     </div>
                     <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
                       <span>t° 12-18°C</span>
-                      <span>Осадки: 23мм</span>
-                      <span>Влажн: 78%</span>
+                      <span>{t("demoRain")}</span>
+                      <span>{t("demoHumidity")}</span>
                     </div>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px] rounded-xl">
                     <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-amber-400 backdrop-blur-sm">
-                      🔒 Откроется после покупки
+                      {t("unlockAfterBuy")}
                     </div>
                   </div>
                 </div>
@@ -955,7 +961,7 @@ export default function MarketplacePage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  Купить за {listingPreview.price} токенов
+                  {t("buyFor", { price: listingPreview.price })}
                 </button>
               </div>
 
@@ -1046,7 +1052,7 @@ export default function MarketplacePage() {
               {detailsLoading && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Загрузка данных из iNaturalist...
+                  {t("loadingInat")}
                 </div>
               )}
               {mushroomDetails?.wikipedia_summary && (
@@ -1061,7 +1067,7 @@ export default function MarketplacePage() {
                       rel="noopener noreferrer"
                       className="mt-1 inline-block text-xs text-primary hover:underline"
                     >
-                      Читать на Wikipedia →
+                      {t("wikipediaRead")}
                     </a>
                   )}
                 </div>
@@ -1070,22 +1076,22 @@ export default function MarketplacePage() {
                 mushroomDetails.taxonomy.length > 0 && (
                   <div className="mt-4">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Таксономия
+                      {t("taxonomy")}
                     </p>
                     <div className="space-y-1">
-                      {mushroomDetails.taxonomy.map((t) => (
+                      {mushroomDetails.taxonomy.map((tax) => (
                         <div
-                          key={t.rank}
+                          key={tax.rank}
                           className="flex items-center gap-2 text-xs"
                         >
                           <span className="w-20 flex-shrink-0 text-right text-muted-foreground">
-                            {t.rank_label}
+                            {tax.rank_label}
                           </span>
                           <span className="h-px flex-1 bg-white/10" />
-                          <span className="font-medium italic">{t.name}</span>
-                          {t.common_name && (
+                          <span className="font-medium italic">{tax.name}</span>
+                          {tax.common_name && (
                             <span className="text-muted-foreground">
-                              ({t.common_name})
+                              ({tax.common_name})
                             </span>
                           )}
                         </div>
@@ -1095,7 +1101,7 @@ export default function MarketplacePage() {
                 )}
               <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
                 <span className="text-xs text-muted-foreground">
-                  {mushroomPreview.count} на маркетплейсе
+                  {t("onMarketplace", { n: mushroomPreview.count })}
                 </span>
                 <button
                   onClick={() => {
@@ -1105,7 +1111,7 @@ export default function MarketplacePage() {
                   }}
                   className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/30"
                 >
-                  Показать все
+                  {t("showAll")}
                 </button>
               </div>
             </div>
@@ -1130,33 +1136,33 @@ export default function MarketplacePage() {
             onClick={() => setBuyConfirm(null)}
           />
           <div className="relative z-[10000] w-full max-w-sm rounded-2xl bg-[#1a2a1f]/95 border border-white/10 p-6 shadow-2xl backdrop-blur-xl">
-            <h3 className="mb-3 text-lg font-bold">Подтвердить покупку</h3>
+            <h3 className="mb-3 text-lg font-bold">{t("confirmTitle")}</h3>
             <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
               <p className="text-sm font-medium">
                 {buyConfirm.best_day?.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                Анонимная локация · {getSeasonLabel(buyConfirm.season)}
+                {t("anonymousSeason", { season: seasonLabel(buyConfirm.season) })}
               </p>
               <div className="mt-2 space-y-1.5 rounded-lg bg-white/5 p-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Стоимость</span>
+                  <span className="text-muted-foreground">{t("cost")}</span>
                   <span className="flex items-center gap-1 font-semibold text-amber-400">
                     -{buyConfirm.price} <Coins className="h-3 w-3" />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Баланс (купленные)</span>
+                  <span className="text-muted-foreground">{t("balancePurchased")}</span>
                   <span className="font-semibold">{realBalance ?? 0}</span>
                 </div>
                 {(bonusBalance ?? 0) > 0 && (
                   <div className="flex items-center justify-between text-muted-foreground/70">
-                    <span>Бонусные (не для маркетплейса)</span>
+                    <span>{t("balanceBonus")}</span>
                     <span>{bonusBalance}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between border-t border-white/10 pt-1.5">
-                  <span className="text-muted-foreground">После операции</span>
+                  <span className="text-muted-foreground">{t("afterOp")}</span>
                   <span className={`font-bold ${(realBalance ?? 0) - buyConfirm.price < 0 ? "text-red-400" : "text-emerald-400"}`}>
                     {(realBalance ?? 0) - buyConfirm.price}
                   </span>
@@ -1164,26 +1170,25 @@ export default function MarketplacePage() {
               </div>
               {(realBalance ?? 0) < buyConfirm.price && (
                 <p className="mt-2 text-xs text-red-400">
-                  Недостаточно купленных токенов. Бонусные токены нельзя использовать на маркетплейсе.{" "}
+                  {t("insufficientBuy")}{" "}
                   <Link
                     href="/payment"
                     className="underline hover:text-red-300"
                   >
-                    Пополнить
+                    {t("topUp")}
                   </Link>
                 </p>
               )}
             </div>
             <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-              После покупки вы получите полные данные: точные координаты и
-              погодный паттерн. Грибной день будет добавлен в ваш профиль.
+              {t("confirmNote")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setBuyConfirm(null)}
                 className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
               >
-                Отмена
+                {t("cancel")}
               </button>
               <button
                 onClick={confirmBuy}
@@ -1197,7 +1202,7 @@ export default function MarketplacePage() {
                 ) : (
                   <ShoppingCart className="h-4 w-4" />
                 )}
-                Купить
+                {t("buy")}
               </button>
             </div>
           </div>

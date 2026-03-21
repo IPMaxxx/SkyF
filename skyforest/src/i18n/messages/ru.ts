@@ -3,6 +3,8 @@ import payment from "./payment.ru";
 import account from "./account.ru";
 import weather from "./weather.ru";
 import compare from "./compare.ru";
+import forestSearch from "./forestSearch.ru";
+import marketplace from "./marketplace.ru";
 
 export default {
   metadata: {
@@ -314,4 +316,6 @@ export default {
   account,
   weather,
   compare,
+  forestSearch,
+  marketplace,
 } as const;

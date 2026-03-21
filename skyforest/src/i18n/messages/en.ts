@@ -3,6 +3,8 @@ import payment from "./payment.en";
 import account from "./account.en";
 import weather from "./weather.en";
 import compare from "./compare.en";
+import forestSearch from "./forestSearch.en";
+import marketplace from "./marketplace.en";
 
 export default {
   metadata: {
@@ -309,4 +311,6 @@ export default {
   account,
   weather,
   compare,
+  forestSearch,
+  marketplace,
 } as const;
