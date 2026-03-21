@@ -7,72 +7,58 @@ import {
   Droplets,
   Wind,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const CAPABILITIES = [
-  {
-    icon: Thermometer,
-    text: "Отслеживает температуру, осадки, влажность и ветер по вашим локациям",
-  },
-  {
-    icon: BarChart3,
-    text: "Сравнивает текущую погоду с погодными паттернами ваших лучших грибных дней",
-  },
-  {
-    icon: Droplets,
-    text: "Показывает карту осадков — где недавно прошёл дождь, там ищите грибы",
-  },
-  {
-    icon: Wind,
-    text: "Анализирует данные за 14 дней для максимально точного прогноза",
-  },
-];
+export async function Bridge() {
+  const t = await getTranslations("bridge");
 
-const STEPS = [
-  {
-    icon: CloudSun,
-    num: "01",
-    title: "Добавьте локации",
-    desc: "Сохраните ваши грибные места — Skyforest начнёт собирать погодные данные автоматически",
-  },
-  {
-    icon: CheckCircle2,
-    num: "02",
-    title: "Запомните лучший день",
-    desc: "Был удачный сбор? Отметьте дату — мы зафиксируем 14-дневный погодный паттерн как эталон",
-  },
-  {
-    icon: BarChart3,
-    num: "03",
-    title: "Сравните паттерны",
-    desc: "Получите процент совпадения текущей погоды с вашим лучшим днём",
-  },
-  {
-    icon: Map,
-    num: "04",
-    title: "Изучите карту осадков",
-    desc: "Посмотрите тепловую карту дождей — ищите грибы там, где была влага",
-  },
-];
+  const CAPABILITIES = [
+    { icon: Thermometer, text: t("cap0") },
+    { icon: BarChart3, text: t("cap1") },
+    { icon: Droplets, text: t("cap2") },
+    { icon: Wind, text: t("cap3") },
+  ];
 
-export function Bridge() {
+  const STEPS = [
+    {
+      icon: CloudSun,
+      num: t("s1n"),
+      title: t("s1t"),
+      desc: t("s1d"),
+    },
+    {
+      icon: CheckCircle2,
+      num: t("s2n"),
+      title: t("s2t"),
+      desc: t("s2d"),
+    },
+    {
+      icon: BarChart3,
+      num: t("s3n"),
+      title: t("s3t"),
+      desc: t("s3d"),
+    },
+    {
+      icon: Map,
+      num: t("s4n"),
+      title: t("s4t"),
+      desc: t("s4d"),
+    },
+  ];
+
   return (
     <section id="about" className="relative py-20 sm:py-28">
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Bridge intro */}
         <div className="mb-20 grid items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-light">
-              Как это работает
+              {t("eyebrow")}
             </p>
             <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl">
-              SkyForest AI 2.0 — мост между погодными данными и вашей грибной охотой
+              {t("title")}
             </h2>
-            <p className="mb-8 text-white/60 leading-relaxed">
-              Наша технология собирает и анализирует метеорологические данные,
-              чтобы помочь вам определить идеальный момент для похода в лес.
-              Вот что делает SkyForest AI 2.0:
-            </p>
+            <p className="mb-8 text-white/60 leading-relaxed">{t("intro")}</p>
             <ul className="space-y-4">
               {CAPABILITIES.map((cap) => (
                 <li key={cap.text} className="flex items-start gap-3">
@@ -85,7 +71,6 @@ export function Bridge() {
             </ul>
           </div>
 
-          {/* App preview mockup */}
           <div className="relative">
             <div className="glass-strong overflow-hidden rounded-2xl">
               <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-1">
@@ -95,14 +80,14 @@ export function Bridge() {
                     <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
                     <div className="h-3 w-3 rounded-full bg-green-500/60" />
                     <span className="ml-2 text-xs text-white/30">
-                      skyforest.by/dashboard
+                      {t("mockUrl")}
                     </span>
                   </div>
                   <div className="space-y-3">
                     <div className="rounded-lg bg-white/5 p-3">
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-xs font-medium text-white/60">
-                          Совпадение с эталоном
+                          {t("mockMatch")}
                         </span>
                         <span className="text-lg font-bold text-primary-light">
                           87%
@@ -114,32 +99,38 @@ export function Bridge() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-lg bg-white/5 p-3">
-                        <p className="text-[10px] text-white/40">Температура</p>
+                        <p className="text-[10px] text-white/40">
+                          {t("mockTemp")}
+                        </p>
                         <p className="text-sm font-semibold text-white">
                           +18°C
                         </p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
-                        <p className="text-[10px] text-white/40">Влажность</p>
+                        <p className="text-[10px] text-white/40">
+                          {t("mockHumidity")}
+                        </p>
                         <p className="text-sm font-semibold text-white">82%</p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
-                        <p className="text-[10px] text-white/40">Осадки</p>
+                        <p className="text-[10px] text-white/40">
+                          {t("mockRain")}
+                        </p>
                         <p className="text-sm font-semibold text-white">
                           12 мм
                         </p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
-                        <p className="text-[10px] text-white/40">Ветер</p>
+                        <p className="text-[10px] text-white/40">
+                          {t("mockWind")}
+                        </p>
                         <p className="text-sm font-semibold text-white">
                           3 м/с
                         </p>
                       </div>
                     </div>
                     <div className="rounded-lg bg-primary/10 p-3 text-center">
-                      <p className="text-xs text-primary-light">
-                        Условия близки к эталону — хорошее время для сбора
-                      </p>
+                      <p className="text-xs text-primary-light">{t("mockHint")}</p>
                     </div>
                   </div>
                 </div>
@@ -149,7 +140,6 @@ export function Bridge() {
           </div>
         </div>
 
-        {/* Steps */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step) => (
             <div
@@ -167,9 +157,7 @@ export function Bridge() {
               <h3 className="mb-2 text-base font-semibold text-white">
                 {step.title}
               </h3>
-              <p className="text-sm leading-relaxed text-white/60">
-                {step.desc}
-              </p>
+              <p className="text-sm leading-relaxed text-white/60">{step.desc}</p>
             </div>
           ))}
         </div>

@@ -11,6 +11,7 @@
 - **Weather**: Open-Meteo API
 - **Payments**: bePaid
 - **Deploy**: Vercel
+- **i18n**: [next-intl](https://next-intl.dev) — локали `ru` (по умолчанию, без префикса в URL) и `en` (`/en/...`). Переводы: `src/i18n/messages/ru.ts` и `src/i18n/messages/en.ts`; навигация: `src/i18n/navigation.ts` (`Link`, `useRouter`, `usePathname`).
 
 ## Запуск
 

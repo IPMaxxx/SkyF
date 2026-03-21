@@ -1,6 +1,9 @@
 import { AlertTriangle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-export function Oracle() {
+export async function Oracle() {
+  const t = await getTranslations("oracle");
+
   return (
     <section className="relative py-16 sm:py-20">
       <div className="absolute inset-0 bg-primary/10" />
@@ -10,15 +13,11 @@ export function Oracle() {
           <AlertTriangle className="h-6 w-6 text-primary-light" />
         </div>
         <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-          SkyForest AI 2.0 — не оракул
+          {t("title")}
         </h2>
         <p className="text-lg leading-relaxed text-white/70">
-          Это инструмент на основе данных и науки. Мы не гарантируем, что грибы
-          будут в определённом месте — мы показываем, когда погодные условия
-          максимально похожи на те, при которых{" "}
-          <span className="text-white font-medium">
-            вы уже успешно собирали грибы.
-          </span>
+          {t("body")}
+          <span className="text-white font-medium">{t("bodyEmphasis")}</span>
         </p>
       </div>
     </section>

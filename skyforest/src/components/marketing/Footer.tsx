@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { ArrowUp, Mail, Phone, Send } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 const SOCIAL_LINKS = [
   {
@@ -43,51 +44,50 @@ const SOCIAL_LINKS = [
   },
 ];
 
-const NAV_LINKS = [
-  { label: "О сервисе", href: "/#about" },
-  { label: "Тарифы", href: "/#tariffs" },
-  { label: "Блог", href: "/blog" },
-  { label: "FAQ", href: "/#faq" },
-
-  { label: "SkyForest 1.0", href: "https://app.skyforest.by", external: true },
-];
-
-const LEGAL_LINKS = [
-  { label: "Оферта", href: "/offer" },
-  { label: "Конфиденциальность", href: "/privacy" },
-  { label: "Способы оплаты", href: "/payment_method" },
-  { label: "Возврат товара", href: "/return_goods" },
-  { label: "Инструкция", href: "/instruction" },
-];
-
-const CONTACTS = [
-  {
-    icon: Mail,
-    value: "support@skyforest.by",
-    href: "mailto:support@skyforest.by",
-  },
-  {
-    icon: Phone,
-    value: "+375 29 328 2842",
-    href: "tel:+375293282842",
-  },
-  {
-    icon: Send,
-    value: "Telegram-поддержка",
-    href: "https://t.me/skyforest_support_bot",
-  },
-];
-
 export function Footer() {
+  const t = useTranslations("footer");
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const NAV_LINKS = [
+    { label: t("about"), href: "/#about" },
+    { label: t("tariffs"), href: "/#tariffs" },
+    { label: t("blog"), href: "/blog" },
+    { label: t("faq"), href: "/#faq" },
+    { label: t("legacy"), href: "https://app.skyforest.by", external: true },
+  ];
+
+  const LEGAL_LINKS = [
+    { label: t("offer"), href: "/offer" },
+    { label: t("privacy"), href: "/privacy" },
+    { label: t("paymentMethods"), href: "/payment_method" },
+    { label: t("returns"), href: "/return_goods" },
+    { label: t("instruction"), href: "/instruction" },
+  ];
+
+  const CONTACTS = [
+    {
+      icon: Mail,
+      value: "support@skyforest.by",
+      href: "mailto:support@skyforest.by",
+    },
+    {
+      icon: Phone,
+      value: "+375 29 328 2842",
+      href: "tel:+375293282842",
+    },
+    {
+      icon: Send,
+      value: t("telegramSupport"),
+      href: "https://t.me/skyforest_support_bot",
+    },
+  ];
 
   return (
     <footer className="relative border-t border-white/10">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Logo & description */}
           <div>
             <Image
               src="/images/logo-square.png"
@@ -96,9 +96,7 @@ export function Footer() {
               height={48}
               className="mb-4 h-12 w-12 rounded-lg"
             />
-            <p className="mb-4 text-sm text-white/50">
-              Сервис анализа погодных условий для грибников
-            </p>
+            <p className="mb-4 text-sm text-white/50">{t("tagline")}</p>
             <div className="flex gap-3">
               {SOCIAL_LINKS.map((s) => (
                 <a
@@ -115,10 +113,9 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Navigation */}
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
-              Навигация
+              {t("navTitle")}
             </h3>
             <ul className="space-y-2">
               {NAV_LINKS.map((link) => (
@@ -145,10 +142,9 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
-              Документы
+              {t("legalTitle")}
             </h3>
             <ul className="space-y-2">
               {LEGAL_LINKS.map((link) => (
@@ -164,10 +160,9 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contacts */}
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
-              Контакты
+              {t("contactsTitle")}
             </h3>
             <ul className="space-y-3">
               {CONTACTS.map((c) => (
@@ -193,14 +188,13 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
           <p className="text-xs text-white/40 text-center sm:text-left">
-            &copy; {new Date().getFullYear()} SkyForest. ИП Горбацевич М.С. УНП
-            191145831
+            &copy; {new Date().getFullYear()} {t("copyright")}
           </p>
           <button
             type="button"
             onClick={scrollToTop}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-primary hover:text-white"
-            aria-label="Наверх"
+            aria-label={t("toTop")}
           >
             <ArrowUp className="h-4 w-4" />
           </button>

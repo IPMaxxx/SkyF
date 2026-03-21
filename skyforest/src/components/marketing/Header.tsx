@@ -2,24 +2,27 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Menu, X, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
-
-const NAV_LINKS: { label: string; href: string; external?: boolean }[] = [
-  { label: "Начало", href: "/" },
-  { label: "О сервисе", href: "/#about" },
-  { label: "Тарифы", href: "/#tariffs" },
-  { label: "Блог", href: "/blog" },
-  { label: "FAQ", href: "/#faq" },
-  { label: "SkyForest 1.0", href: "https://app.skyforest.by", external: true },
-];
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const loggedIn = useIsLoggedIn();
+  const t = useTranslations("header");
+
+  const NAV_LINKS: { label: string; href: string; external?: boolean }[] = [
+    { label: t("home"), href: "/" },
+    { label: t("about"), href: "/#about" },
+    { label: t("tariffs"), href: "/#tariffs" },
+    { label: t("blog"), href: "/blog" },
+    { label: t("faq"), href: "/#faq" },
+    { label: t("legacy"), href: "https://app.skyforest.by", external: true },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -79,13 +82,14 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <LocaleSwitcher />
           {loggedIn ? (
             <Link
               href="/dashboard"
               className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
             >
               <LayoutDashboard className="h-4 w-4" />
-              Мой кабинет
+              {t("cabinet")}
             </Link>
           ) : (
             <>
@@ -93,13 +97,13 @@ export function Header() {
                 href="/login"
                 className="hidden text-sm font-medium text-white/70 transition-colors hover:text-white sm:block"
               >
-                Войти
+                {t("login")}
               </Link>
               <Link
                 href="/register"
                 className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
               >
-                Начать
+                {t("start")}
               </Link>
             </>
           )}
@@ -108,7 +112,7 @@ export function Header() {
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className={cn("rounded-lg p-2 md:hidden", "text-white")}
-            aria-label="Меню"
+            aria-label={t("menu")}
           >
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -148,7 +152,7 @@ export function Header() {
                 className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-primary-light transition-colors hover:bg-white/10"
               >
                 <LayoutDashboard className="h-4 w-4" />
-                Мой кабинет
+                {t("cabinet")}
               </Link>
             ) : (
               <Link
@@ -156,7 +160,7 @@ export function Header() {
                 onClick={() => setMobileOpen(false)}
                 className="rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
               >
-                Войти
+                {t("login")}
               </Link>
             )}
           </nav>

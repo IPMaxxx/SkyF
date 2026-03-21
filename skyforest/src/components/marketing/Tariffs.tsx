@@ -1,89 +1,64 @@
 "use client";
 
 import { Check, Sparkles } from "lucide-react";
-import Link from "next/link";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
-
-interface Plan {
-  name: string;
-  desc: string;
-  price: string;
-  priceNote: string;
-  highlight: boolean;
-  features: string[];
-  cta: string;
-  ctaLoggedIn?: string;
-  href: string;
-  hrefLoggedIn?: string;
-}
-
-const PLANS: Plan[] = [
-  {
-    name: "Старт",
-    desc: "Знакомство с сервисом",
-    price: "Бесплатно",
-    priceNote: "при регистрации",
-    highlight: false,
-    features: [
-      "Бесплатные токены на старте",
-      "Добавление грибных локаций",
-      "Проверка погоды по локации",
-      "Сохранение лучшего дня",
-      "Доступ к дашборду",
-    ],
-    cta: "Начать бесплатно",
-    ctaLoggedIn: "Перейти в кабинет",
-    href: "/register",
-    hrefLoggedIn: "/dashboard",
-  },
-  {
-    name: "Стандарт",
-    desc: "Для регулярных походов",
-    price: "12 BYN",
-    priceNote: "30 токенов",
-    highlight: true,
-    features: [
-      "Всё из тарифа «Старт»",
-      "Сравнение погодных паттернов",
-      "Карта осадков",
-      "Поиск лесных массивов",
-      "Хватает на ~15 проверок",
-    ],
-    cta: "Выбрать",
-    href: "/payment",
-  },
-  {
-    name: "Грибник Про",
-    desc: "Максимум возможностей",
-    price: "90 BYN",
-    priceNote: "300 токенов",
-    highlight: false,
-    features: [
-      "Всё из тарифа «Стандарт»",
-      "Лучшая цена за токен",
-      "Хватает на весь сезон",
-      "Неограниченные локации",
-      "Приоритетная поддержка",
-    ],
-    cta: "Выбрать",
-    href: "/payment",
-  },
-];
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export function Tariffs() {
   const loggedIn = useIsLoggedIn();
+  const t = useTranslations("tariffs");
+
+  const PLANS = [
+    {
+      name: t("startName"),
+      desc: t("startDesc"),
+      price: t("startPrice"),
+      priceNote: t("startNote"),
+      highlight: false,
+      features: [
+        t("fStart0"),
+        t("fStart1"),
+        t("fStart2"),
+        t("fStart3"),
+        t("fStart4"),
+      ],
+      cta: t("startCta"),
+      ctaLoggedIn: t("startCtaIn"),
+      href: "/register",
+      hrefLoggedIn: "/dashboard",
+    },
+    {
+      name: t("stdName"),
+      desc: t("stdDesc"),
+      price: t("stdPrice"),
+      priceNote: t("stdNote"),
+      highlight: true,
+      features: [t("fStd0"), t("fStd1"), t("fStd2"), t("fStd3"), t("fStd4")],
+      cta: t("stdCta"),
+      href: "/payment",
+    },
+    {
+      name: t("proName"),
+      desc: t("proDesc"),
+      price: t("proPrice"),
+      priceNote: t("proNote"),
+      highlight: false,
+      features: [t("fPro0"), t("fPro1"), t("fPro2"), t("fPro3"), t("fPro4")],
+      cta: t("proCta"),
+      href: "/payment",
+    },
+  ];
+
   return (
     <section id="tariffs" className="relative py-20 sm:py-28">
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-14 text-center">
           <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
-            Тарифы
+            {t("title")}
           </h2>
-          <p className="mx-auto max-w-2xl text-white/60">
-            Оплата за токены — тратите только на те функции, которые используете.
-            Без абонентской платы и скрытых списаний.
-          </p>
+          <p className="mx-auto max-w-2xl text-white/60">{t("subtitle")}</p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,14 +74,12 @@ export function Tariffs() {
               {plan.highlight && (
                 <div className="flex items-center justify-center gap-1.5 bg-primary py-1.5 text-xs font-semibold text-white">
                   <Sparkles className="h-3 w-3" />
-                  Популярный выбор
+                  {t("popular")}
                 </div>
               )}
 
               <div className="flex flex-1 flex-col p-6">
-                <h3 className="mb-1 text-lg font-bold text-white">
-                  {plan.name}
-                </h3>
+                <h3 className="mb-1 text-lg font-bold text-white">{plan.name}</h3>
                 <p className="mb-4 text-sm text-white/50">{plan.desc}</p>
 
                 <div className="mb-6">
@@ -128,24 +101,27 @@ export function Tariffs() {
                 </ul>
 
                 <Link
-                  href={loggedIn && plan.hrefLoggedIn ? plan.hrefLoggedIn : plan.href}
+                  href={
+                    loggedIn && "hrefLoggedIn" in plan && plan.hrefLoggedIn
+                      ? plan.hrefLoggedIn
+                      : plan.href
+                  }
                   className={`block w-full rounded-xl py-3 text-center text-sm font-semibold transition-all ${
                     plan.highlight
                       ? "bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary-dark hover:shadow-xl"
                       : "bg-white/10 text-white hover:bg-white/15"
                   }`}
                 >
-                  {loggedIn && plan.ctaLoggedIn ? plan.ctaLoggedIn : plan.cta}
+                  {loggedIn && "ctaLoggedIn" in plan && plan.ctaLoggedIn
+                    ? plan.ctaLoggedIn
+                    : plan.cta}
                 </Link>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="mt-8 text-center text-sm text-white/40">
-          Все функции работают в браузере — скачивать ничего не нужно. Оплата
-          через bePaid (Visa, MasterCard, Белкарт).
-        </p>
+        <p className="mt-8 text-center text-sm text-white/40">{t("footnote")}</p>
       </div>
     </section>
   );

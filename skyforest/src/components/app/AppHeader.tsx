@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
 import {
@@ -11,7 +10,6 @@ import {
   Coins,
   LayoutDashboard,
   Gift,
-
   Menu,
   X,
   Store,
@@ -23,26 +21,56 @@ import {
   MapPin,
   CalendarDays,
 } from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
-const NAV = [
-  { href: "/dashboard", label: "Главная", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/weather", label: "Погода", icon: CloudSun },
-  { href: "/dashboard/compare", label: "Мониторинг", icon: GitCompareArrows },
-  { href: "/dashboard/forest-search", label: "Поиск леса", icon: Trees },
-  { href: "/dashboard/marketplace", label: "Маркетплейс", icon: Store },
-];
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
 
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("appHeader");
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadChats, setUnreadChats] = useState(0);
   const { balance, loading: balanceLoading } = useTokens();
   const unreadTimer = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  const NAV: NavItem[] = useMemo(
+    () => [
+      {
+        href: "/dashboard",
+        label: t("home"),
+        icon: LayoutDashboard,
+        exact: true,
+      },
+      { href: "/dashboard/weather", label: t("weather"), icon: CloudSun },
+      {
+        href: "/dashboard/compare",
+        label: t("compare"),
+        icon: GitCompareArrows,
+      },
+      {
+        href: "/dashboard/forest-search",
+        label: t("forestSearch"),
+        icon: Trees,
+      },
+      {
+        href: "/dashboard/marketplace",
+        label: t("marketplace"),
+        icon: Store,
+      },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     setMobileNav(false);
@@ -56,13 +84,17 @@ export function AppHeader() {
         const data = await res.json();
         setUnreadChats(data.count ?? 0);
       }
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }, []);
 
   useEffect(() => {
     const check = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
@@ -84,7 +116,7 @@ export function AppHeader() {
     router.refresh();
   };
 
-  const isActive = (item: (typeof NAV)[number]) =>
+  const isActive = (item: NavItem) =>
     item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(item.href + "/");
@@ -92,17 +124,19 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0d1a12]/95 backdrop-blur-md">
       <div className="flex h-14 items-center justify-between px-4">
-        <Link href="/" className="flex-shrink-0">
-          <Image
-            src="/images/logo-square.png"
-            alt="SkyForest"
-            width={40}
-            height={40}
-            className="h-8 w-8 rounded-lg"
-          />
-        </Link>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <Link href="/" className="flex-shrink-0">
+            <Image
+              src="/images/logo-square.png"
+              alt="SkyForest"
+              width={40}
+              height={40}
+              className="h-8 w-8 rounded-lg"
+            />
+          </Link>
+          <LocaleSwitcher className="hidden sm:inline-flex" />
+        </div>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-0.5 lg:flex">
           {NAV.map((item) => (
             <Link
@@ -121,7 +155,6 @@ export function AppHeader() {
           ))}
         </nav>
 
-        {/* Right side: balance + user menu */}
         <div className="hidden items-center gap-2 lg:flex">
           <Link
             href="/payment"
@@ -143,7 +176,7 @@ export function AppHeader() {
           <Link
             href="/dashboard/marketplace/chats"
             className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-foreground/70 transition-colors hover:bg-white/15 hover:text-foreground"
-            title="Сообщения"
+            title={t("messages")}
           >
             <MessageCircle className="h-4 w-4" />
             {unreadChats > 0 && (
@@ -176,7 +209,7 @@ export function AppHeader() {
                       className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
                     >
                       <Shield className="h-4 w-4" />
-                      Админ-панель
+                      {t("admin")}
                     </Link>
                   )}
                   <Link
@@ -185,7 +218,7 @@ export function AppHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <User className="h-4 w-4" />
-                    Мой аккаунт
+                    {t("account")}
                   </Link>
                   <Link
                     href="/dashboard#locations"
@@ -193,7 +226,7 @@ export function AppHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <MapPin className="h-4 w-4" />
-                    Мои локации
+                    {t("myLocations")}
                   </Link>
                   <Link
                     href="/dashboard#best-days"
@@ -201,7 +234,7 @@ export function AppHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <CalendarDays className="h-4 w-4" />
-                    Мои грибные дни
+                    {t("myBestDays")}
                   </Link>
                   <Link
                     href="/payment"
@@ -209,7 +242,7 @@ export function AppHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <Coins className="h-4 w-4" />
-                    Токены
+                    {t("tokens")}
                   </Link>
                   <Link
                     href="/dashboard/referral"
@@ -217,7 +250,7 @@ export function AppHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground"
                   >
                     <Gift className="h-4 w-4" />
-                    Пригласить друга
+                    {t("referral")}
                   </Link>
                   <button
                     type="button"
@@ -225,7 +258,7 @@ export function AppHeader() {
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300"
                   >
                     <LogOut className="h-4 w-4" />
-                    Выйти
+                    {t("logout")}
                   </button>
                 </div>
               </>
@@ -233,8 +266,8 @@ export function AppHeader() {
           </div>
         </div>
 
-        {/* Mobile: balance + chat + burger */}
         <div className="flex items-center gap-2 lg:hidden">
+          <LocaleSwitcher />
           <Link
             href="/payment"
             className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 py-1.5 text-sm font-semibold text-amber-400"
@@ -263,7 +296,6 @@ export function AppHeader() {
         </div>
       </div>
 
-      {/* Mobile nav panel */}
       {mobileNav && (
         <div className="border-t border-white/10 bg-[#0d1a12] px-4 pb-4 pt-2 lg:hidden">
           <div className="space-y-1">
@@ -293,7 +325,7 @@ export function AppHeader() {
               )}
             >
               <Coins className="h-5 w-5" />
-              Токены
+              {t("tokens")}
             </Link>
 
             <div className="my-2 border-t border-white/10" />
@@ -309,7 +341,7 @@ export function AppHeader() {
                 )}
               >
                 <Shield className="h-5 w-5" />
-                Админ-панель
+                {t("admin")}
               </Link>
             )}
 
@@ -318,28 +350,28 @@ export function AppHeader() {
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <User className="h-5 w-5" />
-              Мой аккаунт
+              {t("account")}
             </Link>
             <Link
               href="/dashboard#locations"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <MapPin className="h-5 w-5" />
-              Мои локации
+              {t("myLocations")}
             </Link>
             <Link
               href="/dashboard#best-days"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <CalendarDays className="h-5 w-5" />
-              Мои грибные дни
+              {t("myBestDays")}
             </Link>
             <Link
               href="/dashboard/referral"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
             >
               <Gift className="h-5 w-5" />
-              Пригласить друга
+              {t("referral")}
             </Link>
 
             <div className="my-2 border-t border-white/10" />
@@ -350,7 +382,7 @@ export function AppHeader() {
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10"
             >
               <LogOut className="h-5 w-5" />
-              Выйти
+              {t("logout")}
             </button>
           </div>
         </div>
