@@ -82,11 +82,21 @@ interface HistoryEntry {
   created_at: string;
 }
 
-type ForecastScoreRow = {
+/** Один якорь прогноза: полный результат comparePatterns + окно 14 дней */
+type ForecastAnchorData = {
   offset: number;
   anchorDate: string;
   label: string;
   overall: number;
+  byParameter: Record<keyof WeightConfig, number>;
+  byDay: number[];
+  currentWeather: WeatherDay[];
+};
+
+type ForecastScoresPersistedV2 = {
+  version: 2;
+  weights: Record<keyof WeightConfig, number>;
+  anchors: ForecastAnchorData[];
 };
 
 const FORECAST_RETENTION_DAYS = 5;
@@ -101,6 +111,60 @@ const DEFAULT_WEIGHTS: Record<keyof WeightConfig, number> = {
 };
 
 const paramKeys = Object.keys(DEFAULT_WEIGHTS) as (keyof WeightConfig)[];
+
+function normalizeForecastWeights(w: Record<string, number> | undefined | null): Record<keyof WeightConfig, number> {
+  const out = { ...DEFAULT_WEIGHTS };
+  if (!w) return out;
+  for (const k of paramKeys) {
+    if (typeof w[k] === "number" && !Number.isNaN(w[k])) out[k] = Math.max(0, Math.min(100, Math.round(w[k])));
+  }
+  return out;
+}
+
+function parseSavedForecastScores(raw: unknown): {
+  anchors: ForecastAnchorData[];
+  weights: Record<keyof WeightConfig, number>;
+  hasFullDetail: boolean;
+} | null {
+  if (!raw) return null;
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw) && (raw as ForecastScoresPersistedV2).version === 2) {
+    const o = raw as ForecastScoresPersistedV2;
+    if (!Array.isArray(o.anchors) || o.anchors.length !== FORECAST_ANCHORS) return null;
+    const hasFullDetail = o.anchors.every(
+      (a) => Array.isArray(a.currentWeather) && a.currentWeather.length >= 14
+    );
+    return {
+      anchors: o.anchors,
+      weights: normalizeForecastWeights(o.weights as Record<string, number>),
+      hasFullDetail,
+    };
+  }
+  if (Array.isArray(raw) && raw.length === FORECAST_ANCHORS) {
+    const first = raw[0] as ForecastAnchorData | undefined;
+    if ((first?.currentWeather?.length ?? 0) >= 14) {
+      return {
+        anchors: raw as ForecastAnchorData[],
+        weights: { ...DEFAULT_WEIGHTS },
+        hasFullDetail: true,
+      };
+    }
+    const legacy = raw as { offset: number; anchorDate: string; label: string; overall: number }[];
+    return {
+      anchors: legacy.map((r) => ({
+        offset: r.offset,
+        anchorDate: r.anchorDate,
+        label: r.label,
+        overall: r.overall,
+        byParameter: {} as Record<keyof WeightConfig, number>,
+        byDay: [],
+        currentWeather: [],
+      })),
+      weights: { ...DEFAULT_WEIGHTS },
+      hasFullDetail: false,
+    };
+  }
+  return null;
+}
 
 export default function ComparePage() {
   const { locations, bestDays, loading: appLoading, addLocation } = useAppData();
@@ -117,7 +181,14 @@ export default function ComparePage() {
   const [forecastLocId, setForecastLocId] = useState("");
   const [forecastRunning, setForecastRunning] = useState(false);
   const [confirmForecast, setConfirmForecast] = useState(false);
-  const [forecastScores, setForecastScores] = useState<ForecastScoreRow[] | null>(null);
+  const [forecastAnchors, setForecastAnchors] = useState<ForecastAnchorData[] | null>(null);
+  const [forecastReference, setForecastReference] = useState<WeatherDay[] | null>(null);
+  const [forecastWeights, setForecastWeights] = useState<Record<keyof WeightConfig, number>>(() => ({
+    ...DEFAULT_WEIGHTS,
+  }));
+  const [forecastHasFullDetail, setForecastHasFullDetail] = useState(false);
+  const [showForecastWeights, setShowForecastWeights] = useState(false);
+  const [openForecastDetail, setOpenForecastDetail] = useState<number | null>(null);
   const [newAuto, setNewAuto] = useState(false);
   const [newTime, setNewTime] = useState("08:00");
   const [creating, setCreating] = useState(false);
@@ -157,11 +228,18 @@ export default function ComparePage() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const rows = data?.scores;
-    if (Array.isArray(rows) && rows.length === FORECAST_ANCHORS) {
-      setForecastScores(rows as ForecastScoreRow[]);
+    const parsed = parseSavedForecastScores(data?.scores);
+    if (parsed) {
+      setForecastAnchors(parsed.anchors);
+      setForecastWeights(parsed.weights);
+      setForecastHasFullDetail(parsed.hasFullDetail);
+      const { data: bdRef } = await supabase.from("best_days").select("weather_data").eq("id", bdId).maybeSingle();
+      setForecastReference((bdRef?.weather_data as WeatherDay[] | null) ?? null);
     } else {
-      setForecastScores(null);
+      setForecastAnchors(null);
+      setForecastReference(null);
+      setForecastWeights({ ...DEFAULT_WEIGHTS });
+      setForecastHasFullDetail(false);
     }
   };
 
@@ -263,7 +341,8 @@ export default function ComparePage() {
 
     setForecastRunning(true);
     setError("");
-    setForecastScores(null);
+    setForecastAnchors(null);
+    setForecastReference(null);
 
     try {
       const supabase = createClient();
@@ -306,27 +385,38 @@ export default function ComparePage() {
         return;
       }
 
+      const weightsSnapshot = { ...DEFAULT_WEIGHTS };
+      setForecastWeights(weightsSnapshot);
       const cfg = {} as WeightConfig;
-      for (const k of paramKeys) cfg[k] = DEFAULT_WEIGHTS[k] / 100;
+      for (const k of paramKeys) cfg[k] = weightsSnapshot[k] / 100;
 
-      const scores: ForecastScoreRow[] = [];
+      const anchors: ForecastAnchorData[] = [];
       for (let offset = 0; offset < FORECAST_ANCHORS; offset++) {
         const windowDays = allDays.slice(offset, offset + 14);
         if (windowDays.length < 14) break;
         const cmpResult = comparePatterns(reference, windowDays, cfg);
-        scores.push({
+        anchors.push({
           offset,
           anchorDate: addCalendarDaysYmd(todayMinsk, offset),
           label: forecastAnchorLabel(offset),
           overall: cmpResult.overall,
+          byParameter: cmpResult.byParameter,
+          byDay: cmpResult.byDay,
+          currentWeather: windowDays,
         });
       }
 
-      if (scores.length !== FORECAST_ANCHORS) {
+      if (anchors.length !== FORECAST_ANCHORS) {
         setError("Не удалось посчитать все окна сравнения");
         setForecastRunning(false);
         return;
       }
+
+      const persistPayload: ForecastScoresPersistedV2 = {
+        version: 2,
+        weights: weightsSnapshot,
+        anchors,
+      };
 
       const { data: { user: saveUser } } = await supabase.auth.getUser();
       if (saveUser) {
@@ -337,7 +427,7 @@ export default function ComparePage() {
           run_minsk_date: todayMinsk,
           weather_start: startDate,
           weather_end: endDate,
-          scores,
+          scores: persistPayload,
         });
         if (!saveErr) {
           const purgeBefore = new Date();
@@ -350,12 +440,40 @@ export default function ComparePage() {
         }
       }
 
-      setForecastScores(scores);
+      setForecastReference(reference);
+      setForecastHasFullDetail(true);
+      setForecastAnchors(anchors);
     } catch {
       setError("Ошибка загрузки данных");
     } finally {
       setForecastRunning(false);
     }
+  };
+
+  const handleForecastWeightChange = (key: keyof WeightConfig, value: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(value)));
+    setForecastWeights((prevW) => {
+      const newWeights = { ...prevW, [key]: clamped };
+      const total = Object.values(newWeights).reduce((a, b) => a + b, 0);
+      setForecastAnchors((prevA) => {
+        if (
+          total !== 100 ||
+          !forecastReference?.length ||
+          !prevA ||
+          prevA.length !== FORECAST_ANCHORS ||
+          !forecastHasFullDetail
+        ) {
+          return prevA;
+        }
+        const cfg = {} as WeightConfig;
+        for (const k of paramKeys) cfg[k] = newWeights[k] / 100;
+        return prevA.map((a) => {
+          const r = comparePatterns(forecastReference, a.currentWeather, cfg);
+          return { ...a, overall: r.overall, byParameter: r.byParameter, byDay: r.byDay };
+        });
+      });
+      return newWeights;
+    });
   };
 
   const requestCompare = (cmp: Comparison) => {
@@ -503,11 +621,10 @@ export default function ComparePage() {
             type="button"
             onClick={() => {
               setShowCreate(false);
-              setForecastScores(null);
               setShowForecast(true);
             }}
             disabled={bestDays.length === 0}
-            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-violet-400/40 bg-violet-500/10 px-4 py-2.5 text-sm font-medium text-violet-200 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             <CalendarDays className="h-4 w-4" /> Прогноз
           </button>
@@ -538,7 +655,7 @@ export default function ComparePage() {
 
       {/* Create form */}
       {showForecast && (
-        <div className="mb-6 glass rounded-2xl border border-cyan-500/25 p-5">
+        <div className="mb-6 glass rounded-2xl border border-orange-500/30 p-5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Прогноз совпадения</h3>
             <button
@@ -615,38 +732,122 @@ export default function ComparePage() {
             type="button"
             onClick={requestForecastRun}
             disabled={forecastRunning || !forecastBdId || !forecastLocId}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 py-3 text-sm font-medium text-white disabled:opacity-50"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 py-3 text-sm font-medium text-white disabled:opacity-50"
           >
             {forecastRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarDays className="h-4 w-4" />}
             Рассчитать · {TOKEN_COSTS.compare_forecast} ток.
           </button>
-          {forecastScores && forecastScores.length > 0 && (
-            <div className="mt-6">
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Совпадение по дням якоря (Минск)
-              </h4>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {forecastScores.map((row) => (
-                  <div
-                    key={row.offset}
-                    className="rounded-xl border border-white/10 bg-white/5 p-3 text-center"
-                  >
-                    <p className="text-[11px] font-medium text-muted-foreground">{row.label}</p>
-                    <p className="text-[10px] text-muted-foreground/70">
-                      {(() => {
-                        const [yy, mo, da] = row.anchorDate.split("-").map(Number);
-                        return new Date(yy, mo - 1, da).toLocaleDateString("ru-RU", {
-                          day: "numeric",
-                          month: "short",
-                        });
-                      })()}
-                    </p>
-                    <p className={`mt-2 text-2xl font-bold ${getMatchColor(row.overall)}`}>
-                      {Math.round(row.overall)}%
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/80">{getMatchLabel(row.overall)}</p>
+
+          {forecastAnchors && forecastAnchors.length > 0 && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowForecastWeights(!showForecastWeights)}
+                  className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <Settings2 className="h-3.5 w-3.5" /> Веса параметров
+                  {(() => {
+                    const tw = Object.values(forecastWeights).reduce((a, b) => a + b, 0);
+                    return tw !== 100 ? (
+                      <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-red-400">{tw}%</span>
+                    ) : null;
+                  })()}
+                  {!forecastHasFullDetail && (
+                    <span className="text-[10px] text-amber-400/90">(пересчёт после нового расчёта)</span>
+                  )}
+                  {showForecastWeights ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {showForecastWeights && (
+                  <div className="mt-3 space-y-3">
+                    {paramKeys.map((wkey) => (
+                      <div key={wkey}>
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-[11px]">{WEIGHT_LABELS[wkey]}</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={forecastWeights[wkey]}
+                              disabled={!forecastHasFullDetail}
+                              onChange={(e) => handleForecastWeightChange(wkey, parseInt(e.target.value) || 0)}
+                              className="w-12 rounded border border-border bg-white px-1.5 py-0.5 text-right text-[11px] font-semibold text-gray-900 outline-none focus:border-primary disabled:opacity-50"
+                            />
+                            <span className="text-[11px] text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={forecastWeights[wkey]}
+                          disabled={!forecastHasFullDetail}
+                          onChange={(e) => handleForecastWeightChange(wkey, parseInt(e.target.value))}
+                          className="w-full accent-orange-500 disabled:opacity-50"
+                        />
+                      </div>
+                    ))}
+                    <div
+                      className={`flex items-center justify-between rounded-lg p-2 text-xs ${
+                        Object.values(forecastWeights).reduce((a, b) => a + b, 0) === 100
+                          ? "bg-green-500/10 text-green-400"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                    >
+                      <span>Сумма:</span>
+                      <span className="font-bold">
+                        {Object.values(forecastWeights).reduce((a, b) => a + b, 0)}%
+                        {Object.values(forecastWeights).reduce((a, b) => a + b, 0) === 100 && " ✓"}
+                      </span>
+                    </div>
                   </div>
-                ))}
+                )}
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Совпадение по дням якоря (Минск) · нажмите день для деталей
+                </h4>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {forecastAnchors.map((row) => {
+                    const hasDetail = row.currentWeather?.length >= 14;
+                    return (
+                      <button
+                        key={row.offset}
+                        type="button"
+                        onClick={() => {
+                          if (!hasDetail) {
+                            toast.info("Запустите расчёт прогноза заново, чтобы открыть подробности.");
+                            return;
+                          }
+                          setOpenForecastDetail(row.offset);
+                        }}
+                        className={`rounded-xl border p-3 text-center transition-colors ${
+                          hasDetail
+                            ? "border-white/10 bg-white/5 hover:border-orange-400/40 hover:bg-orange-500/10"
+                            : "border-white/5 bg-white/[0.03] opacity-80"
+                        }`}
+                      >
+                        <p className="text-[11px] font-medium text-muted-foreground">{row.label}</p>
+                        <p className="text-[10px] text-muted-foreground/70">
+                          {(() => {
+                            const [yy, mo, da] = row.anchorDate.split("-").map(Number);
+                            return new Date(yy, mo - 1, da).toLocaleDateString("ru-RU", {
+                              day: "numeric",
+                              month: "short",
+                            });
+                          })()}
+                        </p>
+                        <p className={`mt-2 text-2xl font-bold ${getMatchColor(row.overall)}`}>
+                          {Math.round(row.overall)}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/80">{getMatchLabel(row.overall)}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -705,7 +906,15 @@ export default function ComparePage() {
         </div>
       )}
 
-      <NewLocationModal open={showNewLocation} onClose={() => setShowNewLocation(false)} onCreated={(loc) => { addLocation(loc); setNewLocId(loc.id); }} />
+      <NewLocationModal
+        open={showNewLocation}
+        onClose={() => setShowNewLocation(false)}
+        onCreated={(loc) => {
+          addLocation(loc);
+          setNewLocId(loc.id);
+          setForecastLocId(loc.id);
+        }}
+      />
 
       {/* Empty state */}
       {comparisons.length === 0 && !showCreate && !showForecast && (
@@ -962,6 +1171,149 @@ export default function ComparePage() {
           </div>
         );
       })()}
+
+      {openForecastDetail !== null &&
+        forecastAnchors &&
+        forecastReference &&
+        (() => {
+          const detail = forecastAnchors.find((a) => a.offset === openForecastDetail);
+          if (!detail?.currentWeather?.length) return null;
+          const bdName = bestDays.find((b) => b.id === forecastBdId)?.name ?? "Эталон";
+          const locName = locations.find((l) => l.id === forecastLocId)?.name ?? "Локация";
+
+          return (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-2 sm:p-4 pt-4 sm:pt-12 pb-4 sm:pb-12">
+              <div className="fixed inset-0 bg-black/70" onClick={() => setOpenForecastDetail(null)} />
+              <div className="relative z-[61] w-full max-w-3xl rounded-2xl border border-orange-500/20 bg-[#1a2a1f]/95 backdrop-blur-xl shadow-2xl">
+                <div className="flex items-center gap-3 border-b border-white/5 px-4 sm:px-6 py-4">
+                  <div
+                    className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-white font-bold bg-gradient-to-br ${getMatchBgGradient(detail.overall)}`}
+                  >
+                    {Math.round(detail.overall)}%
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">
+                      Прогноз: {detail.label}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Star className="h-3 w-3 text-amber-400" />
+                        {bdName}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-emerald-400" />
+                        {locName}
+                      </span>
+                      <span>
+                        {(() => {
+                          const [yy, mo, da] = detail.anchorDate.split("-").map(Number);
+                          return new Date(yy, mo - 1, da).toLocaleDateString("ru-RU", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          });
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenForecastDetail(null)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="max-h-[calc(100vh-160px)] overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5">
+                  <div
+                    className={`rounded-2xl bg-gradient-to-br ${getMatchBgGradient(detail.overall)} p-4 sm:p-6 text-center text-white`}
+                  >
+                    <p className="text-4xl sm:text-5xl font-bold">{Math.round(detail.overall)}%</p>
+                    <p className="mt-1 text-sm font-medium opacity-90">{getMatchLabel(detail.overall)}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      По параметрам
+                    </h4>
+                    {paramKeys.map((key) => {
+                      const score = detail.byParameter[key] ?? 0;
+                      return (
+                        <div key={key}>
+                          <div className="mb-0.5 flex items-center justify-between">
+                            <span className="text-xs">{WEIGHT_LABELS[key]}</span>
+                            <span className={`text-xs font-bold ${getMatchColor(score)}`}>{Math.round(score)}%</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+                            <div
+                              className={`h-full rounded-full bg-gradient-to-r ${getMatchBgGradient(score)} transition-all duration-500`}
+                              style={{ width: `${Math.min(100, score)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {forecastReference.length > 0 && detail.currentWeather.length > 0 && (
+                    <CompareChart
+                      reference={forecastReference}
+                      current={detail.currentWeather}
+                      dayScores={detail.byDay}
+                    />
+                  )}
+
+                  {forecastReference.length > 0 && detail.currentWeather.length > 0 && (
+                    <div className="overflow-hidden rounded-xl border border-white/5">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-white/10 bg-white/3 text-left">
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">День</th>
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Совп.</th>
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
+                                <Thermometer className="mr-0.5 inline h-3 w-3" /> t° эталон
+                              </th>
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° окно</th>
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
+                                <Droplets className="mr-0.5 inline h-3 w-3" /> Дождь эт.
+                              </th>
+                              <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дождь окно</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.byDay.map((dayScore, i) => {
+                              const ref = forecastReference[i];
+                              const cur = detail.currentWeather[i];
+                              if (!ref || !cur) return null;
+                              return (
+                                <tr key={i} className="border-b border-white/10">
+                                  <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                                  <td className="px-3 py-2">
+                                    <span className={`font-bold ${getMatchColor(dayScore)}`}>{Math.round(dayScore)}%</span>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {ref.temperature_mean !== null ? `${ref.temperature_mean.toFixed(1)}°` : "—"}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {cur.temperature_mean !== null ? `${cur.temperature_mean.toFixed(1)}°` : "—"}
+                                  </td>
+                                  <td className="px-3 py-2">{ref.rain_sum.toFixed(1)} мм</td>
+                                  <td className="px-3 py-2">{cur.rain_sum.toFixed(1)} мм</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
       <TokenConfirmModal
         open={!!confirmCompare}
