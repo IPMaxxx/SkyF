@@ -401,23 +401,17 @@ export default function WeatherPage() {
         <button
           type="button"
           onClick={() => setTab("weather")}
-          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 ${
+          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 border-blue-500/40 bg-gradient-to-br from-blue-500/15 to-cyan-500/5 ${
             tab === "weather"
-              ? "border-blue-500/40 bg-gradient-to-br from-blue-500/15 to-cyan-500/5 shadow-lg shadow-blue-500/10"
-              : "border-white/10 bg-white/5 hover:border-blue-500/20 hover:bg-blue-500/5"
+              ? "shadow-lg shadow-blue-500/10 ring-1 ring-blue-500/30"
+              : "opacity-75 hover:opacity-100"
           }`}
         >
-          <div className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
-            tab === "weather"
-              ? "bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-md shadow-blue-500/25"
-              : "bg-white/10 text-muted-foreground group-hover:bg-blue-500/20 group-hover:text-blue-400"
-          }`}>
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-md shadow-blue-500/25">
             <CloudSun className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div className="min-w-0">
-            <p className={`text-xs sm:text-sm font-semibold transition-colors ${
-              tab === "weather" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-            }`}>{t("tabWeather")}</p>
+            <p className="text-xs sm:text-sm font-semibold text-foreground">{t("tabWeather")}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">
               {t("tabWeatherCost", { n: TOKEN_COSTS.weather_check })}
             </p>
@@ -429,23 +423,17 @@ export default function WeatherPage() {
         <button
           type="button"
           onClick={() => setTab("rain-map")}
-          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 ${
+          className={`group relative flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 border-sky-500/40 bg-gradient-to-br from-sky-500/15 to-blue-500/5 ${
             tab === "rain-map"
-              ? "border-sky-500/40 bg-gradient-to-br from-sky-500/15 to-blue-500/5 shadow-lg shadow-sky-500/10"
-              : "border-white/10 bg-white/5 hover:border-sky-500/20 hover:bg-sky-500/5"
+              ? "shadow-lg shadow-sky-500/10 ring-1 ring-sky-500/30"
+              : "opacity-75 hover:opacity-100"
           }`}
         >
-          <div className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
-            tab === "rain-map"
-              ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25"
-              : "bg-white/10 text-muted-foreground group-hover:bg-sky-500/20 group-hover:text-sky-400"
-          }`}>
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25">
             <CloudRain className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div className="min-w-0">
-            <p className={`text-xs sm:text-sm font-semibold transition-colors ${
-              tab === "rain-map" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-            }`}>{t("tabRainMap")}</p>
+            <p className="text-xs sm:text-sm font-semibold text-foreground">{t("tabRainMap")}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">{t("tabRainMapSub")}</p>
           </div>
           {tab === "rain-map" && (
