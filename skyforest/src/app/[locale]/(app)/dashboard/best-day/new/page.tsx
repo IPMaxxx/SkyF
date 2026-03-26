@@ -67,11 +67,103 @@ export default function NewBestDayPage() {
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
 
   const requestGetData = () => {
-    if (!selectedLocation || !bestDate) {
-      setError("Выберите локацию и укажите дату");
+    if (!name.trim()) {
+      setError("Введите название для этого лучшего дня");
       return;
     }
+    if (!selectedLocation || !selectedLocId) {
+      setError("Выберите локацию");
+      return;
+    }
+    if (!bestDate) {
+      setError("Укажите дату");
+      return;
+    }
+    if (!mushroom) {
+      setError("Выберите вид гриба");
+      return;
+    }
+    setError("");
     setShowConfirmGetData(true);
+  };
+
+  const saveAfterWeather = async (days: WeatherDay[]) => {
+    setSaving(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError("Необходимо авторизоваться");
+      setSaving(false);
+      return;
+    }
+
+    const { data: existingMushroom } = await supabase
+      .from("mushroom_species")
+      .select("id")
+      .eq("inaturalist_id", mushroom!.inaturalist_id)
+      .single();
+
+    let mushroomDbId: string;
+
+    if (existingMushroom) {
+      mushroomDbId = existingMushroom.id;
+    } else {
+      const { data: newMushroom, error: mErr } = await supabase
+        .from("mushroom_species")
+        .insert({
+          inaturalist_id: mushroom!.inaturalist_id,
+          latin_name: mushroom!.latin_name,
+          common_name: mushroom!.common_name,
+          image_url: mushroom!.image_url,
+        })
+        .select("id")
+        .single();
+
+      if (mErr || !newMushroom) {
+        setError("Ошибка сохранения вида гриба: " + (mErr?.message || ""));
+        setSaving(false);
+        return;
+      }
+      mushroomDbId = newMushroom.id;
+    }
+
+    const { data: newBd, error: bdErr } = await supabase.from("best_days").insert({
+      user_id: user.id,
+      location_id: selectedLocId,
+      mushroom_id: mushroomDbId,
+      name: name.trim(),
+      best_date: bestDate,
+      weather_data: days,
+      photos,
+    }).select("id, name, best_date, location_id, created_at").single();
+
+    if (bdErr) {
+      setError(bdErr.message);
+      setSaving(false);
+      return;
+    }
+
+    if (newBd) {
+      const loc = locations.find((l) => l.id === selectedLocId);
+      addBestDay({
+        ...newBd,
+        location: loc ? { id: loc.id, name: loc.name } : undefined,
+        mushroom: mushroom
+          ? {
+              id: mushroomDbId,
+              latin_name: mushroom.latin_name,
+              common_name: mushroom.common_name,
+              image_url: mushroom.image_url,
+            }
+          : undefined,
+      } as never);
+    }
+
+    toast.success("Грибной день сохранён");
+    router.push("/dashboard");
+    router.refresh();
   };
 
   const handleGetData = async () => {
@@ -96,13 +188,17 @@ export default function NewBestDayPage() {
       const data = await res.json();
       if (data.error) {
         setError(data.error);
-      } else if (data.days) {
+        return;
+      }
+      if (data.days) {
         setWeatherDays(data.days);
+        await saveAfterWeather(data.days);
       }
     } catch {
       setError("Ошибка загрузки данных о погоде");
     } finally {
       setLoadingWeather(false);
+      setSaving(false);
     }
   };
 
@@ -189,84 +285,8 @@ export default function NewBestDayPage() {
       setError("Сначала нажмите «Загрузить погоду» для загрузки погодных данных");
       return;
     }
-
-    setSaving(true);
     setError("");
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Необходимо авторизоваться");
-      setSaving(false);
-      return;
-    }
-
-    const { data: existingMushroom } = await supabase
-      .from("mushroom_species")
-      .select("id")
-      .eq("inaturalist_id", mushroom.inaturalist_id)
-      .single();
-
-    let mushroomDbId: string;
-
-    if (existingMushroom) {
-      mushroomDbId = existingMushroom.id;
-    } else {
-      const { data: newMushroom, error: mErr } = await supabase
-        .from("mushroom_species")
-        .insert({
-          inaturalist_id: mushroom.inaturalist_id,
-          latin_name: mushroom.latin_name,
-          common_name: mushroom.common_name,
-          image_url: mushroom.image_url,
-        })
-        .select("id")
-        .single();
-
-      if (mErr || !newMushroom) {
-        setError("Ошибка сохранения вида гриба: " + (mErr?.message || ""));
-        setSaving(false);
-        return;
-      }
-      mushroomDbId = newMushroom.id;
-    }
-
-    const { data: newBd, error: bdErr } = await supabase.from("best_days").insert({
-      user_id: user.id,
-      location_id: selectedLocId,
-      mushroom_id: mushroomDbId,
-      name: name.trim(),
-      best_date: bestDate,
-      weather_data: weatherDays,
-      photos,
-    }).select("id, name, best_date, location_id, created_at").single();
-
-    if (bdErr) {
-      setError(bdErr.message);
-      setSaving(false);
-      return;
-    }
-
-    if (newBd) {
-      const loc = locations.find((l) => l.id === selectedLocId);
-      addBestDay({
-        ...newBd,
-        location: loc ? { id: loc.id, name: loc.name } : undefined,
-        mushroom: mushroom
-          ? {
-              id: mushroomDbId,
-              latin_name: mushroom.latin_name,
-              common_name: mushroom.common_name,
-              image_url: mushroom.image_url,
-            }
-          : undefined,
-      } as never);
-    }
-
-    router.push("/dashboard");
-    router.refresh();
+    await saveAfterWeather(weatherDays);
   };
 
   return (
@@ -297,8 +317,7 @@ export default function NewBestDayPage() {
           Этот погодный «отпечаток» станет эталоном: система будет искать похожие условия и оповестит вас.
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Загрузка погоды — 2 токена</span>
-          <span className="flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-emerald-400">Сохранение — бесплатно</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Стоимость — 2 токена</span>
         </div>
       </div>
 
@@ -481,24 +500,28 @@ export default function NewBestDayPage() {
         <button
           type="button"
           onClick={requestGetData}
-          disabled={loadingWeather || !selectedLocation || !bestDate}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          disabled={loadingWeather || saving}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
-          {loadingWeather ? (
+          {loadingWeather || saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Thermometer className="h-4 w-4" />
+            <Save className="h-4 w-4" />
           )}
-          Загрузить погоду · {TOKEN_COSTS.best_day_create} токен
+          {loadingWeather
+            ? "Загрузка погоды..."
+            : saving
+              ? "Сохранение..."
+              : `Сохранить погоду · ${TOKEN_COSTS.best_day_create} токена`}
         </button>
 
         <TokenConfirmModal
           open={showConfirmGetData}
-          title="Загрузить погоду"
-          description="Система загрузит данные о погоде за 14 дней для выбранной локации и даты."
+          title="Сохранить грибной день"
+          description="Система загрузит данные о погоде за 14 дней для выбранной локации и даты, и сохранит грибной день."
           cost={TOKEN_COSTS.best_day_create}
           balance={balance}
-          loading={loadingWeather}
+          loading={loadingWeather || saving}
           onConfirm={handleGetData}
           onCancel={() => setShowConfirmGetData(false)}
         />
@@ -571,17 +594,6 @@ export default function NewBestDayPage() {
         {error && (
           <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>
         )}
-
-        {/* Save */}
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || weatherDays.length === 0 || !mushroom}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Сохранить грибной день · Бесплатно
-        </button>
       </div>
 
       {fullscreenPhoto && (

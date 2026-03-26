@@ -274,7 +274,7 @@ export default function NewLocationPage() {
                 if (searchResults.length > 0) setShowResults(true);
               }}
               placeholder="Город, деревня или 53.90, 27.56"
-              className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
             {searchQuery && (
               <button
@@ -334,7 +334,7 @@ export default function NewLocationPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Например: Лес у деревни Заречье"
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -350,7 +350,7 @@ export default function NewLocationPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
             rows={3}
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
           />
         </div>
 

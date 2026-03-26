@@ -173,7 +173,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => handleSearchInput(e.target.value)}
                 onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
                 placeholder="Город, деревня, улица..."
-                className="w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchLoading && (
                 <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -211,7 +211,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Например: Лес у деревни Заречье"
-              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
@@ -227,7 +227,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
               rows={2}
-              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
 
