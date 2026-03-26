@@ -28,6 +28,7 @@ interface AppData {
   refreshLocations: () => Promise<void>;
   refreshBestDays: () => Promise<void>;
   addLocation: (loc: Location) => void;
+  updateLocation: (id: string, patch: Partial<Location>) => void;
   addBestDay: (bd: BestDaySummary) => void;
   removeLocation: (id: string) => void;
   removeBestDay: (id: string) => void;
@@ -40,6 +41,7 @@ const AppDataContext = createContext<AppData>({
   refreshLocations: async () => {},
   refreshBestDays: async () => {},
   addLocation: () => {},
+  updateLocation: () => {},
   addBestDay: () => {},
   removeLocation: () => {},
   removeBestDay: () => {},
@@ -67,7 +69,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const [locRes, bdRes] = await Promise.all([
       supabase
         .from("locations")
-      .select("id, name, lat, lng, difficulty, description, created_at")
+      .select("id, name, lat, lng, difficulty, description, forest_info, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
       supabase
@@ -92,7 +94,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const { data } = await supabase
       .from("locations")
-      .select("id, name, lat, lng, difficulty, description, created_at")
+      .select("id, name, lat, lng, difficulty, description, forest_info, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (data) setLocations(data as Location[]);
@@ -118,6 +120,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setLocations((prev) => [loc, ...prev]);
   }, []);
 
+  const updateLocation = useCallback((id: string, patch: Partial<Location>) => {
+    setLocations((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    );
+  }, []);
+
   const addBestDay = useCallback((bd: BestDaySummary) => {
     setBestDays((prev) => [bd, ...prev]);
   }, []);
@@ -138,6 +146,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       refreshLocations,
       refreshBestDays,
       addLocation,
+      updateLocation,
       addBestDay,
       removeLocation,
       removeBestDay,
@@ -149,6 +158,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       refreshLocations,
       refreshBestDays,
       addLocation,
+      updateLocation,
       addBestDay,
       removeLocation,
       removeBestDay,

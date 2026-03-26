@@ -28,7 +28,7 @@ export default function EditLocationPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { removeLocation, refreshBestDays } = useAppData();
+  const { removeLocation, updateLocation: updateLocationCtx, refreshBestDays } = useAppData();
 
   const [location, setLocation] = useState<Location | null>(null);
   const [name, setName] = useState("");
@@ -194,6 +194,7 @@ export default function EditLocationPage() {
               lng={lng}
               forestInfo={location?.forest_info ?? null}
               onLoaded={(info: ForestInfo) => {
+                updateLocationCtx(id, { forest_info: info });
                 const supabase = createClient();
                 supabase
                   .from("locations")

@@ -474,31 +474,25 @@ export default function WeatherPage() {
                     </Link>
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    {locations.map((loc) => (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => setSelectedId(loc.id)}
-                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
-                          selectedId === loc.id
-                            ? "border-primary/50 bg-primary/15"
-                            : "border-white/10 hover:border-primary/30 bg-white/5"
-                        }`}
-                      >
-                        <MapPin
-                          className={`h-4 w-4 flex-shrink-0 ${
-                            selectedId === loc.id ? "text-primary" : "text-muted-foreground"
-                          }`}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{loc.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={selectedId}
+                      onChange={(e) => setSelectedId(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                    >
+                      {locations.length === 0 && <option value="" disabled>{t("noLocations")}</option>}
+                      {locations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name} ({loc.lat.toFixed(4)}, {loc.lng.toFixed(4)})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
                 )}
               </div>

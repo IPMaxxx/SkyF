@@ -38,7 +38,7 @@ interface MushroomResult {
 
 export default function NewBestDayPage() {
   const router = useRouter();
-  const { locations, loading: appLoading, addLocation, addBestDay } = useAppData();
+  const { locations, loading: appLoading, addLocation, updateLocation, addBestDay } = useAppData();
   const [selectedLocId, setSelectedLocId] = useState("");
   const [name, setName] = useState("");
   const [bestDate, setBestDate] = useState("");
@@ -388,6 +388,7 @@ export default function NewBestDayPage() {
               lng={selectedLocation.lng}
               forestInfo={selectedLocation.forest_info}
               onLoaded={(info: ForestInfo) => {
+                updateLocation(selectedLocation.id, { forest_info: info });
                 const supabase = createClient();
                 supabase
                   .from("locations")

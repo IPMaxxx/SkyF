@@ -44,7 +44,7 @@ export default function EditBestDayPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { locations, removeBestDay } = useAppData();
+  const { locations, removeBestDay, updateLocation } = useAppData();
 
   const [bestDay, setBestDay] = useState<BestDay | null>(null);
   const [selectedLocId, setSelectedLocId] = useState("");
@@ -513,6 +513,7 @@ export default function EditBestDayPage() {
               lng={selectedLocation.lng}
               forestInfo={selectedLocation.forest_info}
               onLoaded={(info: ForestInfo) => {
+                updateLocation(selectedLocation.id, { forest_info: info });
                 const supabase = createClient();
                 supabase
                   .from("locations")
