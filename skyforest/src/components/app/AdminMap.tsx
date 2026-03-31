@@ -27,6 +27,7 @@ import {
   Tag,
   MessageSquare,
   Check,
+  Leaf,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -208,6 +209,11 @@ export function AdminMap() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [mushroomFilter, setMushroomFilter] = useState<string>("");
+  const [mushroomSearch, setMushroomSearch] = useState("");
+  const [showMushroomDropdown, setShowMushroomDropdown] = useState(false);
+  const mushroomDropdownRef = useRef<HTMLDivElement>(null);
+
   const loadData = useCallback(async (userId?: string) => {
     setLoading(true);
     try {
@@ -256,6 +262,9 @@ export function AdminMap() {
     function handleClickOutside(e: MouseEvent) {
       if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
         setShowUserDropdown(false);
+      }
+      if (mushroomDropdownRef.current && !mushroomDropdownRef.current.contains(e.target as Node)) {
+        setShowMushroomDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -349,6 +358,10 @@ export function AdminMap() {
     return bestDays.filter((b) => {
       if (statusFilter === "active" && b._deleted) return false;
       if (statusFilter === "deleted" && !b._deleted) return false;
+      if (mushroomFilter) {
+        const latinName = b._deleted ? b.mushroom_latin_name : b.mushroom?.latin_name;
+        if (latinName !== mushroomFilter) return false;
+      }
       if (markFilter !== "all") {
         const tt = getTargetType(!!b._deleted, "best_day");
         const mark = getMark(tt, b.id);
@@ -360,7 +373,7 @@ export function AdminMap() {
       }
       return true;
     });
-  }, [bestDays, filterMode, statusFilter, markFilter, getMark]);
+  }, [bestDays, filterMode, statusFilter, mushroomFilter, markFilter, getMark]);
 
   const allPoints = useMemo(() => {
     const pts: [number, number][] = [];
@@ -384,6 +397,39 @@ export function AdminMap() {
         u.email?.toLowerCase().includes(q),
     );
   }, [users, userSearch]);
+
+  const mushroomOptions = useMemo(() => {
+    const map = new Map<string, { latin_name: string; common_name: string | null; image_url: string | null; count: number }>();
+    for (const b of bestDays) {
+      const latinName = b._deleted ? b.mushroom_latin_name : b.mushroom?.latin_name;
+      if (!latinName) continue;
+      const commonName = b._deleted ? (b.mushroom_common_name ?? null) : (b.mushroom?.common_name ?? null);
+      const imageUrl = b._deleted ? (b.mushroom_image_url ?? null) : (b.mushroom?.image_url ?? null);
+      const existing = map.get(latinName);
+      if (existing) {
+        existing.count++;
+      } else {
+        map.set(latinName, { latin_name: latinName, common_name: commonName, image_url: imageUrl, count: 1 });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [bestDays]);
+
+  const filteredMushroomOptions = useMemo(() => {
+    if (!mushroomSearch.trim()) return mushroomOptions;
+    const q = mushroomSearch.toLowerCase();
+    return mushroomOptions.filter(
+      (m) =>
+        m.latin_name.toLowerCase().includes(q) ||
+        m.common_name?.toLowerCase().includes(q),
+    );
+  }, [mushroomOptions, mushroomSearch]);
+
+  const selectedMushroomName = useMemo(() => {
+    if (!mushroomFilter) return "";
+    const m = mushroomOptions.find((m) => m.latin_name === mushroomFilter);
+    return m ? (m.common_name || m.latin_name) : "";
+  }, [mushroomFilter, mushroomOptions]);
 
   const selectedUserName = useMemo(() => {
     if (!userFilter) return "";
@@ -456,7 +502,7 @@ export function AdminMap() {
     URL.revokeObjectURL(url);
   };
 
-  const hasAnyFilter = userFilter || filterMode !== "all" || statusFilter !== "all" || markFilter !== "all";
+  const hasAnyFilter = userFilter || mushroomFilter || filterMode !== "all" || statusFilter !== "all" || markFilter !== "all";
 
   return (
     <div className="space-y-4">
@@ -566,6 +612,81 @@ export function AdminMap() {
           </button>
         </div>
 
+        {/* Mushroom filter */}
+        <div className="relative" ref={mushroomDropdownRef}>
+          <button
+            onClick={() => {
+              setShowMushroomDropdown(!showMushroomDropdown);
+              setMushroomSearch("");
+            }}
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+              mushroomFilter
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Leaf className="h-3.5 w-3.5" />
+            {mushroomFilter ? selectedMushroomName : "Все грибы"}
+            <ChevronDown className="h-3 w-3" />
+          </button>
+
+          {showMushroomDropdown && (
+            <div className="absolute left-0 top-full z-[9999] mt-1 w-72 rounded-xl border border-white/10 bg-[#1a2a1f]/95 p-2 shadow-2xl backdrop-blur-xl">
+              <div className="relative mb-2">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={mushroomSearch}
+                  onChange={(e) => setMushroomSearch(e.target.value)}
+                  placeholder="Поиск гриба..."
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-1.5 pl-8 pr-3 text-xs outline-none placeholder:text-muted-foreground/50 focus:border-amber-500/30"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-56 overflow-y-auto space-y-0.5">
+                <button
+                  onClick={() => {
+                    setMushroomFilter("");
+                    setShowMushroomDropdown(false);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                    !mushroomFilter ? "bg-amber-500/20 text-amber-300" : "text-foreground/70 hover:bg-white/5"
+                  }`}
+                >
+                  Все грибы
+                </button>
+                {filteredMushroomOptions.map((m) => (
+                  <button
+                    key={m.latin_name}
+                    onClick={() => {
+                      setMushroomFilter(m.latin_name);
+                      setShowMushroomDropdown(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                      mushroomFilter === m.latin_name ? "bg-amber-500/20 text-amber-300" : "text-foreground/70 hover:bg-white/5"
+                    }`}
+                  >
+                    {m.image_url && (
+                      <img
+                        src={m.image_url}
+                        alt=""
+                        className="h-5 w-5 rounded object-cover flex-shrink-0"
+                      />
+                    )}
+                    <span className="truncate font-medium">{m.common_name || m.latin_name}</span>
+                    <span className="ml-auto flex-shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {m.count}
+                    </span>
+                  </button>
+                ))}
+                {filteredMushroomOptions.length === 0 && (
+                  <p className="px-2.5 py-2 text-xs text-muted-foreground/50">Не найдено</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* User filter */}
         <div className="relative" ref={userDropdownRef}>
           <button
@@ -633,6 +754,7 @@ export function AdminMap() {
               setFilterMode("all");
               setStatusFilter("all");
               setMarkFilter("all");
+              setMushroomFilter("");
               setUserFilter("");
             }}
             className="flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/10"
