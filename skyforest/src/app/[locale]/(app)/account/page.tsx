@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
-import { User, Mail, Coins, Lock, ShieldCheck } from "lucide-react";
+import { User, Mail, Coins, Lock, ShieldCheck, Trash2 } from "lucide-react";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { TwoFactorSetup } from "@/components/app/TwoFactorSetup";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { EditProfileName } from "@/components/app/EditProfileName";
+import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -141,6 +142,17 @@ export default async function AccountPage({ params }: Props) {
       <div className="glass rounded-2xl p-6">
         <h2 className="mb-4 text-lg font-semibold">{t("history")}</h2>
         <TransactionHistory initial={transactions} />
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+          <Trash2 className="h-5 w-5 text-red-400" />
+          {t("deleteAccount")}
+        </h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          {t("deleteHint")}
+        </p>
+        <DeleteAccount email={userEmail!} />
       </div>
     </div>
   );

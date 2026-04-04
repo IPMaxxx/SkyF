@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
+  LayersControl,
   Marker,
   Popup,
   useMap,
@@ -825,7 +826,17 @@ export function AdminMap() {
             zoomControl={true}
             attributionControl={false}
           >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="Карта">
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Спутник">
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  maxZoom={18}
+                />
+              </LayersControl.BaseLayer>
+            </LayersControl>
 
             {allPoints.length > 0 && <FitBounds points={allPoints} />}
 
