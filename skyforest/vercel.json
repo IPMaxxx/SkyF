@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/compare",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/finalize-deletions",
+      "schedule": "0 3 * * *"
     }
   ]
 }

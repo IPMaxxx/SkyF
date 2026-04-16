@@ -73,4 +73,13 @@ export default {
   savedMapParams: "R:{radius} · S:{step} · {days}d",
   unitMm: "mm",
   unitKmH: "km/h",
+  chartTempTitle: "Temperature over 14 days",
+  chartRainTitle: "Rain over 14 days",
+  chartTMax: "Max",
+  chartTMin: "Min",
+  chartTMaxLabel: "t° max",
+  chartTMeanLabel: "t° mean",
+  chartTMinLabel: "t° min",
+  chartRainLabel: "Rain (mm)",
+  chartRainUnit: " mm",
 } as const;

@@ -39,7 +39,9 @@ export default function AppLayout({
         </div>
         <AppHeader />
         <ReferralApplier />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1" tabIndex={-1}>
+          {children}
+        </main>
         <Footer />
       </div>
       <Toaster

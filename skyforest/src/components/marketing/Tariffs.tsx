@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Calculator } from "lucide-react";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -119,6 +119,35 @@ export function Tariffs() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mx-auto mt-10 max-w-2xl glass rounded-2xl p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-primary-light" aria-hidden="true" />
+            <h3 className="text-sm font-semibold text-white">
+              {t("calculatorTitle")}
+            </h3>
+          </div>
+          <p className="mb-3 text-xs text-white/60">{t("calculatorIntro")}</p>
+          <dl className="grid gap-2 sm:grid-cols-2">
+            {[
+              [t("calcRow1"), t("calcRow1Cost")],
+              [t("calcRow2"), t("calcRow2Cost")],
+              [t("calcRow3"), t("calcRow3Cost")],
+              [t("calcRow4"), t("calcRow4Cost")],
+            ].map(([label, cost]) => (
+              <div
+                key={label}
+                className="flex items-center justify-between gap-3 rounded-lg bg-white/5 px-3 py-2"
+              >
+                <dt className="text-xs text-white/70">{label}</dt>
+                <dd className="text-xs font-semibold text-amber-300">{cost}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-xs leading-relaxed text-white/50">
+            {t("calcExample")}
+          </p>
         </div>
 
         <p className="mt-8 text-center text-sm text-white/40">{t("footnote")}</p>

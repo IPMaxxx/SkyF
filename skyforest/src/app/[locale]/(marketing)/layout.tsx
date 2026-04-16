@@ -24,7 +24,9 @@ export default function MarketingLayout({
       </div>
       <div className="relative z-10">
         <Header />
-        <main>{children}</main>
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
         <Footer />
       </div>
     </div>

@@ -34,6 +34,8 @@ export default {
     locationsDesc:
       "Your mushroom spots on the map. Each location has weather checks, mushroom days, and monitoring. Click to view or edit.",
     locationsAdd: "Add",
+    locationsSearch: "Search by name...",
+    locationsEmpty: "No matches",
     diffEasy: "Easy",
     diffMedium: "Medium",
     diffHard: "Hard",
@@ -41,6 +43,11 @@ export default {
     topUp: "Top up",
     topUpShort: "+",
     lastOps: "Recent activity",
+    emptyWelcomeTitle: "Welcome to SkyForest",
+    emptyWelcomeBody:
+      "Set things up in 2 minutes: add your mushroom spot and save a successful day. After that, the system watches the weather for you.",
+    blockedBadgeNeedsLocation: "Requires a location",
+    blockedBadgeNeedsBestDay: "Requires a mushroom day",
   },
   onboarding: {
     title: "Getting started",

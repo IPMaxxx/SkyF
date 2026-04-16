@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { MapPin, Star, GitCompareArrows, ChevronRight } from "lucide-react";
+import { MapPin, Star, GitCompareArrows, ChevronRight, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
@@ -13,6 +13,9 @@ interface OnboardingStepsProps {
 export function OnboardingSteps({ hasLocations, hasBestDays }: OnboardingStepsProps) {
   const t = useTranslations("dashboard.onboarding");
   const currentStep = !hasLocations ? 0 : !hasBestDays ? 1 : 2;
+  const totalSteps = 3;
+  const completedCount = currentStep;
+  const progressPercent = Math.round((completedCount / totalSteps) * 100);
 
   const steps = useMemo(
     () => [
@@ -48,42 +51,69 @@ export function OnboardingSteps({ hasLocations, hasBestDays }: OnboardingStepsPr
   );
 
   return (
-    <div className="mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-6">
-      <h2 className="mb-1 text-lg font-bold">{t("title")}</h2>
-      <p className="mb-5 text-sm text-muted-foreground">{t("subtitle")}</p>
+    <div
+      className="mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-6"
+      role="region"
+      aria-label={t("title")}
+    >
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-bold">{t("title")}</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <span
+          className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary-light"
+          aria-label={`${completedCount} / ${totalSteps}`}
+        >
+          {completedCount} / {totalSteps}
+        </span>
+      </div>
 
-      <div className="space-y-3">
+      <div
+        className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/5"
+        role="progressbar"
+        aria-valuenow={progressPercent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light transition-[width] duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
+      <ol className="space-y-3">
         {steps.map((step, i) => {
           const done = i < currentStep;
           const active = i === currentStep;
 
           return (
-            <div
+            <li
               key={step.num}
+              aria-current={active ? "step" : undefined}
               className={`relative flex items-center gap-4 rounded-xl p-4 transition-all ${
                 active
                   ? "glass border border-primary/30 shadow-md shadow-primary/10"
                   : done
-                    ? "opacity-60"
-                    : "opacity-40"
+                    ? "opacity-70"
+                    : "opacity-55"
               }`}
             >
               <div
                 className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white ${
                   done ? "bg-emerald-600" : `bg-gradient-to-br ${step.color}`
                 }`}
+                aria-hidden="true"
               >
                 {done ? (
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
+                  <Check className="h-5 w-5" strokeWidth={2.5} />
                 ) : (
                   <step.icon className="h-5 w-5" />
                 )}
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className={`text-sm font-semibold ${done ? "line-through" : ""}`}>
                     {t("stepPrefix")} {step.num}: {step.title}
                   </p>
@@ -104,16 +134,16 @@ export function OnboardingSteps({ hasLocations, hasBestDays }: OnboardingStepsPr
               {active && (
                 <Link
                   href={step.href}
-                  className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
+                  className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1a12]"
                 >
                   {t("start")}
-                  <ChevronRight className="h-3 w-3" />
+                  <ChevronRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }

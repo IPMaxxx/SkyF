@@ -87,6 +87,42 @@ export function getSiteJsonLd(locale: Locale) {
         },
       ];
 
+  const tariffs = isEn
+    ? [
+        {
+          name: "Start",
+          description: "Free tier: free welcome tokens, add mushroom locations, weather checks, save best days.",
+          price: "0",
+        },
+        {
+          name: "Standard",
+          description: "30 tokens for regular forays: weather check, pattern comparison, precipitation map, forest search.",
+          price: "12",
+        },
+        {
+          name: "Pro Forager",
+          description: "300 tokens for a whole season, best per-token price, unlimited locations, priority support.",
+          price: "90",
+        },
+      ]
+    : [
+        {
+          name: "Старт",
+          description: "Бесплатно: приветственные токены, добавление локаций, проверка погоды, сохранение грибных дней.",
+          price: "0",
+        },
+        {
+          name: "Стандарт",
+          description: "30 токенов для регулярных походов: проверка погоды, сравнение паттернов, карта осадков, поиск леса.",
+          price: "12",
+        },
+        {
+          name: "Грибник Про",
+          description: "300 токенов на весь сезон, лучшая цена за токен, неограниченные локации, приоритетная поддержка.",
+          price: "90",
+        },
+      ];
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -178,6 +214,30 @@ export function getSiteJsonLd(locale: Locale) {
           acceptedAnswer: {
             "@type": "Answer",
             text: item.a,
+          },
+        })),
+      },
+      {
+        "@type": "ItemList",
+        "@id": `${BASE}/#pricing`,
+        name: isEn ? "SkyForest pricing plans" : "Тарифы SkyForest",
+        itemListElement: tariffs.map((tariff, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          item: {
+            "@type": "Product",
+            name: `SkyForest — ${tariff.name}`,
+            description: tariff.description,
+            brand: {
+              "@id": `${BASE}/#organization`,
+            },
+            offers: {
+              "@type": "Offer",
+              price: tariff.price,
+              priceCurrency: "BYN",
+              availability: "https://schema.org/InStock",
+              url: `${BASE}${isEn ? "/en" : ""}/#tariffs`,
+            },
           },
         })),
       },

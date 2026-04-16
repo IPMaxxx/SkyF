@@ -35,6 +35,8 @@ export default {
     locationsDesc:
       "Ваши грибные места на карте. К каждой локации привязаны проверки погоды, грибные дни и мониторинг. Кликните, чтобы посмотреть детали или отредактировать.",
     locationsAdd: "Добавить",
+    locationsSearch: "Поиск по названию...",
+    locationsEmpty: "Ничего не найдено",
     diffEasy: "Простая",
     diffMedium: "Средняя",
     diffHard: "Тяжёлая",
@@ -42,6 +44,11 @@ export default {
     topUp: "Пополнить",
     topUpShort: "+",
     lastOps: "Последние операции",
+    emptyWelcomeTitle: "Добро пожаловать в SkyForest",
+    emptyWelcomeBody:
+      "За 2 минуты настроим всё необходимое: добавим ваше грибное место и отметим удачный день. Дальше система сама будет следить за погодой.",
+    blockedBadgeNeedsLocation: "Нужна локация",
+    blockedBadgeNeedsBestDay: "Нужен грибной день",
   },
   onboarding: {
     title: "С чего начать?",

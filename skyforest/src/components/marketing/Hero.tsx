@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ExternalLink, Bell, Droplets, Store, Trees } from "lucide-react";
+import { ArrowRight, Bell, Droplets, Store, Trees } from "lucide-react";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -26,8 +26,9 @@ export function Hero() {
           <Image
             src="/images/logo-square.png"
             alt="SkyForest"
-            width={160}
-            height={160}
+            width={144}
+            height={144}
+            sizes="(max-width: 640px) 112px, 144px"
             className="mx-auto mb-8 h-28 w-28 sm:h-36 sm:w-36 rounded-2xl"
             priority
           />
@@ -46,20 +47,18 @@ export function Hero() {
           <div className="mb-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href={loggedIn ? "/dashboard" : "/register"}
-              className="rounded-xl bg-primary px-10 py-4 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40"
+              className="group inline-flex items-center gap-2 rounded-xl bg-primary px-10 py-4 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1a12]"
             >
-              {t("ctaPrimary")}
+              {loggedIn ? t("ctaLoggedIn") : t("ctaPrimary")}
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
             </Link>
 
-            <a
-              href="https://app.skyforest.by"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass flex items-center gap-2 rounded-xl px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/15"
+            <Link
+              href="/#about"
+              className="glass flex items-center gap-2 rounded-xl px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             >
-              <ExternalLink className="h-5 w-5" />
-              {t("ctaLegacy")}
-            </a>
+              {t("ctaLearnMore")}
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

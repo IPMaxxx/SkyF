@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServerClient } from "@supabase/ssr";
+
+const COOLDOWN_DAYS = 14;
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -22,36 +23,73 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const admin = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } },
-  );
+  const { data, error } = await supabase.rpc("schedule_account_deletion", {
+    p_days: COOLDOWN_DAYS,
+  });
 
-  const { error: insertError } = await admin
-    .from("deleted_accounts")
-    .insert({
-      original_user_id: user.id,
-      email: user.email!.toLowerCase(),
-    });
-
-  if (insertError) {
-    console.error("Failed to record deleted account:", insertError);
+  if (error) {
+    console.error("Failed to schedule deletion:", error);
     return NextResponse.json(
-      { error: "Failed to process deletion" },
+      { error: "Failed to schedule deletion" },
       { status: 500 },
     );
   }
 
-  const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+  return NextResponse.json({
+    success: true,
+    effective_at: data,
+    cooldown_days: COOLDOWN_DAYS,
+  });
+}
 
-  if (deleteError) {
-    console.error("Failed to delete auth user:", deleteError);
+export async function DELETE() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await supabase.rpc("cancel_account_deletion");
+  if (error) {
+    console.error("Failed to cancel deletion:", error);
     return NextResponse.json(
-      { error: "Failed to delete account" },
+      { error: "Failed to cancel deletion" },
       { status: 500 },
     );
   }
 
   return NextResponse.json({ success: true });
+}
+
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("deletion_scheduled_at, deletion_effective_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch status" },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({
+    scheduled_at: data?.deletion_scheduled_at ?? null,
+    effective_at: data?.deletion_effective_at ?? null,
+    cooldown_days: COOLDOWN_DAYS,
+  });
 }

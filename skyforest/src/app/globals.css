@@ -21,10 +21,90 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High-contrast mode: strengthens all glass surfaces and borders
+   without changing the overall dark theme. Toggled via
+   document.documentElement.dataset.theme = "hc" */
+html[data-theme="hc"] {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-primary: #7bd97e;
+  --color-primary-light: #a6ebac;
+  --color-primary-dark: #54b659;
+  --color-muted: rgba(255, 255, 255, 0.15);
+  --color-muted-foreground: #d0d7de;
+  --color-border: rgba(255, 255, 255, 0.4);
+  --color-card: rgba(255, 255, 255, 0.12);
+  --color-glass: rgba(255, 255, 255, 0.18);
+  --color-glass-border: rgba(255, 255, 255, 0.45);
+  --color-glass-hover: rgba(255, 255, 255, 0.28);
+}
+
+html[data-theme="hc"] .glass,
+html[data-theme="hc"] .glass-strong {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Accessibility: consistent focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+html[data-theme="hc"] :focus-visible {
+  outline-width: 3px;
+  outline-color: #ffd700;
+}
+
+/* Visually-hidden helper */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Skip link shown on keyboard focus */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 100;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 1rem;
 }
 
 /* Glassmorphism utilities */

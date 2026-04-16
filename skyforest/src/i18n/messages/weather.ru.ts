@@ -73,4 +73,13 @@ export default {
   savedMapParams: "R:{radius} · Ш:{step} · {days}д",
   unitMm: "мм",
   unitKmH: "км/ч",
+  chartTempTitle: "Температура за 14 дней",
+  chartRainTitle: "Дождь за 14 дней",
+  chartTMax: "Макс",
+  chartTMin: "Мин",
+  chartTMaxLabel: "t° макс",
+  chartTMeanLabel: "t° средняя",
+  chartTMinLabel: "t° мин",
+  chartRainLabel: "Дождь (мм)",
+  chartRainUnit: " мм",
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "@/i18n/navigation";
 import dynamic from "next/dynamic";
 import {
@@ -14,6 +14,9 @@ import {
   Store,
   Coins,
   History,
+  Lock,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 import { useAppData } from "@/lib/AppDataContext";
@@ -50,6 +53,39 @@ type MainCard = {
   blockedHint?: string;
 };
 
+function LazyDashboardMap(props: {
+  locations: ReturnType<typeof useAppData>["locations"];
+  bestDays: ReturnType<typeof useAppData>["bestDays"];
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible || !ref.current) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" }
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [visible]);
+
+  return (
+    <div ref={ref}>
+      {visible ? (
+        <DashboardMap locations={props.locations} bestDays={props.bestDays} />
+      ) : (
+        <MapLoadingFallback />
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const t = useTranslations("dashboard.home");
   const locale = useLocale();
@@ -57,12 +93,20 @@ export default function DashboardPage() {
   const { locations, bestDays: allBestDays, loading } = useAppData();
   const { balance, loading: balanceLoading } = useTokens();
   const [showAllDays, setShowAllDays] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
   const DAYS_PREVIEW = 6;
   const bestDays = showAllDays ? allBestDays : allBestDays.slice(0, DAYS_PREVIEW);
   const hasMoreDays = allBestDays.length > DAYS_PREVIEW;
 
   const hasLocations = locations.length > 0;
   const hasBestDays = bestDays.length > 0;
+  const isEmpty = !hasLocations && !hasBestDays;
+
+  const filteredLocations = useMemo(() => {
+    const q = locationSearch.trim().toLowerCase();
+    if (!q) return locations;
+    return locations.filter((loc) => loc.name.toLowerCase().includes(q));
+  }, [locations, locationSearch]);
 
   const mainCards: MainCard[] = useMemo(
     () => [
@@ -123,20 +167,36 @@ export default function DashboardPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/dashboard/locations/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             {t("addLocation")}
           </Link>
           <Link
             href="/dashboard/best-day/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             {t("addBestDay")}
           </Link>
         </div>
       </div>
+
+      {isEmpty && !loading && (
+        <div className="mb-6 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary-light">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold">{t("emptyWelcomeTitle")}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {t("emptyWelcomeBody")}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(!hasLocations || !hasBestDays) && !loading && (
         <OnboardingSteps hasLocations={hasLocations} hasBestDays={hasBestDays} />
@@ -148,39 +208,44 @@ export default function DashboardPage() {
 
         if (blocked) {
           return (
-            <div className="mb-4 relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-4 sm:p-6">
+            <Link
+              href="/dashboard/locations/new"
+              aria-label={`${weatherCard.title} — ${t("blockedBadgeNeedsLocation")}`}
+              className="group mb-4 relative block overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent p-4 sm:p-6 transition-all hover:border-blue-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            >
               <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
-              <div className="mb-3 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white opacity-30 shadow-lg shadow-blue-500/20">
-                <weatherCard.icon className="h-5 w-5 sm:h-7 sm:w-7" />
+              <span className="mb-3 inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                {t("blockedBadgeNeedsLocation")}
+              </span>
+              <div className="mb-3 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white opacity-60 shadow-lg shadow-blue-500/20">
+                <weatherCard.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
               </div>
-              <h2 className="mb-2 text-xl font-bold text-foreground/40">{weatherCard.title}</h2>
-              <p className="mb-4 text-sm leading-relaxed text-muted-foreground/50">{weatherCard.desc}</p>
+              <h2 className="mb-2 text-xl font-bold text-foreground/70">{weatherCard.title}</h2>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground/80">{weatherCard.desc}</p>
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-                <p className="mb-2 text-xs leading-relaxed text-amber-400/80">
+                <p className="mb-2 text-xs leading-relaxed text-amber-400/90">
                   {weatherCard.blockedHint}
                 </p>
-                <Link
-                  href="/dashboard/locations/new"
-                  className="inline-flex items-center gap-1 rounded-lg bg-amber-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-500"
-                >
-                  <Plus className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors group-hover:bg-amber-500">
+                  <Plus className="h-3 w-3" aria-hidden="true" />
                   {t("addLocation")}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           );
         }
 
         return (
           <Link
             href={weatherCard.href}
-            className="group relative mb-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 via-cyan-500/5 to-transparent p-4 sm:p-6 transition-all duration-300 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5"
+            className="group relative mb-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 via-cyan-500/5 to-transparent p-4 sm:p-6 transition-all duration-300 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl transition-all group-hover:bg-blue-500/20" />
             <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-cyan-500/5 blur-xl" />
             <div className="relative flex items-center gap-3 sm:block">
               <div className="flex h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/25">
-                <weatherCard.icon className="h-5 w-5 sm:h-7 sm:w-7" />
+                <weatherCard.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
               </div>
               <div className="sm:hidden min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -190,7 +255,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
-              <ChevronRight className="sm:hidden relative h-5 w-5 flex-shrink-0 text-blue-400/50" />
+              <ChevronRight className="sm:hidden relative h-5 w-5 flex-shrink-0 text-blue-400/50" aria-hidden="true" />
             </div>
             <div className="relative min-w-0 flex-1">
               <div className="mb-1 hidden sm:flex items-center gap-2">
@@ -201,53 +266,60 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">{weatherCard.desc}</p>
             </div>
-            <ChevronRight className="hidden sm:block relative h-6 w-6 flex-shrink-0 text-blue-400/50 transition-all group-hover:text-blue-400 group-hover:translate-x-1" />
+            <ChevronRight className="hidden sm:block relative h-6 w-6 flex-shrink-0 text-blue-400/50 transition-all group-hover:text-blue-400 group-hover:translate-x-1" aria-hidden="true" />
           </Link>
         );
       })()}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {mainCards.slice(1).map((card) => {
-          const blocked =
-            (card.needsLocation && !hasLocations) ||
-            (card.needsBestDay && !hasBestDays);
+          const blockedByLocation = card.needsLocation && !hasLocations;
+          const blockedByBestDay = card.needsBestDay && !hasBestDays;
+          const blocked = blockedByLocation || blockedByBestDay;
 
           if (blocked) {
+            const href = blockedByLocation
+              ? "/dashboard/locations/new"
+              : "/dashboard/best-day/new";
+            const badge = blockedByLocation
+              ? t("blockedBadgeNeedsLocation")
+              : t("blockedBadgeNeedsBestDay");
+            const ctaLabel = blockedByLocation
+              ? t("addLocation")
+              : t("addBestDay");
             return (
-              <div
+              <Link
                 key={card.title}
-                className="glass relative overflow-hidden rounded-2xl p-6"
+                href={href}
+                aria-label={`${card.title} — ${badge}`}
+                className="glass group relative block overflow-hidden rounded-2xl p-6 transition-all hover:bg-glass-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
               >
+                <span className="mb-3 inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                  <Lock className="h-3 w-3" aria-hidden="true" />
+                  {badge}
+                </span>
                 <div
-                  className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} text-white opacity-30`}
+                  className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} text-white opacity-60`}
+                  aria-hidden="true"
                 >
                   <card.icon className="h-6 w-6" />
                 </div>
-                <h2 className="mb-2 text-lg font-semibold text-foreground/40">
+                <h2 className="mb-2 text-lg font-semibold text-foreground/70">
                   {card.title}
                 </h2>
-                <p className="mb-4 text-sm leading-relaxed text-muted-foreground/50">
+                <p className="mb-4 text-sm leading-relaxed text-muted-foreground/80">
                   {card.desc}
                 </p>
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-                  <p className="mb-2 text-xs leading-relaxed text-amber-400/80">
+                  <p className="mb-2 text-xs leading-relaxed text-amber-400/90">
                     {card.blockedHint}
                   </p>
-                  <Link
-                    href={
-                      card.needsLocation && !hasLocations
-                        ? "/dashboard/locations/new"
-                        : "/dashboard/best-day/new"
-                    }
-                    className="inline-flex items-center gap-1 rounded-lg bg-amber-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-500"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {card.needsLocation && !hasLocations
-                      ? t("addLocation")
-                      : t("addBestDay")}
-                  </Link>
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors group-hover:bg-amber-500">
+                    <Plus className="h-3 w-3" aria-hidden="true" />
+                    {ctaLabel}
+                  </span>
                 </div>
-              </div>
+              </Link>
             );
           }
 
@@ -255,11 +327,12 @@ export default function DashboardPage() {
             <Link
               key={card.title}
               href={card.href}
-              className="glass group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:bg-glass-hover hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
+              className="glass group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:bg-glass-hover hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
             >
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.03] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
               <div
                 className={`relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} text-white shadow-lg`}
+                aria-hidden="true"
               >
                 <card.icon className="h-6 w-6" />
               </div>
@@ -267,7 +340,7 @@ export default function DashboardPage() {
               <p className="relative text-sm leading-relaxed text-muted-foreground">
                 {card.desc}
               </p>
-              <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
             </Link>
           );
         })}
@@ -275,7 +348,7 @@ export default function DashboardPage() {
 
       {(hasLocations || hasBestDays) && !loading && (
         <div className="mt-8 sm:mt-10">
-          <DashboardMap locations={locations} bestDays={allBestDays} />
+          <LazyDashboardMap locations={locations} bestDays={allBestDays} />
         </div>
       )}
 
@@ -286,9 +359,9 @@ export default function DashboardPage() {
               <h2 className="text-base sm:text-lg font-semibold">{t("bestDaysTitle")}</h2>
               <Link
                 href="/dashboard/best-day/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25 flex-shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">{t("bestDaysAdd")}</span>
                 <span className="sm:hidden">{t("bestDaysAddShort")}</span>
               </Link>
@@ -302,16 +375,16 @@ export default function DashboardPage() {
               <Link
                 key={bd.id}
                 href={`/dashboard/best-day/${bd.id}`}
-                className="glass flex items-center gap-3 rounded-xl p-4 transition-all hover:bg-glass-hover hover:shadow-md hover:shadow-black/10"
+                className="glass flex items-center gap-3 rounded-xl p-4 transition-all hover:bg-glass-hover hover:shadow-md hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
               >
                 {bd.mushroom?.image_url ? (
                   <img
                     src={bd.mushroom.image_url}
-                    alt={bd.mushroom.latin_name}
+                    alt={bd.mushroom.common_name || bd.mushroom.latin_name}
                     className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/15" aria-hidden="true">
                     <Star className="h-5 w-5 text-amber-400" />
                   </div>
                 )}
@@ -327,7 +400,7 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/50" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/50" aria-hidden="true" />
               </Link>
             ))}
           </div>
@@ -335,7 +408,8 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setShowAllDays((v) => !v)}
-              className="mt-3 w-full rounded-xl border border-amber-500/20 bg-amber-500/5 py-2.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10"
+              className="mt-3 w-full rounded-xl border border-amber-500/20 bg-amber-500/5 py-2.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              aria-expanded={showAllDays}
             >
               {showAllDays
                 ? t("collapse")
@@ -352,49 +426,71 @@ export default function DashboardPage() {
               <h2 className="text-base sm:text-lg font-semibold">{t("locationsTitle")}</h2>
               <Link
                 href="/dashboard/locations/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 flex-shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 {t("locationsAdd")}
               </Link>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t("locationsDesc")}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {locations.map((loc) => (
-              <Link
-                key={loc.id}
-                href={`/dashboard/locations/${loc.id}`}
-                className="glass inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all hover:bg-glass-hover hover:shadow-md hover:shadow-black/10"
-              >
-                <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
-                <span className="font-medium">{loc.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {loc.lat.toFixed(2)}, {loc.lng.toFixed(2)}
-                </span>
-                {loc.difficulty && (
-                  <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
-                      loc.difficulty === "easy"
-                        ? "bg-emerald-500/15 text-emerald-400"
-                        : loc.difficulty === "medium"
-                          ? "bg-amber-500/15 text-amber-400"
-                          : "bg-red-500/15 text-red-400"
-                    }`}
-                  >
-                    {diffLabels[loc.difficulty as keyof typeof diffLabels]}
+          {locations.length > 4 && (
+            <div className="relative mb-3">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                value={locationSearch}
+                onChange={(e) => setLocationSearch(e.target.value)}
+                placeholder={t("locationsSearch")}
+                aria-label={t("locationsSearch")}
+                className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground/40 focus:border-primary/40 focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          )}
+          {filteredLocations.length === 0 ? (
+            <p className="rounded-xl bg-white/5 py-4 text-center text-sm text-muted-foreground">
+              {t("locationsEmpty")}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {filteredLocations.map((loc) => (
+                <Link
+                  key={loc.id}
+                  href={`/dashboard/locations/${loc.id}`}
+                  className="glass inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm transition-all hover:bg-glass-hover hover:shadow-md hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+                >
+                  <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400" aria-hidden="true" />
+                  <span className="font-medium">{loc.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {loc.lat.toFixed(2)}, {loc.lng.toFixed(2)}
                   </span>
-                )}
-              </Link>
-            ))}
-          </div>
+                  {loc.difficulty && (
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                        loc.difficulty === "easy"
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : loc.difficulty === "medium"
+                            ? "bg-amber-500/15 text-amber-400"
+                            : "bg-red-500/15 text-red-400"
+                      }`}
+                    >
+                      {diffLabels[loc.difficulty as keyof typeof diffLabels]}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       <div className="mt-8 sm:mt-10">
         <div className="mb-4 flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
-            <Coins className="h-5 w-5 text-amber-400" />
+            <Coins className="h-5 w-5 text-amber-400" aria-hidden="true" />
             {t("tokensTitle")}
           </h2>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -405,9 +501,9 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/payment"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden xs:inline">{t("topUp")}</span>
               <span className="xs:hidden">{t("topUpShort")}</span>
             </Link>
@@ -415,7 +511,7 @@ export default function DashboardPage() {
         </div>
         <div className="glass rounded-2xl p-4 sm:p-5">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <History className="h-4 w-4" />
+            <History className="h-4 w-4" aria-hidden="true" />
             {t("lastOps")}
           </h3>
           <TransactionHistory compact limit={10} />
@@ -423,7 +519,7 @@ export default function DashboardPage() {
       </div>
 
       {loading && (
-        <div className="mt-12 flex justify-center">
+        <div className="mt-12 flex justify-center" aria-live="polite">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}

@@ -13,15 +13,20 @@ import {
   Area,
 } from "recharts";
 import type { WeatherDay } from "@/lib/supabase/types";
+import { useLocale, useTranslations } from "next-intl";
 
 interface Props {
   data: WeatherDay[];
 }
 
 export function WeatherChart({ data }: Props) {
+  const t = useTranslations("weather");
+  const locale = useLocale();
+  const dateLocale = locale === "en" ? "en-GB" : "ru-RU";
+
   const chartData = data.map((d, i) => ({
     day: i + 1,
-    date: new Date(d.date).toLocaleDateString("ru-RU", {
+    date: new Date(d.date).toLocaleDateString(dateLocale, {
       day: "numeric",
       month: "short",
     }),
@@ -35,10 +40,9 @@ export function WeatherChart({ data }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Temperature chart */}
       <div className="glass rounded-2xl p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-          Температура за 14 дней
+          {t("chartTempTitle")}
         </h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -72,21 +76,21 @@ export function WeatherChart({ data }: Props) {
               <Area
                 type="monotone"
                 dataKey="tMax"
-                name="Макс"
+                name={t("chartTMax")}
                 fill="rgba(239,68,68,0.1)"
                 stroke="transparent"
               />
               <Area
                 type="monotone"
                 dataKey="tMin"
-                name="Мин"
+                name={t("chartTMin")}
                 fill="rgba(59,130,246,0.1)"
                 stroke="transparent"
               />
               <Line
                 type="monotone"
                 dataKey="tMax"
-                name="t° макс"
+                name={t("chartTMaxLabel")}
                 stroke="#ef4444"
                 strokeWidth={1.5}
                 dot={{ r: 3, fill: "#ef4444" }}
@@ -95,7 +99,7 @@ export function WeatherChart({ data }: Props) {
               <Line
                 type="monotone"
                 dataKey="tMean"
-                name="t° средняя"
+                name={t("chartTMeanLabel")}
                 stroke="#f59e0b"
                 strokeWidth={2.5}
                 dot={{ r: 3, fill: "#f59e0b" }}
@@ -104,7 +108,7 @@ export function WeatherChart({ data }: Props) {
               <Line
                 type="monotone"
                 dataKey="tMin"
-                name="t° мин"
+                name={t("chartTMinLabel")}
                 stroke="#3b82f6"
                 strokeWidth={1.5}
                 dot={{ r: 3, fill: "#3b82f6" }}
@@ -115,10 +119,9 @@ export function WeatherChart({ data }: Props) {
         </div>
       </div>
 
-      {/* Rain chart */}
       <div className="glass rounded-2xl p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-          Дождь за 14 дней
+          {t("chartRainTitle")}
         </h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
@@ -134,7 +137,7 @@ export function WeatherChart({ data }: Props) {
                 tick={{ fill: "#94a3b8", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                unit=" мм"
+                unit={t("chartRainUnit")}
               />
               <Tooltip
                 contentStyle={{
@@ -148,7 +151,7 @@ export function WeatherChart({ data }: Props) {
               />
               <Bar
                 dataKey="rain"
-                name="Дождь (мм)"
+                name={t("chartRainLabel")}
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
                 opacity={0.8}
