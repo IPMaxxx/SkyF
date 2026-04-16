@@ -17,7 +17,14 @@ export async function middleware(request: NextRequest) {
     return intlResponse;
   }
 
-  let response = intlResponse;
+  const rawPathname = request.nextUrl.pathname;
+  const isEn = rawPathname === "/en" || rawPathname.startsWith("/en/");
+  request.cookies.set("NEXT_LOCALE", isEn ? "en" : "ru");
+
+  let response = NextResponse.next({ request });
+  intlResponse.headers.forEach((value, key) => {
+    response.headers.set(key, value);
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,9 +53,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const rawPathname = request.nextUrl.pathname;
-  const isEn = rawPathname === "/en" || rawPathname.startsWith("/en/");
   const pathname = stripLocalePrefix(rawPathname);
   const isProtected = PROTECTED_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)

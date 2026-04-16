@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Договор-оферта",
-  description:
-    "Публичный договор-оферта сервиса SkyForest.by — условия предоставления услуг по анализу и сравнению погодных данных.",
-  alternates: { canonical: "https://www.skyforest.by/offer" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const base = "https://www.skyforest.by";
+  const path = "/offer";
+  return {
+    title: "Договор-оферта",
+    description:
+      "Публичный договор-оферта сервиса SkyForest.by — условия предоставления услуг по анализу и сравнению погодных данных.",
+    alternates: {
+      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
+      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
+    },
+  };
+}
 
 export default function OfferPage() {
   return (

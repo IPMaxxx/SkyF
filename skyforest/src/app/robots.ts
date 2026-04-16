@@ -29,6 +29,7 @@ const AI_ALLOWED_PATHS = [
   "/blog/kogda-pora-v-les",
   "/blog/v-kakom-lesu-iskat-griby",
   "/blog/gde-rastut-griby",
+  "/blog/ezhovik-grebenchatyj",
   "/instruction",
   "/llms.txt",
   "/llms-full.txt",

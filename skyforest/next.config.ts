@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      { source: "/tproduct/:path*", destination: "/", permanent: true },
+      { source: "/shop/:path*", destination: "/", permanent: true },
+      { source: "/shop", destination: "/", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },

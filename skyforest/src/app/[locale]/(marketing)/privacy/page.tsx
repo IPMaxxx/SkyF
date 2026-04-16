@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Политика конфиденциальности",
-  description:
-    "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
-  alternates: { canonical: "https://www.skyforest.by/privacy" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const base = "https://www.skyforest.by";
+  const path = "/privacy";
+  return {
+    title: "Политика конфиденциальности",
+    description:
+      "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
+    alternates: {
+      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
+      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
+    },
+  };
+}
 
 export default function PrivacyPage() {
   return (

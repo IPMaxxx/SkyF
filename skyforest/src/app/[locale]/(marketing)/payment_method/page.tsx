@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Способы оплаты",
-  description:
-    "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
-  alternates: { canonical: "https://www.skyforest.by/payment_method" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const base = "https://www.skyforest.by";
+  const path = "/payment_method";
+  return {
+    title: "Способы оплаты",
+    description:
+      "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
+    alternates: {
+      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
+      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
+    },
+  };
+}
 
 export default function PaymentMethodPage() {
   return (

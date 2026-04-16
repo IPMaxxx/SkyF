@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Инструкция — SkyForest",
-  description:
-    "Подробная инструкция по всем функциям SkyForest: создание локаций, запись грибных дней, проверка погоды, мониторинг, поиск леса, маркетплейс.",
-  alternates: { canonical: "https://www.skyforest.by/instruction" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const base = "https://www.skyforest.by";
+  const path = "/instruction";
+  return {
+    title: "Инструкция — SkyForest",
+    description:
+      "Подробная инструкция по всем функциям SkyForest: создание локаций, запись грибных дней, проверка погоды, мониторинг, поиск леса, маркетплейс.",
+    alternates: {
+      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
+      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
+    },
+  };
+}
 
 const COST_TABLE = [
   { action: "Создание локации", tokens: "Бесплатно", byn: "—" },

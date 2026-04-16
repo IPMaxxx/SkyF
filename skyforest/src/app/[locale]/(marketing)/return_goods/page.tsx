@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Условия возврата средств",
-  description:
-    "Условия возврата средств за токены в сервисе SkyForest.by — порядок и сроки.",
-  alternates: { canonical: "https://www.skyforest.by/return_goods" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const base = "https://www.skyforest.by";
+  const path = "/return_goods";
+  return {
+    title: "Условия возврата средств",
+    description:
+      "Условия возврата средств за токены в сервисе SkyForest.by — порядок и сроки.",
+    alternates: {
+      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
+      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
+    },
+  };
+}
 
 export default function ReturnGoodsPage() {
   return (

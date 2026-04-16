@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 
 export const metadata: Metadata = {
@@ -28,12 +28,12 @@ export const metadata: Metadata = {
     title: "Ежовик гребенчатый: гриб для мозга — что говорит наука",
     description:
       "Разбираем клинические исследования ежовика гребенчатого: влияние на память, депрессию, тревогу и нервную систему. Мицелий vs плодовое тело.",
-    url: "https://skyforest.by/blog/ezhovik-grebenchatyj",
+    url: "https://www.skyforest.by/blog/ezhovik-grebenchatyj",
     siteName: "SkyForest",
     type: "article",
     images: [
       {
-        url: "/images/blog/blog-ezhovik-grebenchatyj.jpg",
+        url: "https://www.skyforest.by/images/blog/blog-ezhovik-grebenchatyj.jpg",
         width: 1792,
         height: 1024,
         alt: "Ежовик гребенчатый растёт на стволе дерева в осеннем лесу",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "https://skyforest.by/blog/ezhovik-grebenchatyj",
+    canonical: "https://www.skyforest.by/blog/ezhovik-grebenchatyj",
   },
 };
 
