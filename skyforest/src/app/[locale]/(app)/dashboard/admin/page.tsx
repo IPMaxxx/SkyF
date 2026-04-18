@@ -39,6 +39,11 @@ import {
   CreditCard,
   UserSearch,
   AlertTriangle,
+  FlaskConical,
+  Play,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 
 const AdminMapLazy = dynamic(
@@ -927,6 +932,7 @@ const TAB_GROUPS = [
       { key: "overview", label: "Дашборд", icon: BarChart3 },
       { key: "admin_map", label: "Карта", icon: Map },
       { key: "user_lookup", label: "Поиск юзера", icon: UserSearch },
+      { key: "reg_test", label: "Тест регистрации", icon: FlaskConical },
     ],
   },
   {
@@ -1127,7 +1133,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "overview") {
       loadStats();
-    } else if (activeTab === "admin_map" || activeTab === "user_lookup") {
+    } else if (
+      activeTab === "admin_map" ||
+      activeTab === "user_lookup" ||
+      activeTab === "reg_test"
+    ) {
       // these tabs handle their own data loading
     } else {
       setSortBy(null);
@@ -1563,8 +1573,11 @@ export default function AdminPage() {
           {/* User lookup tool */}
           {activeTab === "user_lookup" && <AdminUserLookup />}
 
+          {/* Registration self-test */}
+          {activeTab === "reg_test" && <AdminRegistrationTest />}
+
           {/* Table view */}
-          {activeTab !== "overview" && activeTab !== "admin_map" && activeTab !== "marketplace_messages" && activeTab !== "user_lookup" && activeTableConfig && (
+          {activeTab !== "overview" && activeTab !== "admin_map" && activeTab !== "marketplace_messages" && activeTab !== "user_lookup" && activeTab !== "reg_test" && activeTableConfig && (
             <div>
               {/* Header */}
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2928,6 +2941,453 @@ function KV({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
         {k}
       </span>
       <span className={mono ? "font-mono text-[11px] break-all" : ""}>{v}</span>
+    </div>
+  );
+}
+
+/* ───────────── Registration self-test ───────────── */
+
+interface RegTestStep {
+  step: string;
+  status: "ok" | "fail" | "warn" | "skip";
+  duration_ms: number;
+  detail?: string;
+  data?: Record<string, unknown> | null;
+}
+
+interface RegTestReport {
+  ok: boolean;
+  email: string;
+  user_id: string | null;
+  total_duration_ms: number;
+  steps: RegTestStep[];
+  cleanup_done: boolean;
+}
+
+const STEP_LABELS: Record<string, string> = {
+  precheck_auth_users_unique: "Email свободен в auth.users",
+  precheck_deleted_archive: "Email не в архиве deleted_accounts",
+  auth_admin_create_user: "Создание пользователя в auth.users",
+  trigger_profile_created: "Триггер handle_new_user → public.profiles",
+  trigger_token_balance_created:
+    "Триггер handle_new_profile_tokens → token_balances",
+  welcome_bonus_transaction_logged:
+    "Запись welcome-бонуса в token_transactions",
+  cleanup_delete_user: "Очистка: удаление тестового пользователя",
+};
+
+interface StepHint {
+  meaning: string;
+  fix: string;
+  tellUser: string;
+}
+
+const STEP_HINTS: Record<string, StepHint> = {
+  precheck_auth_users_unique: {
+    meaning:
+      "Тестовый email уже занят в auth.users — это значит, что прошлый прогон теста не удалился, либо реальный юзер успел зарегистрироваться на этот адрес.",
+    fix: "Откройте «Поиск юзера», вбейте этот email и удалите аккаунт через «Опасную зону». Затем перегенерите email кнопкой ↻ и запустите тест ещё раз.",
+    tellUser:
+      "К жалобе пользователя отношения не имеет — это проблема самого теста, не отвечайте ему ничего.",
+  },
+  precheck_deleted_archive: {
+    meaning:
+      "Email находится в архиве deleted_accounts (антифрод v23). Если пользователь жалуется именно на этот email — повторная регистрация пройдёт, но welcome-бонус 20 токенов начислен НЕ будет.",
+    fix: "Если это реальный пользователь — через «Поиск юзера» найдите его email и при удалении (либо вручную) очистите запись из deleted_accounts.",
+    tellUser:
+      "«Вы уже регистрировались с этим email ранее. Можете зарегистрироваться повторно, но приветственные бонусные токены не начислятся — напишите нам, если нужно их вернуть.»",
+  },
+  auth_admin_create_user: {
+    meaning:
+      "Сам Supabase Auth не дал создать пользователя. Возможные причины: невалидный SUPABASE_SERVICE_ROLE_KEY, отвалился Supabase, включён captcha/anti-abuse, превышены лимиты проекта, email домен в blocklist.",
+    fix: "Смотрите detail шага — там точное сообщение от Supabase. Проверьте, что в .env свежие ключи; зайдите в Supabase Dashboard → Auth → Logs и посмотрите ошибки за последние 5 минут; проверьте лимиты проекта (Settings → Billing).",
+    tellUser:
+      "«Сейчас проблема на стороне сервиса авторизации, мы её чиним. Попробуйте через 10–15 минут, если не получится — напишите нам ещё раз.»",
+  },
+  trigger_profile_created: {
+    meaning:
+      "Это самая частая причина жалоб. auth-юзер создаётся, но триггер handle_new_user не вставляет строку в public.profiles. Симптом для пользователя: он подтверждает email, входит в приложение, и его сразу выкидывает / не пускает в дашборд / показывает «профиль не найден».",
+    fix: "Откройте Supabase SQL Editor и выполните: SELECT * FROM pg_trigger WHERE tgname = 'on_auth_user_created'; — триггер должен существовать. Если нет — повторно прогоните schema.sql. Если есть — выполните CREATE OR REPLACE FUNCTION public.handle_new_user() из schema.sql и проверьте, что нет ошибок (например, NOT NULL поле в profiles, которое триггер не заполняет).",
+    tellUser:
+      "«Спасибо, что сообщили — у нас сбой при создании профилей. Уже чиним, через 1–2 часа вернёмся с ответом и восстановим вашу регистрацию вручную. Какой email вы использовали?» (после фикса — через «Поиск юзера» создайте профиль вручную или попросите перерегистрироваться).",
+  },
+  trigger_token_balance_created: {
+    meaning:
+      "Профиль создаётся, но триггер handle_new_profile_tokens не создаёт строку в token_balances. Симптом: пользователь регистрируется и входит, но баланс пустой, welcome-бонус не начислен, оплата сервисов не работает.",
+    fix: "В SQL Editor: SELECT * FROM pg_trigger WHERE tgname = 'on_profile_created_tokens'; и проверьте функцию handle_new_profile_tokens (см. patch-v23-antifraud.sql). Если статус WARN с неожиданными значениями (balance/bonus_balance) — кто-то изменил функцию, проверьте git log на supabase/.",
+    tellUser:
+      "«Профиль создан, но приветственные токены не начислились из-за технического сбоя. Уже чиним, в течение часа начислим вручную — напишите ваш email.»",
+  },
+  welcome_bonus_transaction_logged: {
+    meaning:
+      "Баланс создался, но запись о бонусной транзакции не появилась в token_transactions. Это косметическая проблема — пользователь видит токены, но в истории операций их «появление» не отражено.",
+    fix: "Проверьте, что внутри handle_new_profile_tokens есть INSERT INTO token_transactions (см. patch-v23-antifraud.sql, строки 32–33). Не критично для регистрации.",
+    tellUser:
+      "Пользователю сообщать ничего не надо — он этого не заметит. Поправьте функцию при следующем деплое.",
+  },
+  cleanup_delete_user: {
+    meaning:
+      "Тестовый пользователь создался, но не удалился автоматически. Все остальные шаги могли пройти успешно — на сам процесс регистрации это не влияет.",
+    fix: "Откройте «Поиск юзера», вбейте email из этого отчёта и удалите вручную через «Опасную зону». Это нужно, чтобы повторный прогон теста с тем же email не упал на precheck.",
+    tellUser: "К жалобе пользователя отношения не имеет.",
+  },
+};
+
+const STATUS_STYLES: Record<
+  RegTestStep["status"],
+  { cls: string; icon: typeof CheckCircle2; label: string }
+> = {
+  ok: {
+    cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    icon: CheckCircle2,
+    label: "OK",
+  },
+  fail: {
+    cls: "border-red-500/30 bg-red-500/10 text-red-300",
+    icon: XCircle,
+    label: "FAIL",
+  },
+  warn: {
+    cls: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    icon: AlertCircle,
+    label: "WARN",
+  },
+  skip: {
+    cls: "border-white/10 bg-white/5 text-muted-foreground",
+    icon: AlertCircle,
+    label: "SKIP",
+  },
+};
+
+function defaultTestEmail(): string {
+  const ts = Date.now().toString(36);
+  return `regtest+${ts}@skyforest.test`;
+}
+
+function AdminRegistrationTest() {
+  const [emailInput, setEmailInput] = useState(defaultTestEmail());
+  const [fullName, setFullName] = useState("Reg Test");
+  const [running, setRunning] = useState(false);
+  const [report, setReport] = useState<RegTestReport | null>(null);
+
+  const runTest = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      const email = emailInput.trim().toLowerCase();
+      if (!email || !email.includes("@")) {
+        toast.error("Введите корректный email");
+        return;
+      }
+      setRunning(true);
+      setReport(null);
+      try {
+        const res = await fetch("/api/admin/registration-test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, full_name: fullName }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || `HTTP ${res.status}`);
+          return;
+        }
+        const r = data as RegTestReport;
+        setReport(r);
+        if (r.ok) {
+          toast.success("Регистрация работает корректно");
+        } else {
+          const failed = r.steps.find((s) => s.status === "fail");
+          toast.error(
+            failed
+              ? `Сломан шаг: ${STEP_LABELS[failed.step] ?? failed.step}`
+              : "Тест завершился с ошибкой",
+          );
+        }
+      } catch {
+        toast.error("Сеть упала");
+      } finally {
+        setRunning(false);
+      }
+    },
+    [emailInput, fullName],
+  );
+
+  const regenerateEmail = () => {
+    setEmailInput(defaultTestEmail());
+    setReport(null);
+  };
+
+  const stepsCount = report?.steps.length ?? 0;
+  const failCount =
+    report?.steps.filter((s) => s.status === "fail").length ?? 0;
+  const warnCount =
+    report?.steps.filter((s) => s.status === "warn").length ?? 0;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+          <FlaskConical className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold">Тест регистрации</h1>
+          <p className="text-xs text-muted-foreground">
+            Прогон полного серверного флоу: создаём auth-юзера, ждём триггеры
+            (profiles, token_balances, welcome-бонус), затем чистим за собой.
+          </p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <form
+        onSubmit={runTest}
+        className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] p-5"
+      >
+        <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-end">
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Email для теста
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="regtest+xxx@skyforest.test"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-mono outline-none placeholder:text-muted-foreground/50 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
+              />
+              <button
+                type="button"
+                onClick={regenerateEmail}
+                title="Сгенерировать новый email"
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs text-muted-foreground hover:bg-white/5"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              full_name
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={running}
+            className="flex h-[42px] items-center justify-center gap-1.5 rounded-lg bg-emerald-500/20 px-5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-50"
+          >
+            {running ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            Запустить тест
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-200/90">
+          <strong>Что проверяет:</strong> создание auth-пользователя через
+          service-role, срабатывание триггеров{" "}
+          <span className="font-mono">handle_new_user</span> и{" "}
+          <span className="font-mono">handle_new_profile_tokens</span>, запись
+          welcome-бонуса. Письмо <strong>не отправляется</strong>{" "}
+          (email_confirm=true). После прогона аккаунт удаляется автоматически.
+        </div>
+      </form>
+
+      {/* Summary + steps */}
+      {report && (
+        <div className="space-y-4">
+          {/* Summary */}
+          <div
+            className={`rounded-xl border p-5 ${
+              report.ok
+                ? "border-emerald-500/30 bg-emerald-500/5"
+                : "border-red-500/30 bg-red-500/5"
+            }`}
+          >
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              {report.ok ? (
+                <span className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Регистрация работает
+                </span>
+              ) : (
+                <span className="flex items-center gap-2 text-sm font-bold text-red-300">
+                  <XCircle className="h-5 w-5" />
+                  Регистрация сломана
+                </span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {stepsCount} шагов · {report.total_duration_ms} ms ·{" "}
+                {failCount > 0 && (
+                  <span className="text-red-300">{failCount} fail </span>
+                )}
+                {warnCount > 0 && (
+                  <span className="text-amber-300">{warnCount} warn </span>
+                )}
+                {report.cleanup_done ? (
+                  <span className="text-emerald-300">cleanup OK</span>
+                ) : (
+                  <span className="text-red-300">cleanup НЕ выполнен</span>
+                )}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              email: <span className="font-mono">{report.email}</span>
+              {report.user_id && (
+                <>
+                  {" "}
+                  · user_id:{" "}
+                  <span className="font-mono">{report.user_id}</span>
+                </>
+              )}
+            </p>
+            {!report.cleanup_done && report.user_id && (
+              <p className="mt-2 text-xs text-amber-300">
+                ⚠️ Тестовый пользователь не удалился автоматически. Удалите
+                вручную через «Поиск юзера» по email{" "}
+                <span className="font-mono">{report.email}</span>.
+              </p>
+            )}
+          </div>
+
+          {/* Steps */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="mb-3 text-sm font-semibold">Шаги</p>
+            <div className="space-y-2">
+              {report.steps.map((s, idx) => {
+                const meta = STATUS_STYLES[s.status];
+                const Icon = meta.icon;
+                const label = STEP_LABELS[s.step] ?? s.step;
+                const hint = STEP_HINTS[s.step];
+                const showHint =
+                  hint && (s.status === "fail" || s.status === "warn");
+                return (
+                  <div
+                    key={idx}
+                    className={`rounded-lg border px-3 py-2 ${meta.cls}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{label}</p>
+                          <p className="font-mono text-[10px] opacity-70">
+                            {s.step}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 text-[11px]">
+                        <span className="font-mono opacity-70">
+                          {s.duration_ms} ms
+                        </span>
+                        <span className="rounded bg-black/30 px-1.5 py-0.5 font-bold tracking-wider">
+                          {meta.label}
+                        </span>
+                      </div>
+                    </div>
+                    {s.detail && (
+                      <p className="mt-1.5 ml-6 text-xs leading-relaxed opacity-90">
+                        {s.detail}
+                      </p>
+                    )}
+                    {showHint && (
+                      <div className="mt-2 ml-6 space-y-1.5 rounded-md bg-black/30 p-2.5 text-[11px] leading-relaxed">
+                        <p>
+                          <span className="font-bold opacity-90">
+                            Что это значит:
+                          </span>{" "}
+                          <span className="opacity-80">{hint.meaning}</span>
+                        </p>
+                        <p>
+                          <span className="font-bold opacity-90">
+                            Что делать:
+                          </span>{" "}
+                          <span className="opacity-80">{hint.fix}</span>
+                        </p>
+                        <p>
+                          <span className="font-bold opacity-90">
+                            Что сказать пользователю:
+                          </span>{" "}
+                          <span className="opacity-80 italic">
+                            {hint.tellUser}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reference: full hints for all steps, always available */}
+      <details className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-xs">
+        <summary className="cursor-pointer select-none text-sm font-semibold text-foreground">
+          📖 Справочник: что значит каждая ошибка и что отвечать пользователю
+        </summary>
+        <div className="mt-4 space-y-3">
+          {Object.entries(STEP_HINTS).map(([key, hint]) => (
+            <div
+              key={key}
+              className="rounded-lg border border-white/5 bg-white/[0.02] p-3"
+            >
+              <p className="mb-2 text-sm font-semibold text-foreground">
+                {STEP_LABELS[key] ?? key}
+              </p>
+              <p className="mb-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                <span className="font-bold text-foreground/80">
+                  Что это значит:
+                </span>{" "}
+                {hint.meaning}
+              </p>
+              <p className="mb-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                <span className="font-bold text-foreground/80">
+                  Что делать:
+                </span>{" "}
+                {hint.fix}
+              </p>
+              <p className="text-[11px] italic leading-relaxed text-blue-200/80">
+                <span className="font-bold not-italic text-foreground/80">
+                  Что сказать пользователю:
+                </span>{" "}
+                {hint.tellUser}
+              </p>
+            </div>
+          ))}
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+            <p className="mb-1 text-sm font-semibold text-emerald-300">
+              Если все шаги зелёные, а юзер всё равно не может зарегистрироваться
+            </p>
+            <p className="mb-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              Сервер регистрации работает — проблема на стороне пользователя
+              (его email, браузер, captcha, локальная сеть, ввод пароля).
+              Сначала вбейте его email в «Поиск юзера»: возможно, он уже
+              зарегистрирован (пусть восстанавливает пароль) или находится в
+              архиве deleted_accounts.
+            </p>
+            <p className="text-[11px] italic leading-relaxed text-blue-200/80">
+              <span className="font-bold not-italic text-foreground/80">
+                Что сказать:
+              </span>{" "}
+              «Проверили — система работает. Подскажите: какой именно email вы
+              вводите, какую ошибку показывает экран (скриншот?), пробовали ли
+              другой браузер или режим инкогнито? Если email уже использовался
+              ранее — попробуйте «Забыли пароль».»
+            </p>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
