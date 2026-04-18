@@ -37,6 +37,8 @@ import {
   Trash2,
   Tag,
   CreditCard,
+  UserSearch,
+  AlertTriangle,
 } from "lucide-react";
 
 const AdminMapLazy = dynamic(
@@ -924,6 +926,7 @@ const TAB_GROUPS = [
     items: [
       { key: "overview", label: "Дашборд", icon: BarChart3 },
       { key: "admin_map", label: "Карта", icon: Map },
+      { key: "user_lookup", label: "Поиск юзера", icon: UserSearch },
     ],
   },
   {
@@ -1124,8 +1127,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "overview") {
       loadStats();
-    } else if (activeTab === "admin_map") {
-      // map handles its own data loading
+    } else if (activeTab === "admin_map" || activeTab === "user_lookup") {
+      // these tabs handle their own data loading
     } else {
       setSortBy(null);
       setSortDir("desc");
@@ -1557,8 +1560,11 @@ export default function AdminPage() {
             <AdminChatsView />
           )}
 
+          {/* User lookup tool */}
+          {activeTab === "user_lookup" && <AdminUserLookup />}
+
           {/* Table view */}
-          {activeTab !== "overview" && activeTab !== "admin_map" && activeTab !== "marketplace_messages" && activeTableConfig && (
+          {activeTab !== "overview" && activeTab !== "admin_map" && activeTab !== "marketplace_messages" && activeTab !== "user_lookup" && activeTableConfig && (
             <div>
               {/* Header */}
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2275,5 +2281,653 @@ function EditableCell({
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs outline-none"
     />
+  );
+}
+
+/* ───────────── Admin User Lookup ───────────── */
+
+interface UserLookupResult {
+  email: string;
+  status:
+    | "active"
+    | "scheduled_deletion"
+    | "auth_only"
+    | "profile_only"
+    | "in_archive"
+    | "not_found";
+  auth_user: {
+    id: string;
+    email: string | null;
+    created_at: string;
+    last_sign_in_at: string | null;
+    email_confirmed_at: string | null;
+    banned_until: string | null;
+    raw_user_meta_data: Record<string, unknown> | null;
+  } | null;
+  profile: {
+    id: string;
+    email: string | null;
+    full_name: string | null;
+    phone: string | null;
+    account_type: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    deletion_scheduled_at: string | null;
+    deletion_effective_at: string | null;
+  } | null;
+  token_balance: {
+    balance: number;
+    bonus_balance: number;
+    total_purchased: number;
+    total_spent: number;
+    total_earned: number;
+    updated_at: string | null;
+  } | null;
+  deleted_accounts: Array<{
+    id: string;
+    original_user_id: string;
+    email: string;
+    deleted_at: string;
+  }>;
+  counts: Record<string, number>;
+  target_user_id: string | null;
+}
+
+interface PurgeStep {
+  step: string;
+  affected: number | null;
+  error?: string;
+}
+
+const STATUS_META: Record<
+  UserLookupResult["status"],
+  { label: string; cls: string; description: string }
+> = {
+  active: {
+    label: "Активный",
+    cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    description: "Юзер существует и пользуется аккаунтом.",
+  },
+  scheduled_deletion: {
+    label: "Запланировано удаление",
+    cls: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    description:
+      "Аккаунт в режиме soft-deletion. Будет удалён cron-ом по истечении cooldown.",
+  },
+  auth_only: {
+    label: "Только в auth",
+    cls: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    description:
+      "Юзер есть в auth.users, но профиля нет. Битая регистрация — обычно достаточно вычистить.",
+  },
+  profile_only: {
+    label: "Профиль без auth",
+    cls: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+    description:
+      "Профиль остался без auth-записи. Можно подчистить — регистрация на этот email пройдёт.",
+  },
+  in_archive: {
+    label: "В архиве удалённых",
+    cls: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    description:
+      "Юзер уже удалён, email сохранён в deleted_accounts (это блокирует welcome-бонус).",
+  },
+  not_found: {
+    label: "Не найден",
+    cls: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+    description:
+      "По этому email ничего нет. Регистрация должна проходить без ошибки.",
+  },
+};
+
+function AdminUserLookup() {
+  const [emailInput, setEmailInput] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [result, setResult] = useState<UserLookupResult | null>(null);
+
+  // Two-stage delete confirmation
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmStage, setConfirmStage] = useState<1 | 2>(1);
+  const [confirmText, setConfirmText] = useState("");
+  const [confirmAck, setConfirmAck] = useState(false);
+  const [alsoClearArchive, setAlsoClearArchive] = useState(true);
+  const [purging, setPurging] = useState(false);
+  const [purgeReport, setPurgeReport] = useState<{
+    auth_deleted: boolean;
+    steps: PurgeStep[];
+  } | null>(null);
+
+  const handleSearch = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      toast.error("Введите корректный email");
+      return;
+    }
+    setSearching(true);
+    setResult(null);
+    setPurgeReport(null);
+    try {
+      const res = await fetch(
+        `/api/admin/users/lookup?email=${encodeURIComponent(email)}`,
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j.error || `HTTP ${res.status}`);
+        return;
+      }
+      const data = (await res.json()) as UserLookupResult;
+      setResult(data);
+    } catch {
+      toast.error("Сеть упала");
+    } finally {
+      setSearching(false);
+    }
+  }, [emailInput]);
+
+  const closeConfirm = () => {
+    if (purging) return;
+    setConfirmOpen(false);
+    setConfirmStage(1);
+    setConfirmText("");
+    setConfirmAck(false);
+  };
+
+  const openConfirm = () => {
+    setConfirmStage(1);
+    setConfirmText("");
+    setConfirmAck(false);
+    setConfirmOpen(true);
+  };
+
+  const handlePurge = async () => {
+    if (!result) return;
+    const expectedEmail = result.email.trim().toLowerCase();
+    if (confirmText.trim().toLowerCase() !== expectedEmail) {
+      toast.error("Email подтверждения не совпадает");
+      return;
+    }
+    if (!confirmAck) {
+      toast.error("Поставьте галочку подтверждения");
+      return;
+    }
+    setPurging(true);
+    try {
+      const res = await fetch("/api/admin/users/purge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: result.target_user_id,
+          email: result.email,
+          confirm_email: result.email,
+          also_clear_deleted_archive: alsoClearArchive,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || `HTTP ${res.status}`);
+        return;
+      }
+      toast.success("Пользователь удалён");
+      setPurgeReport({
+        auth_deleted: !!data.auth_deleted,
+        steps: (data.steps || []) as PurgeStep[],
+      });
+      setConfirmOpen(false);
+      setConfirmStage(1);
+      setConfirmText("");
+      setConfirmAck(false);
+      // Refresh lookup so admin sees new state
+      void handleSearch();
+    } catch {
+      toast.error("Сеть упала");
+    } finally {
+      setPurging(false);
+    }
+  };
+
+  const statusMeta = result ? STATUS_META[result.status] : null;
+  const totalRelated = result
+    ? Object.values(result.counts).reduce((sum, n) => sum + (n || 0), 0)
+    : 0;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400">
+          <UserSearch className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold">Поиск пользователя по email</h1>
+          <p className="text-xs text-muted-foreground">
+            Сводка по auth.users + profiles + архивам и безопасное полное удаление
+          </p>
+        </div>
+      </div>
+
+      {/* Search form */}
+      <form
+        onSubmit={handleSearch}
+        className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="email"
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            placeholder="user@example.com"
+            className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/20"
+            autoFocus
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={searching}
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-purple-300 hover:bg-purple-500/30 disabled:opacity-50"
+        >
+          {searching ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
+          Найти
+        </button>
+      </form>
+
+      {/* Result */}
+      {result && statusMeta && (
+        <div className="space-y-4">
+          {/* Status card */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${statusMeta.cls}`}
+              >
+                {statusMeta.label}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {result.email}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {statusMeta.description}
+            </p>
+
+            {/* auth.users block */}
+            {result.auth_user && (
+              <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  auth.users
+                </p>
+                <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                  <KV k="id" v={result.auth_user.id} mono />
+                  <KV
+                    k="created_at"
+                    v={formatDate(result.auth_user.created_at)}
+                  />
+                  <KV
+                    k="email_confirmed_at"
+                    v={
+                      result.auth_user.email_confirmed_at
+                        ? formatDate(result.auth_user.email_confirmed_at)
+                        : "—"
+                    }
+                  />
+                  <KV
+                    k="last_sign_in_at"
+                    v={
+                      result.auth_user.last_sign_in_at
+                        ? formatDate(result.auth_user.last_sign_in_at)
+                        : "никогда"
+                    }
+                  />
+                  <KV
+                    k="banned_until"
+                    v={result.auth_user.banned_until || "—"}
+                  />
+                </dl>
+              </div>
+            )}
+
+            {/* profile block */}
+            {result.profile && (
+              <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  profiles
+                </p>
+                <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                  <KV k="full_name" v={result.profile.full_name || "—"} />
+                  <KV k="phone" v={result.profile.phone || "—"} />
+                  <KV
+                    k="account_type"
+                    v={result.profile.account_type || "user"}
+                  />
+                  <KV
+                    k="created_at"
+                    v={formatDate(result.profile.created_at)}
+                  />
+                  <KV
+                    k="deletion_scheduled_at"
+                    v={
+                      result.profile.deletion_scheduled_at
+                        ? formatDate(result.profile.deletion_scheduled_at)
+                        : "—"
+                    }
+                  />
+                  <KV
+                    k="deletion_effective_at"
+                    v={
+                      result.profile.deletion_effective_at
+                        ? formatDate(result.profile.deletion_effective_at)
+                        : "—"
+                    }
+                  />
+                </dl>
+              </div>
+            )}
+
+            {/* token balance */}
+            {result.token_balance && (
+              <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                  Баланс
+                </p>
+                <div className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
+                  <KV
+                    k="balance"
+                    v={String(result.token_balance.balance ?? 0)}
+                  />
+                  <KV
+                    k="bonus_balance"
+                    v={String(result.token_balance.bonus_balance ?? 0)}
+                  />
+                  <KV
+                    k="total_purchased"
+                    v={String(result.token_balance.total_purchased ?? 0)}
+                  />
+                  <KV
+                    k="total_spent"
+                    v={String(result.token_balance.total_spent ?? 0)}
+                  />
+                  <KV
+                    k="total_earned"
+                    v={String(result.token_balance.total_earned ?? 0)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* deleted_accounts */}
+            {result.deleted_accounts.length > 0 && (
+              <div className="mt-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-blue-300">
+                  deleted_accounts ({result.deleted_accounts.length})
+                </p>
+                <div className="space-y-1 text-xs">
+                  {result.deleted_accounts.map((d) => (
+                    <div key={d.id} className="flex flex-wrap gap-2">
+                      <span className="font-mono text-muted-foreground">
+                        {d.original_user_id}
+                      </span>
+                      <span className="text-muted-foreground">
+                        удалён {formatDate(d.deleted_at)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Related counts */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="mb-3 text-sm font-semibold">
+              Связанные записи{" "}
+              <span className="text-xs text-muted-foreground">
+                (всего {totalRelated})
+              </span>
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {Object.entries(result.counts).map(([k, v]) => (
+                <div
+                  key={k}
+                  className={`rounded-lg border px-3 py-2 ${
+                    v > 0
+                      ? "border-purple-500/20 bg-purple-500/5"
+                      : "border-white/5 bg-white/[0.02]"
+                  }`}
+                >
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {k}
+                  </p>
+                  <p
+                    className={`text-lg font-bold ${
+                      v > 0 ? "text-purple-300" : "text-muted-foreground"
+                    }`}
+                  >
+                    {v}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Danger zone */}
+          {(result.target_user_id ||
+            result.deleted_accounts.length > 0) && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-bold text-red-300">
+                <AlertTriangle className="h-4 w-4" />
+                Опасная зона
+              </div>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Полное удаление: чистит все связанные записи (локации, грибные
+                дни, листинги, транзакции, балансы, чаты, реф. коды,
+                автомониторинг, поиски леса, архивы), затем удаляет auth-юзера
+                (профиль уйдёт каскадно). Действие необратимо.
+              </p>
+              <button
+                onClick={openConfirm}
+                className="flex items-center gap-2 rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/30"
+              >
+                <Trash2 className="h-4 w-4" />
+                Удалить пользователя и все его данные
+              </button>
+            </div>
+          )}
+
+          {/* Purge report */}
+          {purgeReport && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+              <p className="mb-3 text-sm font-bold text-emerald-300">
+                Отчёт об удалении{" "}
+                {purgeReport.auth_deleted
+                  ? "(auth.users тоже удалён)"
+                  : "(auth.users НЕ удалён — см. ошибки)"}
+              </p>
+              <div className="space-y-1 text-xs">
+                {purgeReport.steps.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded bg-white/5 px-2 py-1"
+                  >
+                    <span className="font-mono text-muted-foreground">
+                      {s.step}
+                    </span>
+                    <span
+                      className={
+                        s.error
+                          ? "text-red-400"
+                          : s.affected
+                            ? "text-emerald-400"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {s.error
+                        ? `error: ${s.error}`
+                        : s.affected !== null
+                          ? `affected: ${s.affected}`
+                          : "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation modal */}
+      {confirmOpen && result && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={closeConfirm}
+          />
+          <div className="relative z-[10000] w-full max-w-md overflow-hidden rounded-2xl border border-red-500/30 bg-[#1a0e0e]/95 shadow-2xl backdrop-blur-xl">
+            <div className="border-b border-red-500/20 bg-red-500/10 p-4">
+              <div className="flex items-center gap-2 text-sm font-bold text-red-200">
+                <AlertTriangle className="h-4 w-4" />
+                Подтверждение удаления — шаг {confirmStage} из 2
+              </div>
+            </div>
+
+            <div className="p-5">
+              {confirmStage === 1 ? (
+                <>
+                  <p className="mb-3 text-sm text-foreground">
+                    Будет удалён пользователь{" "}
+                    <strong className="text-red-300">{result.email}</strong>
+                    {result.target_user_id && (
+                      <>
+                        {" "}
+                        (id{" "}
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {result.target_user_id}
+                        </span>
+                        )
+                      </>
+                    )}
+                    .
+                  </p>
+                  <p className="mb-4 text-xs text-muted-foreground">
+                    Будут стёрты {totalRelated} связанных записей (см. сводку
+                    выше). Это <strong>необратимо</strong>.
+                  </p>
+
+                  <label className="mb-4 flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 p-3 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={alsoClearArchive}
+                      onChange={(e) => setAlsoClearArchive(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <strong>Очистить запись из deleted_accounts</strong>{" "}
+                      <span className="text-muted-foreground">
+                        — иначе при повторной регистрации этого email не
+                        начислится welcome-бонус.
+                      </span>
+                    </span>
+                  </label>
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={closeConfirm}
+                      className="rounded-lg border border-white/10 px-4 py-2 text-sm text-muted-foreground hover:bg-white/5"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      onClick={() => setConfirmStage(2)}
+                      className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/30"
+                    >
+                      Понимаю, продолжить
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2 text-sm text-foreground">
+                    Введите email{" "}
+                    <strong className="text-red-300">{result.email}</strong> для
+                    подтверждения:
+                  </p>
+                  <input
+                    type="text"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder={result.email}
+                    className="mb-3 w-full rounded-lg border border-red-500/30 bg-white/5 px-3 py-2 text-sm font-mono outline-none focus:border-red-500/50"
+                    autoFocus
+                  />
+                  <label className="mb-4 flex items-start gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={confirmAck}
+                      onChange={(e) => setConfirmAck(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Я понимаю, что все данные пользователя будут удалены без
+                      возможности восстановления.
+                    </span>
+                  </label>
+
+                  <div className="flex justify-between gap-2">
+                    <button
+                      onClick={() => setConfirmStage(1)}
+                      disabled={purging}
+                      className="rounded-lg border border-white/10 px-4 py-2 text-sm text-muted-foreground hover:bg-white/5 disabled:opacity-50"
+                    >
+                      Назад
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={closeConfirm}
+                        disabled={purging}
+                        className="rounded-lg border border-white/10 px-4 py-2 text-sm text-muted-foreground hover:bg-white/5 disabled:opacity-50"
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        onClick={handlePurge}
+                        disabled={
+                          purging ||
+                          confirmText.trim().toLowerCase() !==
+                            result.email.trim().toLowerCase() ||
+                          !confirmAck
+                        }
+                        className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {purging ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        Удалить навсегда
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KV({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {k}
+      </span>
+      <span className={mono ? "font-mono text-[11px] break-all" : ""}>{v}</span>
+    </div>
   );
 }
