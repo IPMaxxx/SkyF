@@ -2973,6 +2973,8 @@ const STEP_LABELS: Record<string, string> = {
     "Триггер handle_new_profile_tokens → token_balances",
   welcome_bonus_transaction_logged:
     "Запись welcome-бонуса в token_transactions",
+  real_signup_smtp_check:
+    "Реальный signUp через anon-ключ (проверка SMTP / отправки письма)",
   cleanup_delete_user: "Очистка: удаление тестового пользователя",
 };
 
@@ -3025,6 +3027,13 @@ const STEP_HINTS: Record<string, StepHint> = {
     tellUser:
       "Пользователю сообщать ничего не надо — он этого не заметит. Поправьте функцию при следующем деплое.",
   },
+  real_signup_smtp_check: {
+    meaning:
+      'Самый частый сценарий жалобы «не могу зарегистрироваться» с ошибкой "Error sending confirmation email". Регистрация в БД проходит, но Supabase не может отправить письмо подтверждения. Причины: (1) превышен лимит встроенного SMTP Supabase — 3 письма/час на Free tier, (2) Custom SMTP настроен с битыми credentials, (3) провайдер заблокировал отправку.',
+    fix: "Откройте Supabase Dashboard → Project → Authentication → Emails → SMTP Settings. Если SMTP не подключён — подключите Custom SMTP. Самые простые варианты: Resend (3000 писем/мес бесплатно, 5 минут на настройку), Brevo (300/день), либо ваш Gmail (host: smtp.gmail.com, port: 465, App Password — тот же, что в .env как SMTP_PASS). После подключения — снова прогоните этот тест с галкой «Проверить SMTP».",
+    tellUser:
+      "«Сейчас сбой при отправке писем подтверждения. Уже чиним. Попробуйте ещё раз через 1–2 часа, либо напишите нам ваш email — мы подтвердим аккаунт вручную.»",
+  },
   cleanup_delete_user: {
     meaning:
       "Тестовый пользователь создался, но не удалился автоматически. Все остальные шаги могли пройти успешно — на сам процесс регистрации это не влияет.",
@@ -3067,6 +3076,7 @@ function defaultTestEmail(): string {
 function AdminRegistrationTest() {
   const [emailInput, setEmailInput] = useState(defaultTestEmail());
   const [fullName, setFullName] = useState("Reg Test");
+  const [testSmtp, setTestSmtp] = useState(false);
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState<RegTestReport | null>(null);
 
@@ -3078,13 +3088,23 @@ function AdminRegistrationTest() {
         toast.error("Введите корректный email");
         return;
       }
+      if (testSmtp && /@skyforest\.test$/.test(email)) {
+        toast.error(
+          "Для проверки SMTP нужен реальный email-домен (Supabase отклонит .test)",
+        );
+        return;
+      }
       setRunning(true);
       setReport(null);
       try {
         const res = await fetch("/api/admin/registration-test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, full_name: fullName }),
+          body: JSON.stringify({
+            email,
+            full_name: fullName,
+            test_smtp: testSmtp,
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -3109,7 +3129,7 @@ function AdminRegistrationTest() {
         setRunning(false);
       }
     },
-    [emailInput, fullName],
+    [emailInput, fullName, testSmtp],
   );
 
   const regenerateEmail = () => {
@@ -3192,13 +3212,36 @@ function AdminRegistrationTest() {
           </button>
         </div>
 
-        <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-200/90">
-          <strong>Что проверяет:</strong> создание auth-пользователя через
+        <label className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
+          <input
+            type="checkbox"
+            checked={testSmtp}
+            onChange={(e) => setTestSmtp(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span className="text-amber-200/90">
+            <strong>Проверить SMTP (отправку письма подтверждения)</strong> —
+            дополнительно сделает реальный <span className="font-mono">signUp</span>{" "}
+            через anon-ключ на адрес{" "}
+            <span className="font-mono">
+              {emailInput.replace(/@/, "+smtp@") || "...+smtp@..."}
+            </span>
+            . Supabase реально попытается послать письмо. Включайте, если жалуются
+            на ошибку <span className="font-mono">«Error sending confirmation email»</span>.
+            Для теста нужен <strong>реальный email-домен</strong> (gmail.com,
+            ваш домен и т.п.) — Supabase отклоняет .test/.example.
+          </span>
+        </label>
+
+        <div className="mt-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-200/90">
+          <strong>Что проверяет базово:</strong> создание auth-пользователя через
           service-role, срабатывание триггеров{" "}
           <span className="font-mono">handle_new_user</span> и{" "}
           <span className="font-mono">handle_new_profile_tokens</span>, запись
-          welcome-бонуса. Письмо <strong>не отправляется</strong>{" "}
-          (email_confirm=true). После прогона аккаунт удаляется автоматически.
+          welcome-бонуса. Письмо{" "}
+          <strong>{testSmtp ? "БУДЕТ отправлено" : "не отправляется"}</strong>{" "}
+          {testSmtp ? "(жжёт квоту SMTP, 3 письма/час на Free tier)" : "(email_confirm=true)"}.
+          После прогона аккаунт(ы) удаляются автоматически.
         </div>
       </form>
 

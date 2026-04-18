@@ -9,6 +9,7 @@ interface TestBody {
   email?: string | null;
   full_name?: string | null;
   password?: string | null;
+  test_smtp?: boolean | null;
 }
 
 type StepStatus = "ok" | "fail" | "warn" | "skip";
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
   const email = (body.email || "").trim().toLowerCase();
   const fullName = (body.full_name || "Reg Test").trim().slice(0, 80);
   const password = body.password?.trim() || makePassword();
+  const testSmtp = body.test_smtp === true;
 
   if (!email || !email.includes("@") || email.length > 200) {
     return NextResponse.json(
@@ -322,7 +324,50 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  // ---------- 7. Cleanup: delete the test auth user (cascades profile + balances) ----------
+  // ---------- 7. (Optional) Real signUp via anon-key — checks SMTP/captcha ----------
+  // This step is opt-in because it actually triggers Supabase to send a confirmation
+  // email (burns SMTP quota, sends a real message to the test address). Use a
+  // distinct email so it doesn't collide with the synthetic user we just created.
+  let smtpTestUserId: string | null = null;
+  let smtpTestEmail: string | null = null;
+  if (testSmtp) {
+    smtpTestEmail = email.replace(/@/, `+smtp${Date.now().toString(36)}@`);
+    await runStep("real_signup_smtp_check", async () => {
+      const anon = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { cookies: { getAll: () => [], setAll: () => {} } },
+      );
+      const { data, error } = await anon.auth.signUp({
+        email: smtpTestEmail!,
+        password: makePassword(),
+        options: { data: { full_name: "Reg Test SMTP" } },
+      });
+      if (error) {
+        const msg = error.message || "";
+        const looksLikeSmtp =
+          /confirmation email|smtp|sending|email rate|over_email_send_rate/i.test(
+            msg,
+          );
+        return {
+          status: "fail" as StepStatus,
+          detail: looksLikeSmtp
+            ? `SMTP сломан: "${msg}". Supabase не может отправить письмо подтверждения. Идите в Supabase Dashboard → Authentication → SMTP Settings и подключите Custom SMTP (Resend / Brevo / Gmail). Встроенный SMTP лимитируется 3 письмами/час на Free tier.`
+            : `signUp failed: ${msg}`,
+        };
+      }
+      if (data.user?.id) {
+        smtpTestUserId = data.user.id;
+      }
+      return {
+        status: "ok" as StepStatus,
+        detail: `signUp принят, Supabase инициировал отправку письма на ${smtpTestEmail}. (Если письмо реально не пришло — проверьте папку спам и логи SMTP-провайдера.)`,
+        data: { email: smtpTestEmail, user_id: data.user?.id ?? null },
+      };
+    });
+  }
+
+  // ---------- 8. Cleanup: delete the test auth user(s) (cascades profile + balances) ----------
   await runStep("cleanup_delete_user", async () => {
     const { error } = await admin.auth.admin.deleteUser(targetUserId);
     if (error) {
@@ -337,7 +382,20 @@ export async function POST(request: NextRequest) {
     // so re-running the test with the same email keeps working (welcome bonus path).
     await admin.from("deleted_accounts").delete().ilike("email", email);
 
-    return { status: "ok" as StepStatus, detail: "auth user deleted, archive cleared" };
+    // Also clean up the SMTP test user if we created one.
+    if (smtpTestUserId) {
+      await admin.auth.admin.deleteUser(smtpTestUserId);
+    }
+    if (smtpTestEmail) {
+      await admin.from("deleted_accounts").delete().ilike("email", smtpTestEmail);
+    }
+
+    return {
+      status: "ok" as StepStatus,
+      detail: smtpTestUserId
+        ? "auth user(s) deleted (включая SMTP-тестовый), archive cleared"
+        : "auth user deleted, archive cleared",
+    };
   });
 
   return NextResponse.json(
