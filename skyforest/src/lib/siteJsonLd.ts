@@ -225,17 +225,16 @@ export function getSiteJsonLd(locale: Locale) {
           "@type": "ListItem",
           position: index + 1,
           item: {
-            "@type": "Product",
+            "@type": "Service",
             name: `SkyForest — ${tariff.name}`,
             description: tariff.description,
-            image: [
-              `${BASE}/images/og-cover.png`,
-              `${BASE}/images/logo-square.png`,
-              `${BASE}/images/logo.png`,
-            ],
-            brand: {
+            serviceType: isEn
+              ? "Mushroom location discovery subscription plan"
+              : "Тарифный план сервиса поиска грибных локаций",
+            provider: {
               "@id": `${BASE}/#organization`,
             },
+            areaServed: isEn ? "Belarus" : "Беларусь",
             offers: {
               "@type": "Offer",
               price: tariff.price,
