@@ -228,6 +228,11 @@ export function getSiteJsonLd(locale: Locale) {
             "@type": "Product",
             name: `SkyForest — ${tariff.name}`,
             description: tariff.description,
+            image: [
+              `${BASE}/images/og-cover.png`,
+              `${BASE}/images/logo-square.png`,
+              `${BASE}/images/logo.png`,
+            ],
             brand: {
               "@id": `${BASE}/#organization`,
             },
