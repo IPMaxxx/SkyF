@@ -63,6 +63,16 @@ export default async function RootLayout({
           name="ai-content-declaration"
           content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
         />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0f1a12" />
+        <meta name="application-name" content="SkyForest" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SkyForest" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="256x256" href="/favicon.png" />
       </head>
       <body className={`${roboto.variable} antialiased`}>{children}</body>
     </html>

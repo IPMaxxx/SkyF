@@ -1,0 +1,50 @@
+{
+  "name": "SkyForest — помощник грибника",
+  "short_name": "SkyForest",
+  "description": "Сервис анализа погодных условий для грибников: карта осадков, прогноз грибных дней, мониторинг локаций.",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#0f1a12",
+  "theme_color": "#0f1a12",
+  "categories": ["lifestyle", "weather", "navigation", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo-square.png",
+      "sizes": "724x724",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo-square.png",
+      "sizes": "724x724",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Прогноз погоды",
+      "short_name": "Погода",
+      "url": "/weather?source=pwa",
+      "description": "Анализ погодных условий для грибов"
+    },
+    {
+      "name": "Мои локации",
+      "short_name": "Локации",
+      "url": "/locations?source=pwa",
+      "description": "Мои сохранённые грибные места"
+    }
+  ]
+}

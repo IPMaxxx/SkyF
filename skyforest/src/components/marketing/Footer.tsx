@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowUp, Mail, Phone, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { InstallAppBadges } from "@/components/pwa/InstallAppBadges";
 
 const SOCIAL_LINKS = [
   {
@@ -186,7 +187,16 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
+        <div className="mt-10 grid gap-6 border-t border-white/10 pt-8 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-10">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/40">
+              {t("getApp")}
+            </h3>
+            <InstallAppBadges />
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
           <p className="text-xs text-white/40 text-center sm:text-left">
             &copy; {new Date().getFullYear()} {t("copyright")}
           </p>

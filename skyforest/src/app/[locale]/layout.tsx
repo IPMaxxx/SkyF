@@ -1,5 +1,8 @@
 import { TelegramFab } from "@/components/TelegramFab";
 import { SkipLink } from "@/components/SkipLink";
+import { PwaInstallProvider } from "@/lib/pwa/PwaInstallProvider";
+import { MobileInstallBanner } from "@/components/pwa/MobileInstallBanner";
+import { IosInstallHelpModal } from "@/components/pwa/IosInstallHelpModal";
 import { routing } from "@/i18n/routing";
 import { getSiteJsonLd } from "@/lib/siteJsonLd";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -81,13 +84,17 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <SkipLink />
-      {children}
-      <TelegramFab />
+      <PwaInstallProvider>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <SkipLink />
+        {children}
+        <TelegramFab />
+        <MobileInstallBanner />
+        <IosInstallHelpModal />
+      </PwaInstallProvider>
     </NextIntlClientProvider>
   );
 }

@@ -86,6 +86,43 @@ export default {
     copyright:
       "SkyForest. ИП Горбацевич М.С. УНП 191145831",
     toTop: "Наверх",
+    getApp: "Установите приложение",
+  },
+  pwa: {
+    badges: {
+      hint: "Откройте SkyForest как приложение — без установки из магазина.",
+      appStoreTop: "Загрузите в",
+      appStoreBottom: "App Store",
+      appStoreAria:
+        "Установить веб-приложение SkyForest на iPhone или iPad",
+      googlePlayTop: "Доступно в",
+      googlePlayBottom: "Google Play",
+      googlePlayAria: "Установить веб-приложение SkyForest на Android",
+    },
+    banner: {
+      title: "Установите SkyForest на телефон",
+      subtitle:
+        "Быстрый доступ с главного экрана и работа в офлайн-режиме.",
+      install: "Установить",
+      later: "Позже",
+      close: "Закрыть",
+    },
+    iosHelp: {
+      title: "Как установить SkyForest на iPhone",
+      subtitle:
+        "Откройте сайт в Safari и добавьте его на главный экран — это займёт несколько секунд.",
+      step1:
+        "Нажмите на кнопку «Поделиться» <share></share> в нижней панели Safari.",
+      step2:
+        "Прокрутите меню и выберите «На экран «Домой»» <add></add>.",
+      step3:
+        "Подтвердите название и нажмите «Добавить» — иконка SkyForest появится на рабочем столе.",
+      shareLabel: "Поделиться",
+      addLabel: "На экран «Домой»",
+      hint: "Совет: установка работает только в браузере Safari на iOS / iPadOS.",
+      gotIt: "Понятно",
+      close: "Закрыть",
+    },
   },
   appHeader: {
     home: "Главная",

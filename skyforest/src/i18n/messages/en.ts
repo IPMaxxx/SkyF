@@ -85,6 +85,43 @@ export default {
     telegramSupport: "Telegram support",
     copyright: "SkyForest. IE Gorbachevich M.S. UNP 191145831",
     toTop: "Back to top",
+    getApp: "Get the app",
+  },
+  pwa: {
+    badges: {
+      hint: "Open SkyForest as a native-like app — no store install needed.",
+      appStoreTop: "Download on the",
+      appStoreBottom: "App Store",
+      appStoreAria:
+        "Install the SkyForest web app on iPhone or iPad",
+      googlePlayTop: "Get it on",
+      googlePlayBottom: "Google Play",
+      googlePlayAria: "Install the SkyForest web app on Android",
+    },
+    banner: {
+      title: "Install SkyForest on your phone",
+      subtitle:
+        "Quick access from your home screen and offline support.",
+      install: "Install",
+      later: "Later",
+      close: "Close",
+    },
+    iosHelp: {
+      title: "How to install SkyForest on iPhone",
+      subtitle:
+        "Open the site in Safari and add it to your Home Screen — it only takes a few seconds.",
+      step1:
+        "Tap the Share button <share></share> in the bottom Safari toolbar.",
+      step2:
+        "Scroll the menu and choose “Add to Home Screen” <add></add>.",
+      step3:
+        "Confirm the name and tap “Add” — the SkyForest icon will appear on your home screen.",
+      shareLabel: "Share",
+      addLabel: "Add to Home Screen",
+      hint: "Tip: installation only works in the Safari browser on iOS / iPadOS.",
+      gotIt: "Got it",
+      close: "Close",
+    },
   },
   appHeader: {
     home: "Home",
