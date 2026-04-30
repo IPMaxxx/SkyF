@@ -297,7 +297,7 @@ export function AppHeader() {
                     {t("account")}
                   </Link>
                   <Link
-                    href="/dashboard/locations"
+                    href="/dashboard#locations"
                     role="menuitem"
                     onClick={closeAll}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
@@ -306,7 +306,7 @@ export function AppHeader() {
                     {t("myLocations")}
                   </Link>
                   <Link
-                    href="/dashboard/best-day"
+                    href="/dashboard#best-days"
                     role="menuitem"
                     onClick={closeAll}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
@@ -471,7 +471,7 @@ export function AppHeader() {
                 {t("account")}
               </Link>
               <Link
-                href="/dashboard/locations"
+                href="/dashboard#locations"
                 onClick={closeAll}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
               >
@@ -479,7 +479,7 @@ export function AppHeader() {
                 {t("myLocations")}
               </Link>
               <Link
-                href="/dashboard/best-day"
+                href="/dashboard#best-days"
                 onClick={closeAll}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
               >
