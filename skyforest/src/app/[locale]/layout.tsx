@@ -1,4 +1,3 @@
-import { TelegramFab } from "@/components/TelegramFab";
 import { SkipLink } from "@/components/SkipLink";
 import { PwaInstallProvider } from "@/lib/pwa/PwaInstallProvider";
 import { MobileInstallBanner } from "@/components/pwa/MobileInstallBanner";
@@ -91,7 +90,6 @@ export default async function LocaleLayout({ children, params }: Props) {
         />
         <SkipLink />
         {children}
-        <TelegramFab />
         <MobileInstallBanner />
         <IosInstallHelpModal />
       </PwaInstallProvider>
