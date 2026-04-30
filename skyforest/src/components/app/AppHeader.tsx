@@ -19,6 +19,8 @@ import {
   Shield,
   MessageCircle,
   AlertTriangle,
+  MapPin,
+  CalendarCheck,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -295,6 +297,24 @@ export function AppHeader() {
                     {t("account")}
                   </Link>
                   <Link
+                    href="/dashboard/locations"
+                    role="menuitem"
+                    onClick={closeAll}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                  >
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
+                    {t("myLocations")}
+                  </Link>
+                  <Link
+                    href="/dashboard/best-day"
+                    role="menuitem"
+                    onClick={closeAll}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                  >
+                    <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+                    {t("myBestDays")}
+                  </Link>
+                  <Link
                     href="/payment"
                     role="menuitem"
                     onClick={closeAll}
@@ -449,6 +469,22 @@ export function AppHeader() {
               >
                 <User className="h-5 w-5" aria-hidden="true" />
                 {t("account")}
+              </Link>
+              <Link
+                href="/dashboard/locations"
+                onClick={closeAll}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+              >
+                <MapPin className="h-5 w-5" aria-hidden="true" />
+                {t("myLocations")}
+              </Link>
+              <Link
+                href="/dashboard/best-day"
+                onClick={closeAll}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+              >
+                <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+                {t("myBestDays")}
               </Link>
               <Link
                 href="/dashboard/referral"
