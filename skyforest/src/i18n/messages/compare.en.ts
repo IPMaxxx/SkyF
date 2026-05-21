@@ -19,6 +19,8 @@ export default {
     "turn on the toggle and set a time — each day at that hour the system runs a comparison and emails you the result. For example, 08:00 means a morning email so you know if it’s worth going today.",
   exampleNote:
     "Example: you found porcini on August 15 at +18°C with rain. Monitoring checks daily whether conditions repeat. At 80%+ match — time to head to the forest!",
+  infoShowMore: "More details",
+  infoShowLess: "Hide",
   priceCompare: "One comparison — 6 tokens",
   priceForecast: "Forecast (6 anchors) — {n} tokens",
   priceAutoDaily: "Auto-compare — 6 tokens/day",

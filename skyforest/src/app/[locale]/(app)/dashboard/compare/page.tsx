@@ -217,6 +217,7 @@ export default function ComparePage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [showWeights, setShowWeights] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [confirmCompare, setConfirmCompare] = useState<Comparison | null>(null);
@@ -655,24 +656,36 @@ export default function ComparePage() {
         <p className="text-sm leading-relaxed text-muted-foreground">
           <strong className="text-foreground">{t("howItWorksBold")}</strong> {t("howItWorks")}
         </p>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          <strong className="text-foreground">{t("forecastExplainBold")}</strong> {t("forecastExplain")}
-        </p>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          <strong className="text-foreground">{t("saveForecastBold")}</strong>{" "}
-          {t("saveForecast", { days: FORECAST_RETENTION_DAYS })}
-        </p>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          <strong className="text-foreground">{t("autoCompareBold")}</strong> {t("autoCompare")}
-        </p>
-        <p className="text-xs leading-relaxed text-muted-foreground/70 italic">{t("exampleNote")}</p>
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceCompare")}</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">
-            {t("priceForecast", { n: TOKEN_COSTS.compare_forecast })}
-          </span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceAutoDaily")}</span>
-        </div>
+        {showInfo && (
+          <div className="space-y-3 pt-1">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">{t("forecastExplainBold")}</strong> {t("forecastExplain")}
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">{t("saveForecastBold")}</strong>{" "}
+              {t("saveForecast", { days: FORECAST_RETENTION_DAYS })}
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">{t("autoCompareBold")}</strong> {t("autoCompare")}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground/70 italic">{t("exampleNote")}</p>
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/80">
+              <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceCompare")}</span>
+              <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">
+                {t("priceForecast", { n: TOKEN_COSTS.compare_forecast })}
+              </span>
+              <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceAutoDaily")}</span>
+            </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowInfo((v) => !v)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-violet-300 hover:text-violet-200"
+        >
+          {showInfo ? t("infoShowLess") : t("infoShowMore")}
+          {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">{error}</div>}
