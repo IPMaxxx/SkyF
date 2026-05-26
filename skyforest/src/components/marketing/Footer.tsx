@@ -196,6 +196,42 @@ export function Footer() {
           </div>
         </div>
 
+        <div className="mt-10 grid gap-8 border-t border-white/10 pt-8 lg:grid-cols-[1.5fr_1fr]">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/40">
+              {t("companyTitle")}
+            </h3>
+            <ul className="space-y-1.5 text-sm text-white/60">
+              <li className="text-white/80">{t("companyName")}</li>
+              <li>{t("companyUnp")}</li>
+              <li>{t("companyActivity")}</li>
+              <li>{t("companyRegistration")}</li>
+              <li>{t("companySchedule")}</li>
+            </ul>
+            <div className="mt-4">
+              <p className="mb-1 text-sm font-semibold text-white/70">
+                {t("companyAddressTitle")}
+              </p>
+              <p className="text-sm text-white/60">{t("companyAddress")}</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/40">
+              {t("paymentSystemsTitle")}
+            </h3>
+            <div className="inline-flex items-center rounded-lg bg-white px-4 py-3">
+              <Image
+                src="/images/payment-systems.png"
+                alt={t("paymentSystemsAlt")}
+                width={883}
+                height={100}
+                className="h-8 w-auto sm:h-10"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="mt-8 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
           <p className="text-xs text-white/40 text-center sm:text-left">
             &copy; {new Date().getFullYear()} {t("copyright")}

@@ -86,6 +86,19 @@ export default {
     copyright: "SkyForest. IE Gorbachevich M.S. UNP 191145831",
     toTop: "Back to top",
     getApp: "Get the app",
+    companyTitle: "Company details",
+    companyName: "IE Gorbatsevich Maksim Sergeevich",
+    companyUnp: "UNP: 191145831",
+    companyActivity: "Activity: information technology services",
+    companyRegistration:
+      "Registered by Minsk City Executive Committee on 25.01.2010",
+    companySchedule: "Working hours: Mon–Fri 9:00–18:00",
+    companyAddressTitle: "Address",
+    companyAddress:
+      "220102, Minsk, Magnitnaya str., 12, off. 1",
+    paymentSystemsTitle: "We accept",
+    paymentSystemsAlt:
+      "Visa, Visa Secure, Mastercard, ID Check, Belkart, Belkart Internet Password, bePaid",
   },
   pwa: {
     badges: {
