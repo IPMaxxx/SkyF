@@ -95,5 +95,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // `auth` исключён: роуты app/auth/* лежат вне сегмента [locale]. Если их пропустить
+  // через next-intl, он переписывает /auth/* в /[locale]/auth/*, которого не существует,
+  // и запрос отдаёт 404 (ломая /auth/callback и /auth/confirm — сброс пароля и OAuth).
+  matcher: ["/((?!api|auth|_next|_vercel|.*\\..*).*)"],
 };
