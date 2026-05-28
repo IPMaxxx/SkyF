@@ -51,7 +51,9 @@ function RegisterForm() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+        // token_hash flow (см. /auth/confirm). Шаблон письма в Supabase должен иметь:
+        //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{NEXT}}
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(redirect)}`,
       },
     });
 

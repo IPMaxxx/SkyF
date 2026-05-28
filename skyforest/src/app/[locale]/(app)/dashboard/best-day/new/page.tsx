@@ -66,6 +66,8 @@ export default function NewBestDayPage() {
 
   const selectedLocation = locations.find((l) => l.id === selectedLocId);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   const requestGetData = () => {
     if (!name.trim()) {
       setError("Введите название для этого лучшего дня");
@@ -77,6 +79,13 @@ export default function NewBestDayPage() {
     }
     if (!bestDate) {
       setError("Укажите дату");
+      return;
+    }
+    const selected = new Date(`${bestDate}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (Number.isNaN(selected.getTime()) || selected.getTime() > today.getTime()) {
+      setError("Дата грибного дня не может быть в будущем");
       return;
     }
     if (!mushroom) {
@@ -170,32 +179,46 @@ export default function NewBestDayPage() {
     setShowConfirmGetData(false);
     if (!selectedLocation || !bestDate) return;
 
-    const spendResult = await spend("best_day_create", "Загрузка погоды для грибного дня");
-    if (!spendResult.success) {
-      setError(spendResult.error || "Недостаточно токенов");
-      return;
-    }
-    toast.success(`Списан ${TOKEN_COSTS.best_day_create} токен`);
-
     setLoadingWeather(true);
     setError("");
     setWeatherDays([]);
 
+    let days: WeatherDay[] | null = null;
     try {
       const res = await fetch(
         `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${bestDate}&days=14`
       );
       const data = await res.json();
-      if (data.error) {
-        setError(data.error);
+      if (!res.ok || data.error) {
+        setError(data.error || "Ошибка загрузки данных о погоде");
+        setLoadingWeather(false);
         return;
       }
-      if (data.days) {
-        setWeatherDays(data.days);
-        await saveAfterWeather(data.days);
+      if (!Array.isArray(data.days) || data.days.length === 0) {
+        setError("Не удалось получить данные о погоде");
+        setLoadingWeather(false);
+        return;
       }
+      days = data.days as WeatherDay[];
     } catch {
       setError("Ошибка загрузки данных о погоде");
+      setLoadingWeather(false);
+      return;
+    }
+
+    // Списываем токены только после того, как погода успешно получена —
+    // чтобы ошибка API (например, дата вне допустимого диапазона) не сжигала баланс.
+    const spendResult = await spend("best_day_create", "Загрузка погоды для грибного дня");
+    if (!spendResult.success) {
+      setError(spendResult.error || "Недостаточно токенов");
+      setLoadingWeather(false);
+      return;
+    }
+    toast.success(`Списан ${TOKEN_COSTS.best_day_create} токен`);
+
+    setWeatherDays(days);
+    try {
+      await saveAfterWeather(days);
     } finally {
       setLoadingWeather(false);
       setSaving(false);
@@ -418,11 +441,12 @@ export default function NewBestDayPage() {
             id="bd-date"
             type="date"
             value={bestDate}
+            max={todayStr}
             onChange={(e) => setBestDate(e.target.value)}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            День, когда вы нашли много грибов
+            День, когда вы нашли много грибов (не может быть в будущем)
           </p>
         </div>
 

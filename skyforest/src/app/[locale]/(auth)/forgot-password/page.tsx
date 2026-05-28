@@ -23,7 +23,10 @@ export default function ForgotPasswordPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
       {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=/reset-password`,
+        // Используется token_hash flow (см. /auth/confirm). Шаблон письма в Supabase
+        // должен иметь ссылку:
+        //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password
+        redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
       }
     );
 

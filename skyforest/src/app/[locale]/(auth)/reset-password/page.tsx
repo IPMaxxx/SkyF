@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function ResetPasswordPage() {
@@ -15,6 +15,32 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [sessionReady, setSessionReady] = useState<null | boolean>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    // Проверяем, есть ли активная сессия (после успешного verifyOtp / exchangeCodeForSession).
+    // Если нет — значит ссылка из письма уже была использована, истекла или открыта в
+    // другом браузере. Показываем понятную ошибку вместо «тихой» поломки updateUser.
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setSessionReady(Boolean(data.user));
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || session?.user) {
+        setSessionReady(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +97,25 @@ export default function ResetPasswordPage() {
               <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
               <h2 className="mb-2 text-lg font-semibold">{t("passwordUpdated")}</h2>
               <p className="text-sm text-muted-foreground">{t("redirecting")}</p>
+            </div>
+          ) : sessionReady === null ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : sessionReady === false ? (
+            <div className="text-center">
+              <AlertCircle className="mx-auto mb-4 h-12 w-12 text-amber-500" />
+              <h2 className="mb-2 text-lg font-semibold">Ссылка недействительна</h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Ссылка для восстановления пароля устарела или уже была использована.
+                Запросите новую — мы пришлём свежее письмо.
+              </p>
+              <Link
+                href="/forgot-password"
+                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
+              >
+                Запросить новое письмо
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
