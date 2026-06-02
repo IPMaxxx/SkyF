@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://www.skyforest.by";
+  const baseUrl = BRAND.url;
 
   const blogPaths = [
     { path: "/blog", lastModified: new Date("2026-04-15"), changeFrequency: "weekly" as const, priority: 0.9 },

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
   const path = "/return_goods";
   return {
     title: "Условия возврата средств",
@@ -78,8 +79,10 @@ export default function ReturnGoodsPage() {
           <li>Причина возврата</li>
         </ul>
         <div className="rounded-xl bg-muted p-4 text-sm">
-          <p>Email: support@skyforest.by</p>
-          <p>Telegram: @skyforest_support_bot</p>
+          <p>Email: {BRAND.contacts.email}</p>
+          {BRAND.contacts.telegramLabel && (
+            <p>Telegram: {BRAND.contacts.telegramLabel}</p>
+          )}
         </div>
 
         <h2 className="text-xl font-semibold">Сроки возврата</h2>
@@ -102,7 +105,7 @@ export default function ReturnGoodsPage() {
           Порядок возврата средств определяется договором-офертой,
           размещённым по адресу{" "}
           <a href="/offer" className="text-primary hover:underline">
-            skyforest.by/offer
+            {BRAND.domain}/offer
           </a>
           , и законодательством Республики Беларусь.
         </p>

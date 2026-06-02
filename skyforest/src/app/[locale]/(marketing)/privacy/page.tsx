@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
   const path = "/privacy";
   return {
     title: "Политика конфиденциальности",
@@ -34,15 +35,12 @@ export default function PrivacyPage() {
         <p>
           1.1. Настоящая Политика конфиденциальности (далее&nbsp;— Политика)
           определяет порядок сбора, обработки, хранения, использования и
-          защиты персональных данных пользователей сервиса SkyForest
-          (далее&nbsp;— Сервис), расположенного по адресу
-          https://www.skyforest.by.
+          защиты персональных данных пользователей сервиса {BRAND.name}{" "}
+          (далее&nbsp;— Сервис), расположенного по адресу {BRAND.url}.
         </p>
         <p>
-          1.2. Оператором персональных данных является ИП Горбацевич Максим
-          Сергеевич (УНП&nbsp;191145831), 220102, г.&nbsp;Минск,
-          ул.&nbsp;Магнитная, д.&nbsp;12, пом.&nbsp;1 (далее&nbsp;—
-          Оператор).
+          1.2. Оператором персональных данных является {BRAND.company.legalName},{" "}
+          {BRAND.company.address} (далее&nbsp;— Оператор).
         </p>
         <p>
           1.3. Регистрируясь в Сервисе, Пользователь даёт полное и
@@ -69,9 +67,9 @@ export default function PrivacyPage() {
           <li>Адрес электронной почты</li>
           <li>
             Данные об оплате (обрабатываются исключительно платёжным
-            провайдером bePaid, сертифицированным по стандарту PCI&nbsp;DSS
-            Level&nbsp;1; Оператор не получает и не хранит данные банковских
-            карт)
+            провайдером {BRAND.paymentProviderName}, сертифицированным по
+            стандарту PCI&nbsp;DSS Level&nbsp;1; Оператор не получает и не
+            хранит данные банковских карт)
           </li>
           <li>
             Пользовательский контент: географические координаты локаций,
@@ -164,9 +162,9 @@ export default function PrivacyPage() {
         </p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Платёжный провайдер bePaid</strong>&nbsp;— для обработки
-            платежей. bePaid сертифицирован по стандарту PCI&nbsp;DSS
-            Level&nbsp;1.
+            <strong>Платёжный провайдер {BRAND.paymentProviderName}</strong>
+            &nbsp;— для обработки платежей. {BRAND.paymentProviderName}{" "}
+            сертифицирован по стандарту PCI&nbsp;DSS Level&nbsp;1.
           </li>
           <li>
             <strong>Хостинг-провайдеры</strong>&nbsp;— для размещения,
@@ -248,7 +246,7 @@ export default function PrivacyPage() {
         </ul>
         <p>
           Для реализации своих прав Пользователь может направить запрос на
-          адрес support@skyforest.by. Срок рассмотрения запроса &mdash;
+          адрес {BRAND.contacts.email}. Срок рассмотрения запроса &mdash;
           15&nbsp;рабочих дней.
         </p>
 
@@ -286,8 +284,7 @@ export default function PrivacyPage() {
         <h2 className="text-xl font-semibold">11. Изменение Политики</h2>
         <p>
           11.1. Оператор вправе вносить изменения в настоящую Политику.
-          Актуальная редакция размещается по адресу
-          https://www.skyforest.by/privacy.
+          Актуальная редакция размещается по адресу {BRAND.url}/privacy.
         </p>
         <p>
           11.2. Продолжение использования Сервиса после публикации изменений
@@ -301,12 +298,16 @@ export default function PrivacyPage() {
           обращайтесь:
         </p>
         <div className="rounded-xl bg-muted p-4 text-sm">
-          <p>ИП Горбацевич Максим Сергеевич</p>
-          <p>220102, г. Минск, ул. Магнитная, д. 12, пом. 1</p>
-          <p>УНП: 191145831</p>
-          <p>Email: support@skyforest.by</p>
-          <p>Телефон: +375 29 328 2842</p>
-          <p>Telegram: @skyforest_support_bot</p>
+          <p>{BRAND.company.legalName}</p>
+          <p>{BRAND.company.address}</p>
+          {BRAND.company.registrationLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <p>Email: {BRAND.contacts.email}</p>
+          {BRAND.contacts.phone && <p>Телефон: {BRAND.contacts.phone}</p>}
+          {BRAND.contacts.telegramLabel && (
+            <p>Telegram: {BRAND.contacts.telegramLabel}</p>
+          )}
         </div>
       </div>
     </div>

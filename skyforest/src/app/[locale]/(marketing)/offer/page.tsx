@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
   const path = "/offer";
   return {
     title: "Договор-оферта",
@@ -33,12 +34,8 @@ export default function OfferPage() {
         </h2>
 
         <p>
-          Индивидуальный предприниматель Горбацевич Максим Сергеевич,
-          зарегистрирован Минским городским исполнительным комитетом 25 января
-          2010 года, регистрационный номер 191145831 (далее&nbsp;—
-          Исполнитель), адрес: 220102, г.&nbsp;Минск, ул.&nbsp;Магнитная,
-          д.&nbsp;12, пом.&nbsp;1, публикует настоящую оферту о
-          нижеследующем.
+          {BRAND.company.legalName} (далее&nbsp;— Исполнитель), адрес:{" "}
+          {BRAND.company.address}, публикует настоящую оферту о нижеследующем.
         </p>
 
         {/* ── 1. Термины ── */}
@@ -46,7 +43,7 @@ export default function OfferPage() {
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>Сервис</strong>&nbsp;— программно-аппаратный комплекс,
-            размещённый по адресу https://www.skyforest.by, предоставляющий
+            размещённый по адресу {BRAND.url}, предоставляющий
             Пользователю информационные услуги по сбору, визуализации,
             сравнению и анализу общедоступных метеорологических данных.
           </li>
@@ -223,8 +220,8 @@ export default function OfferPage() {
         </p>
         <p>
           6.3. Оплата осуществляется через сертифицированного платёжного
-          провайдера bePaid (PCI&nbsp;DSS Level&nbsp;1). Исполнитель не
-          хранит данные банковских карт Пользователей.
+          провайдера {BRAND.paymentProviderName} (PCI&nbsp;DSS Level&nbsp;1).
+          Исполнитель не хранит данные банковских карт Пользователей.
         </p>
         <p>
           6.4. Токены не подлежат обмену на денежные средства, за исключением
@@ -236,8 +233,8 @@ export default function OfferPage() {
         <p>
           7.1. Возврат денежных средств возможен в случае, если ни один токен
           из приобретённого пакета не был использован. Запрос на возврат
-          необходимо направить на support@skyforest.by в течение 14&nbsp;дней
-          с момента покупки.
+          необходимо направить на {BRAND.contacts.email} в течение
+          14&nbsp;дней с момента покупки.
         </p>
         <p>
           7.2. При частичном использовании токенов возврат не производится,
@@ -312,8 +309,8 @@ export default function OfferPage() {
         <h3 className="text-lg font-semibold">11. Персональные данные</h3>
         <p>
           Обработка персональных данных осуществляется в соответствии с
-          Политикой конфиденциальности, размещённой по адресу
-          https://www.skyforest.by/privacy, и Законом Республики Беларусь от
+          Политикой конфиденциальности, размещённой по адресу{" "}
+          {BRAND.url}/privacy, и Законом Республики Беларусь от
           7&nbsp;мая 2021&nbsp;г. №99-З «О защите персональных данных».
           Регистрируясь в Сервисе, Пользователь даёт согласие на обработку
           персональных данных в соответствии с указанной Политикой.
@@ -324,7 +321,7 @@ export default function OfferPage() {
         <p>
           12.1. Исполнитель вправе в одностороннем порядке вносить изменения
           в настоящую оферту. Изменения вступают в силу с момента публикации
-          новой редакции на сайте https://www.skyforest.by/offer.
+          новой редакции на сайте {BRAND.url}/offer.
         </p>
         <p>
           12.2. Продолжение использования Сервиса после публикации изменений
@@ -379,13 +376,15 @@ export default function OfferPage() {
         {/* ── 16. Реквизиты ── */}
         <h3 className="text-lg font-semibold">16. Реквизиты Исполнителя</h3>
         <div className="rounded-xl bg-muted p-4 text-sm">
-          <p>ИП Горбацевич Максим Сергеевич</p>
-          <p>220102, г. Минск, ул. Магнитная, д. 12, пом. 1</p>
-          <p>УНП: 191145831</p>
-          <p>Р/с: BY86OLMP30130000757520000933</p>
-          <p>Банк: ОАО «Белгазпромбанк»</p>
-          <p>БИК: OLMPBY2X</p>
-          <p>Email: support@skyforest.by</p>
+          <p>{BRAND.company.legalName}</p>
+          <p>{BRAND.company.address}</p>
+          {BRAND.company.registrationLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          {BRAND.company.bankLines?.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <p>Email: {BRAND.contacts.email}</p>
         </div>
       </div>
     </div>

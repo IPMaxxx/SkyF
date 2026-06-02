@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import { XCircle } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -32,7 +33,7 @@ export default async function PaymentFailPage({ params }: Props) {
             {t("retry")}
           </Link>
           <a
-            href="https://t.me/skyforest_support_bot"
+            href={BRAND.contacts.telegram || `mailto:${BRAND.contacts.email}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block rounded-xl glass px-8 py-3 text-base font-medium transition-colors hover:bg-white/5"

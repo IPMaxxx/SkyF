@@ -83,20 +83,10 @@ export default {
     instruction: "Инструкция",
     contactsTitle: "Контакты",
     telegramSupport: "Telegram-поддержка",
-    copyright:
-      "SkyForest. ИП Горбацевич М.С. УНП 191145831",
     toTop: "Наверх",
     getApp: "Установите приложение",
     companyTitle: "Реквизиты",
-    companyName: "ИП Горбацевич Максим Сергеевич",
-    companyUnp: "УНП: 191145831",
-    companyActivity:
-      "Вид деятельности: услуги в области информационных технологий",
-    companyRegistration:
-      "Зарегистрирован Мингорисполкомом 25.01.2010",
-    companySchedule: "Режим работы: Пн–Пт 9:00–18:00",
     companyAddressTitle: "Адрес",
-    companyAddress: "220102, г. Минск, ул. Магнитная, д. 12, пом. 1",
     paymentSystemsTitle: "Принимаем к оплате",
     paymentSystemsAlt:
       "Visa, Visa Secure, Mastercard, ID Check, Белкарт, Белкарт-Интернет пароль, bePaid",

@@ -8,6 +8,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 
 type Props = {
   children: React.ReactNode;
@@ -21,13 +22,14 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "metadata" });
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
+  const ogImage = `${base}/images/og-cover.png`;
   const keywords = t.raw("keywords") as string[];
 
   return {
     title: {
       default: t("title"),
-      template: "%s | Skyforest.by",
+      template: `%s | ${BRAND.domain}`,
     },
     description: t("description"),
     keywords,
@@ -35,12 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: t("ogTitle"),
       description: t("ogDescription"),
       url: base,
-      siteName: "Skyforest",
+      siteName: BRAND.name,
       locale: locale === "en" ? "en_US" : "ru_BY",
       type: "website",
       images: [
         {
-          url: "https://www.skyforest.by/images/og-cover.png",
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: t("ogAlt"),
@@ -51,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: t("twitterTitle"),
       description: t("twitterDescription"),
-      images: ["https://www.skyforest.by/images/og-cover.png"],
+      images: [ogImage],
     },
     alternates: {
       canonical: locale === "en" ? `${base}/en` : base,
@@ -63,8 +65,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     metadataBase: new URL(base),
     icons: { icon: "/favicon.png" },
     other: {
-      "geo.region": "BY",
-      "geo.placename": "Belarus",
+      "geo.region": BRAND.seo.geoRegion,
+      "geo.placename": BRAND.seo.geoPlacename,
       "content-language": t("contentLanguage"),
     },
     category: "lifestyle",

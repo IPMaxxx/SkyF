@@ -23,6 +23,7 @@ import {
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel, BULK_RATE } from "@/lib/tokens";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
+import { BRAND } from "@/lib/brand";
 
 export default function PaymentPage() {
   return (
@@ -511,8 +512,13 @@ function PaymentContent() {
                 Условия возврата средств
               </a>
               <span className="mx-2 text-muted-foreground/30">·</span>
-              <a href="https://t.me/skyforest_support" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                Поддержка в Telegram
+              <a
+                href={BRAND.contacts.telegram || `mailto:${BRAND.contacts.email}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline"
+              >
+                {BRAND.contacts.telegram ? "Поддержка в Telegram" : "Поддержка"}
               </a>
             </div>
           </div>

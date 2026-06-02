@@ -25,6 +25,7 @@ import {
   Coins,
   AlertTriangle,
   RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 
 function WeatherMapLoading() {
@@ -126,6 +127,7 @@ export default function WeatherPage() {
   const t = useTranslations("weather");
   const locale = useLocale();
   const [tab, setTab] = useState<Tab>("weather");
+  const [showGuide, setShowGuide] = useState(false);
   const { locations, loading: appLoading } = useAppData();
 
   // --- Weather state ---
@@ -388,12 +390,72 @@ export default function WeatherPage() {
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+      <div className="mb-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceWeather")}</span>
           <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceRainMap")}</span>
         </div>
+      </div>
+
+      {/* Collapsible guide: how it works + token math */}
+      <div className="mb-6 overflow-hidden rounded-xl border border-border bg-white/[0.02]">
+        <button
+          type="button"
+          onClick={() => setShowGuide((v) => !v)}
+          aria-expanded={showGuide}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.03]"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <Info className="h-4 w-4 flex-shrink-0 text-sky-400" />
+            {t("guideToggle")}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${
+              showGuide ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {showGuide && (
+          <div className="space-y-5 border-t border-border px-4 py-4 text-sm leading-relaxed text-muted-foreground">
+            <section className="space-y-1.5">
+              <h3 className="font-semibold text-foreground">{t("guideRainTitle")}</h3>
+              <p>{t("guideRainP1")}</p>
+              <p>{t("guideRainP2")}</p>
+              <p>{t("guideRainP3")}</p>
+            </section>
+
+            <section className="space-y-1.5">
+              <h3 className="font-semibold text-foreground">{t("guideColorTitle")}</h3>
+              <p>{t("guideColorDesc")}</p>
+            </section>
+
+            <section className="space-y-1.5">
+              <h3 className="font-semibold text-foreground">{t("guidePrincipleTitle")}</h3>
+              <p>{t("guidePrincipleDesc")}</p>
+            </section>
+
+            <section className="space-y-1.5">
+              <h3 className="font-semibold text-foreground">{t("guideTokensTitle")}</h3>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>{t("guideTokensWeather", { weather: TOKEN_COSTS.weather_check })}</li>
+                <li>{t("guideTokensRain", { perBatch: TOKEN_COSTS.rain_map_per_batch })}</li>
+              </ul>
+              <p className="rounded-lg bg-white/5 px-3 py-2 font-mono text-xs text-foreground/90">
+                {t("guideTokensFormula", { perBatch: TOKEN_COSTS.rain_map_per_batch })}
+              </p>
+              <p>
+                {t("guideTokensExample", {
+                  perBatch: TOKEN_COSTS.rain_map_per_batch,
+                  example: 3 * TOKEN_COSTS.rain_map_per_batch,
+                })}
+              </p>
+              <p>{t("guideTokensControl")}</p>
+              <p className="text-foreground/80">{t("guideTokensTip")}</p>
+            </section>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

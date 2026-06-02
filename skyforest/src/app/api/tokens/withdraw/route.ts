@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { BRAND } from "@/lib/brand";
 
 function escapeHtml(str: string): string {
   return str
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
     `;
 
     await sendEmail(
-      "support@skyforest.by",
+      BRAND.contacts.email,
       `Запрос на вывод: ${numAmount} токенов от ${user.email}`,
       html
     );

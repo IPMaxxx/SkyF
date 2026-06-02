@@ -1,9 +1,11 @@
 import type { Locale } from "@/i18n/routing";
+import { BRAND } from "@/lib/brand";
 
-const BASE = "https://www.skyforest.by";
+const BASE = BRAND.url;
 
 export function getSiteJsonLd(locale: Locale) {
   const isEn = locale === "en";
+  const areaServed = isEn ? BRAND.seo.areaServedEn : BRAND.seo.areaServedRu;
 
   const webAppDesc = isEn
     ? "Mushroom location discovery service in Belarus. Weather analysis, precipitation maps, and pattern comparison for the best picking time."
@@ -137,18 +139,17 @@ export function getSiteJsonLd(locale: Locale) {
         },
         contactPoint: {
           "@type": "ContactPoint",
-          telephone: "+375-29-328-2842",
+          ...(BRAND.contacts.phone
+            ? { telephone: BRAND.contacts.phone.replace(/\s/g, "") }
+            : { email: BRAND.contacts.email }),
           contactType: "customer support",
           availableLanguage: isEn
             ? ["Russian", "Belarusian", "English"]
             : ["Russian", "Belarusian"],
         },
-        sameAs: [
-          "https://www.instagram.com/ip.chaser",
-          "https://www.tiktok.com/@skyforest1",
-          "https://www.youtube.com/@sky_forest",
-          "https://t.me/iPChaser",
-        ],
+        ...(BRAND.social.length > 0
+          ? { sameAs: BRAND.social.map((s) => s.href) }
+          : {}),
       },
       {
         "@type": "WebApplication",
@@ -161,7 +162,7 @@ export function getSiteJsonLd(locale: Locale) {
         offers: {
           "@type": "Offer",
           price: "0",
-          priceCurrency: "BYN",
+          priceCurrency: BRAND.currency,
           description: offerDesc,
         },
         provider: {
@@ -234,11 +235,11 @@ export function getSiteJsonLd(locale: Locale) {
             provider: {
               "@id": `${BASE}/#organization`,
             },
-            areaServed: isEn ? "Belarus" : "Беларусь",
+            areaServed,
             offers: {
               "@type": "Offer",
               price: tariff.price,
-              priceCurrency: "BYN",
+              priceCurrency: BRAND.currency,
               availability: "https://schema.org/InStock",
               url: `${BASE}${isEn ? "/en" : ""}/#tariffs`,
             },

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
   const path = "/instruction";
   return {
     title: "Инструкция — SkyForest",

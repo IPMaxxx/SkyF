@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 const PRIVATE_PATHS = ["/dashboard", "/map", "/payment", "/account", "/api/", "/login", "/register"];
 
@@ -54,7 +55,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: PRIVATE_PATHS,
       })),
     ],
-    sitemap: "https://www.skyforest.by/sitemap.xml",
-    host: "https://www.skyforest.by",
+    sitemap: `${BRAND.url}/sitemap.xml`,
+    host: BRAND.url,
   };
 }

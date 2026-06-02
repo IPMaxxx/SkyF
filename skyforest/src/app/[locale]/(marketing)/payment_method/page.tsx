@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = "https://www.skyforest.by";
+  const base = BRAND.url;
   const path = "/payment_method";
   return {
     title: "Способы оплаты",
@@ -111,19 +112,21 @@ export default function PaymentMethodPage() {
             По вопросам оплаты обращайтесь в нашу службу поддержки:
           </p>
           <div className="rounded-xl bg-muted p-4 text-sm">
-            <p>
-              Telegram:{" "}
-              <a
-                href="https://t.me/skyforest_support_bot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                @skyforest_support_bot
-              </a>
-            </p>
-            <p>Email: support@skyforest.by</p>
-            <p>Телефон: +375 29 328 2842</p>
+            {BRAND.contacts.telegram && BRAND.contacts.telegramLabel && (
+              <p>
+                Telegram:{" "}
+                <a
+                  href={BRAND.contacts.telegram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {BRAND.contacts.telegramLabel}
+                </a>
+              </p>
+            )}
+            <p>Email: {BRAND.contacts.email}</p>
+            {BRAND.contacts.phone && <p>Телефон: {BRAND.contacts.phone}</p>}
           </div>
         </section>
       </div>
