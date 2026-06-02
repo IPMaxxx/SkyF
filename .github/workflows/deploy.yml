@@ -1,0 +1,28 @@
+name: Deploy to Production
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /var/www/html/skyforest.by
+            [ -d .git ] || { echo "ОШИБКА: папка .git отсутствует — репозиторий нужно восстановить вручную"; exit 1; }
+            echo "==> Pulling latest changes..."
+            git pull origin main
+            echo "==> Installing dependencies..."
+            npm install
+            echo "==> Building Next.js..."
+            npm run build
+            echo "==> Restarting PM2..."
+            pm2 restart skyforest.by
+            echo "==> Done!"
