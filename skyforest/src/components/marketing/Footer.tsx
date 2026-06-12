@@ -234,10 +234,17 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col-reverse items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between sm:gap-0">
-          <p className="text-xs text-white/40 text-center sm:text-left">
-            &copy; {new Date().getFullYear()} {BRAND.name}.{" "}
-            {BRAND.company.copyrightSuffix}
-          </p>
+          <div className="text-center sm:text-left">
+            <p className="text-xs text-white/40">
+              &copy; {new Date().getFullYear()} {BRAND.name}.{" "}
+              {BRAND.company.copyrightSuffix}
+            </p>
+            <p className="mt-1 text-[10px] text-white/25">
+              v{process.env.NEXT_PUBLIC_APP_VERSION} &middot;{" "}
+              {process.env.NEXT_PUBLIC_BUILD_SHA} &middot;{" "}
+              {process.env.NEXT_PUBLIC_BUILD_DATE}
+            </p>
+          </div>
           <button
             type="button"
             onClick={scrollToTop}
