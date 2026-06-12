@@ -12,17 +12,33 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 15m
+          command_timeout: 20m
           script: |
             set -e
             cd /var/www/html/skyforest.by
             [ -d .git ] || { echo "ОШИБКА: папка .git отсутствует — репозиторий нужно восстановить вручную"; exit 1; }
             echo "==> Pulling latest changes..."
             git pull origin main
+
+            echo "==> Diagnostics (раскладка сервера)..."
+            echo "--- содержимое корня ---"
+            ls -la | head -30
+            echo "--- package.json в корне (старая плоская копия?) ---"
+            grep -E '"(name|version)"' package.json 2>/dev/null || echo "package.json в корне отсутствует"
+            echo "--- процесс PM2 ---"
+            pm2 describe skyforest.by | grep -iE "exec cwd|script path|script args|status|node" || echo "pm2 describe не дал данных"
+
+            echo "==> Ensuring .env is available in skyforest/ ..."
+            if [ ! -e skyforest/.env ] && [ -f .env ]; then ln -s ../.env skyforest/.env; fi
+
+            # Приложение живёт в подпапке skyforest/ репозитория.
+            # Сборка из корня подхватывает устаревшую плоскую копию (src/ без новых
+            # модулей) и валится на typecheck — поэтому строго cd skyforest.
+            cd skyforest
             echo "==> Installing dependencies..."
             npm install
             echo "==> Building Next.js..."
             npm run build
             echo "==> Restarting PM2..."
-            pm2 restart skyforest.by
+            pm2 restart skyforest.by --update-env
             echo "==> Done!"
