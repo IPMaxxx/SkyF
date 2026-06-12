@@ -1,7 +1,30 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { execSync } from "node:child_process";
+import pkg from "./package.json";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+/** Короткий hash коммита: Vercel отдаёт env, на VPS берём из git, иначе "dev" */
+function getBuildSha(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) {
+    return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7);
+  }
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "dev";
+  }
+}
+
+function getBuildDate(): string {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}.${mm}.${d.getFullYear()}`;
+}
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -32,6 +55,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_BUILD_SHA: getBuildSha(),
+    NEXT_PUBLIC_BUILD_DATE: getBuildDate(),
+  },
 
   images: {
     formats: ["image/avif", "image/webp"],
