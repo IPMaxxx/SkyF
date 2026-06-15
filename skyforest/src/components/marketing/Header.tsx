@@ -23,6 +23,7 @@ export function Header() {
     () => [
       { label: t("home"), href: "/" },
       { label: t("about"), href: "/#about", sectionId: "about" },
+      { label: t("mushroomBot"), href: "/#bot", sectionId: "bot" },
       { label: t("tariffs"), href: "/#tariffs", sectionId: "tariffs" },
       { label: t("blog"), href: "/blog" },
       { label: t("faq"), href: "/#faq", sectionId: "faq" },

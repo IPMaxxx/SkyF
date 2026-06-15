@@ -8,6 +8,7 @@ import { TwoFactorSetup } from "@/components/app/TwoFactorSetup";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { EditProfileName } from "@/components/app/EditProfileName";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
+import { MushroomBotCard } from "@/components/app/MushroomBotCard";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -139,9 +140,13 @@ export default async function AccountPage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="glass rounded-2xl p-6">
+      <div className="mb-6">
+        <MushroomBotCard />
+      </div>
+
+      <div className="glass mb-6 rounded-2xl p-6">
         <h2 className="mb-4 text-lg font-semibold">{t("history")}</h2>
-        <TransactionHistory initial={transactions} />
+        <TransactionHistory initial={transactions} initialShow={3} />
       </div>
 
       <div className="glass rounded-2xl p-6">

@@ -5,7 +5,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = BRAND.url;
 
   const blogPaths = [
-    { path: "/blog", lastModified: new Date("2026-04-15"), changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/blog", lastModified: new Date("2026-06-15"), changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/blog/kak-opredelit-grib", lastModified: new Date("2026-06-15"), changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/blog/pervye-majskie-boroviki", lastModified: new Date("2026-06-15"), changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/blog/pogoda-dlya-gribov", lastModified: new Date("2026-04-15"), changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/blog/griby-posle-dozhdya", lastModified: new Date("2026-04-15"), changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/blog/kogda-pora-v-les", lastModified: new Date("2026-04-15"), changeFrequency: "monthly" as const, priority: 0.8 },

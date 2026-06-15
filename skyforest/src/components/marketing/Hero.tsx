@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, Bell, Droplets, Store, Trees } from "lucide-react";
+import { ArrowRight, Bell, Droplets, ScanSearch, Store, Trees } from "lucide-react";
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -13,6 +13,7 @@ export function Hero() {
   const FEATURES = [
     { icon: Bell, title: t("f0Title"), desc: t("f0Desc") },
     { icon: Droplets, title: t("f1Title"), desc: t("f1Desc") },
+    { icon: ScanSearch, title: t("f4Title"), desc: t("f4Desc") },
     { icon: Store, title: t("f2Title"), desc: t("f2Desc") },
     { icon: Trees, title: t("f3Title"), desc: t("f3Desc") },
   ];
@@ -61,7 +62,7 @@ export function Hero() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
