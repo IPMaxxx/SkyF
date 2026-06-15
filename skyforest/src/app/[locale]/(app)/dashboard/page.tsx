@@ -22,6 +22,7 @@ import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 import { useAppData } from "@/lib/AppDataContext";
 import { useTokens } from "@/lib/TokenContext";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
+import { MushroomBotCard } from "@/components/app/MushroomBotCard";
 import { useTranslations, useLocale } from "next-intl";
 
 function MapLoadingFallback() {
@@ -517,6 +518,8 @@ export default function DashboardPage() {
           <TransactionHistory compact limit={10} />
         </div>
       </div>
+
+      <MushroomBotCard />
 
       {loading && (
         <div className="mt-12 flex justify-center" aria-live="polite">
