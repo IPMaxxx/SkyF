@@ -12,9 +12,12 @@ import {
   ScanSearch,
 } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
+import { BRAND } from "@/lib/brand";
 
 const BOT_URL =
-  process.env.NEXT_PUBLIC_MUSHROOM_BOT_URL || "https://t.me/skyforest_mushroom_bot";
+  process.env.NEXT_PUBLIC_MUSHROOM_BOT_URL ||
+  BRAND.mushroomBotUrl ||
+  "https://t.me/skyforest_mushroom_bot";
 
 interface BotAccount {
   linked: boolean;

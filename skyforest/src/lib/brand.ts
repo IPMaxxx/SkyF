@@ -74,6 +74,10 @@ export interface Brand {
     telegramLabel?: string;
   };
 
+  /** Telegram-бот определения грибов по фото */
+  mushroomBotUrl?: string;
+  mushroomBotHandle?: string;
+
   social: { label: string; href: string }[];
 }
 
@@ -117,6 +121,8 @@ const SKYFOREST: Brand = {
     telegram: "https://t.me/skyforest_support_bot",
     telegramLabel: "@skyforest_support_bot",
   },
+  mushroomBotUrl: "https://t.me/skyforest_mushroom_bot",
+  mushroomBotHandle: "@skyforest_mushroom_bot",
   social: [
     { label: "Instagram", href: "https://www.instagram.com/ip.chaser" },
     { label: "TikTok", href: "https://www.tiktok.com/@skyforest1" },

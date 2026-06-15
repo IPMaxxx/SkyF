@@ -51,6 +51,7 @@ export default {
   header: {
     home: "Home",
     about: "About",
+    mushroomBot: "Mushroom ID",
     tariffs: "Pricing",
     blog: "Blog",
     faq: "FAQ",
@@ -71,6 +72,7 @@ export default {
     tagline: "Weather analysis for mushroom pickers",
     navTitle: "Navigation",
     about: "About",
+    mushroomBot: "Mushroom ID",
     tariffs: "Pricing",
     blog: "Blog",
     faq: "FAQ",
@@ -210,6 +212,9 @@ export default {
     f3Title: "Find a forest like yours",
     f3Desc:
       "Search forests by type, tree species, and distance — discover new places similar to your favorites.",
+    f4Title: "Identify mushrooms by photo",
+    f4Desc:
+      "A Telegram bot recognizes the mushroom from a photo — 3 free checks, then 1 token each from your balance.",
   },
   faq: {
     title: "FAQ",
@@ -250,6 +255,22 @@ export default {
     title: "SkyForest AI 2.0 is not an oracle",
     body: "It’s a data- and science-based tool. We don’t guarantee mushrooms in a specific place — we show when weather conditions are most similar to those when ",
     bodyEmphasis: "you already picked successfully.",
+  },
+  mushroomBotLanding: {
+    eyebrow: "Mushroom ID in Telegram",
+    title: "Not sure what you found? Identify it by photo",
+    intro:
+      "Snap your find and send it to the bot — it recognizes the species from the photo. The first 3 checks are free, then it’s 1 token per identification from your SkyForest balance.",
+    s1t: "3 free checks",
+    s1d: "Every new bot user gets 3 free mushroom identifications by photo.",
+    s2t: "Buy tokens",
+    s2d: "Top up your token balance on the SkyForest site — tokens pay for the service.",
+    s3t: "Transfer to the bot",
+    s3d: "From your dashboard, move some tokens to the bot balance: 1 token = 1 identification.",
+    s4t: "Identify by photo",
+    s4d: "Send the bot photos of mushrooms — each identification spends 1 check from the balance.",
+    openBot: "Open the bot in Telegram",
+    manageTokens: "Manage tokens",
   },
   cta: {
     mockMatch: "Match with reference",

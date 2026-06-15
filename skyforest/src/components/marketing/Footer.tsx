@@ -44,6 +44,7 @@ export function Footer() {
 
   const NAV_LINKS = [
     { label: t("about"), href: "/#about" },
+    { label: t("mushroomBot"), href: "/#bot" },
     { label: t("tariffs"), href: "/#tariffs" },
     { label: t("blog"), href: "/blog" },
     { label: t("faq"), href: "/#faq" },

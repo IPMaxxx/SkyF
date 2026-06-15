@@ -26,11 +26,18 @@ interface Props {
   initial?: Transaction[];
   limit?: number;
   compact?: boolean;
+  /** Сколько операций показывать до «шторки». По умолчанию 5 (compact) / 10. */
+  initialShow?: number;
 }
 
 type Filter = "all" | "purchase" | "spend" | "bonus" | "refund";
 
-export function TransactionHistory({ initial, limit = 20, compact = false }: Props) {
+export function TransactionHistory({
+  initial,
+  limit = 20,
+  compact = false,
+  initialShow,
+}: Props) {
   const t = useTranslations("account");
   const locale = useLocale();
   const dateLocale = locale === "en" ? "en-GB" : "ru-RU";
@@ -41,7 +48,7 @@ export function TransactionHistory({ initial, limit = 20, compact = false }: Pro
   const [hasMore, setHasMore] = useState((initial?.length ?? 0) >= limit);
   const [filter, setFilter] = useState<Filter>("all");
 
-  const INITIAL_SHOW = compact ? 5 : 10;
+  const INITIAL_SHOW = initialShow ?? (compact ? 5 : 10);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {

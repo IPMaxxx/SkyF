@@ -3,6 +3,22 @@ import Image from "next/image";
 
 const ALL_ARTICLES = [
   {
+    href: "/blog/kak-opredelit-grib",
+    title: "Как определить гриб по фото: приложения, нейросети и признаки",
+    description:
+      "Точность определителей, что фотографировать и какие признаки проверять. Плюс определитель SkyForest в Telegram.",
+    image: "/images/blog/blog-kak-opredelit-grib.jpg",
+    readTime: "11 мин",
+  },
+  {
+    href: "/blog/pervye-majskie-boroviki",
+    title: "Первые майские боровики: где и когда искать ранний белый гриб",
+    description:
+      "Боровик сетчатый — самый ранний белый гриб. Сроки, места, погода и отличия от двойников.",
+    image: "/images/blog/blog-pervye-majskie-boroviki.jpg",
+    readTime: "10 мин",
+  },
+  {
     href: "/blog/pogoda-dlya-gribov",
     title: "Погода для грибов: при какой температуре и влажности растут грибы",
     description:

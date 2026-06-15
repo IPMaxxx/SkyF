@@ -8,6 +8,8 @@ import {
   Trees,
   MapPin,
   Brain,
+  ScanSearch,
+  Sprout,
   ArrowRight,
 } from "lucide-react";
 
@@ -38,6 +40,26 @@ export const metadata: Metadata = {
 };
 
 const ARTICLES = [
+  {
+    href: "/blog/kak-opredelit-grib",
+    title: "Как определить гриб по фото: приложения, нейросети и признаки",
+    description:
+      "Как работают определители грибов, какая у них точность, что фотографировать и какие признаки проверять вручную. Плюс бесплатный определитель SkyForest в Telegram.",
+    icon: ScanSearch,
+    image: "/images/blog/blog-kak-opredelit-grib.jpg",
+    readTime: "11 мин",
+    gradient: "from-sky-500/30 to-cyan-600/20",
+  },
+  {
+    href: "/blog/pervye-majskie-boroviki",
+    title: "Первые майские боровики: где и когда искать ранний белый гриб",
+    description:
+      "Боровик сетчатый — самый ранний белый гриб. Когда появляется, в каких лесах искать, какая погода нужна и как отличить от двойников.",
+    icon: Sprout,
+    image: "/images/blog/blog-pervye-majskie-boroviki.jpg",
+    readTime: "10 мин",
+    gradient: "from-emerald-500/30 to-lime-600/20",
+  },
   {
     href: "/blog/pogoda-dlya-gribov",
     title: "Погода для грибов: при какой температуре и влажности растут грибы",
