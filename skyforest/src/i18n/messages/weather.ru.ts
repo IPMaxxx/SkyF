@@ -56,6 +56,10 @@ export default {
   addLocation: "Добавить",
   endDateLabel: "Конечная дата (день 14 из 14)",
   endDateHint: "Загрузятся данные за 14 дней до этой даты включительно",
+  sourceLabel: "Источник данных",
+  sourceOpenMeteo: "Open-Meteo (по умолчанию)",
+  sourceVisualCrossing: "Visual Crossing",
+  sourceHint: "Если осадки кажутся неточными — попробуйте другой источник",
   loadWeatherCta: "Загрузить погоду · {n} токен",
   confirmWeatherTitle: "Загрузить погоду",
   confirmWeatherDesc:

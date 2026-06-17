@@ -137,7 +137,15 @@ export default function WeatherPage() {
   const [loading, setLoading] = useState(false);
   const [pageDataLoaded, setPageDataLoaded] = useState(false);
   const [error, setError] = useState("");
+  const [weatherSource, setWeatherSource] = useState<"open-meteo" | "visual-crossing">("open-meteo");
   const { balance, spend } = useTokens();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sf_weather_source");
+    if (saved === "open-meteo" || saved === "visual-crossing") {
+      setWeatherSource(saved);
+    }
+  }, []);
   const [savedList, setSavedList] = useState<{ id: string; check_date: string; location: unknown; created_at: string }[]>([]);
 
   // --- Rain map state ---
@@ -222,7 +230,7 @@ export default function WeatherPage() {
 
     try {
       const res = await fetch(
-        `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${date}&days=14`
+        `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${date}&days=14&source=${weatherSource}`
       );
       const data = await res.json();
 
@@ -559,6 +567,33 @@ export default function WeatherPage() {
                   className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">{t("endDateHint")}</p>
+              </div>
+
+              <div>
+                <label htmlFor="weather-source" className="mb-1.5 block text-sm font-medium">
+                  {t("sourceLabel")}
+                </label>
+                <div className="relative">
+                  <select
+                    id="weather-source"
+                    value={weatherSource}
+                    onChange={(e) => {
+                      const v = e.target.value === "visual-crossing" ? "visual-crossing" : "open-meteo";
+                      setWeatherSource(v);
+                      localStorage.setItem("sf_weather_source", v);
+                    }}
+                    className="w-full appearance-none rounded-xl border border-border bg-white px-4 py-3 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="open-meteo">{t("sourceOpenMeteo")}</option>
+                    <option value="visual-crossing">{t("sourceVisualCrossing")}</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">{t("sourceHint")}</p>
               </div>
             </div>
 

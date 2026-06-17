@@ -56,6 +56,10 @@ export default {
   addLocation: "Add",
   endDateLabel: "End date (day 14 of 14)",
   endDateHint: "Data loads for the 14 days up to and including this date",
+  sourceLabel: "Data source",
+  sourceOpenMeteo: "Open-Meteo (default)",
+  sourceVisualCrossing: "Visual Crossing",
+  sourceHint: "If precipitation looks off, try a different source",
   loadWeatherCta: "Load weather · {n} tokens",
   confirmWeatherTitle: "Load weather",
   confirmWeatherDesc:
