@@ -86,6 +86,8 @@ export default {
   delete: "Удалить",
   radius: "Радиус",
   step: "Шаг",
+  pointsField: "Точек",
+  pointsAuto: "авто",
   days: "Дней",
   pointsCount: "{count} точек",
   pointsTooMany: " (макс 200)",
