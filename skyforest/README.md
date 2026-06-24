@@ -1,6 +1,15 @@
-# Skyforest.by
+# SkyForest
 
-Сервис поиска грибных локаций. Next.js 15 + Supabase + Vercel.
+Сервис поиска грибных локаций. Next.js 16 + Supabase + Vercel.
+
+Два продакшен-деплоя из одного репозитория:
+
+| Домен | Юрлицо | Платежи | `NEXT_PUBLIC_BRAND` |
+|-------|--------|---------|---------------------|
+| skyforest.by | ИП Горбацевич М.С. | bePaid (BYN) | *(пусто / skyforest)* |
+| skyforest.ai | SAMPLIFY FZCO | Stripe (USD) | `samplify` |
+
+База Supabase **общая** для обоих доменов.
 
 ## Стек
 
@@ -9,9 +18,9 @@
 - **Auth & DB**: Supabase (PostgreSQL, Auth)
 - **Maps**: Leaflet + OpenStreetMap + Global Forest Watch
 - **Weather**: Open-Meteo API
-- **Payments**: bePaid
-- **Deploy**: Vercel
-- **i18n**: [next-intl](https://next-intl.dev) — локали `ru` (по умолчанию, без префикса в URL) и `en` (`/en/...`). Переводы: `src/i18n/messages/ru.ts` и `src/i18n/messages/en.ts`; навигация: `src/i18n/navigation.ts` (`Link`, `useRouter`, `usePathname`).
+- **Payments**: bePaid (.by) / Stripe (.ai)
+- **Deploy**: Vercel (два проекта или два env-набора)
+- **i18n**: [next-intl](https://next-intl.dev) — `ru` и `en`. Для `.by` локаль по умолчанию `ru`, для `.ai` — `en`.
 
 ## Запуск
 
@@ -22,39 +31,71 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+Локальная проверка `.ai`-сборки:
+
+```bash
+NEXT_PUBLIC_BRAND=samplify NEXT_PUBLIC_APP_URL=http://localhost:3000 npm run dev
+```
+
 ## Настройка Supabase
 
 1. Создайте проект на [supabase.com](https://supabase.com)
 2. Выполните SQL из `supabase/schema.sql` в SQL Editor
 3. Скопируйте URL и ключи в `.env.local`
+4. В **Authentication → URL Configuration** добавьте redirect URLs:
+   - `https://skyforest.by/**`
+   - `https://www.skyforest.by/**`
+   - `https://skyforest.ai/**`
 
-## Настройка bePaid
+## Настройка bePaid (skyforest.by)
 
-1. Получите Shop ID и Secret Key в [личном кабинете bePaid](https://bepaid.by)
-2. Добавьте их в `.env.local`
-3. Настройте webhook URL: `https://skyforest.by/api/payment/webhook`
+1. Shop ID и Secret Key в [личном кабинете bePaid](https://bepaid.by)
+2. Webhook: `https://skyforest.by/api/payment/webhook`
+
+## Настройка Stripe (skyforest.ai)
+
+1. Создайте аккаунт Stripe для SAMPLIFY FZCO
+2. Добавьте в env деплоя `.ai`:
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+3. Webhook endpoint: `https://skyforest.ai/api/payment/stripe-webhook`
+4. Событие: `checkout.session.completed`
 
 ## Деплой на Vercel
 
-1. Push в Git-репозиторий
-2. Импортируйте в Vercel
-3. Добавьте переменные окружения
-4. Привяжите домен `skyforest.by`
+### skyforest.by
+
+```
+NEXT_PUBLIC_BRAND=skyforest   # или не задавать
+NEXT_PUBLIC_APP_URL=https://www.skyforest.by
+BEPAID_SHOP_ID=...
+BEPAID_SECRET_KEY=...
+# + Supabase, SMTP, CRON_SECRET
+```
+
+### skyforest.ai
+
+```
+NEXT_PUBLIC_BRAND=samplify
+NEXT_PUBLIC_APP_URL=https://skyforest.ai
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+SMTP_FROM=noreply@skyforest.ai
+# + те же Supabase keys, CRON_SECRET
+```
 
 ## Структура
 
 ```
 src/
-  app/
-    (marketing)/    - Лендинг и юридические страницы
-    (app)/          - Приложение (карта, оплата, аккаунт)
-    (auth)/         - Вход и регистрация
-    api/            - Weather proxy, payment webhooks
-  components/
-    marketing/      - Header, Hero, About, Subscription, Contacts, Footer
-    app/            - AppHeader, MapView
   lib/
-    supabase/       - Client и Server клиенты Supabase
-    payment.ts      - bePaid интеграция
-    utils.ts        - Утилиты (cn)
+    brand.ts           - конфиг бренда (.by / .ai)
+    payment.ts         - bePaid
+    stripe.ts          - Stripe Checkout
+    payment-credit.ts  - начисление токенов (общее)
+  app/api/payment/
+    checkout/          - создание сессии оплаты
+    webhook/           - bePaid webhook
+    stripe-webhook/    - Stripe webhook
+  components/legal/    - юридические тексты для .ai
 ```

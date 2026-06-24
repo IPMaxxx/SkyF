@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { verifyBePaidWebhook } from "@/lib/payment";
-import { TOKEN_PACKAGES, BULK_RATE } from "@/lib/tokens";
-
-const MAX_CUSTOM_TOKENS = 100000;
-
-function isValidTokenAmount(tokens: number): boolean {
-  if (TOKEN_PACKAGES.some((p) => p.tokens === tokens)) return true;
-  return Number.isInteger(tokens) && tokens >= 301 && tokens <= MAX_CUSTOM_TOKENS;
-}
-
-function getExpectedPriceCents(tokens: number): number {
-  const pkg = TOKEN_PACKAGES.find((p) => p.tokens === tokens);
-  if (pkg) return Math.round(pkg.price * 100);
-  return Math.round(tokens * BULK_RATE * 100);
-}
+import {
+  creditTokenPurchase,
+  isValidTokenAmount,
+} from "@/lib/payment-credit";
+import { BRAND } from "@/lib/brand";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-
   const authHeader = request.headers.get("authorization");
 
   if (!verifyBePaidWebhook(authHeader)) {
@@ -58,62 +47,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid token amount" }, { status: 400 });
   }
 
-  const paidCents = transaction.amount;
-  const expectedCents = getExpectedPriceCents(tokens);
-  if (typeof paidCents === "number" && paidCents < expectedCents) {
-    console.error(`Webhook: paid ${paidCents} < expected ${expectedCents} for ${tokens} tokens`);
-    return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
-  }
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  );
-
-  const { data: existingTx } = await supabase
-    .from("token_transactions")
-    .select("id")
-    .eq("payment_id", paymentId)
-    .maybeSingle();
-
-  if (existingTx) {
-    return NextResponse.json({ status: "already_processed" });
-  }
-
+  const paidCents =
+    typeof transaction.amount === "number" ? transaction.amount : null;
   const currency =
-    typeof transaction.currency === "string" ? transaction.currency : "BYN";
+    typeof transaction.currency === "string"
+      ? transaction.currency
+      : BRAND.currency;
 
-  const { data, error } = await supabase.rpc("add_tokens", {
-    p_user_id: userId,
-    p_amount: tokens,
-    p_type: "purchase",
-    p_description: `Покупка ${tokens} токенов`,
-    p_payment_id: paymentId,
-    p_payment_amount_cents:
-      typeof paidCents === "number" ? paidCents : null,
-    p_payment_currency: currency,
-    p_payment_tracking_id: trackingId,
-  });
-
-  if (error) {
-    console.error("Token add error:", error);
-    return NextResponse.json({ error: "Processing error" }, { status: 500 });
-  }
-
-  // Apply referral bonus: +10% to buyer, 10% to referrer
-  const { data: bonusResult, error: bonusError } = await supabase.rpc(
-    "apply_referral_purchase_bonus",
-    {
-      p_buyer_id: userId,
-      p_purchased_tokens: tokens,
-      p_payment_id: paymentId,
+  try {
+    const result = await creditTokenPurchase({
+      userId,
+      tokens,
+      paymentId,
+      paidMinorUnits: paidCents,
+      currency,
+      trackingId,
+    });
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Processing error";
+    if (message === "Amount mismatch") {
+      return NextResponse.json({ error: message }, { status: 400 });
     }
-  );
-
-  if (bonusError) {
-    console.error("Referral bonus error (non-fatal):", bonusError);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ status: "ok", result: data, referral_bonus: bonusResult });
 }

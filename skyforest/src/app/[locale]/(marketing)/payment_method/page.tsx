@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { BRAND, isSamplify } from "@/lib/brand";
+import { PaymentMethodSamplify } from "@/components/legal/PaymentMethodSamplify";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -8,9 +9,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = BRAND.url;
   const path = "/payment_method";
   return {
-    title: "Способы оплаты",
-    description:
-      "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
+    title: isSamplify ? "Payment methods" : "Способы оплаты",
+    description: isSamplify
+      ? "How to pay for SkyForest tokens — secure card payments via Stripe."
+      : "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
     alternates: {
       canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
       languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
@@ -19,6 +21,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function PaymentMethodPage() {
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
+          Payment methods
+        </h1>
+        <PaymentMethodSamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
       <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">Способы оплаты</h1>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BRAND } from "@/lib/brand";
+import { TOKEN_PACKAGES, BULK_RATE } from "@/lib/tokens";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -39,12 +40,11 @@ const FOREST_SEARCH_COST = [
   { radius: "20 км", cost: "20 токенов" },
 ];
 
-const TOKEN_PACKAGES = [
-  { pack: "10 токенов", price: "5 BYN", per: "0,50 BYN" },
-  { pack: "30 токенов", price: "12 BYN", per: "0,40 BYN" },
-  { pack: "100 токенов", price: "35 BYN", per: "0,35 BYN" },
-  { pack: "300 токенов", price: "90 BYN", per: "0,30 BYN" },
-];
+const INSTRUCTION_PACKAGES = TOKEN_PACKAGES.map((p) => ({
+  pack: `${p.tokens} ${BRAND.currency === "USD" ? "tokens" : "токенов"}`,
+  price: `${p.price} ${BRAND.currency}`,
+  per: `${(p.price / p.tokens).toFixed(2)} ${BRAND.currency}`,
+}));
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
@@ -623,7 +623,7 @@ export default function InstructionPage() {
                 </tr>
               </thead>
               <tbody>
-                {TOKEN_PACKAGES.map((p) => (
+                {INSTRUCTION_PACKAGES.map((p) => (
                   <tr key={p.pack} className="border-b border-border/50">
                     <td className="py-2 pr-6">{p.pack}</td>
                     <td className="py-2 pr-6">{p.price}</td>

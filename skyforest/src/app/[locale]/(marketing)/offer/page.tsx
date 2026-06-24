@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { BRAND, isSamplify } from "@/lib/brand";
+import { OfferSamplify } from "@/components/legal/OfferSamplify";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -8,9 +9,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = BRAND.url;
   const path = "/offer";
   return {
-    title: "Договор-оферта",
-    description:
-      "Публичный договор-оферта сервиса SkyForest.by — условия предоставления услуг по анализу и сравнению погодных данных.",
+    title: isSamplify ? "Terms of Service" : "Договор-оферта",
+    description: isSamplify
+      ? "Terms of Service for SkyForest — weather analysis and mushroom picking assistant."
+      : "Публичный договор-оферта сервиса SkyForest.by — условия предоставления услуг по анализу и сравнению погодных данных.",
     alternates: {
       canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
       languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
@@ -19,6 +21,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function OfferPage() {
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
+          Terms of Service
+        </h1>
+        <OfferSamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
       <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">Договор-оферта</h1>

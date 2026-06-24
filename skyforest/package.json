@@ -1,6 +1,6 @@
 {
   "name": "skyforest",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -27,6 +27,7 @@
     "react-leaflet": "^5.0.0",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7",
+    "stripe": "^22.2.3",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

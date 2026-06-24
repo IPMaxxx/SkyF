@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { BRAND, isSamplify } from "@/lib/brand";
+import { PrivacySamplify } from "@/components/legal/PrivacySamplify";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -8,9 +9,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = BRAND.url;
   const path = "/privacy";
   return {
-    title: "Политика конфиденциальности",
-    description:
-      "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
+    title: isSamplify ? "Privacy Policy" : "Политика конфиденциальности",
+    description: isSamplify
+      ? "SkyForest Privacy Policy — how we collect, use, and protect your personal data."
+      : "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
     alternates: {
       canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
       languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
@@ -19,6 +21,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function PrivacyPage() {
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
+          Privacy Policy
+        </h1>
+        <PrivacySamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
       <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">

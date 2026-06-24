@@ -161,7 +161,6 @@ const SAMPLIFY: Brand = {
       "UAE, Dubai, Dubai Digital Park, Dubai Silicon Oasis, Building A2, office 101",
   },
   contacts: {
-    // NOTE: confirm the support address for the .ai domain.
     email: "support@skyforest.ai",
   },
   social: [],

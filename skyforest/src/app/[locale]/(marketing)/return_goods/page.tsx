@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { BRAND, isSamplify } from "@/lib/brand";
+import { ReturnGoodsSamplify } from "@/components/legal/ReturnGoodsSamplify";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -8,9 +9,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = BRAND.url;
   const path = "/return_goods";
   return {
-    title: "Условия возврата средств",
-    description:
-      "Условия возврата средств за токены в сервисе SkyForest.by — порядок и сроки.",
+    title: isSamplify ? "Refund Policy" : "Условия возврата средств",
+    description: isSamplify
+      ? "SkyForest token refund policy — terms and processing times."
+      : "Условия возврата средств за токены в сервисе SkyForest.by — порядок и сроки.",
     alternates: {
       canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
       languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
@@ -19,6 +21,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function ReturnGoodsPage() {
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
+          Refund Policy
+        </h1>
+        <ReturnGoodsSamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
       <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">Условия возврата средств</h1>

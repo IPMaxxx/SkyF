@@ -14,19 +14,20 @@ import {
 } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import Link from "next/link";
-
-const METHODS = [
-  { id: "card", label: "Банковская карта", icon: CreditCard, placeholder: "Номер карты (XXXX XXXX XXXX XXXX)" },
-  { id: "erip", label: "ЕРИП / расчётный счёт", icon: Building2, placeholder: "Номер счёта / IBAN" },
-  { id: "phone", label: "Перевод по номеру телефона", icon: Wallet, placeholder: "+375 (XX) XXX-XX-XX" },
-  { id: "other", label: "Другой способ", icon: MessageSquare, placeholder: "Укажите способ и реквизиты" },
-] as const;
+import { useLocale } from "next-intl";
+import { BRAND } from "@/lib/brand";
+import { TOKEN_WITHDRAW_RATE } from "@/lib/tokens";
+import {
+  WITHDRAW_METHODS,
+  withdrawMethodLabel,
+  withdrawMethodPlaceholder,
+} from "@/lib/payment-display";
 
 const MIN_WITHDRAW = 100;
 const MIN_REMAINING = 50;
-const TOKEN_RATE_BYN = 0.3;
 
 export default function WithdrawPage() {
+  const locale = useLocale();
   const { realBalance, bonusBalance, refresh } = useTokens();
   const [amount, setAmount] = useState<number>(MIN_WITHDRAW);
   const [method, setMethod] = useState<string>("card");
@@ -38,7 +39,9 @@ export default function WithdrawPage() {
   const [success, setSuccess] = useState(false);
   const [withdrawn, setWithdrawn] = useState(0);
 
-  const currentMethod = METHODS.find((m) => m.id === method) ?? METHODS[0];
+  const currentMethod = WITHDRAW_METHODS.find((m) => m.id === method) ?? WITHDRAW_METHODS[0];
+  const currentMethodLabel = withdrawMethodLabel(currentMethod, locale);
+  const currentMethodPlaceholder = withdrawMethodPlaceholder(currentMethod, locale);
   const totalBalance = realBalance ?? 0;
   const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
 
@@ -73,7 +76,7 @@ export default function WithdrawPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          method: `${currentMethod.label}${fullName ? ` | ФИО: ${fullName}` : ""}`,
+          method: `${currentMethodLabel}${fullName ? ` | ${locale === "en" ? "Name" : "ФИО"}: ${fullName}` : ""}`,
           details: details.trim(),
           comment: comment.trim() || undefined,
         }),
@@ -106,7 +109,7 @@ export default function WithdrawPage() {
           <h1 className="mb-2 text-xl font-bold">Заявка отправлена</h1>
           <p className="mb-1 text-muted-foreground">
             Вы запросили вывод <strong className="text-amber-400">{withdrawn} токенов</strong>{" "}
-            (~{(withdrawn * TOKEN_RATE_BYN).toFixed(2)} BYN)
+            (~{(withdrawn * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})
           </p>
           <p className="mb-6 text-sm text-muted-foreground">
             Мы свяжемся с вами по email для уточнения деталей. Обычно обработка занимает 1–3 рабочих дня.
@@ -158,12 +161,12 @@ export default function WithdrawPage() {
               <Coins className="h-5 w-5" />
               {totalBalance} токенов
             </span>
-            <p className="text-xs text-muted-foreground">~{(totalBalance * TOKEN_RATE_BYN).toFixed(2)} BYN</p>
+            <p className="text-xs text-muted-foreground">~{(totalBalance * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</p>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>Минимальный остаток: {MIN_REMAINING} токенов</span>
-          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
+          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
         </div>
         {(bonusBalance ?? 0) > 0 && (
           <div className="mt-2 text-xs text-muted-foreground">
@@ -171,7 +174,7 @@ export default function WithdrawPage() {
           </div>
         )}
         <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
-          Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_RATE_BYN} BYN</strong>
+          Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
         </div>
       </div>
 
@@ -225,7 +228,7 @@ export default function WithdrawPage() {
             {amount >= MIN_WITHDRAW && (
               <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center text-sm">
                 <span className="text-muted-foreground">Сумма к выплате: </span>
-                <strong className="text-emerald-400">{(amount * TOKEN_RATE_BYN).toFixed(2)} BYN</strong>
+                <strong className="text-emerald-400">{(amount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</strong>
               </div>
             )}
           </div>
@@ -234,7 +237,7 @@ export default function WithdrawPage() {
           <div className="mb-5">
             <label className="mb-1.5 block text-sm font-medium">Способ вывода</label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {METHODS.map((m) => (
+              {WITHDRAW_METHODS.map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -246,7 +249,7 @@ export default function WithdrawPage() {
                   }`}
                 >
                   <m.icon className="h-4 w-4 flex-shrink-0" />
-                  {m.label}
+                  {withdrawMethodLabel(m, locale)}
                 </button>
               ))}
             </div>
@@ -271,7 +274,7 @@ export default function WithdrawPage() {
               type="text"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
-              placeholder={currentMethod.placeholder}
+              placeholder={currentMethodPlaceholder}
               className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -321,7 +324,7 @@ export default function WithdrawPage() {
             ) : (
               <ArrowDownToLine className="h-4 w-4" />
             )}
-            Запросить вывод {amount} токенов (~{(amount * TOKEN_RATE_BYN).toFixed(2)} BYN)
+            Запросить вывод {amount} токенов (~{(amount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})
           </button>
         </div>
       )}
