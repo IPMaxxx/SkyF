@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { BRAND } from "@/lib/brand";
-import { TOKEN_PACKAGES, BULK_RATE } from "@/lib/tokens";
+import { TOKEN_PACKAGES } from "@/lib/tokens";
+import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
+import { marketingPageMetadata } from "@/lib/marketingSeo";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = BRAND.url;
-  const path = "/instruction";
-  return {
-    title: "Инструкция — SkyForest",
-    description:
-      "Подробная инструкция по всем функциям SkyForest: создание локаций, запись грибных дней, проверка погоды, мониторинг, поиск леса, маркетплейс.",
-    alternates: {
-      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
-      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
-    },
-  };
+  const title =
+    locale === "en"
+      ? "User guide — SkyForest"
+      : "Инструкция по использованию SkyForest";
+  const description =
+    locale === "en"
+      ? "SkyForest user guide: locations, mushroom days, weather checks, monitoring, forest search, and marketplace."
+      : "Инструкция SkyForest: локации, грибные дни, погода, мониторинг, поиск леса и маркетплейс.";
+  return marketingPageMetadata({ title, description, path: "/instruction", locale });
 }
 
 const COST_TABLE = [
@@ -63,12 +64,24 @@ function Cost({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function InstructionPage() {
+export default async function InstructionPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "footer" });
+  const pageTitle =
+    locale === "en"
+      ? "SkyForest user guide"
+      : "Инструкция по использованию SkyForest";
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
-      <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
-        Инструкция по использованию SkyForest
-      </h1>
+      <MarketingPageHeader
+        locale={locale}
+        title={pageTitle}
+        breadcrumbs={[
+          { name: t("services"), path: "/services" },
+          { name: pageTitle },
+        ]}
+      />
 
       <div className="prose prose-sm max-w-none space-y-8 text-foreground">
         <p className="text-muted-foreground">

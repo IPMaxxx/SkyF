@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { RelatedArticles } from "@/components/marketing/RelatedArticles";
+import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
   title:
@@ -112,12 +113,8 @@ export default function GdeRastutGribyPage() {
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         {/* Back link */}
-        <Link
-          href="/blog"
-          className="mb-10 inline-flex items-center gap-1 text-sm text-white/50 transition-colors hover:text-emerald-400"
-        >
-          ← Блог
-        </Link>
+        <BlogArticleHeader title="Где растут грибы в&nbsp;России и&nbsp;Беларуси: полный гид
+          по&nbsp;видам и&nbsp;местам" />
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">

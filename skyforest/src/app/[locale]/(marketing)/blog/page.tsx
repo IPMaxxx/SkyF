@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import {
@@ -12,32 +13,24 @@ import {
   Sprout,
   ArrowRight,
 } from "lucide-react";
+import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
+import { marketingPageMetadata } from "@/lib/marketingSeo";
+import { BRAND } from "@/lib/brand";
 
-export const metadata: Metadata = {
-  title: "Блог о грибах — советы грибникам | Skyforest.by",
-  description:
-    "Полезные статьи для грибников: погода для грибов, когда идти в лес после дождя, в каком лесу искать грибы. Советы по тихой охоте в России и Беларуси.",
-  keywords: [
-    "грибы",
-    "грибники",
-    "тихая охота",
-    "погода для грибов",
-    "когда идти за грибами",
-    "грибные места",
-    "советы грибникам",
-    "SkyForest",
-    "skyforest.by",
-  ],
-  openGraph: {
-    title: "Блог о грибах — советы грибникам | Skyforest.by",
-    description:
-      "Полезные статьи для грибников: погода для грибов, когда идти в лес после дождя, в каком лесу искать грибы.",
-    url: "https://www.skyforest.by/blog",
-    siteName: "SkyForest",
-    type: "website",
-  },
-  alternates: { canonical: "https://www.skyforest.by/blog" },
-};
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const title =
+    locale === "en"
+      ? "Mushroom picking blog"
+      : "Блог о грибах — советы грибникам";
+  const description =
+    locale === "en"
+      ? "Articles for mushroom pickers: weather, timing, forest types, and mushroom identification tips."
+      : "Статьи для грибников: погода для грибов, когда идти в лес, где искать грибы и как определить вид.";
+  return marketingPageMetadata({ title, description, path: "/blog", locale });
+}
 
 const ARTICLES = [
   {
@@ -122,19 +115,25 @@ const ARTICLES = [
   },
 ] as const;
 
-export default function BlogPage() {
+export default async function BlogPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "header" });
+  const pageTitle = locale === "en" ? "Mushroom picking blog" : "Блог для грибников";
+  const pageLead =
+    locale === "en"
+      ? "Tips on weather, timing, forests, and mushroom identification"
+      : "Советы по тихой охоте: погода, места, сроки и признаки удачного сезона";
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
       <section className="relative px-4 pt-24 pb-16 sm:pt-28 sm:pb-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            Блог для грибников
-          </h1>
-          <p className="text-lg text-white/70 sm:text-xl">
-            Советы по тихой охоте: погода, места, сроки и признаки удачного
-            сезона
-          </p>
+        <div className="mx-auto max-w-4xl">
+          <MarketingPageHeader
+            locale={locale}
+            title={pageTitle}
+            description={pageLead}
+            breadcrumbs={[{ name: t("blog"), path: "/blog" }]}
+          />
         </div>
       </section>
 
@@ -191,16 +190,25 @@ export default function BlogPage() {
               SkyForest — ваш умный помощник для тихой охоты
             </h2>
             <p className="mb-8 text-white/70">
-              Анализируем погоду и подсказываем, когда условия идеальны для
-              сбора грибов. Регистрация бесплатна.
+              {locale === "en"
+                ? `${BRAND.name} analyzes weather and suggests the best time to pick mushrooms. Free registration.`
+                : "SkyForest анализирует погоду и подсказывает, когда условия идеальны для сбора грибов. Регистрация бесплатна."}
             </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-dark hover:shadow-xl"
-            >
-              Зарегистрироваться
-              <ArrowRight className="h-5 w-5" />
-            </Link>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-dark"
+              >
+                {locale === "en" ? "Sign up" : "Зарегистрироваться"}
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/services"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-6 py-4 text-base font-medium text-white transition-colors hover:bg-white/10"
+              >
+                {locale === "en" ? "Services" : "Услуги"}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

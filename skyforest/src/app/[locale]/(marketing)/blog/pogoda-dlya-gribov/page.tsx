@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { RelatedArticles } from "@/components/marketing/RelatedArticles";
+import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
   title: "Погода для грибов: при какой температуре и влажности растут грибы",
@@ -89,13 +90,8 @@ export default function PogodaDlyaGribovPage() {
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         {/* Back link */}
-        <Link
-          href="/blog"
-          className="mb-10 inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/80"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Блог
-        </Link>
+        <BlogArticleHeader title="Погода для грибов: при&nbsp;какой температуре и&nbsp;влажности растут
+          грибы" />
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">

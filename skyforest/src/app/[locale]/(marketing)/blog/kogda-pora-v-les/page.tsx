@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { RelatedArticles } from "@/components/marketing/RelatedArticles";
+import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
   title: "Когда пора в лес: 7 признаков, что грибы пошли",
@@ -143,12 +144,7 @@ export default function KogdaPoraVLesPage() {
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         {/* Back link */}
-        <Link
-          href="/blog"
-          className="mb-8 inline-block text-sm text-emerald-400 transition-colors hover:text-emerald-300"
-        >
-          ← Блог
-        </Link>
+        <BlogArticleHeader title="Когда пора в лес: 7&nbsp;признаков, что грибы пошли" />
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">

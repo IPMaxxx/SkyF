@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { HEADER_NAV } from "@/lib/siteNav";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,17 +18,13 @@ export function Header() {
   const loggedIn = useIsLoggedIn();
   const t = useTranslations("header");
 
-  const NAV_LINKS = useMemo<
-    { label: string; href: string; sectionId?: string }[]
-  >(
-    () => [
-      { label: t("home"), href: "/" },
-      { label: t("about"), href: "/#about", sectionId: "about" },
-      { label: t("mushroomBot"), href: "/#bot", sectionId: "bot" },
-      { label: t("tariffs"), href: "/#tariffs", sectionId: "tariffs" },
-      { label: t("blog"), href: "/blog" },
-      { label: t("faq"), href: "/#faq", sectionId: "faq" },
-    ],
+  const NAV_LINKS = useMemo(
+    () =>
+      HEADER_NAV.map((item) => ({
+        label: t(item.labelKey),
+        href: item.href,
+        sectionId: item.sectionId,
+      })),
     [t]
   );
 
@@ -97,7 +94,7 @@ export function Header() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label={t("menu")}>
+        <nav className="hidden items-center gap-0.5 lg:flex xl:gap-1" aria-label={t("menu")}>
           {NAV_LINKS.map((link) => {
             const active = isActive(link);
             return (
@@ -106,7 +103,7 @@ export function Header() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light xl:px-4",
                   active
                     ? "bg-white/15 text-white"
                     : "text-white/80 hover:text-white hover:bg-white/10"
@@ -127,7 +124,7 @@ export function Header() {
               className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
             >
               <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-              {t("cabinet")}
+              <span className="hidden sm:inline">{t("cabinet")}</span>
             </Link>
           ) : (
             <>
@@ -150,7 +147,7 @@ export function Header() {
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className={cn(
-              "rounded-lg p-2 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+              "rounded-lg p-2 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
               "text-white"
             )}
             aria-label={t("menu")}
@@ -165,13 +162,13 @@ export function Header() {
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 top-16 z-40 bg-black/40 md:hidden"
+            className="fixed inset-0 top-16 z-40 bg-black/40 lg:hidden"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
           <div
             id="marketing-mobile-nav"
-            className="relative z-50 border-t border-white/10 bg-black/90 backdrop-blur-xl px-4 pb-4 md:hidden"
+            className="relative z-50 border-t border-white/10 bg-black/90 backdrop-blur-xl px-4 pb-4 lg:hidden"
           >
             <nav className="flex flex-col gap-1 pt-2" aria-label={t("menu")}>
               {NAV_LINKS.map((link) => {
