@@ -16,6 +16,8 @@ import {
   Sparkles,
   ArrowRight,
   Info,
+  BookOpen,
+  ChevronDown,
 } from "lucide-react";
 import { TourAdminPanel } from "@/components/app/TourAdminPanel";
 
@@ -67,10 +69,12 @@ export default function MushroomToursPage() {
       </div>
       <p className="mb-4 max-w-3xl text-sm text-muted-foreground">{t("subtitle")}</p>
 
-      <div className="mb-6 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
+      <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
         <span>{t("cashHint")}</span>
       </div>
+
+      <AuctionRules t={t} />
 
       {isAdmin && <TourAdminPanel onChange={load} />}
 
@@ -168,6 +172,31 @@ export default function MushroomToursPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function AuctionRules({ t }: { t: ReturnType<typeof useTranslations> }) {
+  const items = t.raw("rulesItems") as string[];
+  return (
+    <details className="group mb-6 rounded-2xl border border-border bg-card/40">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-primary" />
+          {t("rulesTitle")}
+        </span>
+        <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <ol className="space-y-2.5 border-t border-border px-4 pb-4 pt-3 text-sm text-muted-foreground">
+        {items.map((item, i) => (
+          <li key={i} className="flex gap-2.5">
+            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary-light">
+              {i + 1}
+            </span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

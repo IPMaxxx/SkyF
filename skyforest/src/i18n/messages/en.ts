@@ -200,6 +200,16 @@ export default {
     loading: "Loading tours...",
     loadError: "Failed to load tours",
     empty: "No tours planned yet. Check back later.",
+    rulesTitle: "How the auction works — rules",
+    rulesItems: [
+      "The auction opens at the scheduled date and time. Before the start you see a countdown and bidding is disabled.",
+      "Each bid costs 1 token (charged from your balance). The tour itself is never charged online — payment is in cash on site.",
+      "A bid must be at least the minimum (start price + step). You can raise your offer as many times as you like — every new bid costs 1 token again.",
+      "Several spots are auctioned. Participants with the highest offers get in, from the highest down.",
+      "All participants are anonymous: you only see participant numbers and bid amounts, no names or contacts.",
+      "Anti-sniping: if a bid lands in the final seconds, the auction is extended a little so others can respond.",
+      "After it ends, winners confirm within an allotted window. If someone declines or doesn't confirm, the spot automatically goes to the next person on the waitlist.",
+    ],
     backToList: "Back to tours",
     cashHint:
       "The tour is paid in cash on site. Only bid tokens are charged online (1 token per bid).",
