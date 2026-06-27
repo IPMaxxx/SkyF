@@ -14,16 +14,19 @@ import {
   ArrowDownToLine,
   ShoppingCart,
   CheckCircle,
-  Wallet,
-  CreditCard,
-  Building2,
-  MessageSquare,
   AlertCircle,
 } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
-import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel, BULK_RATE } from "@/lib/tokens";
+import { TOKEN_PACKAGES, TOKEN_COSTS, getTokenCostLabel, BULK_RATE, TOKEN_WITHDRAW_RATE } from "@/lib/tokens";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { BRAND } from "@/lib/brand";
+import {
+  ACCEPTED_CARDS,
+  WITHDRAW_METHODS,
+  withdrawMethodLabel,
+  withdrawMethodPlaceholder,
+} from "@/lib/payment-display";
+import { useLocale } from "next-intl";
 
 export default function PaymentPage() {
   return (
@@ -39,20 +42,13 @@ export default function PaymentPage() {
   );
 }
 
-const WITHDRAW_METHODS = [
-  { id: "card", label: "Банковская карта", icon: CreditCard, placeholder: "Номер карты (XXXX XXXX XXXX XXXX)" },
-  { id: "erip", label: "ЕРИП / расчётный счёт", icon: Building2, placeholder: "Номер счёта / IBAN" },
-  { id: "phone", label: "Перевод по номеру телефона", icon: Wallet, placeholder: "+375 (XX) XXX-XX-XX" },
-  { id: "other", label: "Другой способ", icon: MessageSquare, placeholder: "Укажите способ и реквизиты" },
-] as const;
-
 const MIN_WITHDRAW = 100;
 const MIN_REMAINING = 50;
-const TOKEN_RATE_BYN = 0.3;
 
 type Tab = "buy" | "withdraw";
 
 function PaymentContent() {
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const { balance, loading: balanceLoading, refresh } = useTokens();
   const [tab, setTab] = useState<Tab>(
@@ -164,6 +160,8 @@ function PaymentContent() {
 
   // --- Withdraw logic ---
   const currentMethod = WITHDRAW_METHODS.find((m) => m.id === wMethod) ?? WITHDRAW_METHODS[0];
+  const currentMethodLabel = withdrawMethodLabel(currentMethod, locale);
+  const currentMethodPlaceholder = withdrawMethodPlaceholder(currentMethod, locale);
   const totalBalance = balance ?? 0;
   const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
 
@@ -196,7 +194,7 @@ function PaymentContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: wAmount,
-          method: `${currentMethod.label}${wFullName ? ` | ФИО: ${wFullName}` : ""}`,
+          method: `${currentMethodLabel}${wFullName ? ` | ${locale === "en" ? "Name" : "ФИО"}: ${wFullName}` : ""}`,
           details: wDetails.trim(),
           comment: wComment.trim() || undefined,
         }),
@@ -355,10 +353,10 @@ function PaymentContent() {
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl font-bold text-primary-light">{pack.price}</span>
-                    <span className="text-sm text-muted-foreground">BYN</span>
+                    <span className="text-sm text-muted-foreground">{BRAND.currency}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {(pack.price / pack.tokens).toFixed(2)} BYN за токен
+                    {(pack.price / pack.tokens).toFixed(2)} {BRAND.currency} {locale === "en" ? "per token" : "за токен"}
                   </p>
                   {selectedPack === pack.id && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -385,7 +383,7 @@ function PaymentContent() {
                 <span className="text-xs text-muted-foreground">от 301 токена</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Лучший курс: {BULK_RATE} BYN за токен
+                {locale === "en" ? "Best rate" : "Лучший курс"}: {BULK_RATE} {BRAND.currency} {locale === "en" ? "per token" : "за токен"}
               </p>
               {isCustom && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -411,7 +409,7 @@ function PaymentContent() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Итого:</span>
-                  <span className="font-bold text-primary-light">{purchasePrice.toFixed(2)} BYN</span>
+                  <span className="font-bold text-primary-light">{purchasePrice.toFixed(2)} {BRAND.currency}</span>
                 </div>
                 {hasReferrer && (
                   <div className="mt-1 flex items-center justify-between text-xs">
@@ -474,10 +472,10 @@ function PaymentContent() {
               <Coins className="h-5 w-5" />
             )}
             <span className="sm:hidden">
-              {purchaseTokens}{hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} за {purchasePrice.toFixed(2)} BYN
+              {purchaseTokens}{hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} {locale === "en" ? "for" : "за"} {purchasePrice.toFixed(2)} {BRAND.currency}
             </span>
             <span className="hidden sm:inline">
-              Купить {purchaseTokens}{hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} токенов за {purchasePrice.toFixed(2)} BYN
+              {locale === "en" ? "Buy" : "Купить"} {purchaseTokens}{hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""} {locale === "en" ? "tokens for" : "токенов за"} {purchasePrice.toFixed(2)} {BRAND.currency}
             </span>
           </button>
 
@@ -488,20 +486,19 @@ function PaymentContent() {
                 <span className="text-xs font-medium">Безопасная оплата</span>
               </div>
               <div className="flex gap-2">
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                  Visa
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                  MasterCard
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium">
-                  Белкарт
-                </div>
+                {ACCEPTED_CARDS.map((card) => (
+                  <div
+                    key={card}
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium"
+                  >
+                    {card}
+                  </div>
+                ))}
               </div>
             </div>
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Оплата через bePaid — сертифицированный провайдер PCI DSS Level 1.
+                {locale === "en" ? "Payments via" : "Оплата через"} {BRAND.paymentProviderName} — {locale === "en" ? "PCI DSS Level 1 certified provider." : "сертифицированный провайдер PCI DSS Level 1."}
               </p>
               <p className="mt-1 text-xs text-muted-foreground/70">
                 Данные вашей карты защищены и не хранятся на наших серверах.
@@ -536,7 +533,7 @@ function PaymentContent() {
               <h2 className="mb-2 text-xl font-bold">Заявка отправлена</h2>
               <p className="mb-1 text-muted-foreground">
                 Вы запросили вывод <strong className="text-amber-400">{wWithdrawn} токенов</strong>{" "}
-                (~{(wWithdrawn * TOKEN_RATE_BYN).toFixed(2)} BYN)
+                (~{(wWithdrawn * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})
               </p>
               <p className="mb-6 text-sm text-muted-foreground">
                 Мы свяжемся с вами по email для уточнения деталей. Обычно обработка занимает 1–3 рабочих дня.
@@ -574,11 +571,11 @@ function PaymentContent() {
                       <Coins className="h-5 w-5" />
                       {maxAmount} токенов
                     </span>
-                    <p className="text-xs text-muted-foreground">~{(maxAmount * TOKEN_RATE_BYN).toFixed(2)} BYN</p>
+                    <p className="text-xs text-muted-foreground">~{(maxAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</p>
                   </div>
                 </div>
                 <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
-                  Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_RATE_BYN} BYN</strong>
+                  {locale === "en" ? "Withdrawal rate" : "Курс вывода"}: <strong className="text-foreground">1 {locale === "en" ? "token" : "токен"} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
                   <span className="mx-2 text-white/20">·</span>
                   Минимальный остаток: {MIN_REMAINING} токенов
                 </div>
@@ -634,7 +631,7 @@ function PaymentContent() {
                     {wAmount >= MIN_WITHDRAW && (
                       <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center text-sm">
                         <span className="text-muted-foreground">Сумма к выплате: </span>
-                        <strong className="text-emerald-400">{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN</strong>
+                        <strong className="text-emerald-400">{(wAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</strong>
                       </div>
                     )}
                   </div>
@@ -655,7 +652,7 @@ function PaymentContent() {
                           }`}
                         >
                           <m.icon className="h-4 w-4 flex-shrink-0" />
-                          {m.label}
+                          {withdrawMethodLabel(m, locale)}
                         </button>
                       ))}
                     </div>
@@ -680,7 +677,7 @@ function PaymentContent() {
                       type="text"
                       value={wDetails}
                       onChange={(e) => setWDetails(e.target.value)}
-                      placeholder={currentMethod.placeholder}
+                      placeholder={currentMethodPlaceholder}
                       className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                   </div>
@@ -730,8 +727,8 @@ function PaymentContent() {
                     ) : (
                       <ArrowDownToLine className="h-4 w-4" />
                     )}
-                    <span className="sm:hidden">Вывод {wAmount} ток. (~{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
-                    <span className="hidden sm:inline">Запросить вывод {wAmount} токенов (~{(wAmount * TOKEN_RATE_BYN).toFixed(2)} BYN)</span>
+                    <span className="sm:hidden">{locale === "en" ? "Withdraw" : "Вывод"} {wAmount} {locale === "en" ? "tok." : "ток."} (~{(wAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
+                    <span className="hidden sm:inline">{locale === "en" ? "Request withdrawal of" : "Запросить вывод"} {wAmount} {locale === "en" ? "tokens" : "токенов"} (~{(wAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
                   </button>
                 </div>
               )}

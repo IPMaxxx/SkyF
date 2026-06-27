@@ -9,6 +9,7 @@ interface PaymentRequest {
   successUrl: string;
   failUrl: string;
   notificationUrl: string;
+  language?: string;
 }
 
 interface CheckoutResponse {
@@ -40,7 +41,7 @@ export async function createBePaidCheckout(
         decline_url: params.failUrl,
         fail_url: params.failUrl,
         notification_url: params.notificationUrl,
-        language: "ru",
+        language: params.language || "ru",
         customer_fields: {
           visible: ["email"],
           read_only: ["email"],

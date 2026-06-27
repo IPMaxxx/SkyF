@@ -1,29 +1,52 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { getTranslations } from "next-intl/server";
+import { BRAND, isSamplify } from "@/lib/brand";
+import { PrivacySamplify } from "@/components/legal/PrivacySamplify";
+import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
+import { marketingPageMetadata } from "@/lib/marketingSeo";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = BRAND.url;
-  const path = "/privacy";
-  return {
-    title: "Политика конфиденциальности",
-    description:
-      "Политика конфиденциальности SkyForest.by — как мы обрабатываем и защищаем ваши персональные данные.",
-    alternates: {
-      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
-      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
-    },
-  };
+  const title = isSamplify ? "Privacy Policy" : "Политика конфиденциальности";
+  const description = isSamplify
+    ? "SkyForest Privacy Policy — how we collect, use, and protect your personal data."
+    : "Политика конфиденциальности SkyForest — обработка и защита персональных данных пользователей.";
+  return marketingPageMetadata({ title, description, path: "/privacy", locale });
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "footer" });
+  const pageTitle = isSamplify ? "Privacy Policy" : "Политика конфиденциальности";
+
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <MarketingPageHeader
+          locale={locale}
+          title={pageTitle}
+          breadcrumbs={[
+            { name: t("legalTitle"), path: "/privacy" },
+            { name: pageTitle },
+          ]}
+        />
+        <PrivacySamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
-      <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">
-        Политика конфиденциальности
-      </h1>
+      <MarketingPageHeader
+        locale={locale}
+        title={pageTitle}
+        breadcrumbs={[
+          { name: t("legalTitle"), path: "/privacy" },
+          { name: pageTitle },
+        ]}
+      />
 
       <div className="prose prose-sm max-w-none space-y-6 text-foreground">
         <p className="text-muted-foreground">

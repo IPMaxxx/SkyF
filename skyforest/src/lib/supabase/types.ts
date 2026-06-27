@@ -3,6 +3,8 @@ export interface Profile {
   email: string | null;
   full_name: string | null;
   phone: string | null;
+  /** Social / messenger contact (Telegram / Instagram / WhatsApp). Admin-visible only. */
+  contact_link: string | null;
   account_type: "user" | "admin";
   created_at: string;
   updated_at: string;
@@ -147,4 +149,85 @@ export function getSeasonLabel(season: Season): string {
     case "summer": return "Лето";
     case "autumn": return "Осень";
   }
+}
+
+export type TourStatus = "draft" | "published" | "finished" | "cancelled";
+
+export type TourParticipantStatus =
+  | "bidding"
+  | "winner"
+  | "waitlist"
+  | "confirmed"
+  | "declined"
+  | "no_show"
+  | "expired";
+
+export interface MushroomTour {
+  id: string;
+  title: string;
+  description: string | null;
+  departure_lat: number | null;
+  departure_lng: number | null;
+  departure_desc: string | null;
+  mushroom_species: string | null;
+  tour_date: string | null;
+  departure_time: string | null;
+  spots: number;
+  auction_start_at: string;
+  auction_end_at: string;
+  start_price: number;
+  bid_step: number;
+  currency: string;
+  anti_snipe_seconds: number;
+  confirm_window_hours: number;
+  status: TourStatus;
+  finished_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TourBid {
+  id: string;
+  tour_id: string;
+  user_id: string;
+  amount: number;
+  created_at: string;
+}
+
+export interface TourParticipant {
+  tour_id: string;
+  user_id: string;
+  participant_no: number;
+  best_amount: number;
+  best_amount_at: string | null;
+  bids_count: number;
+  tokens_spent: number;
+  rank: number | null;
+  status: TourParticipantStatus;
+  confirm_deadline: string | null;
+  confirmed_at: string | null;
+  first_bid_at: string | null;
+  updated_at: string;
+}
+
+/** Anonymized leaderboard row returned by get_tour_leaderboard RPC */
+export interface TourLeaderboardRow {
+  participant_no: number;
+  best_amount: number;
+  status: TourParticipantStatus;
+  is_me: boolean;
+  position: number;
+}
+
+/** Caller's own participation summary from get_tour_leaderboard RPC */
+export interface TourMyParticipation {
+  participant_no: number;
+  best_amount: number;
+  bids_count: number;
+  tokens_spent: number;
+  status: TourParticipantStatus;
+  rank: number | null;
+  confirm_deadline: string | null;
+  confirmed_at: string | null;
 }

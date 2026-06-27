@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { InstallAppBadges } from "@/components/pwa/InstallAppBadges";
 import { BRAND } from "@/lib/brand";
+import { FOOTER_LEGAL_LINKS, FOOTER_SERVICE_LINKS } from "@/lib/siteNav";
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   Instagram: (
@@ -42,22 +43,16 @@ export function Footer() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const NAV_LINKS = [
-    { label: t("about"), href: "/#about" },
-    { label: t("mushroomBot"), href: "/#bot" },
-    { label: t("tariffs"), href: "/#tariffs" },
-    { label: t("blog"), href: "/blog" },
-    { label: t("faq"), href: "/#faq" },
-    { label: t("legacy"), href: "https://app.skyforest.by", external: true },
-  ];
+  const NAV_LINKS = FOOTER_SERVICE_LINKS.map((link) => ({
+    label: t(link.labelKey),
+    href: link.href,
+    external: link.external,
+  }));
 
-  const LEGAL_LINKS = [
-    { label: t("offer"), href: "/offer" },
-    { label: t("privacy"), href: "/privacy" },
-    { label: t("paymentMethods"), href: "/payment_method" },
-    { label: t("returns"), href: "/return_goods" },
-    { label: t("instruction"), href: "/instruction" },
-  ];
+  const LEGAL_LINKS = FOOTER_LEGAL_LINKS.map((link) => ({
+    label: t(link.labelKey),
+    href: link.href,
+  }));
 
   const CONTACTS = [
     {
@@ -183,6 +178,14 @@ export function Footer() {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="/contacts"
+                  className="text-sm text-primary-light transition-colors hover:underline"
+                >
+                  {t("contacts")} →
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -212,7 +215,12 @@ export function Footer() {
               <p className="mb-1 text-sm font-semibold text-white/70">
                 {t("companyAddressTitle")}
               </p>
-              <p className="text-sm text-white/60">{BRAND.company.address}</p>
+              <Link
+                href="/contacts#address"
+                className="text-sm text-white/60 transition-colors hover:text-primary-light"
+              >
+                {BRAND.company.address}
+              </Link>
             </div>
           </div>
 

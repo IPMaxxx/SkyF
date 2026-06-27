@@ -4,6 +4,13 @@ export default {
   subtitle:
     "Управляйте профилем, паролем и отслеживайте историю операций с токенами.",
   profile: "Профиль",
+  contactLink: "Контакт для связи",
+  contactLinkHint:
+    "Telegram, Instagram или WhatsApp — чтобы организатор тура мог связаться с вами. Виден только администрации.",
+  contactLinkPlaceholder: "@username, ссылка или телефон",
+  contactLinkEmpty: "Не указан",
+  contactLinkSaved: "Контакт сохранён",
+  contactLinkError: "Не удалось сохранить контакт",
   changePassword: "Изменить пароль",
   twoFactor: "Двухфакторная аутентификация",
   tokens: "Токены",

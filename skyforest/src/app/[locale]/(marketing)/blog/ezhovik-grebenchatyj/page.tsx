@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
+import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
   title:
@@ -125,12 +126,7 @@ export default function EzhovikGrebenchatyjPage() {
       />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-        <Link
-          href="/blog"
-          className="mb-10 inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/80"
-        >
-          ← Блог
-        </Link>
+        <BlogArticleHeader title="Ежовик гребенчатый: гриб для&nbsp;мозга&nbsp;— что&nbsp;говорит наука" />
 
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
           Ежовик гребенчатый: гриб для&nbsp;мозга&nbsp;— что&nbsp;говорит наука

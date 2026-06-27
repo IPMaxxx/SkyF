@@ -84,6 +84,37 @@ function generateGridPoints(
   return points;
 }
 
+// Равномерное распределение N точек внутри круга (спираль Фогеля /
+// «подсолнух»): площадь на точку постоянна, без скоплений у центра.
+function generateEvenPoints(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  count: number
+): { lat: number; lng: number }[] {
+  const points: { lat: number; lng: number }[] = [];
+  const golden = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.39996 рад
+  const cosLat = Math.cos((lat * Math.PI) / 180) || 1;
+  for (let i = 0; i < count; i++) {
+    const r = radiusKm * Math.sqrt((i + 0.5) / count); // равная площадь
+    const theta = i * golden;
+    const dxKm = r * Math.cos(theta); // на восток
+    const dyKm = r * Math.sin(theta); // на север
+    points.push({
+      lat: lat + dyKm / 111.32,
+      lng: lng + dxKm / (111.32 * cosLat),
+    });
+  }
+  return points;
+}
+
+// Диаметр «ячейки» для отрисовки кругов при равномерном распределении:
+// эквивалентный радиус покрытия r = R/√N, диаметр = 2R/√N.
+function evenCellStep(radiusKm: number, count: number): number {
+  if (count <= 0) return radiusKm;
+  return Math.max(1, (2 * radiusKm) / Math.sqrt(count));
+}
+
 function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -137,14 +168,26 @@ export default function WeatherPage() {
   const [loading, setLoading] = useState(false);
   const [pageDataLoaded, setPageDataLoaded] = useState(false);
   const [error, setError] = useState("");
+  const [weatherSource, setWeatherSource] = useState<"open-meteo" | "visual-crossing">("open-meteo");
   const { balance, spend } = useTokens();
-  const [savedList, setSavedList] = useState<{ id: string; check_date: string; location: unknown; created_at: string }[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sf_weather_source");
+    if (saved === "open-meteo" || saved === "visual-crossing") {
+      setWeatherSource(saved);
+    }
+  }, []);
+  const [savedList, setSavedList] = useState<{ id: string; check_date: string; location: unknown; created_at: string; source?: string }[]>([]);
 
   // --- Rain map state ---
   const [centerLat, setCenterLat] = useState<number | null>(null);
   const [centerLng, setCenterLng] = useState<number | null>(null);
   const [radius, setRadius] = useState(30);
   const [step, setStep] = useState(5);
+  // Целевое число точек: 0 = режим шага, >0 = равномерно распределить N точек.
+  const [pointTarget, setPointTarget] = useState(0);
+  // Шаг для отрисовки кругов (км): для режима «точек» вычисляется автоматически.
+  const [renderStep, setRenderStep] = useState(5);
   const [days, setDays] = useState(14);
   const [rainLoading, setRainLoading] = useState(false);
   const [gridData, setGridData] = useState<GridPoint[]>([]);
@@ -167,7 +210,7 @@ export default function WeatherPage() {
       if (!user) { setPageDataLoaded(true); return; }
 
       const [savedRes, lastRes, rainRes] = await Promise.all([
-        supabase.from("saved_weather").select("id, check_date, created_at, location:locations(name)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+        supabase.from("saved_weather").select("id, check_date, created_at, source, location:locations(name)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
         supabase.from("saved_weather").select("location_id, check_date, weather_data").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
         supabase.from("saved_rain_maps").select("id, center_lat, center_lng, radius_km, step_km, days, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
       ]);
@@ -222,7 +265,7 @@ export default function WeatherPage() {
 
     try {
       const res = await fetch(
-        `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${date}&days=14`
+        `/api/weather?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&date=${date}&days=14&source=${weatherSource}`
       );
       const data = await res.json();
 
@@ -238,7 +281,8 @@ export default function WeatherPage() {
             location_id: selectedId,
             check_date: date,
             weather_data: data.days,
-          }).select("id, check_date, created_at").single();
+            source: data.source ?? weatherSource,
+          }).select("id, check_date, created_at, source").single();
           if (saved) {
             setSavedList((prev) => [{ ...saved, location: { name: selectedLocation!.name } }, ...prev].slice(0, 10));
           }
@@ -268,10 +312,22 @@ export default function WeatherPage() {
   };
 
   // --- Rain map handlers ---
-  const pointCount = useMemo(() => {
-    if (centerLat === null || centerLng === null) return 0;
-    return generateGridPoints(centerLat, centerLng, radius, step).length;
-  }, [centerLat, centerLng, radius, step]);
+  const useCount = pointTarget >= 1;
+
+  const gridPoints = useMemo(() => {
+    if (centerLat === null || centerLng === null) return [];
+    if (useCount) {
+      return generateEvenPoints(
+        centerLat,
+        centerLng,
+        radius,
+        Math.max(1, Math.min(pointTarget, 1000))
+      );
+    }
+    return generateGridPoints(centerLat, centerLng, radius, step);
+  }, [centerLat, centerLng, radius, step, useCount, pointTarget]);
+
+  const pointCount = gridPoints.length;
 
   const batchCount = Math.ceil(pointCount / 50);
   const tokenCost = Math.max(batchCount, pointCount > 0 ? 1 : 0) * TOKEN_COSTS.rain_map_per_batch;
@@ -298,7 +354,9 @@ export default function WeatherPage() {
   const handleConfirmGenerate = async () => {
     setShowConfirm(false);
     if (centerLat === null || centerLng === null) return;
-    const points = generateGridPoints(centerLat, centerLng, radius, step);
+    const points = gridPoints;
+    const effStep = useCount ? evenCellStep(radius, points.length) : step;
+    setRenderStep(Math.round(effStep * 10) / 10);
 
     const spendResult = await spend(
       "rain_map_per_batch",
@@ -335,7 +393,7 @@ export default function WeatherPage() {
             center_lat: centerLat,
             center_lng: centerLng,
             radius_km: radius,
-            step_km: step,
+            step_km: Math.max(1, Math.round(effStep)),
             days,
             grid_data: results,
           }).select("id, center_lat, center_lng, radius_km, step_km, days, created_at").single();
@@ -359,6 +417,7 @@ export default function WeatherPage() {
       setCenterLng(data.center_lng);
       setRadius(data.radius_km);
       setStep(data.step_km);
+      setRenderStep(data.step_km);
       setDays(data.days);
       setGridData(data.grid_data);
     }
@@ -560,6 +619,33 @@ export default function WeatherPage() {
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">{t("endDateHint")}</p>
               </div>
+
+              <div>
+                <label htmlFor="weather-source" className="mb-1.5 block text-sm font-medium">
+                  {t("sourceLabel")}
+                </label>
+                <div className="relative">
+                  <select
+                    id="weather-source"
+                    value={weatherSource}
+                    onChange={(e) => {
+                      const v = e.target.value === "visual-crossing" ? "visual-crossing" : "open-meteo";
+                      setWeatherSource(v);
+                      localStorage.setItem("sf_weather_source", v);
+                    }}
+                    className="w-full appearance-none rounded-xl border border-border bg-white px-4 py-3 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="open-meteo">{t("sourceOpenMeteo")}</option>
+                    <option value="visual-crossing">{t("sourceVisualCrossing")}</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">{t("sourceHint")}</p>
+              </div>
             </div>
 
             {error && (
@@ -702,6 +788,8 @@ export default function WeatherPage() {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
+                          {" · "}
+                          {s.source === "visual-crossing" ? "Visual Crossing" : "Open-Meteo"}
                         </p>
                       </div>
                     </button>
@@ -727,7 +815,7 @@ export default function WeatherPage() {
           <div className="mb-3 glass rounded-2xl px-3 sm:px-4 py-3">
             <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
               {/* Inputs */}
-              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
                 <div>
                   <label htmlFor="radius" className="mb-1 block text-[10px] sm:hidden font-medium text-muted-foreground">
                     {t("radius")}
@@ -761,8 +849,29 @@ export default function WeatherPage() {
                       min={1}
                       max={50}
                       value={step}
+                      disabled={useCount}
                       onChange={(e) => setStep(parseInt(e.target.value) || 5)}
-                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
+                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary disabled:opacity-40"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="point-target" className="mb-1 block text-[10px] sm:hidden font-medium text-muted-foreground">
+                    {t("pointsField")}
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="point-target" className="hidden sm:block text-xs font-medium text-muted-foreground">
+                      {t("pointsField")}
+                    </label>
+                    <input
+                      id="point-target"
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={pointTarget || ""}
+                      placeholder={t("pointsAuto")}
+                      onChange={(e) => setPointTarget(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary placeholder:text-muted-foreground/50"
                     />
                   </div>
                 </div>
@@ -935,7 +1044,7 @@ export default function WeatherPage() {
               centerLat={centerLat}
               centerLng={centerLng}
               radius={radius}
-              step={step}
+              step={renderStep}
               gridData={gridData}
               onCenterSelect={(lat, lng) => {
                 if (gridData.length > 0) return;

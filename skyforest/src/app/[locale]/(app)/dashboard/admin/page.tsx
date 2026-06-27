@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { BRAND } from "@/lib/brand";
 import { toast } from "sonner";
 import { UserName } from "@/components/app/UserName";
 import dynamic from "next/dynamic";
@@ -505,7 +506,7 @@ const TABLES: TableConfig[] = [
       },
       {
         key: "payment_id",
-        label: "ID платежа (bePaid)",
+        label: `ID платежа (${BRAND.paymentProviderName})`,
         render: (_v, row) => {
           const id = row.payment_id as string | null;
           if (!id) return <span className="text-xs text-muted-foreground">—</span>;

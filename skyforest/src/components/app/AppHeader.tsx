@@ -16,6 +16,7 @@ import {
   Trees,
   GitCompareArrows,
   CloudSun,
+  Ticket,
   Shield,
   MessageCircle,
   AlertTriangle,
@@ -73,6 +74,11 @@ export function AppHeader() {
         href: "/dashboard/marketplace",
         label: t("marketplace"),
         icon: Store,
+      },
+      {
+        href: "/dashboard/mushroom-tours",
+        label: t("mushroomTours"),
+        icon: Ticket,
       },
     ],
     [t]

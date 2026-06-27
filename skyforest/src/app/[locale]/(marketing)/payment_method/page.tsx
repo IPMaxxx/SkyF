@@ -1,27 +1,52 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
+import { getTranslations } from "next-intl/server";
+import { isSamplify, BRAND } from "@/lib/brand";
+import { PaymentMethodSamplify } from "@/components/legal/PaymentMethodSamplify";
+import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
+import { marketingPageMetadata } from "@/lib/marketingSeo";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const base = BRAND.url;
-  const path = "/payment_method";
-  return {
-    title: "Способы оплаты",
-    description:
-      "Способы оплаты токенов в Skyforest.by — банковские карты, ЕРИП и другие варианты. Безопасные платежи через bePaid.",
-    alternates: {
-      canonical: locale === "en" ? `${base}/en${path}` : `${base}${path}`,
-      languages: { ru: `${base}${path}`, en: `${base}/en${path}` },
-    },
-  };
+  const title = isSamplify ? "Payment methods" : "Способы оплаты";
+  const description = isSamplify
+    ? "How to pay for SkyForest tokens — secure card payments via Stripe."
+    : "Способы оплаты токенов SkyForest — банковские карты, ЕРИП. Безопасные платежи через bePaid.";
+  return marketingPageMetadata({ title, description, path: "/payment_method", locale });
 }
 
-export default function PaymentMethodPage() {
+export default async function PaymentMethodPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "footer" });
+  const pageTitle = isSamplify ? "Payment methods" : "Способы оплаты";
+
+  if (isSamplify) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
+        <MarketingPageHeader
+          locale={locale}
+          title={pageTitle}
+          breadcrumbs={[
+            { name: t("legalTitle"), path: "/payment_method" },
+            { name: pageTitle },
+          ]}
+        />
+        <PaymentMethodSamplify />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 sm:pb-20 pt-24 sm:pt-28 sm:px-6 lg:px-8">
-      <h1 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold">Способы оплаты</h1>
+      <MarketingPageHeader
+        locale={locale}
+        title={pageTitle}
+        breadcrumbs={[
+          { name: t("legalTitle"), path: "/payment_method" },
+          { name: pageTitle },
+        ]}
+      />
 
       <div className="prose prose-sm max-w-none space-y-8 text-foreground">
         <section>
@@ -102,14 +127,22 @@ export default function PaymentMethodPage() {
           <p>
             Возврат денежных средств производится на карту, с которой была
             произведена оплата. Срок возврата составляет от 1 до 30 дней в
-            зависимости от банка-эмитента.
+            зависимости от банка-эмитента.{" "}
+            <a href="/return_goods" className="text-primary hover:underline">
+              Условия возврата
+            </a>
+            .
           </p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold">6. Поддержка</h2>
           <p>
-            По вопросам оплаты обращайтесь в нашу службу поддержки:
+            По вопросам оплаты обращайтесь на{" "}
+            <a href="/contacts" className="text-primary hover:underline">
+              страницу контактов
+            </a>
+            :
           </p>
           <div className="rounded-xl bg-muted p-4 text-sm">
             {BRAND.contacts.telegram && BRAND.contacts.telegramLabel && (

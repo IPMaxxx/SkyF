@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowLeft, ArrowRight, Bot, ScanSearch } from "lucide-react";
 import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 import { BRAND } from "@/lib/brand";
+import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 const BOT_URL = BRAND.mushroomBotUrl || "https://t.me/skyforest_mushroom_bot";
 
@@ -131,13 +132,7 @@ export default function KakOpredelitGribPage() {
       />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-        <Link
-          href="/blog"
-          className="mb-10 inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/80"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Блог
-        </Link>
+        <BlogArticleHeader title="Как определить гриб по&nbsp;фото: приложения, нейросети и&nbsp;признаки" />
 
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
           Как определить гриб по&nbsp;фото: приложения, нейросети и&nbsp;признаки

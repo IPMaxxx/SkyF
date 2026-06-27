@@ -1,4 +1,6 @@
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.skyforest.by";
+import { BRAND } from "@/lib/brand";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || BRAND.url;
 
 interface CompareEmailData {
   bestDayName: string;
