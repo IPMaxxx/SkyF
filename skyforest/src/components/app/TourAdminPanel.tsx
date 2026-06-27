@@ -16,7 +16,9 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  QrCode,
 } from "lucide-react";
+import { TourShareBox } from "@/components/app/TourShareBox";
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
@@ -100,6 +102,7 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [participantsFor, setParticipantsFor] = useState<string | null>(null);
+  const [shareFor, setShareFor] = useState<string | null>(null);
 
   const loadTours = useCallback(async () => {
     setLoading(true);
@@ -172,8 +175,11 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
         return;
       }
       toast.success(form.id ? t("admin.updated") : t("admin.created"));
+      const wasCreate = !form.id;
+      const savedId = data.tour?.id as string | undefined;
       setForm(null);
       await loadTours();
+      if (wasCreate && savedId) setShareFor(savedId);
       onChange();
     } finally {
       setSaving(false);
@@ -254,6 +260,12 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
                         <Pencil className="h-4 w-4" />
                       </IconBtn>
                       <IconBtn
+                        onClick={() => setShareFor(shareFor === tour.id ? null : tour.id)}
+                        title={t("admin.share")}
+                      >
+                        <QrCode className="h-4 w-4" />
+                      </IconBtn>
+                      <IconBtn
                         onClick={() =>
                           setParticipantsFor(participantsFor === tour.id ? null : tour.id)
                         }
@@ -266,6 +278,7 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
                       </IconBtn>
                     </div>
                   </div>
+                  {shareFor === tour.id && <TourShareBox tourId={tour.id} />}
                   {participantsFor === tour.id && (
                     <ParticipantsTable tourId={tour.id} currency={tour.currency} t={t} />
                   )}
