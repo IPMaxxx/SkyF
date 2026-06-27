@@ -217,6 +217,7 @@ export interface TourParticipant {
 export interface TourLeaderboardRow {
   participant_no: number;
   best_amount: number;
+  best_amount_at: string | null;
   status: TourParticipantStatus;
   is_me: boolean;
   position: number;
@@ -226,6 +227,7 @@ export interface TourLeaderboardRow {
 export interface TourMyParticipation {
   participant_no: number;
   best_amount: number;
+  best_amount_at: string | null;
   bids_count: number;
   tokens_spent: number;
   status: TourParticipantStatus;
