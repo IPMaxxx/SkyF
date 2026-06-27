@@ -70,6 +70,17 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
 
   return (
     <div className="space-y-6">
+      {tour.mushroom_image_url && (
+        <div className="overflow-hidden rounded-2xl border border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={tour.mushroom_image_url}
+            alt={tour.mushroom_species ?? ""}
+            className="h-64 w-full object-cover sm:h-80"
+          />
+        </div>
+      )}
+
       {tour.description && (
         <p className="whitespace-pre-line text-sm text-muted-foreground sm:text-base">
           {tour.description}

@@ -170,6 +170,8 @@ export interface MushroomTour {
   departure_lng: number | null;
   departure_desc: string | null;
   mushroom_species: string | null;
+  mushroom_image_url: string | null;
+  mushroom_inaturalist_id: number | null;
   tour_date: string | null;
   departure_time: string | null;
   spots: number;

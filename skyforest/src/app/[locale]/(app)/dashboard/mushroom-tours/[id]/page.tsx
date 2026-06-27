@@ -198,6 +198,16 @@ export default function AuctionHallPage() {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Left: tour info + map */}
         <div className="space-y-3">
+          {tour.mushroom_image_url && (
+            <div className="overflow-hidden rounded-2xl border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={tour.mushroom_image_url}
+                alt={tour.mushroom_species ?? ""}
+                className="h-56 w-full object-cover"
+              />
+            </div>
+          )}
           {tour.departure_lat != null && tour.departure_lng != null && (
             <TourMap lat={tour.departure_lat} lng={tour.departure_lng} />
           )}

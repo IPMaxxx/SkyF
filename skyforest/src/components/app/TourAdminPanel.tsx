@@ -19,6 +19,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { TourShareBox } from "@/components/app/TourShareBox";
+import { MushroomSearch } from "@/components/app/MushroomSearch";
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
@@ -45,6 +46,8 @@ type FormState = {
   title: string;
   description: string;
   mushroom_species: string;
+  mushroom_image_url: string | null;
+  mushroom_inaturalist_id: number | null;
   departure_lat: number | null;
   departure_lng: number | null;
   departure_desc: string;
@@ -65,6 +68,8 @@ const emptyForm = (): FormState => ({
   title: "",
   description: "",
   mushroom_species: "",
+  mushroom_image_url: null,
+  mushroom_inaturalist_id: null,
   departure_lat: null,
   departure_lng: null,
   departure_desc: "",
@@ -126,6 +131,8 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
       title: tour.title ?? "",
       description: tour.description ?? "",
       mushroom_species: tour.mushroom_species ?? "",
+      mushroom_image_url: tour.mushroom_image_url,
+      mushroom_inaturalist_id: tour.mushroom_inaturalist_id,
       departure_lat: tour.departure_lat,
       departure_lng: tour.departure_lng,
       departure_desc: tour.departure_desc ?? "",
@@ -366,13 +373,30 @@ function TourForm({
             />
           </Field>
         </div>
-        <Field label={t("admin.fMushroom")}>
-          <input
-            className={inputCls}
-            value={form.mushroom_species}
-            onChange={(e) => set("mushroom_species", e.target.value)}
-          />
-        </Field>
+        <div className="sm:col-span-2">
+          <Field label={t("admin.fMushroom")}>
+            <MushroomSearch
+              value={
+                form.mushroom_species
+                  ? {
+                      inaturalist_id: form.mushroom_inaturalist_id ?? 0,
+                      latin_name: form.mushroom_species,
+                      common_name: null,
+                      image_url: form.mushroom_image_url,
+                    }
+                  : null
+              }
+              onChange={(m) =>
+                setForm({
+                  ...form,
+                  mushroom_species: m ? m.common_name || m.latin_name : "",
+                  mushroom_image_url: m?.image_url ?? null,
+                  mushroom_inaturalist_id: m?.inaturalist_id ?? null,
+                })
+              }
+            />
+          </Field>
+        </div>
         <Field label={t("admin.fDepartureDesc")}>
           <input
             className={inputCls}
