@@ -92,11 +92,22 @@ export default function MushroomToursPage() {
             return (
               <div
                 key={tour.id}
-                className="glass flex flex-col rounded-2xl border border-border p-5"
+                className="glass flex flex-col overflow-hidden rounded-2xl border border-border p-5"
               >
+                {tour.mushroom_image_url && (
+                  <div className="relative -mx-5 -mt-5 mb-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tour.mushroom_image_url}
+                      alt={tour.mushroom_species ?? ""}
+                      className="h-48 w-full object-cover"
+                    />
+                    <PhaseBadge phase={phase} t={t} className="absolute right-3 top-3" />
+                  </div>
+                )}
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <h2 className="text-lg font-semibold">{tour.title}</h2>
-                  <PhaseBadge phase={phase} t={t} />
+                  {!tour.mushroom_image_url && <PhaseBadge phase={phase} t={t} />}
                 </div>
 
                 {tour.description && (
@@ -172,9 +183,11 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
 function PhaseBadge({
   phase,
   t,
+  className = "",
 }: {
   phase: "upcoming" | "live" | "finished";
   t: ReturnType<typeof useTranslations>;
+  className?: string;
 }) {
   const map = {
     upcoming: { label: t("notStartedYet"), cls: "bg-sky-500/15 text-sky-300" },
@@ -183,7 +196,9 @@ function PhaseBadge({
   };
   const m = map[phase];
   return (
-    <span className={`flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${m.cls}`}>
+    <span
+      className={`flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-medium shadow ${m.cls} ${className}`}
+    >
       {m.label}
     </span>
   );
