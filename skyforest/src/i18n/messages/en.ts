@@ -345,6 +345,15 @@ export default {
     ctaLoggedIn: "Go to dashboard",
     ctaLearnMore: "How it works",
     ctaLegacy: "Legacy SkyForest AI 1.0",
+    toolsSectionLabel: "SkyForest tools",
+    toolsEyebrow: "All tools",
+    toolCta: "Open",
+    f5Title: "Weather at your spots",
+    f5Desc:
+      "Archive and checks for rain, temperature, and humidity — for any period at your mushroom locations.",
+    f6Title: "Mushroom tours",
+    f6Desc:
+      "Planned mushroom-picking trips — spot auctions, coordinates, and dates from organizers.",
     f0Title: "We’ll tell you when it’s time to head to the forest",
     f0Desc:
       "Save the date of a great harvest — we’ll remember the weather from that day. When conditions repeat, you’ll be the first to know.",
