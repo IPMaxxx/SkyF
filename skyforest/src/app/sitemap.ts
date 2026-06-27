@@ -3,11 +3,15 @@ import {
   SITEMAP_BLOG_PATHS,
   SITEMAP_MARKETING_PATHS,
   buildSitemapEntries,
+  fetchSitemapTourPaths,
 } from "@/lib/marketingSeo";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const tourPaths = await fetchSitemapTourPaths();
+
   return [
     ...buildSitemapEntries(SITEMAP_MARKETING_PATHS),
     ...buildSitemapEntries(SITEMAP_BLOG_PATHS),
+    ...buildSitemapEntries(tourPaths),
   ];
 }
