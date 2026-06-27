@@ -11,6 +11,7 @@ export const TOKEN_COSTS = {
   forest_search: 2, // base; actual cost = 2 * ceil(radius_km / 2)
   marketplace_buy: 0, // dynamic — equals listing price; 0 is placeholder
   marketplace_list: 10,
+  tour_bid: 1, // one token per bid action in a mushroom-tour auction
 } as const;
 
 const TOKEN_PACKAGES_BY = [
@@ -46,5 +47,6 @@ export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
     case "forest_search": return "Поиск леса (≈ радиус в км)";
     case "marketplace_buy": return "Покупка грибного дня на маркетплейсе";
     case "marketplace_list": return "Размещение на маркетплейсе";
+    case "tour_bid": return "Ставка на грибном аукционе";
   }
 }

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
-import { User, Mail, Coins, Lock, ShieldCheck, Trash2 } from "lucide-react";
+import { User, Mail, Coins, Lock, ShieldCheck, Trash2, MessageSquare } from "lucide-react";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { TwoFactorSetup } from "@/components/app/TwoFactorSetup";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { EditProfileName } from "@/components/app/EditProfileName";
+import { EditContactLink } from "@/components/app/EditContactLink";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -77,6 +78,13 @@ export default async function AccountPage({ params }: Props) {
               initialName={profile?.full_name || null}
               accountType={profile?.account_type}
             />
+          </div>
+          <div className="flex items-start gap-3">
+            <MessageSquare className="mt-1 h-4 w-4 text-muted-foreground" />
+            <div>
+              <EditContactLink userId={userId} initialValue={profile?.contact_link || null} />
+              <p className="mt-1 text-xs text-muted-foreground">{t("contactLinkHint")}</p>
+            </div>
           </div>
         </div>
       </div>

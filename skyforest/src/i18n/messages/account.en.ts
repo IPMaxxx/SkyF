@@ -4,6 +4,13 @@ export default {
   subtitle:
     "Manage your profile, password, and token transaction history.",
   profile: "Profile",
+  contactLink: "Contact link",
+  contactLinkHint:
+    "Telegram, Instagram or WhatsApp — so the tour organizer can reach you. Visible to admins only.",
+  contactLinkPlaceholder: "@username, link or phone",
+  contactLinkEmpty: "Not set",
+  contactLinkSaved: "Contact saved",
+  contactLinkError: "Failed to save contact",
   changePassword: "Change password",
   twoFactor: "Two-factor authentication",
   tokens: "Tokens",
