@@ -26,6 +26,17 @@ export function formatCountdown(ms: number): string {
   return days > 0 ? `${days}д ${hms}` : hms;
 }
 
+/** Compact local date+time for a bid timestamp, e.g. "27.06 19:42". */
+export function formatBidTime(iso: string | null | undefined, locale: string): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function formatMoney(amount: number, currency: string): string {
   const n = Number(amount);
   const value = Number.isInteger(n) ? n.toString() : n.toFixed(2);

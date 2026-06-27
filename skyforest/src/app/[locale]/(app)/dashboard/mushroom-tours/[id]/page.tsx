@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useTokens } from "@/lib/TokenContext";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
@@ -13,11 +13,18 @@ import type {
   TourLeaderboardRow,
   TourMyParticipation,
 } from "@/lib/supabase/types";
-import { formatCountdown, formatMoney, tourPhase, participantStatusKey } from "@/lib/tourFormat";
+import {
+  formatBidTime,
+  formatCountdown,
+  formatMoney,
+  tourPhase,
+  participantStatusKey,
+} from "@/lib/tourFormat";
 import {
   ArrowLeft,
   MapPin,
   CalendarDays,
+  Clock,
   Sparkles,
   Users,
   Loader2,
@@ -47,6 +54,7 @@ export default function AuctionHallPage() {
   const params = useParams();
   const id = params.id as string;
   const t = useTranslations("mushroomTours");
+  const locale = useLocale();
   const { balance, refresh } = useTokens();
 
   const [tour, setTour] = useState<MushroomTour | null>(null);
@@ -291,6 +299,7 @@ export default function AuctionHallPage() {
                 <p className="mt-2 text-center text-xs text-muted-foreground">
                   {t("youAre", { no: me.participant_no })} ·{" "}
                   {formatMoney(me.best_amount, tour.currency)}
+                  {me.best_amount_at ? ` · ${formatBidTime(me.best_amount_at, locale)}` : ""}
                 </p>
               )}
             </div>
@@ -395,9 +404,10 @@ function BoardRow({
   t: ReturnType<typeof useTranslations>;
   green?: boolean;
 }) {
+  const locale = useLocale();
   return (
     <div
-      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
+      className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${
         row.is_me
           ? "bg-primary/20 ring-1 ring-primary/40"
           : green
@@ -411,7 +421,15 @@ function BoardRow({
           {row.is_me ? t("youAre", { no: row.participant_no }) : t("participant", { no: row.participant_no })}
         </span>
       </span>
-      <span className="font-semibold">{formatMoney(row.best_amount, tour.currency)}</span>
+      <span className="flex flex-col items-end leading-tight">
+        <span className="font-semibold">{formatMoney(row.best_amount, tour.currency)}</span>
+        {row.best_amount_at && (
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            {formatBidTime(row.best_amount_at, locale)}
+          </span>
+        )}
+      </span>
     </div>
   );
 }
