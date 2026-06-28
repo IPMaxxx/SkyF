@@ -19,7 +19,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("mushroom_tours")
     .select(
-      "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, status, followers_count, notifications_sent_at, finished_at, created_at"
+      "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, mushroom_images, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, status, followers_count, notifications_sent_at, finished_at, created_at"
     )
     .in("status", ["announced", "published", "finished"])
     .order("auction_start_at", { ascending: true, nullsFirst: false })

@@ -39,9 +39,16 @@ import {
   Info,
 } from "lucide-react";
 
+import { TourGallery } from "@/components/app/TourGallery";
+
 const TourMap = dynamic(() => import("@/components/app/TourMap").then((m) => m.TourMap), {
   ssr: false,
 });
+
+function tourImages(tour: { mushroom_images: string[] | null; mushroom_image_url: string | null }): string[] {
+  if (tour.mushroom_images && tour.mushroom_images.length > 0) return tour.mushroom_images;
+  return tour.mushroom_image_url ? [tour.mushroom_image_url] : [];
+}
 
 type Board = {
   success: boolean;
@@ -247,15 +254,12 @@ export default function AuctionHallPage() {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Left: tour info + map */}
         <div className="space-y-3">
-          {tour.mushroom_image_url && (
-            <div className="overflow-hidden rounded-2xl border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={tour.mushroom_image_url}
-                alt={tour.mushroom_species ?? ""}
-                className="h-56 w-full object-cover"
-              />
-            </div>
+          {tourImages(tour).length > 0 && (
+            <TourGallery
+              images={tourImages(tour)}
+              alt={tour.mushroom_species ?? ""}
+              coverClass="h-56"
+            />
           )}
           {tour.departure_lat != null && tour.departure_lng != null && (
             <TourMap lat={tour.departure_lat} lng={tour.departure_lng} />

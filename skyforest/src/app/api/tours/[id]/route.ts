@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   const { data: tour, error: tourErr } = await supabase
     .from("mushroom_tours")
     .select(
-      "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, anti_snipe_seconds, confirm_window_hours, status, followers_count, notifications_sent_at, finished_at, created_at"
+      "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, mushroom_images, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, anti_snipe_seconds, confirm_window_hours, status, followers_count, notifications_sent_at, finished_at, created_at"
     )
     .eq("id", id)
     .in("status", ["announced", "published", "finished"])

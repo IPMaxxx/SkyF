@@ -4,7 +4,7 @@ import {
   SITEMAP_MARKETING_PATHS,
   buildSitemapEntries,
   fetchSitemapTourPaths,
-} from "@/lib/marketingSeo";
+} from "@/lib/sitemapData";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tourPaths = await fetchSitemapTourPaths();

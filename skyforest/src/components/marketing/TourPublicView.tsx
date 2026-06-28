@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { MushroomTour } from "@/lib/supabase/types";
 import { formatCountdown, tourPhase } from "@/lib/tourFormat";
+import { TourGallery } from "@/components/app/TourGallery";
 
 const TourMap = dynamic(() => import("@/components/app/TourMap").then((m) => m.TourMap), {
   ssr: false,
@@ -72,17 +73,17 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
     });
   facts.push({ icon: Users, label: t("public.spotsLine"), value: String(tour.spots) });
 
+  const images =
+    tour.mushroom_images && tour.mushroom_images.length > 0
+      ? tour.mushroom_images
+      : tour.mushroom_image_url
+        ? [tour.mushroom_image_url]
+        : [];
+
   return (
     <div className="space-y-6">
-      {tour.mushroom_image_url && (
-        <div className="overflow-hidden rounded-2xl border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={tour.mushroom_image_url}
-            alt={tour.mushroom_species ?? ""}
-            className="h-64 w-full object-cover sm:h-80"
-          />
-        </div>
+      {images.length > 0 && (
+        <TourGallery images={images} alt={tour.mushroom_species ?? ""} />
       )}
 
       {tour.description && (

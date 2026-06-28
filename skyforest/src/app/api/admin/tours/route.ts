@@ -37,6 +37,7 @@ const EDITABLE_FIELDS = [
   "departure_desc",
   "mushroom_species",
   "mushroom_image_url",
+  "mushroom_images",
   "mushroom_inaturalist_id",
   "tour_date",
   "departure_time",
