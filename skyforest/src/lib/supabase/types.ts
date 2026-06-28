@@ -151,7 +151,12 @@ export function getSeasonLabel(season: Season): string {
   }
 }
 
-export type TourStatus = "draft" | "published" | "finished" | "cancelled";
+export type TourStatus =
+  | "draft"
+  | "announced"
+  | "published"
+  | "finished"
+  | "cancelled";
 
 export type TourParticipantStatus =
   | "bidding"
@@ -175,14 +180,16 @@ export interface MushroomTour {
   tour_date: string | null;
   departure_time: string | null;
   spots: number;
-  auction_start_at: string;
-  auction_end_at: string;
+  auction_start_at: string | null;
+  auction_end_at: string | null;
   start_price: number;
   bid_step: number;
   currency: string;
   anti_snipe_seconds: number;
   confirm_window_hours: number;
   status: TourStatus;
+  followers_count: number;
+  notifications_sent_at: string | null;
   finished_at: string | null;
   created_by: string | null;
   created_at: string;

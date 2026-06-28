@@ -154,6 +154,7 @@ export default {
     lowBalanceWarning: "Low on tokens — top up soon",
     lowBalanceCritical: "Tokens almost depleted — please top up",
     onboardingProgress: "Step {step} of {total}",
+    siteSections: "Site sections",
   },
   appMeta: {
     title: "App",
@@ -257,6 +258,17 @@ export default {
     statusNoShow: "No-show",
     statusExpired: "Expired",
     statusBidding: "Bidding",
+    statusAnnounced: "Announced",
+    announcedTitle: "Auction date not set yet",
+    announcedHint:
+      "Follow this tour to get an email as soon as the admin schedules the auction date.",
+    follow: "Follow tour",
+    unfollow: "Unfollow",
+    following: "You're following",
+    followed: "Tour added to your watchlist",
+    unfollowed: "Tour removed from your watchlist",
+    followersLabel: "Following",
+    dateTbd: "Date TBD",
     public: {
       eyebrow: "Mushroom tour",
       metaDescription:
@@ -321,6 +333,13 @@ export default {
       markNoShow: "No-show",
       promote: "Promote waitlist",
       promoted: "Waitlist updated",
+      notify: "Send notifications",
+      notifyConfirm:
+        "Email everyone following this tour that the auction date has been set?",
+      notifyNoFollowers: "Nobody is following this tour yet",
+      notifyNoDate: "Set the auction date first",
+      notifySent: "Emails sent: {sent}",
+      followers: "Followers",
       share: "Link & QR",
       publicLink: "Public tour link",
       copyLink: "Copy link",
@@ -345,6 +364,15 @@ export default {
     ctaLoggedIn: "Go to dashboard",
     ctaLearnMore: "How it works",
     ctaLegacy: "Legacy SkyForest AI 1.0",
+    toolsSectionLabel: "SkyForest tools",
+    toolsEyebrow: "All tools",
+    toolCta: "Open",
+    f5Title: "Weather at your spots",
+    f5Desc:
+      "Archive and checks for rain, temperature, and humidity — for any period at your mushroom locations.",
+    f6Title: "Mushroom tours",
+    f6Desc:
+      "Planned mushroom-picking trips — spot auctions, coordinates, and dates from organizers.",
     f0Title: "We’ll tell you when it’s time to head to the forest",
     f0Desc:
       "Save the date of a great harvest — we’ll remember the weather from that day. When conditions repeat, you’ll be the first to know.",
@@ -598,6 +626,8 @@ export default {
       botDesc: "Identify mushrooms from photos via Telegram.",
       marketplaceTitle: "Marketplace",
       marketplaceDesc: "Buy and sell mushroom spot listings.",
+      toursTitle: "Mushroom tours",
+      toursDesc: "Group mushroom-picking trips. A spot on the tour is auctioned.",
       moreLink: "Full guide",
       pricingLink: "See pricing",
       registerLink: "Create free account",

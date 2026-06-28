@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { MushroomTour } from "@/lib/supabase/types";
 import { tourPhase, formatCountdown, formatMoney } from "@/lib/tourFormat";
@@ -18,12 +19,17 @@ import {
   Info,
   BookOpen,
   ChevronDown,
+  Bell,
+  BellRing,
+  Eye,
 } from "lucide-react";
 import { TourAdminPanel } from "@/components/app/TourAdminPanel";
 
 export default function MushroomToursPage() {
   const t = useTranslations("mushroomTours");
   const [tours, setTours] = useState<MushroomTour[]>([]);
+  const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [followBusy, setFollowBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -32,11 +38,48 @@ export default function MushroomToursPage() {
     try {
       const res = await fetch("/api/tours");
       const data = await res.json();
-      if (res.ok) setTours(data.tours ?? []);
+      if (res.ok) {
+        setTours(data.tours ?? []);
+        setFollowing(new Set<string>(data.following ?? []));
+      }
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const toggleFollow = useCallback(
+    async (tourId: string) => {
+      const isFollowing = following.has(tourId);
+      setFollowBusy(tourId);
+      try {
+        const res = await fetch(`/api/tours/${tourId}/follow`, {
+          method: isFollowing ? "DELETE" : "POST",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          toast.error(data.error || "Error");
+          return;
+        }
+        setFollowing((prev) => {
+          const next = new Set(prev);
+          if (isFollowing) next.delete(tourId);
+          else next.add(tourId);
+          return next;
+        });
+        setTours((prev) =>
+          prev.map((tr) =>
+            tr.id === tourId
+              ? { ...tr, followers_count: Math.max(0, tr.followers_count + (isFollowing ? -1 : 1)) }
+              : tr
+          )
+        );
+        toast.success(t(isFollowing ? "unfollowed" : "followed"));
+      } finally {
+        setFollowBusy(null);
+      }
+    },
+    [following, t]
+  );
 
   useEffect(() => {
     load();
@@ -91,8 +134,11 @@ export default function MushroomToursPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {tours.map((tour) => {
             const phase = tourPhase(tour);
-            const startMs = new Date(tour.auction_start_at).getTime();
+            const startMs = tour.auction_start_at
+              ? new Date(tour.auction_start_at).getTime()
+              : 0;
             const canEnter = phase === "live" || phase === "finished";
+            const isFollowing = following.has(tour.id);
             return (
               <div
                 key={tour.id}
@@ -141,14 +187,32 @@ export default function MushroomToursPage() {
                   <Row icon={<Users className="h-4 w-4 text-purple-400" />}>
                     {t("spots")}: {tour.spots}
                   </Row>
-                  <Row icon={<Clock className="h-4 w-4 text-muted-foreground" />}>
-                    {t("startPrice")}: {formatMoney(tour.start_price, tour.currency)} ·{" "}
-                    {t("bidStep")}: {formatMoney(tour.bid_step, tour.currency)}
+                  {phase !== "announced" && (
+                    <Row icon={<Clock className="h-4 w-4 text-muted-foreground" />}>
+                      {t("startPrice")}: {formatMoney(tour.start_price, tour.currency)} ·{" "}
+                      {t("bidStep")}: {formatMoney(tour.bid_step, tour.currency)}
+                    </Row>
+                  )}
+                  <Row icon={<Eye className="h-4 w-4 text-muted-foreground" />}>
+                    {t("followersLabel")}: {tour.followers_count}
                   </Row>
                 </div>
 
+                {phase === "announced" && (
+                  <div className="mb-3 rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">
+                    {t("announcedHint")}
+                  </div>
+                )}
+
                 <div className="mt-auto">
-                  {canEnter ? (
+                  {phase === "announced" ? (
+                    <FollowButton
+                      following={isFollowing}
+                      busy={followBusy === tour.id}
+                      onClick={() => toggleFollow(tour.id)}
+                      t={t}
+                    />
+                  ) : canEnter ? (
                     <Link
                       href={`/dashboard/mushroom-tours/${tour.id}`}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-emerald-600 py-3 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-primary/20"
@@ -158,11 +222,20 @@ export default function MushroomToursPage() {
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   ) : (
-                    <div className="rounded-xl border border-border bg-card/60 py-3 text-center text-sm">
-                      <span className="text-muted-foreground">{t("opensIn")}: </span>
-                      <span className="font-mono font-semibold text-foreground">
-                        {formatCountdown(startMs - now)}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="rounded-xl border border-border bg-card/60 py-3 text-center text-sm">
+                        <span className="text-muted-foreground">{t("opensIn")}: </span>
+                        <span className="font-mono font-semibold text-foreground">
+                          {formatCountdown(startMs - now)}
+                        </span>
+                      </div>
+                      <FollowButton
+                        following={isFollowing}
+                        busy={followBusy === tour.id}
+                        onClick={() => toggleFollow(tour.id)}
+                        t={t}
+                        subtle
+                      />
                     </div>
                   )}
                 </div>
@@ -209,16 +282,55 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
   );
 }
 
+function FollowButton({
+  following,
+  busy,
+  onClick,
+  t,
+  subtle,
+}: {
+  following: boolean;
+  busy: boolean;
+  onClick: () => void;
+  t: ReturnType<typeof useTranslations>;
+  subtle?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${
+        following
+          ? "border border-border bg-card/60 text-muted-foreground hover:bg-white/5"
+          : subtle
+            ? "border border-sky-500/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+            : "bg-gradient-to-r from-sky-500 to-primary text-white hover:shadow-lg hover:shadow-primary/20"
+      }`}
+    >
+      {busy ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : following ? (
+        <BellRing className="h-4 w-4" />
+      ) : (
+        <Bell className="h-4 w-4" />
+      )}
+      {following ? t("following") : t("follow")}
+    </button>
+  );
+}
+
 function PhaseBadge({
   phase,
   t,
   className = "",
 }: {
-  phase: "upcoming" | "live" | "finished";
+  phase: "announced" | "upcoming" | "live" | "finished";
   t: ReturnType<typeof useTranslations>;
   className?: string;
 }) {
   const map = {
+    announced: { label: t("statusAnnounced"), cls: "bg-sky-500/15 text-sky-300" },
     upcoming: { label: t("notStartedYet"), cls: "bg-sky-500/15 text-sky-300" },
     live: { label: t("auctionLive"), cls: "bg-emerald-500/15 text-emerald-300 animate-pulse" },
     finished: { label: t("auctionFinished"), cls: "bg-muted text-muted-foreground" },

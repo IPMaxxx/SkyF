@@ -91,9 +91,14 @@ export async function POST(request: NextRequest) {
   if (!fields.title) {
     return NextResponse.json({ error: "Укажите название тура" }, { status: 400 });
   }
-  if (!fields.auction_start_at || !fields.auction_end_at) {
+  // Auction dates are optional for "announced" tours. They are only required
+  // once the tour is actually published (so people can bid).
+  if (
+    fields.status === "published" &&
+    (!fields.auction_start_at || !fields.auction_end_at)
+  ) {
     return NextResponse.json(
-      { error: "Укажите время начала и окончания аукциона" },
+      { error: "Для публикации укажите время начала и окончания аукциона" },
       { status: 400 }
     );
   }
@@ -122,6 +127,16 @@ export async function PATCH(request: NextRequest) {
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   const fields = pickFields(body);
+  if (
+    fields.status === "published" &&
+    (("auction_start_at" in fields && !fields.auction_start_at) ||
+      ("auction_end_at" in fields && !fields.auction_end_at))
+  ) {
+    return NextResponse.json(
+      { error: "Для публикации укажите время начала и окончания аукциона" },
+      { status: 400 }
+    );
+  }
   fields.updated_at = new Date().toISOString();
 
   const admin = adminClient();

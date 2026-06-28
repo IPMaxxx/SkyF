@@ -12,6 +12,7 @@ import {
   Users,
   Gavel,
   ArrowRight,
+  Eye,
 } from "lucide-react";
 import type { MushroomTour } from "@/lib/supabase/types";
 import { formatCountdown, tourPhase } from "@/lib/tourFormat";
@@ -31,19 +32,22 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
   }, []);
 
   const phase = tourPhase(tour);
-  const startMs = new Date(tour.auction_start_at).getTime();
-  const endMs = new Date(tour.auction_end_at).getTime();
+  const startMs = tour.auction_start_at ? new Date(tour.auction_start_at).getTime() : 0;
+  const endMs = tour.auction_end_at ? new Date(tour.auction_end_at).getTime() : 0;
 
-  const dateFmt = (iso: string) =>
-    new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const dateFmt = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "ru-RU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : t("dateTbd");
 
   const noteByPhase = {
+    announced: t("announcedHint"),
     upcoming: t("public.upcomingNote"),
     live: t("public.liveNote"),
     finished: t("public.finishedNote"),
@@ -159,6 +163,10 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
         <p className="mt-3 text-xs text-muted-foreground">{t("public.loginHint")}</p>
+        <p className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+          <Eye className="h-3 w-3" aria-hidden="true" />
+          {t("followersLabel")}: {tour.followers_count}
+        </p>
       </div>
 
       {/* How it works */}

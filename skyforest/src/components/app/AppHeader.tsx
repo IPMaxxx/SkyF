@@ -22,12 +22,14 @@ import {
   AlertTriangle,
   MapPin,
   CalendarCheck,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { HEADER_NAV } from "@/lib/siteNav";
 
 type NavItem = {
   href: string;
@@ -43,13 +45,25 @@ export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("appHeader");
+  const tHeader = useTranslations("header");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [homeMenuOpen, setHomeMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadChats, setUnreadChats] = useState(0);
   const { balance, loading: balanceLoading } = useTokens();
   const unreadTimer = useRef<ReturnType<typeof setInterval>>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
+  const homeMenuRef = useRef<HTMLDivElement>(null);
+
+  const siteNavLinks = useMemo(
+    () =>
+      HEADER_NAV.map((item) => ({
+        href: item.href,
+        label: tHeader(item.labelKey),
+      })),
+    [tHeader]
+  );
 
   const NAV: NavItem[] = useMemo(
     () => [
@@ -87,6 +101,7 @@ export function AppHeader() {
   const closeAll = useCallback(() => {
     setMobileNav(false);
     setMenuOpen(false);
+    setHomeMenuOpen(false);
   }, []);
 
   const fetchUnread = useCallback(async () => {
@@ -129,6 +144,19 @@ export function AppHeader() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!homeMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHomeMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [homeMenuOpen]);
+
+  useEffect(() => {
+    setHomeMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!mobileNav) return;
@@ -194,8 +222,80 @@ export function AppHeader() {
         </div>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t("home")}>
-          {NAV.map((item) => {
+          {NAV.map((item, index) => {
             const active = isActive(item);
+
+            if (index === 0) {
+              return (
+                <div key={item.href} className="relative" ref={homeMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setHomeMenuOpen(!homeMenuOpen)}
+                    aria-expanded={homeMenuOpen}
+                    aria-haspopup="menu"
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+                      active || homeMenuOpen
+                        ? "bg-primary/20 text-primary-light"
+                        : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" aria-hidden="true" />
+                    {item.label}
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 opacity-70 transition-transform",
+                        homeMenuOpen && "rotate-180"
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {homeMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setHomeMenuOpen(false)}
+                        aria-hidden="true"
+                      />
+                      <div
+                        role="menu"
+                        className="absolute left-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-white/10 bg-[#1a2e1f]/98 py-1 shadow-2xl backdrop-blur-xl"
+                      >
+                        <Link
+                          href="/dashboard"
+                          role="menuitem"
+                          onClick={closeAll}
+                          aria-current={pathname === "/dashboard" ? "page" : undefined}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2.5 text-sm focus-visible:outline-none focus-visible:bg-white/10",
+                            pathname === "/dashboard"
+                              ? "bg-primary/15 font-medium text-primary-light"
+                              : "text-foreground/80 hover:bg-white/10 hover:text-foreground"
+                          )}
+                        >
+                          <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                          {item.label}
+                        </Link>
+                        <div className="my-1 border-t border-white/10" />
+                        {siteNavLinks.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            role="menuitem"
+                            onClick={closeAll}
+                            className="block px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -205,7 +305,7 @@ export function AppHeader() {
                   "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
                   active
                     ? "bg-primary/20 text-primary-light"
-                    : "text-foreground/70 hover:text-foreground hover:bg-white/5"
+                    : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4" aria-hidden="true" />
@@ -415,8 +515,43 @@ export function AppHeader() {
             className="relative z-40 border-t border-white/10 bg-[#0d1a12] px-4 pb-4 pt-2 lg:hidden"
           >
             <nav className="space-y-1" aria-label={t("home")}>
-              {NAV.map((item) => {
+              {NAV.map((item, index) => {
                 const active = isActive(item);
+
+                if (index === 0) {
+                  return (
+                    <div key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={closeAll}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-primary/20 text-primary-light"
+                            : "text-foreground/80 hover:bg-white/5"
+                        )}
+                      >
+                        <item.icon className="h-5 w-5" aria-hidden="true" />
+                        {item.label}
+                      </Link>
+                      <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-foreground/45">
+                        {t("siteSections")}
+                      </p>
+                      {siteNavLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeAll}
+                          className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/75 transition-colors hover:bg-white/5 hover:text-foreground"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.href}

@@ -117,7 +117,6 @@ const SKYFOREST: Brand = {
   },
   contacts: {
     email: "support@skyforest.by",
-    phone: "+375 29 328 2842",
     telegram: "https://t.me/skyforest_support_bot",
     telegramLabel: "@skyforest_support_bot",
   },

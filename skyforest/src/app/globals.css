@@ -122,6 +122,31 @@ html[data-theme="hc"] :focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+@keyframes hero-tool-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-tool-btn {
+  animation: hero-tool-in 0.55s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-tool-btn {
+    animation: none;
+  }
+
+  .hero-tool-btn:hover {
+    transform: none;
+  }
+}
+
 /* Override input styles for dark background */
 input[type="text"],
 input[type="email"],

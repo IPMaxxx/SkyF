@@ -25,6 +25,9 @@ import {
   MapPin,
   CalendarDays,
   Clock,
+  Bell,
+  BellRing,
+  Eye,
   Sparkles,
   Users,
   Loader2,
@@ -64,6 +67,8 @@ export default function AuctionHallPage() {
   const [amount, setAmount] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const amountTouched = useRef(false);
 
   const load = useCallback(async () => {
@@ -73,30 +78,58 @@ export default function AuctionHallPage() {
       if (res.ok) {
         setTour(data.tour);
         setBoard(data.board);
+        setIsFollowing(!!data.is_following);
       }
     } finally {
       setLoading(false);
     }
   }, [id]);
 
+  const toggleFollow = useCallback(async () => {
+    setFollowBusy(true);
+    try {
+      const res = await fetch(`/api/tours/${id}/follow`, {
+        method: isFollowing ? "DELETE" : "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Error");
+        return;
+      }
+      setIsFollowing((v) => !v);
+      setTour((prev) =>
+        prev
+          ? {
+              ...prev,
+              followers_count: Math.max(0, prev.followers_count + (isFollowing ? -1 : 1)),
+            }
+          : prev
+      );
+      toast.success(t(isFollowing ? "unfollowed" : "followed"));
+    } finally {
+      setFollowBusy(false);
+    }
+  }, [id, isFollowing, t]);
+
   useEffect(() => {
     load();
   }, [load]);
 
-  // Poll the board while the auction is not finished
-  const isFinished = board
+  // Poll the board only while the auction is active (skip finished & announced)
+  const boardPhase = board
     ? tourPhase({
         auction_start_at: board.auction_start_at,
         auction_end_at: board.auction_end_at,
         status: board.status as MushroomTour["status"],
-      }) === "finished"
-    : false;
+      })
+    : "upcoming";
+  const stopPolling = boardPhase === "finished" || boardPhase === "announced";
 
   useEffect(() => {
-    if (isFinished) return;
+    if (stopPolling) return;
     const poll = setInterval(load, 4000);
     return () => clearInterval(poll);
-  }, [isFinished, load]);
+  }, [stopPolling, load]);
 
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 1000);
@@ -192,6 +225,14 @@ export default function AuctionHallPage() {
             <Gavel className="h-4 w-4" />
             {t("auctionLive")}
           </span>
+        ) : phase === "announced" ? (
+          <span className="rounded-full bg-sky-500/15 px-3 py-1 text-sm font-medium text-sky-300">
+            {t("statusAnnounced")}
+          </span>
+        ) : phase === "upcoming" ? (
+          <span className="rounded-full bg-sky-500/15 px-3 py-1 text-sm font-medium text-sky-300">
+            {t("notStartedYet")}
+          </span>
         ) : (
           <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
             {t("auctionFinished")}
@@ -248,6 +289,47 @@ export default function AuctionHallPage() {
 
         {/* Right: auction controls */}
         <div className="space-y-3">
+          {phase === "announced" && (
+            <div className="glass rounded-2xl border border-sky-500/20 p-4">
+              <p className="mb-1 font-semibold text-sky-200">{t("announcedTitle")}</p>
+              <p className="mb-3 text-sm text-muted-foreground">{t("announcedHint")}</p>
+              <button
+                type="button"
+                onClick={toggleFollow}
+                disabled={followBusy}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                  isFollowing
+                    ? "border border-border bg-card/60 text-muted-foreground hover:bg-white/5"
+                    : "bg-gradient-to-r from-sky-500 to-primary text-white hover:shadow-lg hover:shadow-primary/20"
+                }`}
+              >
+                {followBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isFollowing ? (
+                  <BellRing className="h-4 w-4" />
+                ) : (
+                  <Bell className="h-4 w-4" />
+                )}
+                {isFollowing ? t("following") : t("follow")}
+              </button>
+              <p className="mt-2 flex items-center justify-center gap-1 text-center text-xs text-muted-foreground">
+                <Eye className="h-3 w-3" />
+                {t("followersLabel")}: {tour.followers_count}
+              </p>
+            </div>
+          )}
+
+          {phase === "upcoming" && (
+            <div className="glass rounded-2xl border border-border p-4 text-center">
+              <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+                {t("opensIn")}
+              </p>
+              <p className="font-mono text-3xl font-bold text-sky-300">
+                {formatCountdown((tour.auction_start_at ? new Date(tour.auction_start_at).getTime() : 0) - now)}
+              </p>
+            </div>
+          )}
+
           {phase === "live" && (
             <div className="glass rounded-2xl border border-border p-4 text-center">
               <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">

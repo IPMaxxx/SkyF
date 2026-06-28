@@ -154,6 +154,7 @@ export default {
     lowBalanceWarning: "Мало токенов — скоро потребуется пополнение",
     lowBalanceCritical: "Токены почти закончились — пополните баланс",
     onboardingProgress: "Шаг {step} из {total}",
+    siteSections: "Разделы сайта",
   },
   appMeta: {
     title: "Приложение",
@@ -257,6 +258,17 @@ export default {
     statusNoShow: "Не явился",
     statusExpired: "Просрочено",
     statusBidding: "Участвует",
+    statusAnnounced: "Анонс",
+    announcedTitle: "Дата аукциона ещё не назначена",
+    announcedHint:
+      "Подпишитесь, чтобы получить письмо, как только администратор назначит дату аукциона.",
+    follow: "Следить за туром",
+    unfollow: "Не следить",
+    following: "Вы следите",
+    followed: "Тур добавлен в отслеживание",
+    unfollowed: "Тур убран из отслеживания",
+    followersLabel: "Следят",
+    dateTbd: "Дата уточняется",
     public: {
       eyebrow: "Грибной тур",
       metaDescription:
@@ -321,6 +333,13 @@ export default {
       markNoShow: "Неявка",
       promote: "Продвинуть лист ожидания",
       promoted: "Лист ожидания обновлён",
+      notify: "Отправить оповещения",
+      notifyConfirm:
+        "Отправить письмо всем, кто следит за туром, о назначенной дате аукциона?",
+      notifyNoFollowers: "Пока никто не следит за туром",
+      notifyNoDate: "Сначала укажите дату аукциона",
+      notifySent: "Отправлено писем: {sent}",
+      followers: "Подписчиков",
       share: "Ссылка и QR",
       publicLink: "Публичная ссылка на тур",
       copyLink: "Копировать ссылку",
@@ -345,6 +364,15 @@ export default {
     ctaLoggedIn: "Перейти в кабинет",
     ctaLearnMore: "Как это работает",
     ctaLegacy: "Старая версия SkyForest AI 1.0",
+    toolsSectionLabel: "Инструменты SkyForest",
+    toolsEyebrow: "Все инструменты",
+    toolCta: "Перейти",
+    f5Title: "Погода в ваших точках",
+    f5Desc:
+      "Архив и проверка осадков, температуры и влажности — за любой период по вашим грибным местам",
+    f6Title: "Грибные туры",
+    f6Desc:
+      "Запланированные выезды за грибами — аукцион мест, координаты и дата тура от организаторов",
     f0Title: "Подскажем, когда пора в лес",
     f0Desc:
       "Запишите дату удачного сбора — мы запомним погоду того дня. Когда условия повторятся, вы узнаете первым",
@@ -602,6 +630,8 @@ export default {
       botDesc: "Распознавание грибов по фото в Telegram.",
       marketplaceTitle: "Маркетплейс",
       marketplaceDesc: "Покупка и продажа объявлений о грибных локациях.",
+      toursTitle: "Грибные туры",
+      toursDesc: "Совместные выезды за грибами. Место на туре разыгрывается на аукционе.",
       moreLink: "Подробная инструкция",
       pricingLink: "Тарифы и токены",
       registerLink: "Бесплатная регистрация",
