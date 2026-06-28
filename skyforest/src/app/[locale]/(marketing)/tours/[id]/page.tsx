@@ -10,7 +10,7 @@ import type { MushroomTour } from "@/lib/supabase/types";
 type Props = { params: Promise<{ locale: string; id: string }> };
 
 const PUBLIC_FIELDS =
-  "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, status";
+  "id, title, description, departure_lat, departure_lng, departure_desc, mushroom_species, mushroom_image_url, tour_date, departure_time, spots, auction_start_at, auction_end_at, start_price, bid_step, currency, status, followers_count";
 
 async function getPublicTour(id: string): Promise<MushroomTour | null> {
   if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
@@ -19,7 +19,7 @@ async function getPublicTour(id: string): Promise<MushroomTour | null> {
     .from("mushroom_tours")
     .select(PUBLIC_FIELDS)
     .eq("id", id)
-    .in("status", ["published", "finished"])
+    .in("status", ["announced", "published", "finished"])
     .maybeSingle();
   return (data as MushroomTour | null) ?? null;
 }

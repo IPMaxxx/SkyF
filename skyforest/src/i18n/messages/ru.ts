@@ -258,6 +258,17 @@ export default {
     statusNoShow: "Не явился",
     statusExpired: "Просрочено",
     statusBidding: "Участвует",
+    statusAnnounced: "Анонс",
+    announcedTitle: "Дата аукциона ещё не назначена",
+    announcedHint:
+      "Подпишитесь, чтобы получить письмо, как только администратор назначит дату аукциона.",
+    follow: "Следить за туром",
+    unfollow: "Не следить",
+    following: "Вы следите",
+    followed: "Тур добавлен в отслеживание",
+    unfollowed: "Тур убран из отслеживания",
+    followersLabel: "Следят",
+    dateTbd: "Дата уточняется",
     public: {
       eyebrow: "Грибной тур",
       metaDescription:
@@ -322,6 +333,13 @@ export default {
       markNoShow: "Неявка",
       promote: "Продвинуть лист ожидания",
       promoted: "Лист ожидания обновлён",
+      notify: "Отправить оповещения",
+      notifyConfirm:
+        "Отправить письмо всем, кто следит за туром, о назначенной дате аукциона?",
+      notifyNoFollowers: "Пока никто не следит за туром",
+      notifyNoDate: "Сначала укажите дату аукциона",
+      notifySent: "Отправлено писем: {sent}",
+      followers: "Подписчиков",
       share: "Ссылка и QR",
       publicLink: "Публичная ссылка на тур",
       copyLink: "Копировать ссылку",

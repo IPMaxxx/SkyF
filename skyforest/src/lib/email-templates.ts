@@ -162,6 +162,56 @@ export function buildNewMessageEmail(
 </html>`;
 }
 
+export function buildTourAuctionScheduledEmail(data: {
+  tourTitle: string;
+  auctionDate: string;
+  tourDate?: string | null;
+  tourUrl: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0a0f0b;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:24px 16px;">
+    <div style="text-align:center;padding:20px 0;">
+      <h1 style="margin:0;font-size:20px;color:#e8f0ea;">Skyforest</h1>
+      <p style="margin:4px 0 0;font-size:12px;color:#64748b;">Грибной тур — назначена дата аукциона</p>
+    </div>
+
+    <div style="background:#0f1a12;border:1px solid #1a2e1d;border-radius:16px;padding:24px;margin-bottom:20px;">
+      <p style="margin:0 0 12px;font-size:15px;color:#e8f0ea;font-weight:600;">${data.tourTitle}</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#94a3b8;line-height:1.6;">
+        Вы следите за этим туром. Аукцион за место назначен — успейте сделать ставку.
+      </p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;">Старт аукциона</td>
+          <td style="padding:6px 0;font-size:13px;color:#62a863;text-align:right;font-weight:600;">${data.auctionDate}</td>
+        </tr>
+        ${
+          data.tourDate
+            ? `<tr>
+          <td style="padding:6px 0;font-size:13px;color:#64748b;">Дата тура</td>
+          <td style="padding:6px 0;font-size:13px;color:#e8f0ea;text-align:right;">${data.tourDate}</td>
+        </tr>`
+            : ""
+        }
+      </table>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${data.tourUrl}" style="display:inline-block;background:#62a863;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;">Открыть страницу тура</a>
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:#475569;">
+      Вы получили это письмо, потому что добавили этот тур в отслеживание в Skyforest.
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 export function buildInsufficientTokensEmail(bestDayName: string, balance: number): string {
   return `
 <!DOCTYPE html>

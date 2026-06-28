@@ -8,6 +8,7 @@ import {
   Trees,
   Bot,
   Store,
+  Ticket,
   ArrowRight,
 } from "lucide-react";
 import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
@@ -34,6 +35,7 @@ const SERVICE_ITEMS = [
   { icon: Trees, titleKey: "forestTitle", descKey: "forestDesc", href: "/instruction" },
   { icon: Bot, titleKey: "botTitle", descKey: "botDesc", href: "/#bot" },
   { icon: Store, titleKey: "marketplaceTitle", descKey: "marketplaceDesc", href: "/instruction" },
+  { icon: Ticket, titleKey: "toursTitle", descKey: "toursDesc", href: "/dashboard/mushroom-tours" },
 ] as const;
 
 export default async function ServicesPage({ params }: Props) {

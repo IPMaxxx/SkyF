@@ -17,6 +17,8 @@ import {
   ChevronRight,
   ExternalLink,
   QrCode,
+  Send,
+  Eye,
 } from "lucide-react";
 import { TourShareBox } from "@/components/app/TourShareBox";
 import { MushroomSearch } from "@/components/app/MushroomSearch";
@@ -157,7 +159,8 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
     }
     const startIso = localInputToIso(form.auction_start_at);
     const endIso = localInputToIso(form.auction_end_at);
-    if (!startIso || !endIso) {
+    // Auction dates are optional for announced/draft tours; required to publish.
+    if (form.status === "published" && (!startIso || !endIso)) {
       toast.error(t("admin.fAuctionStart"));
       return;
     }
@@ -191,6 +194,26 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const notify = async (tour: MushroomTour) => {
+    if (!tour.auction_start_at) {
+      toast.error(t("admin.notifyNoDate"));
+      return;
+    }
+    if ((tour.followers_count ?? 0) === 0) {
+      toast.error(t("admin.notifyNoFollowers"));
+      return;
+    }
+    if (!confirm(t("admin.notifyConfirm"))) return;
+    const res = await fetch(`/api/admin/tours/${tour.id}/notify`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || t("admin.saveError"));
+      return;
+    }
+    toast.success(t("admin.notifySent", { sent: data.sent ?? 0 }));
+    await loadTours();
   };
 
   const remove = async (id: string) => {
@@ -255,16 +278,32 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{tour.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
                         <span className="uppercase">{tour.status}</span>
-                        {" · "}
-                        {new Date(tour.auction_start_at).toLocaleString()} →{" "}
-                        {new Date(tour.auction_end_at).toLocaleString()}
+                        {tour.auction_start_at && tour.auction_end_at ? (
+                          <span>
+                            {" · "}
+                            {new Date(tour.auction_start_at).toLocaleString()} →{" "}
+                            {new Date(tour.auction_end_at).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span>· {t("dateTbd")}</span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          · <Eye className="h-3 w-3" /> {tour.followers_count ?? 0}
+                        </span>
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
                       <IconBtn onClick={() => startEdit(tour)} title={t("admin.editTour")}>
                         <Pencil className="h-4 w-4" />
+                      </IconBtn>
+                      <IconBtn
+                        onClick={() => notify(tour)}
+                        title={t("admin.notify")}
+                        disabled={!tour.auction_start_at || (tour.followers_count ?? 0) === 0}
+                      >
+                        <Send className="h-4 w-4" />
                       </IconBtn>
                       <IconBtn
                         onClick={() => setShareFor(shareFor === tour.id ? null : tour.id)}
@@ -304,18 +343,21 @@ function IconBtn({
   onClick,
   title,
   danger,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   title: string;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+      disabled={disabled}
+      className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         danger
           ? "text-red-400 hover:bg-red-500/10"
           : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
@@ -513,7 +555,8 @@ function TourForm({
             value={form.status}
             onChange={(e) => set("status", e.target.value as TourStatus)}
           >
-            <option value="draft">{t("admin.fStatus")}: draft</option>
+            <option value="draft">draft</option>
+            <option value="announced">announced</option>
             <option value="published">published</option>
             <option value="finished">finished</option>
             <option value="cancelled">cancelled</option>

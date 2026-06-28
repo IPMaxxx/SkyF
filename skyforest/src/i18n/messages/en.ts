@@ -258,6 +258,17 @@ export default {
     statusNoShow: "No-show",
     statusExpired: "Expired",
     statusBidding: "Bidding",
+    statusAnnounced: "Announced",
+    announcedTitle: "Auction date not set yet",
+    announcedHint:
+      "Follow this tour to get an email as soon as the admin schedules the auction date.",
+    follow: "Follow tour",
+    unfollow: "Unfollow",
+    following: "You're following",
+    followed: "Tour added to your watchlist",
+    unfollowed: "Tour removed from your watchlist",
+    followersLabel: "Following",
+    dateTbd: "Date TBD",
     public: {
       eyebrow: "Mushroom tour",
       metaDescription:
@@ -322,6 +333,13 @@ export default {
       markNoShow: "No-show",
       promote: "Promote waitlist",
       promoted: "Waitlist updated",
+      notify: "Send notifications",
+      notifyConfirm:
+        "Email everyone following this tour that the auction date has been set?",
+      notifyNoFollowers: "Nobody is following this tour yet",
+      notifyNoDate: "Set the auction date first",
+      notifySent: "Emails sent: {sent}",
+      followers: "Followers",
       share: "Link & QR",
       publicLink: "Public tour link",
       copyLink: "Copy link",

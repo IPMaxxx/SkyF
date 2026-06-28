@@ -1,10 +1,14 @@
 import type { MushroomTour, TourParticipantStatus } from "@/lib/supabase/types";
 
-export type TourPhase = "upcoming" | "live" | "finished";
+export type TourPhase = "announced" | "upcoming" | "live" | "finished";
 
 /** Current auction phase based on timestamps + status. */
 export function tourPhase(tour: Pick<MushroomTour, "auction_start_at" | "auction_end_at" | "status">): TourPhase {
   if (tour.status === "finished") return "finished";
+  // No auction scheduled yet → an "announced" tour open for following.
+  if (tour.status === "announced" || !tour.auction_start_at || !tour.auction_end_at) {
+    return "announced";
+  }
   const now = Date.now();
   const start = new Date(tour.auction_start_at).getTime();
   const end = new Date(tour.auction_end_at).getTime();
