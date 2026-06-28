@@ -154,6 +154,7 @@ export default {
     lowBalanceWarning: "Low on tokens — top up soon",
     lowBalanceCritical: "Tokens almost depleted — please top up",
     onboardingProgress: "Step {step} of {total}",
+    siteSections: "Site sections",
   },
   appMeta: {
     title: "App",
@@ -607,6 +608,8 @@ export default {
       botDesc: "Identify mushrooms from photos via Telegram.",
       marketplaceTitle: "Marketplace",
       marketplaceDesc: "Buy and sell mushroom spot listings.",
+      toursTitle: "Mushroom tours",
+      toursDesc: "Group mushroom-picking trips. A spot on the tour is auctioned.",
       moreLink: "Full guide",
       pricingLink: "See pricing",
       registerLink: "Create free account",

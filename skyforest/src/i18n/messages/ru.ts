@@ -154,6 +154,7 @@ export default {
     lowBalanceWarning: "Мало токенов — скоро потребуется пополнение",
     lowBalanceCritical: "Токены почти закончились — пополните баланс",
     onboardingProgress: "Шаг {step} из {total}",
+    siteSections: "Разделы сайта",
   },
   appMeta: {
     title: "Приложение",
@@ -611,6 +612,8 @@ export default {
       botDesc: "Распознавание грибов по фото в Telegram.",
       marketplaceTitle: "Маркетплейс",
       marketplaceDesc: "Покупка и продажа объявлений о грибных локациях.",
+      toursTitle: "Грибные туры",
+      toursDesc: "Совместные выезды за грибами. Место на туре разыгрывается на аукционе.",
       moreLink: "Подробная инструкция",
       pricingLink: "Тарифы и токены",
       registerLink: "Бесплатная регистрация",
