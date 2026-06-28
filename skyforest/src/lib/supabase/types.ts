@@ -176,6 +176,7 @@ export interface MushroomTour {
   departure_desc: string | null;
   mushroom_species: string | null;
   mushroom_image_url: string | null;
+  mushroom_images: string[] | null;
   mushroom_inaturalist_id: number | null;
   tour_date: string | null;
   departure_time: string | null;

@@ -139,64 +139,70 @@ export default function MushroomToursPage() {
               : 0;
             const canEnter = phase === "live" || phase === "finished";
             const isFollowing = following.has(tour.id);
+            const heroImg =
+              tour.mushroom_image_url || tour.mushroom_images?.[0] || null;
             return (
               <div
                 key={tour.id}
                 className="glass flex flex-col overflow-hidden rounded-2xl border border-border p-5"
               >
-                {tour.mushroom_image_url && (
-                  <div className="relative -mx-5 -mt-5 mb-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={tour.mushroom_image_url}
-                      alt={tour.mushroom_species ?? ""}
-                      className="h-48 w-full object-cover"
-                    />
-                    <PhaseBadge phase={phase} t={t} className="absolute right-3 top-3" />
+                <Link href={`/dashboard/mushroom-tours/${tour.id}`} className="block">
+                  {heroImg && (
+                    <div className="relative -mx-5 -mt-5 mb-4">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={heroImg}
+                        alt={tour.mushroom_species ?? ""}
+                        className="h-48 w-full object-cover"
+                      />
+                      <PhaseBadge phase={phase} t={t} className="absolute right-3 top-3" />
+                    </div>
+                  )}
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h2 className="text-lg font-semibold hover:text-primary-light">
+                      {tour.title}
+                    </h2>
+                    {!heroImg && <PhaseBadge phase={phase} t={t} />}
                   </div>
-                )}
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <h2 className="text-lg font-semibold">{tour.title}</h2>
-                  {!tour.mushroom_image_url && <PhaseBadge phase={phase} t={t} />}
-                </div>
 
-                {tour.description && (
-                  <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                    {tour.description}
-                  </p>
-                )}
+                  {tour.description && (
+                    <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                      {tour.description}
+                    </p>
+                  )}
 
-                <div className="mb-4 space-y-1.5 text-sm">
-                  {tour.mushroom_species && (
-                    <Row icon={<Sparkles className="h-4 w-4 text-amber-400" />}>
-                      <span className="text-muted-foreground">{t("mushroom")}:</span>{" "}
-                      {tour.mushroom_species}
+                  <div className="mb-4 space-y-1.5 text-sm">
+                    {tour.mushroom_species && (
+                      <Row icon={<Sparkles className="h-4 w-4 text-amber-400" />}>
+                        <span className="text-muted-foreground">{t("mushroom")}:</span>{" "}
+                        {tour.mushroom_species}
+                      </Row>
+                    )}
+                    {tour.departure_desc && (
+                      <Row icon={<MapPin className="h-4 w-4 text-emerald-400" />}>
+                        {tour.departure_desc}
+                      </Row>
+                    )}
+                    {tour.tour_date && (
+                      <Row icon={<CalendarDays className="h-4 w-4 text-sky-400" />}>
+                        {new Date(tour.tour_date).toLocaleDateString()}
+                        {tour.departure_time ? ` · ${tour.departure_time.slice(0, 5)}` : ""}
+                      </Row>
+                    )}
+                    <Row icon={<Users className="h-4 w-4 text-purple-400" />}>
+                      {t("spots")}: {tour.spots}
                     </Row>
-                  )}
-                  {tour.departure_desc && (
-                    <Row icon={<MapPin className="h-4 w-4 text-emerald-400" />}>
-                      {tour.departure_desc}
+                    {phase !== "announced" && (
+                      <Row icon={<Clock className="h-4 w-4 text-muted-foreground" />}>
+                        {t("startPrice")}: {formatMoney(tour.start_price, tour.currency)} ·{" "}
+                        {t("bidStep")}: {formatMoney(tour.bid_step, tour.currency)}
+                      </Row>
+                    )}
+                    <Row icon={<Eye className="h-4 w-4 text-muted-foreground" />}>
+                      {t("followersLabel")}: {tour.followers_count}
                     </Row>
-                  )}
-                  {tour.tour_date && (
-                    <Row icon={<CalendarDays className="h-4 w-4 text-sky-400" />}>
-                      {new Date(tour.tour_date).toLocaleDateString()}
-                      {tour.departure_time ? ` · ${tour.departure_time.slice(0, 5)}` : ""}
-                    </Row>
-                  )}
-                  <Row icon={<Users className="h-4 w-4 text-purple-400" />}>
-                    {t("spots")}: {tour.spots}
-                  </Row>
-                  {phase !== "announced" && (
-                    <Row icon={<Clock className="h-4 w-4 text-muted-foreground" />}>
-                      {t("startPrice")}: {formatMoney(tour.start_price, tour.currency)} ·{" "}
-                      {t("bidStep")}: {formatMoney(tour.bid_step, tour.currency)}
-                    </Row>
-                  )}
-                  <Row icon={<Eye className="h-4 w-4 text-muted-foreground" />}>
-                    {t("followersLabel")}: {tour.followers_count}
-                  </Row>
-                </div>
+                  </div>
+                </Link>
 
                 {phase === "announced" && (
                   <div className="mb-3 rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-200">

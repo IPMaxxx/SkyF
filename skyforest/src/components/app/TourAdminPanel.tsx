@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -19,6 +19,9 @@ import {
   QrCode,
   Send,
   Eye,
+  ImagePlus,
+  Star,
+  X,
 } from "lucide-react";
 import { TourShareBox } from "@/components/app/TourShareBox";
 import { MushroomSearch } from "@/components/app/MushroomSearch";
@@ -49,6 +52,7 @@ type FormState = {
   description: string;
   mushroom_species: string;
   mushroom_image_url: string | null;
+  mushroom_images: string[] | null;
   mushroom_inaturalist_id: number | null;
   departure_lat: number | null;
   departure_lng: number | null;
@@ -71,6 +75,7 @@ const emptyForm = (): FormState => ({
   description: "",
   mushroom_species: "",
   mushroom_image_url: null,
+  mushroom_images: null,
   mushroom_inaturalist_id: null,
   departure_lat: null,
   departure_lng: null,
@@ -134,6 +139,7 @@ export function TourAdminPanel({ onChange }: { onChange: () => void }) {
       description: tour.description ?? "",
       mushroom_species: tour.mushroom_species ?? "",
       mushroom_image_url: tour.mushroom_image_url,
+      mushroom_images: tour.mushroom_images,
       mushroom_inaturalist_id: tour.mushroom_inaturalist_id,
       departure_lat: tour.departure_lat,
       departure_lng: tour.departure_lng,
@@ -397,6 +403,89 @@ function TourForm({
 }) {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm({ ...form, [k]: v });
 
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const images = form.mushroom_images ?? [];
+
+  const setImages = (imgs: string[]) =>
+    setForm({
+      ...form,
+      mushroom_images: imgs.length ? imgs : null,
+      mushroom_image_url: imgs[0] ?? null,
+    });
+
+  const removeImageAt = (i: number) => setImages(images.filter((_, idx) => idx !== i));
+  const makeCover = (i: number) => {
+    const arr = [...images];
+    const [picked] = arr.splice(i, 1);
+    arr.unshift(picked);
+    setImages(arr);
+  };
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("tour_id", form.id ?? "new");
+      Array.from(files).forEach((f) => fd.append("file", f));
+      const res = await fetch("/api/admin/tours/upload", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || t("admin.saveError"));
+        return;
+      }
+      setImages([...(form.mushroom_images ?? []), ...((data.urls as string[]) ?? [])]);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const onSelectMushroom = async (m: {
+    inaturalist_id: number;
+    latin_name: string;
+    common_name: string | null;
+    image_url: string | null;
+  } | null) => {
+    if (!m) {
+      setForm({
+        ...form,
+        mushroom_species: "",
+        mushroom_image_url: null,
+        mushroom_images: null,
+        mushroom_inaturalist_id: null,
+      });
+      return;
+    }
+    const base: FormState = {
+      ...form,
+      mushroom_species: m.common_name || m.latin_name,
+      mushroom_image_url: m.image_url ?? null,
+      mushroom_images: m.image_url ? [m.image_url] : null,
+      mushroom_inaturalist_id: m.inaturalist_id,
+    };
+    setForm(base);
+    // Pull up to 5 photos of the species from the reference (iNaturalist).
+    try {
+      const res = await fetch(
+        `/api/mushrooms/details?inaturalist_id=${m.inaturalist_id}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const urls: string[] = (data.photos ?? [])
+          .map((p: { url?: string }) => p.url)
+          .filter((u: string | undefined): u is string => !!u)
+          .slice(0, 5);
+        if (urls.length > 0) {
+          setForm({ ...base, mushroom_image_url: urls[0], mushroom_images: urls });
+        }
+      }
+    } catch {
+      /* keep the single search image on failure */
+    }
+  };
+
   return (
     <div className="rounded-xl border border-purple-500/20 bg-card/60 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -428,17 +517,76 @@ function TourForm({
                     }
                   : null
               }
-              onChange={(m) =>
-                setForm({
-                  ...form,
-                  mushroom_species: m ? m.common_name || m.latin_name : "",
-                  mushroom_image_url: m?.image_url ?? null,
-                  mushroom_inaturalist_id: m?.inaturalist_id ?? null,
-                })
-              }
+              onChange={onSelectMushroom}
             />
           </Field>
         </div>
+
+        <div className="sm:col-span-2">
+          <Field label={t("admin.photos")}>
+            <p className="mb-2 text-xs text-muted-foreground">{t("admin.photosHint")}</p>
+            {images.length > 0 && (
+              <div className="mb-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {images.map((url, i) => (
+                  <div
+                    key={`${url}-${i}`}
+                    className="relative overflow-hidden rounded-lg border border-border"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="h-20 w-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        {t("admin.cover")}
+                      </span>
+                    )}
+                    <div className="absolute inset-x-1 bottom-1 flex items-center gap-1">
+                      {i !== 0 && (
+                        <button
+                          type="button"
+                          title={t("admin.makeCover")}
+                          onClick={() => makeCover(i)}
+                          className="rounded bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
+                        >
+                          <Star className="h-3 w-3" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        title={t("admin.removePhoto")}
+                        onClick={() => removeImageAt(i)}
+                        className="ml-auto rounded bg-red-600/80 p-1 text-white transition-colors hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleUpload(e.target.files)}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-white/5 disabled:opacity-60"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImagePlus className="h-4 w-4" />
+              )}
+              {uploading ? t("admin.uploading") : t("admin.addPhoto")}
+            </button>
+          </Field>
+        </div>
+
         <Field label={t("admin.fDepartureDesc")}>
           <input
             className={inputCls}
