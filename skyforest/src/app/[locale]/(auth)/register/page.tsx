@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 
 export default function RegisterPage() {
   return (
@@ -244,7 +245,11 @@ function RegisterForm() {
             {t("createAccount")}
           </button>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6">
+            <SocialLoginButtons redirect={redirect} />
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground">
             {t("haveAccount")}{" "}
             <Link
               href={`/login?redirect=${encodeURIComponent(redirect)}`}

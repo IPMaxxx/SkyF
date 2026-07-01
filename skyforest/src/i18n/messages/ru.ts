@@ -562,6 +562,10 @@ export default {
     password: "Пароль",
     forgotPassword: "Забыли пароль?",
     signIn: "Войти",
+    orContinueWith: "или",
+    continueWithGoogle: "Продолжить с Google",
+    continueWithApple: "Продолжить с Apple",
+    socialError: "Не удалось войти. Попробуйте ещё раз.",
     noAccount: "Нет аккаунта?",
     signUp: "Зарегистрироваться",
     authFailed:
