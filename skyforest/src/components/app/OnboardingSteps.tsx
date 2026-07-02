@@ -134,7 +134,7 @@ export function OnboardingSteps({ hasLocations, hasBestDays }: OnboardingStepsPr
               {active && (
                 <Link
                   href={step.href}
-                  className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1a12]"
+                  className="flex min-h-[44px] items-center gap-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1a12]"
                 >
                   {t("start")}
                   <ChevronRight className="h-3 w-3" aria-hidden="true" />

@@ -1,8 +1,6 @@
-import { AppHeader } from "@/components/app/AppHeader";
-import { Footer } from "@/components/marketing/Footer";
+import { AppShell } from "@/components/app/AppShell";
 import { TokenProvider } from "@/lib/TokenContext";
 import { AppDataProvider } from "@/lib/AppDataContext";
-import { ReferralApplier } from "@/components/app/ReferralApplier";
 import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -22,28 +20,7 @@ export default function AppLayout({
   return (
     <TokenProvider>
     <AppDataProvider>
-      <div className="relative flex min-h-screen flex-col">
-        {/* Video background */}
-        <div className="fixed inset-0 -z-10">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source src="/images/background.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f0f]/40 via-transparent to-[#0a1f0f]/60" />
-        </div>
-        <AppHeader />
-        <ReferralApplier />
-        <main id="main-content" className="flex-1" tabIndex={-1}>
-          {children}
-        </main>
-        <Footer />
-      </div>
+      <AppShell>{children}</AppShell>
       <Toaster
         position="top-right"
         theme="dark"

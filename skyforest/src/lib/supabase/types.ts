@@ -42,6 +42,12 @@ export interface ForestInfo {
     age_group: string | null;
   }[] | null;
   fetched_at: string;
+  /**
+   * Язык локализованного контента (народные названия видов iNaturalist).
+   * Входит в ключ кэша: записи с другой локалью считаются промахом. Старые
+   * записи без поля трактуются как "ru" (историческое поведение).
+   */
+  locale?: string;
 }
 
 export interface TreeSpecies {

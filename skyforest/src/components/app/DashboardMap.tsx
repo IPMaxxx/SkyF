@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import { useIsNative } from "@/lib/native/useIsNative";
 import type { Location } from "@/lib/supabase/types";
 import type { BestDaySummary } from "@/lib/AppDataContext";
 
@@ -28,7 +31,117 @@ function makeBestDayIcon(count: number) {
   });
 }
 
+const queryIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:30px;height:30px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+  </div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+});
+
 type Filter = "all" | "locations" | "bestDays";
+
+/**
+ * Выбранная на карте точка (native-режим). Прокидывается через `onPointSelect`
+ * в родительский дашборд, который на её основе строит панель действий.
+ */
+export type MapSelection =
+  | { kind: "location"; lat: number; lng: number; location: Location }
+  | {
+      kind: "bestDay";
+      lat: number;
+      lng: number;
+      location: Location;
+      bestDay: BestDaySummary;
+    }
+  | { kind: "empty"; lat: number; lng: number };
+
+/** Клик по свободному месту карты открывает попап быстрых действий. */
+function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onPick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function QueryMarker({
+  lat,
+  lng,
+  onWeather,
+  onForest,
+  labels,
+}: {
+  lat: number;
+  lng: number;
+  onWeather: () => void;
+  onForest: () => void;
+  labels: { title: string; hint: string; weather: string; forest: string };
+}) {
+  const markerRef = useRef<L.Marker>(null);
+
+  useEffect(() => {
+    markerRef.current?.openPopup();
+  }, [lat, lng]);
+
+  return (
+    <Marker position={[lat, lng]} icon={queryIcon} ref={markerRef}>
+      <Popup minWidth={220} maxWidth={260}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
+          <p style={{ fontWeight: 600, marginBottom: 2 }}>{labels.title}</p>
+          <p style={{ color: "#888", fontSize: 11, marginBottom: 8 }}>
+            {lat.toFixed(5)}, {lng.toFixed(5)}
+          </p>
+          <p style={{ color: "#888", fontSize: 11, marginBottom: 8 }}>{labels.hint}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <button
+              type="button"
+              onClick={onWeather}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 44,
+                borderRadius: 8,
+                background: "#0284c7",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                border: "none",
+                cursor: "pointer",
+                padding: "0 12px",
+              }}
+            >
+              {labels.weather}
+            </button>
+            <button
+              type="button"
+              onClick={onForest}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 44,
+                borderRadius: 8,
+                background: "#10b981",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                border: "none",
+                cursor: "pointer",
+                padding: "0 12px",
+              }}
+            >
+              {labels.forest}
+            </button>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
 
 function FitBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
@@ -52,11 +165,27 @@ function FitBounds({ points }: { points: [number, number][] }) {
 interface Props {
   locations: Location[];
   bestDays: BestDaySummary[];
+  /** Native-режим: клик по карте/маркеру выбирает точку вместо веб-попапа. */
+  native?: boolean;
+  /** Точка «пустого» выбора в native — рисуем синий маркер-цель. */
+  nativeSelectedPoint?: { lat: number; lng: number } | null;
+  /** Колбэк выбора точки (только native). */
+  onPointSelect?: (sel: MapSelection) => void;
 }
 
-export function DashboardMap({ locations, bestDays }: Props) {
+export function DashboardMap({
+  locations,
+  bestDays,
+  native = false,
+  nativeSelectedPoint = null,
+  onPointSelect,
+}: Props) {
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [queryPoint, setQueryPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const router = useRouter();
+  const tActions = useTranslations("dashboard.mapActions");
+  const isNative = useIsNative();
 
   useEffect(() => setMounted(true), []);
 
@@ -141,7 +270,21 @@ export function DashboardMap({ locations, bestDays }: Props) {
               key={`loc-${loc.id}`}
               position={[loc.lat, loc.lng]}
               icon={locationIcon}
+              eventHandlers={
+                native
+                  ? {
+                      click: () =>
+                        onPointSelect?.({
+                          kind: "location",
+                          lat: loc.lat,
+                          lng: loc.lng,
+                          location: loc,
+                        }),
+                    }
+                  : undefined
+              }
             >
+              {!native && (
               <Popup>
                 <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>
                   <p style={{ fontWeight: 600, marginBottom: 2 }}>{loc.name}</p>
@@ -165,18 +308,35 @@ export function DashboardMap({ locations, bestDays }: Props) {
                   </a>
                 </div>
               </Popup>
+              )}
             </Marker>
           ))}
 
         {showBestDays &&
           groupedBestDays.map((group) => {
             const first = group[0];
+            const groupLoc = locMap.get(first.location_id);
             return (
               <Marker
                 key={`bd-group-${first.location_id}`}
                 position={[first.lat, first.lng]}
                 icon={makeBestDayIcon(group.length)}
+                eventHandlers={
+                  native && groupLoc
+                    ? {
+                        click: () =>
+                          onPointSelect?.({
+                            kind: "bestDay",
+                            lat: first.lat,
+                            lng: first.lng,
+                            location: groupLoc,
+                            bestDay: first,
+                          }),
+                      }
+                    : undefined
+                }
               >
+                {!native && (
                 <Popup>
                   <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, maxHeight: 240, overflowY: "auto" }}>
                     {group.map((bd, i) => (
@@ -222,9 +382,52 @@ export function DashboardMap({ locations, bestDays }: Props) {
                     ))}
                   </div>
                 </Popup>
+                )}
               </Marker>
             );
           })}
+
+        <MapClickHandler
+          onPick={(lat, lng) => {
+            if (native) {
+              onPointSelect?.({ kind: "empty", lat, lng });
+            } else {
+              setQueryPoint({ lat, lng });
+            }
+          }}
+        />
+
+        {native && nativeSelectedPoint && (
+          <Marker
+            position={[nativeSelectedPoint.lat, nativeSelectedPoint.lng]}
+            icon={queryIcon}
+          />
+        )}
+
+        {!native && queryPoint && (
+          <QueryMarker
+            lat={queryPoint.lat}
+            lng={queryPoint.lng}
+            labels={{
+              title: tActions("title"),
+              hint: tActions("hint"),
+              // В native кнопки переименованы: «Прогноз погоды» / «Тип леса».
+              // На вебе — прежние подписи, чтобы не менять веб-версию.
+              weather: tActions(isNative ? "weatherForecast" : "weather"),
+              forest: tActions(isNative ? "forestType" : "forest"),
+            }}
+            onWeather={() =>
+              router.push(
+                `/dashboard/weather?lat=${queryPoint.lat.toFixed(6)}&lng=${queryPoint.lng.toFixed(6)}&tab=rain-map`
+              )
+            }
+            onForest={() =>
+              router.push(
+                `/dashboard/forest-search?lat=${queryPoint.lat.toFixed(6)}&lng=${queryPoint.lng.toFixed(6)}`
+              )
+            }
+          />
+        )}
 
         {allPoints.length > 0 && <FitBounds points={allPoints} />}
       </MapContainer>

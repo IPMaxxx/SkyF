@@ -10,6 +10,7 @@ import { EditProfileName } from "@/components/app/EditProfileName";
 import { EditContactLink } from "@/components/app/EditContactLink";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
+import { WebOnly } from "@/components/native/NativeOnly";
 import { BiometricLockSetting } from "@/components/native/BiometricLockSetting";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -151,9 +152,12 @@ export default async function AccountPage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="mb-6">
-        <MushroomBotCard />
-      </div>
+      {/* Бот-определитель грибов скрыт в native (определение встроено в приложение) */}
+      <WebOnly>
+        <div className="mb-6">
+          <MushroomBotCard />
+        </div>
+      </WebOnly>
 
       <div className="glass mb-6 rounded-2xl p-6">
         <h2 className="mb-4 text-lg font-semibold">{t("history")}</h2>

@@ -5,6 +5,7 @@ import weather from "./weather.en";
 import compare from "./compare.en";
 import forestSearch from "./forestSearch.en";
 import marketplace from "./marketplace.en";
+import identify from "./identify.en";
 
 export default {
   metadata: {
@@ -141,6 +142,7 @@ export default {
     weather: "Weather",
     compare: "Monitoring",
     forestSearch: "Forest search",
+    identify: "Identify mushroom",
     marketplace: "Marketplace",
     mushroomTours: "Mushroom tours",
     messages: "Messages",
@@ -156,6 +158,7 @@ export default {
     lowBalanceCritical: "Tokens almost depleted — please top up",
     onboardingProgress: "Step {step} of {total}",
     siteSections: "Site sections",
+    more: "More",
   },
   appMeta: {
     title: "App",
@@ -558,6 +561,8 @@ export default {
   auth: {
     loginTitle: "Log in",
     loginSubtitle: "Sign in to access the service",
+    nativeSlogan: "Mushroom-spot forecasts in a couple of taps.",
+    orWithEmail: "or with email",
     password: "Password",
     forgotPassword: "Forgot password?",
     signIn: "Sign in",
@@ -679,4 +684,5 @@ export default {
   compare,
   forestSearch,
   marketplace,
+  identify,
 } as const;

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft, Trees, Search, Loader2, MapPin, Crosshair, Leaf, Satellite,
@@ -61,6 +62,9 @@ const RADIUS_OPTIONS = [1, 2, 5, 10, 20];
 export default function ForestSearchPage() {
   const t = useTranslations("forestSearch");
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const initLat = searchParams.get("lat");
+  const initLng = searchParams.get("lng");
   const { balance, spend, refresh: refreshTokens } = useTokens();
   const [step, setStep] = useState<Step>("reference");
 
@@ -114,6 +118,18 @@ export default function ForestSearchPage() {
   }, []);
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
+
+  // Эталонная точка из URL (переход с попапа на карте дашборда).
+  useEffect(() => {
+    if (!initLat || !initLng) return;
+    const la = parseFloat(initLat);
+    const ln = parseFloat(initLng);
+    if (Number.isNaN(la) || Number.isNaN(ln)) return;
+    setRefLat(la);
+    setRefLng(ln);
+    setRefPattern(null);
+    setStep("reference");
+  }, [initLat, initLng]);
 
   const restoreFromHistory = (item: HistoryItem) => {
     setRefLat(item.ref_lat);

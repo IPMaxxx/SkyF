@@ -447,7 +447,8 @@ function isTreeGenus(latinName: string): boolean {
 async function fetchInatSpecies(
   lat: number,
   lng: number,
-  radiusKm = 5
+  radiusKm = 5,
+  locale = "ru"
 ): Promise<TreeSpecies[]> {
   try {
     // Query all Plantae (47126) broadly, then filter to tree genera on our side
@@ -458,7 +459,7 @@ async function fetchInatSpecies(
       taxon_id: "47126", // Plantae
       quality_grade: "research",
       per_page: "100",
-      locale: "ru",
+      locale,
     });
 
     const res = await fetch(`${INAT_URL}?${params}`, {
@@ -527,6 +528,9 @@ export async function GET(request: NextRequest) {
   }
 
   const force = request.nextUrl.searchParams.get("force") === "1";
+  // Локаль для источников, поддерживающих её (iNaturalist). По умолчанию ru —
+  // веб-поведение без изменений. ФГИС ЛК/OSM теги приходят на языке источника.
+  const locale = request.nextUrl.searchParams.get("locale") === "en" ? "en" : "ru";
 
   // Check cache first (rounded to 4 decimal places ~ 11m precision)
   if (!force) {
@@ -540,7 +544,11 @@ export async function GET(request: NextRequest) {
     if (cached) {
       const age = Date.now() - new Date(cached.created_at).getTime();
       const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-      if (age < THIRTY_DAYS) {
+      // Локаль — часть ключа кэша: народные названия видов (iNaturalist)
+      // зависят от языка. Записи с другой локалью считаем промахом, чтобы не
+      // отдавать чужой язык. Старые записи без поля — русские (было раньше).
+      const cachedLocale = (cached.data as { locale?: string } | null)?.locale ?? "ru";
+      if (age < THIRTY_DAYS && cachedLocale === locale) {
         return NextResponse.json({ forest_info: cached.data, from_cache: true });
       }
     }
@@ -550,7 +558,7 @@ export async function GET(request: NextRequest) {
   const [osmResult, fgisResult, inatSpecies, modisResult] = await Promise.all([
     fetchOsmForest(lat, lng),
     fetchFgisLk(lat, lng),
-    fetchInatSpecies(lat, lng),
+    fetchInatSpecies(lat, lng, 5, locale),
     getModisLandCover(lat, lng).catch(() => null),
   ]);
 
@@ -617,6 +625,7 @@ export async function GET(request: NextRequest) {
     modis: modisData,
     fgis_lk: fgisResult.raw.length > 0 ? fgisResult.raw : null,
     fetched_at: new Date().toISOString(),
+    locale,
   };
 
   // Save to cache (upsert)

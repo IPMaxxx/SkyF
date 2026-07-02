@@ -5,6 +5,7 @@ import weather from "./weather.ru";
 import compare from "./compare.ru";
 import forestSearch from "./forestSearch.ru";
 import marketplace from "./marketplace.ru";
+import identify from "./identify.ru";
 
 export default {
   metadata: {
@@ -141,6 +142,7 @@ export default {
     weather: "Погода",
     compare: "Мониторинг",
     forestSearch: "Поиск леса",
+    identify: "Определить гриб",
     marketplace: "Маркетплейс",
     mushroomTours: "Грибные туры",
     messages: "Сообщения",
@@ -156,6 +158,7 @@ export default {
     lowBalanceCritical: "Токены почти закончились — пополните баланс",
     onboardingProgress: "Шаг {step} из {total}",
     siteSections: "Разделы сайта",
+    more: "Ещё",
   },
   appMeta: {
     title: "Приложение",
@@ -560,6 +563,8 @@ export default {
   auth: {
     loginTitle: "Вход в аккаунт",
     loginSubtitle: "Войдите, чтобы получить доступ к сервису",
+    nativeSlogan: "Прогноз грибных мест — за пару касаний.",
+    orWithEmail: "или по e-mail",
     password: "Пароль",
     forgotPassword: "Забыли пароль?",
     signIn: "Войти",
@@ -683,4 +688,5 @@ export default {
   compare,
   forestSearch,
   marketplace,
+  identify,
 } as const;
