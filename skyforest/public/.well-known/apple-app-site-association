@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "VH4L4R7PKW.ai.skyforest.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

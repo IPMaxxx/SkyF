@@ -27,6 +27,8 @@ import {
   withdrawMethodPlaceholder,
 } from "@/lib/payment-display";
 import { useLocale } from "next-intl";
+import { isNativeApp } from "@/lib/native/capacitor";
+import { purchasePack } from "@/lib/native/iap";
 
 export default function PaymentPage() {
   return (
@@ -54,6 +56,15 @@ function PaymentContent() {
   const [tab, setTab] = useState<Tab>(
     searchParams.get("tab") === "withdraw" ? "withdraw" : "buy"
   );
+  // Внутри нативного приложения покупка токенов идёт только через IAP
+  // (Apple/Google требуют это для цифровых товаров). Веб-checkout и вывод скрыты.
+  const [native, setNative] = useState(false);
+  useEffect(() => {
+    if (isNativeApp()) {
+      setNative(true);
+      setTab("buy");
+    }
+  }, []);
 
   // Buy state
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
@@ -131,6 +142,22 @@ function PaymentContent() {
   const handlePurchase = async () => {
     if (isCustom && customTokens < 301) {
       setBuyError("Минимальное количество для произвольной покупки — 301 токен");
+      return;
+    }
+    // Нативное приложение: покупка фиксированного пакета через IAP.
+    if (native) {
+      setPurchasing(true);
+      setBuyError("");
+      try {
+        const r = await purchasePack(selectedPack);
+        if (r.ok) {
+          refresh();
+        } else {
+          setBuyError(r.error || (locale === "en" ? "Purchase failed" : "Не удалось выполнить покупку"));
+        }
+      } finally {
+        setPurchasing(false);
+      }
       return;
     }
     setPurchasing(true);
@@ -256,21 +283,23 @@ function PaymentContent() {
           <ShoppingCart className="h-4 w-4" />
           Купить
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setTab("withdraw");
-            setWSuccess(false);
-          }}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
-            tab === "withdraw"
-              ? "bg-emerald-500/20 text-emerald-300 shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <ArrowDownToLine className="h-4 w-4" />
-          Вывести
-        </button>
+        {!native && (
+          <button
+            type="button"
+            onClick={() => {
+              setTab("withdraw");
+              setWSuccess(false);
+            }}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+              tab === "withdraw"
+                ? "bg-emerald-500/20 text-emerald-300 shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ArrowDownToLine className="h-4 w-4" />
+            Вывести
+          </button>
+        )}
       </div>
 
       {/* ========== BUY TAB ========== */}
@@ -367,7 +396,9 @@ function PaymentContent() {
               ))}
             </div>
 
-            {/* Custom amount */}
+            {/* Custom amount (недоступно в приложении — IAP только фиксированные пакеты) */}
+            {!native && (
+            <>
             <button
               type="button"
               onClick={() => setSelectedPack("custom")}
@@ -418,6 +449,8 @@ function PaymentContent() {
                   </div>
                 )}
               </div>
+            )}
+            </>
             )}
           </div>
 
@@ -479,6 +512,15 @@ function PaymentContent() {
             </span>
           </button>
 
+          {native ? (
+            <div className="mt-6 text-center">
+              <p className="text-xs text-muted-foreground">
+                {locale === "en"
+                  ? "Purchases are processed securely by the App Store / Google Play."
+                  : "Покупки обрабатываются безопасно через App Store / Google Play."}
+              </p>
+            </div>
+          ) : (
           <div className="mt-6 space-y-4">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
@@ -519,11 +561,12 @@ function PaymentContent() {
               </a>
             </div>
           </div>
+          )}
         </>
       )}
 
       {/* ========== WITHDRAW TAB ========== */}
-      {tab === "withdraw" && (
+      {!native && tab === "withdraw" && (
         <>
           {wSuccess ? (
             <div className="glass rounded-2xl p-8 text-center">

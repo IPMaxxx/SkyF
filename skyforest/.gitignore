@@ -68,3 +68,11 @@ next-env.d.ts
 client_secret*.json
 GoogleService-Info.plist
 *.mobileprovision
+
+# ios/android build artifacts (never commit — large binaries)
+*.ipa
+*.dSYM.zip
+*.dSYM/
+*.aab
+*.apk
+*.der

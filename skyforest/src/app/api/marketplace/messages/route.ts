@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServerClient } from "@supabase/ssr";
 import { sendEmail } from "@/lib/email";
 import { buildNewMessageEmail } from "@/lib/email-templates";
+import { sendPushToUser } from "@/lib/native/push-send";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -269,6 +270,13 @@ export async function POST(request: NextRequest) {
   } catch (emailErr) {
     console.error("Email notification error:", emailErr);
   }
+
+  // Push-уведомление получателю (no-op, если push-креды не настроены).
+  void sendPushToUser(resolvedRecipientId, {
+    title: "SkyForest",
+    body: message.length > 120 ? `${message.slice(0, 117)}…` : message,
+    link: `/dashboard/marketplace/chats?listing=${listingId}&partner=${user.id}`,
+  });
 
   return NextResponse.json({ message: msg });
 }
