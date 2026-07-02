@@ -41,3 +41,30 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# fastlane / store credentials (secrets — never commit)
+/fastlane/asc_api_key.json
+/fastlane/*.p8
+/fastlane/play-service-account.json
+/fastlane/report.xml
+/fastlane/README.md
+/fastlane/test_output
+/fastlane/*.log
+
+# capacitor / mobile build artifacts
+/ios/App/Pods
+/ios/App/build
+/android/.gradle
+/android/build
+/android/app/build
+
+# android signing secrets (never commit)
+/fastlane/skyforest-upload.jks
+/android/keystore.properties
+*.jks
+
+# oauth / apple-google credentials (never commit — defensive, any location)
+*.p8
+client_secret*.json
+GoogleService-Info.plist
+*.mobileprovision

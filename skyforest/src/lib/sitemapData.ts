@@ -27,6 +27,7 @@ export const SITEMAP_MARKETING_PATHS: SitemapPathEntry[] = [
   { path: "/instruction", lastModified: new Date("2026-06-24"), changeFrequency: "yearly", priority: 0.6 },
   { path: "/offer", lastModified: new Date("2026-03-08"), changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", lastModified: new Date("2026-03-08"), changeFrequency: "yearly", priority: 0.3 },
+  { path: "/delete-account", lastModified: new Date("2026-07-02"), changeFrequency: "yearly", priority: 0.3 },
   { path: "/payment_method", lastModified: new Date("2025-01-15"), changeFrequency: "yearly", priority: 0.3 },
   { path: "/return_goods", lastModified: new Date("2025-01-15"), changeFrequency: "yearly", priority: 0.3 },
 ];

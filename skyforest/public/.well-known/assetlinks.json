@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.skyforest.app",
+      "sha256_cert_fingerprints": [
+        "72:57:9B:23:47:08:A3:B8:F8:B4:97:A8:82:D7:B8:02:E5:1F:A3:9C:3A:ED:FB:D2:61:D7:31:76:9A:1A:35:13"
+      ]
+    }
+  }
+]

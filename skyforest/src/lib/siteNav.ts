@@ -30,6 +30,7 @@ export const FOOTER_SERVICE_LINKS: NavLink[] = [
 export const FOOTER_LEGAL_LINKS: NavLink[] = [
   { labelKey: "offer", href: "/offer" },
   { labelKey: "privacy", href: "/privacy" },
+  { labelKey: "deleteAccount", href: "/delete-account" },
   { labelKey: "paymentMethods", href: "/payment_method" },
   { labelKey: "returns", href: "/return_goods" },
 ];
