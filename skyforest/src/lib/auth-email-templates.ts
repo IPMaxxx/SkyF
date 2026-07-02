@@ -1,16 +1,20 @@
 import type { Brand } from "@/lib/brand";
 
 /**
- * Brand-aware, localized templates for Supabase Auth transactional emails
+ * Brand-aware templates for Supabase Auth transactional emails
  * (confirm signup, password recovery, magic link, email change, reauthentication).
  *
  * These are rendered by the Supabase "Send Email" auth hook
  * (see src/app/api/auth/send-email/route.ts) so that a single shared Supabase
- * project can deliver:
- *   - skyforest.by  → Russian copy, skyforest.by branding, support@skyforest.by
- *   - skyforest.ai  → English copy, skyforest.ai branding, support@skyforest.ai
+ * project can deliver per-brand branding and support address:
+ *   - skyforest.by  → skyforest.by branding, support@skyforest.by
+ *   - skyforest.ai  → skyforest.ai branding, support@skyforest.ai
  *
- * The active brand + locale are resolved per-request from the hook payload,
+ * All copy is delivered in English regardless of brand/locale. The locale
+ * parameter is retained for future localization, but every branch renders
+ * English so no Russian is ever emitted.
+ *
+ * The active brand is resolved per-request from the hook payload,
  * NOT from the build-time NEXT_PUBLIC_BRAND, because one deployment hosts the
  * hook for both domains.
  */
@@ -115,68 +119,69 @@ function copyFor(kind: AuthEmailKind, locale: AuthEmailLocale, brand: Brand): Co
     }
   }
 
-  // Russian (skyforest.by)
+  // Fallback locale: English content is emitted for every brand/locale so all
+  // transactional email is delivered in English.
   switch (kind) {
     case "signup":
       return {
-        subject: `Подтвердите регистрацию в ${app}`,
-        preview: `Подтвердите email, чтобы активировать аккаунт в ${app}.`,
-        heading: "Подтвердите email",
-        intro: `Добро пожаловать в ${app}! Нажмите кнопку ниже, чтобы подтвердить адрес электронной почты и активировать аккаунт.`,
-        button: "Подтвердить email",
-        fallback: "Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:",
-        ignore: "Если вы не создавали этот аккаунт, просто проигнорируйте это письмо.",
+        subject: `Confirm your ${app} account`,
+        preview: `Confirm your email to activate your ${app} account.`,
+        heading: "Confirm your email",
+        intro: `Welcome to ${app}! Tap the button below to confirm your email address and activate your account.`,
+        button: "Confirm email",
+        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        ignore: "If you didn't create this account, you can safely ignore this email.",
       };
     case "recovery":
       return {
-        subject: `Восстановление пароля ${app}`,
-        preview: `Сброс пароля для вашего аккаунта в ${app}.`,
-        heading: "Сброс пароля",
-        intro: "Мы получили запрос на сброс пароля. Нажмите кнопку ниже, чтобы задать новый пароль.",
-        button: "Сбросить пароль",
-        fallback: "Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:",
-        ignore: "Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.",
+        subject: `Reset your ${app} password`,
+        preview: `Reset the password for your ${app} account.`,
+        heading: "Reset your password",
+        intro: "We received a request to reset your password. Tap the button below to choose a new one.",
+        button: "Reset password",
+        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        ignore: "If you didn't request a password reset, you can safely ignore this email.",
       };
     case "magiclink":
       return {
-        subject: `Ссылка для входа в ${app}`,
-        preview: `Вход в ${app} по волшебной ссылке.`,
-        heading: "Вход в аккаунт",
-        intro: "Нажмите кнопку ниже, чтобы войти. В целях безопасности ссылка скоро истечёт.",
-        button: "Войти",
-        fallback: "Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:",
-        ignore: "Если вы не запрашивали эту ссылку, просто проигнорируйте это письмо.",
+        subject: `Your ${app} sign-in link`,
+        preview: `Sign in to ${app} with this magic link.`,
+        heading: "Sign in to your account",
+        intro: "Tap the button below to sign in. This link will expire shortly for your security.",
+        button: "Sign in",
+        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        ignore: "If you didn't request this link, you can safely ignore this email.",
       };
     case "invite":
       return {
-        subject: `Приглашение в ${app}`,
-        preview: `Примите приглашение в ${app}.`,
-        heading: "Вас пригласили",
-        intro: `Вас пригласили в ${app}. Нажмите кнопку ниже, чтобы принять приглашение и настроить аккаунт.`,
-        button: "Принять приглашение",
-        fallback: "Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:",
-        ignore: "Если вы не ожидали этого приглашения, просто проигнорируйте это письмо.",
+        subject: `You've been invited to ${app}`,
+        preview: `Accept your invitation to ${app}.`,
+        heading: "You've been invited",
+        intro: `You've been invited to join ${app}. Tap the button below to accept the invitation and set up your account.`,
+        button: "Accept invitation",
+        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        ignore: "If you weren't expecting this invitation, you can safely ignore this email.",
       };
     case "email_change":
       return {
-        subject: `Подтвердите новый email в ${app}`,
-        preview: `Подтвердите смену email в аккаунте ${app}.`,
-        heading: "Подтвердите новый email",
-        intro: "Нажмите кнопку ниже, чтобы подтвердить новый адрес электронной почты для вашего аккаунта.",
-        button: "Подтвердить новый email",
-        fallback: "Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:",
-        ignore: "Если вы не запрашивали это изменение, немедленно свяжитесь с поддержкой.",
+        subject: `Confirm your new ${app} email`,
+        preview: `Confirm the email change on your ${app} account.`,
+        heading: "Confirm your new email",
+        intro: "Tap the button below to confirm the new email address for your account.",
+        button: "Confirm new email",
+        fallback: "If the button doesn't work, copy and paste this link into your browser:",
+        ignore: "If you didn't request this change, please contact support immediately.",
       };
     case "reauthentication":
       return {
-        subject: `Код подтверждения ${app}`,
-        preview: `Ваш код подтверждения ${app}.`,
-        heading: "Код подтверждения",
-        intro: "Используйте код ниже, чтобы подтвердить действие:",
+        subject: `Your ${app} verification code`,
+        preview: `Your ${app} verification code.`,
+        heading: "Verification code",
+        intro: "Use the code below to confirm this action:",
         button: "",
         fallback: "",
-        ignore: "Если вы не запрашивали этот код, просто проигнорируйте это письмо.",
-        otpLead: "Ваш код подтверждения:",
+        ignore: "If you didn't request this code, you can safely ignore this email.",
+        otpLead: "Your verification code is:",
       };
   }
 }
@@ -184,10 +189,7 @@ function copyFor(kind: AuthEmailKind, locale: AuthEmailLocale, brand: Brand): Co
 function shell(brand: Brand, c: Copy, body: string): string {
   const domain = brand.domain;
   const support = brand.contacts.email;
-  const supportLine =
-    brand.id === "samplify"
-      ? `Questions? Email us at <a href="mailto:${support}" style="color:#62a863;">${support}</a>.`
-      : `Вопросы? Пишите на <a href="mailto:${support}" style="color:#62a863;">${support}</a>.`;
+  const supportLine = `Questions? Email us at <a href="mailto:${support}" style="color:#62a863;">${support}</a>.`;
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>

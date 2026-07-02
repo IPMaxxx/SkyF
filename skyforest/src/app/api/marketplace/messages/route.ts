@@ -247,14 +247,14 @@ export async function POST(request: NextRequest) {
 
       const recipientEmail = recipientRes.data?.email;
       if (recipientEmail) {
-        const senderName = senderRes.data?.full_name || "Пользователь";
+        const senderName = senderRes.data?.full_name || "A user";
         const bd = listingInfoRes.data?.best_day as
           | { name: string }
           | { name: string }[]
           | null;
         const listingName = Array.isArray(bd)
           ? bd[0]?.name
-          : bd?.name ?? "Листинг";
+          : bd?.name ?? "Listing";
 
         const appUrl =
           process.env.NEXT_PUBLIC_APP_URL || "https://www.skyforest.by";
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
 
         await sendEmail(
           recipientEmail,
-          `Новое сообщение от ${senderName} — Skyforest`,
+          `New message from ${senderName} — Skyforest`,
           buildNewMessageEmail(senderName, listingName, message, chatUrl)
         );
       }

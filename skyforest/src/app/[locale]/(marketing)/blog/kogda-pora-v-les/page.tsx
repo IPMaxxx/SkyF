@@ -5,32 +5,32 @@ import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
-  title: "Когда пора в лес: 7 признаков, что грибы пошли",
+  title: "When It's Time to Head to the Forest: 7 Signs the Mushrooms Are Out",
   description:
-    "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
+    "How do you know when it's time to go mushroom picking? 7 proven signs that the mushroom season has begun. A month-by-month mushroom calendar, scientific data, and tips from experienced foragers.",
   keywords: [
-    "когда идти за грибами",
-    "когда собирать грибы",
-    "грибной сезон",
-    "когда пора в лес за грибами",
-    "признаки что грибы пошли",
-    "грибной сезон 2025",
-    "когда начинается грибной сезон",
-    "тихая охота",
-    "сезон грибов по месяцам",
+    "when to go mushroom picking",
+    "when to pick mushrooms",
+    "mushroom season",
+    "when it's time to head to the forest for mushrooms",
+    "signs the mushrooms are out",
+    "mushroom season 2025",
+    "when does mushroom season start",
+    "mushroom foraging",
+    "mushroom season by month",
   ],
   openGraph: {
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
+    title: "When It's Time to Head to the Forest: 7 Signs the Mushrooms Are Out",
     description:
-      "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
+      "How do you know when it's time to go mushroom picking? 7 proven signs that the mushroom season has begun. A month-by-month mushroom calendar, scientific data, and tips from experienced foragers.",
     url: "https://www.skyforest.by/blog/kogda-pora-v-les",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "https://www.skyforest.by/images/blog/blog-kogda-pora-v-les.jpg", width: 1792, height: 1024, alt: "Подосиновики в осеннем лесу утром с туманом и росой" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-kogda-pora-v-les.jpg", width: 1792, height: 1024, alt: "Orange-cap boletes in an autumn forest in the morning with mist and dew" }],
     publishedTime: "2025-09-10T00:00:00+03:00",
     modifiedTime: "2025-09-10T00:00:00+03:00",
     authors: ["SkyForest"],
-    section: "Грибы",
+    section: "Mushrooms",
   },
   alternates: { canonical: "https://www.skyforest.by/blog/kogda-pora-v-les" },
 };
@@ -40,9 +40,9 @@ const JSON_LD = {
   "@graph": [
     {
       "@type": "Article",
-      headline: "Когда пора в лес: 7 признаков, что грибы пошли",
+      headline: "When It's Time to Head to the Forest: 7 Signs the Mushrooms Are Out",
       description:
-        "Как понять, что пора идти за грибами? 7 проверенных признаков начала грибного сезона. Грибной календарь по месяцам, научные данные и советы опытных грибников.",
+        "How do you know when it's time to go mushroom picking? 7 proven signs that the mushroom season has begun. A month-by-month mushroom calendar, scientific data, and tips from experienced foragers.",
       author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
       publisher: {
         "@type": "Organization",
@@ -59,14 +59,14 @@ const JSON_LD = {
         width: 1792,
         height: 1024,
       },
-      inLanguage: "ru",
+      inLanguage: "en",
     },
     {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
-        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
-        { "@type": "ListItem", position: 3, name: "Когда пора в лес" },
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "When It's Time to Head to the Forest" },
       ],
     },
   ],
@@ -74,62 +74,62 @@ const JSON_LD = {
 
 const CALENDAR = [
   {
-    month: "Май",
-    mushrooms: "Сморчки, строчки, маслята ранние",
-    conditions: "Прогрев почвы до +10 °C, первые тёплые дожди",
+    month: "May",
+    mushrooms: "Morels, false morels, early slippery jacks",
+    conditions: "Soil warms to +10 °C, first warm rains",
   },
   {
-    month: "Июнь",
-    mushrooms: "Подберёзовики, маслята, лисички (конец месяца)",
-    conditions: "Устойчивое тепло +15–20 °C, обильные дожди",
+    month: "June",
+    mushrooms: "Birch boletes, slippery jacks, chanterelles (late in the month)",
+    conditions: "Steady warmth of +15–20 °C, plentiful rain",
   },
   {
-    month: "Июль",
-    mushrooms: "Белые грибы, подосиновики, лисички, маслята",
-    conditions: "Тёплые ливни, высокая влажность, ночи без заморозков",
+    month: "July",
+    mushrooms: "Porcini, orange-cap boletes, chanterelles, slippery jacks",
+    conditions: "Warm downpours, high humidity, frost-free nights",
   },
   {
-    month: "Август",
-    mushrooms: "Белые, подберёзовики, подосиновики, рыжики, грузди",
-    conditions: "Пик сезона: тёплые дожди + туманы, температура 15–22 °C",
+    month: "August",
+    mushrooms: "Porcini, birch boletes, orange-cap boletes, saffron milk caps, milk caps",
+    conditions: "Peak of the season: warm rains + mist, temperatures of 15–22 °C",
   },
   {
-    month: "Сентябрь",
-    mushrooms: "Опята, рыжики, грузди, белые (вторая волна)",
-    conditions: "Температура снижается до 10–15 °C, утренние росы и туманы",
+    month: "September",
+    mushrooms: "Honey fungus, saffron milk caps, milk caps, porcini (second wave)",
+    conditions: "Temperatures drop to 10–15 °C, morning dew and mist",
   },
   {
-    month: "Октябрь",
-    mushrooms: "Опята осенние, рядовки, зеленушки, вёшенки",
-    conditions: "Прохладно (+5–12 °C), частые дожди, первые заморозки",
+    month: "October",
+    mushrooms: "Autumn honey fungus, tricholoma, man on horseback, oyster mushrooms",
+    conditions: "Cool (+5–12 °C), frequent rain, first frosts",
   },
   {
-    month: "Ноябрь",
-    mushrooms: "Вёшенки, зимние опята, рядовка фиолетовая",
-    conditions: "Холодно, но без устойчивого снега; грибы до первых морозов",
+    month: "November",
+    mushrooms: "Oyster mushrooms, winter enoki, wood blewit",
+    conditions: "Cold, but without lasting snow; mushrooms until the first hard frosts",
   },
 ];
 
 const FAQ = [
   {
-    q: "Через сколько дней после дождя появляются грибы?",
-    a: "Большинство видов появляется через 5–10 дней после обильного тёплого дождя. Быстрее всех реагируют маслята и сыроежки — им хватает 3–5 дней. Белые грибы и подосиновики более неторопливы: обычно нужно 7–12 дней. Важно, чтобы после дождя не наступила жара выше +28 °C — иначе влага быстро испарится и грибница не успеет сформировать плодовые тела.",
+    q: "How many days after rain do mushrooms appear?",
+    a: "Most species appear 5–10 days after a heavy, warm rain. Slippery jacks and russulas react the fastest — they need just 3–5 days. Porcini and orange-cap boletes are more leisurely: they usually take 7–12 days. It's important that heat above +28 °C doesn't set in after the rain — otherwise the moisture evaporates quickly and the mycelium doesn't have time to form fruiting bodies.",
   },
   {
-    q: "Можно ли собирать грибы после заморозков?",
-    a: "Лёгкий заморозок (до −2 °C) не убивает грибницу — она находится в почве и защищена слоем подстилки. Уже выросшие плодовые тела могут выглядеть нормально, но после оттаивания быстро раскисают. Опята и вёшенки переносят заморозки лучше других и продолжают расти при +3–5 °C. А вот белые грибы, подберёзовики и маслята заморозков не любят — их сезон обычно заканчивается с первым устойчивым минусом.",
+    q: "Can you pick mushrooms after frost?",
+    a: "A light frost (down to −2 °C) doesn't kill the mycelium — it sits in the soil, protected by a layer of leaf litter. Fruiting bodies that have already grown may look fine, but they quickly turn mushy once they thaw. Honey fungus and oyster mushrooms tolerate frost better than most and keep growing at +3–5 °C. Porcini, birch boletes, and slippery jacks, on the other hand, don't like frost — their season usually ends with the first lasting subzero temperatures.",
   },
   {
-    q: "Когда начинается грибной сезон в Беларуси?",
-    a: "Первые грибы (сморчки, строчки) появляются уже в конце апреля — начале мая. Основной сезон «благородных» грибов стартует в конце июня — начале июля с первых подберёзовиков и маслят. Пик тихой охоты приходится на август — сентябрь: в это время в лесах можно найти практически все виды. Сезон продолжается до конца октября, а вёшенки и зимние опята собирают вплоть до устойчивых морозов в ноябре.",
+    q: "When does mushroom season start in Belarus?",
+    a: "The first mushrooms (morels and false morels) appear as early as late April to early May. The main season for the prized \"noble\" mushrooms kicks off in late June to early July with the first birch boletes and slippery jacks. The peak of foraging falls in August and September: during this time you can find practically every species in the forest. The season continues until the end of October, and oyster mushrooms and winter enoki are picked right up until the hard frosts of November.",
   },
   {
-    q: "Какая температура лучше всего подходит для роста грибов?",
-    a: "Оптимальный диапазон для большинства съедобных грибов — от +10 до +20 °C. При этом важна не только температура воздуха, но и температура почвы на глубине 5–10 см: она должна быть выше +8 °C. Именно поэтому после холодной ночи грибы растут медленнее, даже если днём тепло. Микологи отмечают, что наиболее активный рост белых грибов происходит при среднесуточной температуре +14–17 °C в сочетании с высокой влажностью почвы.",
+    q: "What temperature is best for mushroom growth?",
+    a: "The optimal range for most edible mushrooms is +10 to +20 °C. What matters is not only the air temperature but also the soil temperature at a depth of 5–10 cm: it should be above +8 °C. That's exactly why mushrooms grow more slowly after a cold night, even if the day is warm. Mycologists note that porcini grow most actively at an average daily temperature of +14–17 °C combined with high soil moisture.",
   },
   {
-    q: "Как SkyForest помогает определить лучшее время для сбора грибов?",
-    a: "SkyForest запоминает погоду за 14 дней до вашего удачного грибного похода и создаёт «погодный отпечаток». Потом сервис каждый день сравнивает текущие условия с этим эталоном и выдаёт процент совпадения. Когда процент поднимается выше 80% — значит, погода сейчас такая же, как перед вашим лучшим днём. Это самый надёжный способ не пропустить грибной слой, потому что он основан на вашем личном опыте, а не на общих прогнозах.",
+    q: "How does SkyForest help you find the best time to pick mushrooms?",
+    a: "SkyForest remembers the weather from the 14 days leading up to your successful mushroom trip and builds a \"weather fingerprint.\" Then the service compares the current conditions with this benchmark every day and gives you a match percentage. When the percentage climbs above 80%, it means the weather right now is the same as it was before your best day. This is the most reliable way not to miss a mushroom flush, because it's based on your personal experience rather than general forecasts.",
   },
 ];
 
@@ -144,21 +144,21 @@ export default function KogdaPoraVLesPage() {
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         {/* Back link */}
-        <BlogArticleHeader title="Когда пора в лес: 7&nbsp;признаков, что грибы пошли" />
+        <BlogArticleHeader title="When It's Time to Head to the Forest: 7&nbsp;Signs the Mushrooms Are Out" />
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-          Когда пора в лес: 7&nbsp;признаков, что грибы пошли
+          When It’s Time to Head to the Forest: 7&nbsp;Signs the Mushrooms Are Out
         </h1>
 
         <p className="mb-8 text-sm text-white/50">
-          10 сентября 2025 · 6 мин чтения
+          September 10, 2025 · 6 min read
         </p>
 
         <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
           <Image
             src="/images/blog/blog-kogda-pora-v-les.jpg"
-            alt="Подосиновики в осеннем лесу ранним утром — туман, роса на паутине, золотой свет"
+            alt="Orange-cap boletes in an autumn forest in the early morning — mist, dew on a spider web, golden light"
             fill
             className="object-cover"
             priority
@@ -169,269 +169,270 @@ export default function KogdaPoraVLesPage() {
         {/* ── Intro ── */}
         <section className="space-y-5">
           <p className="text-lg leading-relaxed text-white/80">
-            Каждый грибник знает это чувство: лето перевалило за середину, прошёл
-            хороший дождь, а в голове уже крутится один вопрос —{" "}
-            <strong className="text-white">пора ли в лес?</strong> Не рано ли
-            ехать? Не опоздал ли? Тихая охота — дело тонкое. Приедешь на неделю
-            раньше — пустая корзинка и разочарование. Опоздаешь на три дня —
-            и вместо крепких боровиков найдёшь только червивые шляпки.
+            Every forager knows the feeling: summer is past its midpoint, a good
+            rain has come and gone, and one question is already spinning in your
+            head —{" "}
+            <strong className="text-white">is it time to head to the forest?</strong> Is it too
+            early to go? Have I missed it? Mushroom foraging is a subtle art. Show up a week
+            too early and you’ll come home with an empty basket and disappointment. Be three days
+            late and instead of firm porcini you’ll find nothing but worm-eaten caps.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            За двадцать лет грибных походов я научился читать природу, как открытую
-            книгу. Погода, запахи в лесу, первые находки на опушке — всё это
-            складывается в чёткую картину. Иногда достаточно выглянуть утром
-            в окно и увидеть туман над полем, чтобы понять: сегодня стоит
-            отложить все дела и взять лукошко.
+            Over twenty years of mushroom trips I’ve learned to read nature like an
+            open book. The weather, the smells in the forest, the first finds along
+            the edge of the woods — it all comes together into a clear picture. Sometimes
+            it’s enough to glance out the window in the morning and see mist over the
+            field to know: today is a day to drop everything and grab a basket.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            В этой статье — семь проверенных признаков, которые подскажут, что
-            грибной сезон начался и самое время отправиться на тихую охоту.
-            Каждый признак подкреплён научными данными и многолетним опытом.
-            Вместе они образуют надёжную систему, которая редко обманывает.
-          </p>
-        </section>
-
-        {/* ── Признак 1 ── */}
-        <section className="mt-14 space-y-5">
-          <h2 className="text-2xl font-bold text-white">
-            Признак 1: Тёплые дожди прошли 5–10 дней назад
-          </h2>
-
-          <p className="leading-relaxed text-white/80">
-            Дождь — главный триггер для грибницы. Но не любой дождь, а именно
-            тёплый, обильный, продолжительный. Короткий ливень в жару промочит
-            только верхний слой почвы, а грибнице нужна глубокая, устойчивая
-            влага. Идеальный вариант — двое-трое суток моросящего дождя при
-            температуре воздуха +15–20&nbsp;°C.
-          </p>
-
-          <p className="leading-relaxed text-white/80">
-            Микологи из Ботанического института РАН установили, что мицелию
-            требуется от 5 до 12 дней после значительного увлажнения почвы, чтобы
-            сформировать плодовые тела. Точные сроки зависят от вида: маслята
-            и сыроежки — «спринтеры», им хватает 3–5 дней. Подберёзовики и белые
-            грибы набирают массу медленнее и появляются через 7–12 дней. Если
-            после дождя установилась жара выше +28&nbsp;°C, влага быстро
-            испаряется, и окно сужается.
-          </p>
-
-          <p className="leading-relaxed text-white/80">
-            Практическое правило: запомните дату хорошего дождя и отсчитайте
-            неделю. Если за эту неделю не было палящего зноя и ночных заморозков,
-            на восьмой-девятый день можно смело ехать. Опытные грибники ведут
-            дневник осадков — это одна из самых полезных привычек для тихой
-            охоты.
+            In this article you’ll find seven proven signs that tell you the
+            mushroom season has begun and it’s the perfect time to head out foraging.
+            Each sign is backed by scientific data and many years of experience.
+            Together they form a reliable system that rarely leads you astray.
           </p>
         </section>
 
-        {/* ── Признак 2 ── */}
+        {/* ── Sign 1 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 2: Температура стабильно 10–20&nbsp;°C
+            Sign 1: Warm rains fell 5–10 days ago
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Грибница — живой организм, и у неё есть свой «коридор комфорта».
-            Исследование, опубликованное в Mycological Progress (2018),
-            показало, что оптимальная температура для большинства съедобных
-            макромицетов умеренного пояса составляет +12–18&nbsp;°C.
-            Температура почвы на глубине 5–10&nbsp;см при этом должна быть не
-            ниже +8&nbsp;°C.
+            Rain is the main trigger for the mycelium. But not just any rain — it has to be
+            warm, heavy, and prolonged. A brief downpour during a heat wave only soaks
+            the top layer of soil, while the mycelium needs deep, lasting
+            moisture. The ideal scenario is two or three days of drizzle at an
+            air temperature of +15–20&nbsp;°C.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Ночные заморозки — враг грибника в начале и конце сезона. Если ночью
-            температура падает ниже нуля, мицелий замедляет рост, а уже
-            появившиеся плодовые тела могут погибнуть. Но лёгкий утренний
-            морозец в октябре — не приговор: грибница в почве защищена слоем
-            опавших листьев, и при возвращении тепла грибы продолжают расти.
-            Опята и вёшенки, например, прекрасно себя чувствуют при +3–8&nbsp;°C.
+            Mycologists at the Komarov Botanical Institute have established that the mycelium
+            needs 5 to 12 days after significant soil moisture to
+            form fruiting bodies. The exact timing depends on the species: slippery jacks
+            and russulas are the “sprinters” and need just 3–5 days. Birch and porcini
+            mushrooms put on mass more slowly and appear after 7–12 days. If
+            heat above +28&nbsp;°C sets in after the rain, moisture evaporates
+            quickly and the window narrows.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            На практике лучшие грибные дни приходятся на периоды, когда
-            среднесуточная температура держится в районе +14–17&nbsp;°C: достаточно
-            тепло для активного роста, но не настолько жарко, чтобы почва
-            пересохла. В средней полосе России и Беларуси такие условия обычно
-            складываются в конце июля, августе и первой половине сентября.
+            A practical rule: note the date of a good rain and count out a
+            week. If there was no scorching heat or overnight frost during that week,
+            you can safely head out on the eighth or ninth day. Experienced foragers keep
+            a rainfall journal — it’s one of the most useful habits for
+            foraging.
           </p>
         </section>
 
-        {/* ── Признак 3 ── */}
+        {/* ── Sign 2 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 3: Высокая влажность воздуха и утренние туманы
+            Sign 2: Temperatures hold steady at 10–20&nbsp;°C
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Народная примета «туман в лесу — жди грибов» имеет научное
-            обоснование. По данным белорусского эколога В.&nbsp;В.&nbsp;Шапорова,
-            влажность воздуха выше 80% в приземном слое на протяжении нескольких
-            дней — один из самых надёжных предикторов массового появления
-            плодовых тел. Туман — видимое проявление этой влажности.
+            The mycelium is a living organism, and it has its own “comfort zone.”
+            A study published in Mycological Progress (2018)
+            showed that the optimal temperature for most edible
+            macrofungi of the temperate zone is +12–18&nbsp;°C.
+            The soil temperature at a depth of 5–10&nbsp;cm should be no
+            lower than +8&nbsp;°C.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Грибы на 85–95% состоят из воды, и для формирования плодового тела
-            мицелию нужна постоянная подпитка влагой не только из почвы, но и из
-            воздуха. Когда утром над лесом стелется густой туман, испарения с
-            поверхности почвы минимальны, и грибница получает идеальные условия.
-            Именно поэтому самые грибные места часто расположены в низинах, у
-            ручьёв, в логах — там, где туман задерживается дольше всего.
+            Overnight frosts are the forager’s enemy at the start and end of the season. If the
+            temperature drops below zero at night, the mycelium slows its growth, and
+            fruiting bodies that have already emerged may die. But a light morning
+            frost in October is not a death sentence: the mycelium in the soil is protected by a layer
+            of fallen leaves, and when the warmth returns the mushrooms keep growing.
+            Honey fungus and oyster mushrooms, for example, do just fine at +3–8&nbsp;°C.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Если вы три утра подряд наблюдаете туман или плотную росу на траве —
-            это сильный сигнал. Проверяйте прогноз: влажность выше 85% при
-            температуре +12–18&nbsp;°C — почти гарантия, что грибы пошли.
+            In practice, the best mushroom days fall on periods when
+            the average daily temperature stays around +14–17&nbsp;°C: warm enough
+            for active growth, but not so hot that the soil
+            dries out. In central Russia and Belarus, such conditions usually
+            develop in late July, August, and the first half of September.
           </p>
         </section>
 
-        {/* ── Признак 4 ── */}
+        {/* ── Sign 3 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 4: Грибники в соцсетях начали хвастаться
+            Sign 3: High air humidity and morning mist
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Звучит несерьёзно, но это один из самых быстрых и достоверных
-            индикаторов. Грибные чаты в Telegram, группы ВКонтакте, форумы
-            тихих охотников — как только в них начинают появляться фотографии
-            полных корзинок, значит, грибной слёт начался. Обычно первые отчёты
-            приходят от самых активных и опытных грибников, которые
-            «разведывают» лес раньше остальных.
+            The old saying “mist in the forest means mushrooms are coming” has a scientific
+            basis. According to the Belarusian ecologist V.&nbsp;V.&nbsp;Shaporov,
+            air humidity above 80% in the surface layer over several
+            days is one of the most reliable predictors of a mass appearance of
+            fruiting bodies. Mist is the visible expression of that humidity.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Но будьте внимательны: фотографии из одного региона не означают, что
-            грибы пошли повсюду. Летние грозы проходят полосами — один район может
-            залить дождём, а соседний обойти стороной. Ориентируйтесь на отчёты
-            из вашей области или из мест с похожими условиями. Обратите
-            внимание на тип леса: если люди хвастаются белыми из соснового бора,
-            а ваш лес — берёзовая роща, ваши грибы могут появиться на пару дней
-            позже.
+            Mushrooms are 85–95% water, and to form a fruiting body
+            the mycelium needs a constant supply of moisture not only from the soil but also from
+            the air. When thick mist lies over the forest in the morning, evaporation from
+            the soil surface is minimal, and the mycelium gets ideal conditions.
+            That’s why the best mushroom spots are often located in hollows, by
+            streams, and in ravines — places where mist lingers the longest.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Хороший подход — подписаться на 3–4 группы грибников из своего
-            региона и следить за ними с середины июня. Первые фотографии
-            подберёзовиков и маслят — сигнал, что через неделю подтянутся и
-            «благородные» виды.
+            If you see mist or heavy dew on the grass three mornings in a row —
+            that’s a strong signal. Check the forecast: humidity above 85% at
+            a temperature of +12–18&nbsp;°C is almost a guarantee that the mushrooms are out.
           </p>
         </section>
 
-        {/* ── Признак 5 ── */}
+        {/* ── Sign 4 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 5: Появились первые «разведчики» — сыроежки и маслята
+            Sign 4: Foragers on social media start showing off
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            В микологии есть понятие «индикаторных видов» — грибов, которые
-            появляются первыми и сигнализируют о начале слоя. Сыроежки, маслята
-            и свинушки — классические разведчики. Их мицелий реагирует на влагу
-            и тепло быстрее, чем мицелий белых грибов или подосиновиков.
+            It sounds unserious, but it’s one of the fastest and most reliable
+            indicators. Mushroom chats on Telegram, groups on VKontakte, foragers’
+            forums — as soon as photos of
+            full baskets start appearing in them, it means the mushroom flush has begun. The first reports
+            usually come from the most active and experienced foragers, who
+            “scout” the forest before everyone else.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Если вы зашли в лес и увидели россыпь молодых маслят на опушке или
-            яркие сыроежки вдоль тропинки — это верный знак. Через 3–5 дней
-            после маслят обычно появляются подберёзовики, а ещё через пару дней —
-            белые. Лисички занимают промежуточное положение: они могут появиться
-            почти одновременно с маслятами, особенно в смешанных лесах с преобладанием
-            берёзы и ели.
+            But be careful: photos from one region don’t mean the
+            mushrooms are out everywhere. Summer storms move in bands — one area may be
+            drenched with rain while the next is passed over. Rely on reports
+            from your own region or from places with similar conditions. Pay
+            attention to the type of forest: if people are showing off porcini from a pine
+            grove but your forest is a birch stand, your mushrooms may appear a couple of days
+            later.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Этот признак работает особенно хорошо, если у вас есть проверенное
-            грибное место недалеко от дома. Заскочите на полчаса, пройдитесь по
-            опушке. Видите разведчиков — планируйте полноценный выезд на
-            выходные. Не видите даже сыроежек — значит, рано, почва ещё не
-            прогрелась или влаги недостаточно.
+            A good approach is to follow 3–4 forager groups from your
+            region and keep an eye on them from mid-June. The first photos
+            of birch boletes and slippery jacks are a signal that the “noble”
+            species will follow within a week.
           </p>
         </section>
 
-        {/* ── Признак 6 ── */}
+        {/* ── Sign 5 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 6: В лесу пахнет грибами и прелой листвой
+            Sign 5: The first “scouts” appear — russulas and slippery jacks
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Опытный грибник чувствует грибы носом раньше, чем видит глазами.
-            Характерный запах — смесь влажной земли, прелых листьев и лёгкого
-            грибного аромата — появляется, когда мицелий в подстилке активно
-            разлагает органику и формирует плодовые тела. Это не мистика,
-            а биохимия: грибница выделяет летучие органические соединения
-            (1-октен-3-ол и другие), которые мы воспринимаем как «грибной запах».
+            In mycology there’s a concept of “indicator species” — mushrooms that
+            appear first and signal the start of a flush. Russulas, slippery jacks,
+            and roll-rims are classic scouts. Their mycelium reacts to moisture
+            and warmth faster than the mycelium of porcini or orange-cap boletes.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Если вы зашли в лес и вдохнули тот самый аромат — тяжёлый, земляной,
-            с нотками сырости и разложения, — значит, под ногами уже работает
-            грибница. Плодовые тела либо уже проклюнулись где-то под мхом, либо
-            появятся в ближайшие дни. Этот запах особенно ощутим ранним утром,
-            когда воздух влажный и прохладный.
+            If you step into the forest and see a scattering of young slippery jacks along the edge or
+            bright russulas along the path — that’s a sure sign. Birch boletes usually appear 3–5 days
+            after the slippery jacks, and a couple of days after that the
+            porcini. Chanterelles occupy an intermediate position: they can appear
+            almost at the same time as the slippery jacks, especially in mixed forests dominated by
+            birch and spruce.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Бывалые охотники советуют: зайдите в лес, присядьте, прислушайтесь
-            к запахам. Если пахнет только хвоей и сухой землёй — рано. А если
-            в воздухе витает густой «грибной дух», как на рынке в сезон, — берите
-            корзинку и не теряйте времени.
+            This sign works especially well if you have a trusted
+            mushroom spot near home. Pop in for half an hour and walk along
+            the forest edge. See the scouts — plan a full trip for the
+            weekend. Don’t even see russulas — then it’s early, the soil hasn’t
+            warmed up yet, or there isn’t enough moisture.
           </p>
         </section>
 
-        {/* ── Признак 7 ── */}
+        {/* ── Sign 6 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Признак 7: Погодный паттерн повторяет ваш лучший день
+            Sign 6: The forest smells of mushrooms and decaying leaves
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Это, пожалуй, самый точный из всех признаков — и самый сложный для
-            отслеживания вручную. У каждого грибника есть «тот самый день»: когда
-            корзинка наполнилась за час, белые стояли рядами, а подосиновики
-            краснели под каждой осиной. Вопрос в том, какая погода была за
-            одну-две недели до этого дня.
+            An experienced forager smells mushrooms before seeing them.
+            The characteristic scent — a mix of damp earth, decaying leaves, and a faint
+            mushroom aroma — appears when the mycelium in the leaf litter is actively
+            breaking down organic matter and forming fruiting bodies. This isn’t mysticism
+            but biochemistry: the mycelium releases volatile organic compounds
+            (1-octen-3-ol and others) that we perceive as the “mushroom smell.”
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Грибы — это результат погодных условий не одного дня, а целого
-            двухнедельного цикла. Количество осадков, перепады температуры,
-            влажность, ветер — все эти факторы формируют «погодный отпечаток»,
-            который привёл к урожаю. Если текущая погода начинает напоминать
-            тот паттерн — вероятность повторения результата очень высока.
+            If you walk into the forest and breathe in that very aroma — heavy, earthy,
+            with notes of dampness and decay — it means the mycelium is already at work
+            beneath your feet. The fruiting bodies have either already broken through somewhere under the moss or
+            will appear in the coming days. This smell is especially noticeable early in the morning,
+            when the air is damp and cool.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            Именно для этого создан SkyForest. Вы сохраняете дату своего лучшего
-            грибного дня — система запоминает погоду за 14 дней до него. Потом
-            каждый день сравнивает текущие условия с эталоном. Когда совпадение
-            выше 80% — пора собираться в лес.
-          </p>
-
-          <p className="leading-relaxed text-white/80">
-            Это работает потому, что грибница в конкретном месте реагирует на
-            одни и те же погодные паттерны из года в год. Ваш личный опыт,
-            подкреплённый данными, превращается в самый точный предсказатель.
-            Не нужно гадать по народным приметам — достаточно сравнить числа.
+            Seasoned foragers advise: step into the forest, crouch down, and listen
+            to the smells. If it smells only of pine needles and dry earth — it’s early. But if
+            a thick “mushroom spirit” hangs in the air, like a market in season — grab a
+            basket and don’t waste any time.
           </p>
         </section>
 
-        {/* ── Грибной календарь ── */}
+        {/* ── Sign 7 ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Грибной календарь по месяцам
+            Sign 7: The weather pattern repeats your best day
           </h2>
 
           <p className="leading-relaxed text-white/80">
-            Грибной сезон в средней полосе России и Беларуси длится с мая по
-            ноябрь. Разумеется, точные сроки смещаются в зависимости от
-            региона и конкретного года, но общая картина остаётся стабильной.
-            Вот ориентировочный сезон грибов по месяцам:
+            This is perhaps the most accurate of all the signs — and the hardest to
+            track by hand. Every forager has “that one day”: when the
+            basket filled up in an hour, the porcini stood in rows, and the orange-cap boletes
+            reddened under every aspen. The question is what the weather was like a
+            week or two before that day.
+          </p>
+
+          <p className="leading-relaxed text-white/80">
+            Mushrooms are the result of the weather conditions not of a single day but of a whole
+            two-week cycle. The amount of rainfall, temperature swings,
+            humidity, wind — all these factors form the “weather fingerprint”
+            that led to the harvest. If the current weather starts to resemble
+            that pattern, the chance of repeating the result is very high.
+          </p>
+
+          <p className="leading-relaxed text-white/80">
+            That’s exactly what SkyForest was built for. You save the date of your best
+            mushroom day — the system remembers the weather from the 14 days before it. Then it
+            compares the current conditions with that benchmark every day. When the match is
+            above 80% — it’s time to head to the forest.
+          </p>
+
+          <p className="leading-relaxed text-white/80">
+            It works because the mycelium in a specific spot reacts to
+            the same weather patterns year after year. Your personal experience,
+            backed by data, becomes the most accurate predictor there is.
+            There’s no need to guess by old folk sayings — it’s enough to compare the numbers.
+          </p>
+        </section>
+
+        {/* ── Mushroom calendar ── */}
+        <section className="mt-14 space-y-5">
+          <h2 className="text-2xl font-bold text-white">
+            Month-by-month mushroom calendar
+          </h2>
+
+          <p className="leading-relaxed text-white/80">
+            The mushroom season in central Russia and Belarus runs from May to
+            November. Of course, the exact timing shifts depending on the
+            region and the specific year, but the overall picture stays stable.
+            Here is an approximate mushroom season by month:
           </p>
 
           <div className="overflow-x-auto">
@@ -439,13 +440,13 @@ export default function KogdaPoraVLesPage() {
               <thead>
                 <tr className="border-b border-white/20">
                   <th className="py-3 pr-4 text-left font-semibold text-white">
-                    Месяц
+                    Month
                   </th>
                   <th className="py-3 pr-4 text-left font-semibold text-white">
-                    Основные виды
+                    Main species
                   </th>
                   <th className="py-3 text-left font-semibold text-white">
-                    Условия
+                    Conditions
                   </th>
                 </tr>
               </thead>
@@ -469,18 +470,18 @@ export default function KogdaPoraVLesPage() {
           </div>
 
           <p className="leading-relaxed text-white/80">
-            Помните: календарь — это ориентир, а не расписание. Каждый год
-            уникален. Весна 2024 была поздней, и белые в Подмосковье пошли
-            только к середине июля. А в 2023-м первые боровики нашли уже в конце
-            июня. Именно поэтому наблюдение за реальными погодными условиями
-            важнее любого календаря.
+            Remember: the calendar is a guide, not a schedule. Every year is
+            unique. The spring of 2024 was late, and porcini around Moscow came out
+            only by mid-July. But in 2023 the first porcini were found as early as the end of
+            June. That’s exactly why observing the actual weather conditions
+            matters more than any calendar.
           </p>
         </section>
 
         {/* ── FAQ ── */}
         <section className="mt-14 space-y-5">
           <h2 className="text-2xl font-bold text-white">
-            Часто задаваемые вопросы
+            Frequently asked questions
           </h2>
 
           <div className="space-y-8">
@@ -495,40 +496,40 @@ export default function KogdaPoraVLesPage() {
           </div>
         </section>
 
-        {/* ── Заключение ── */}
+        {/* ── Conclusion ── */}
         <section className="mt-14 space-y-5">
-          <h2 className="text-2xl font-bold text-white">Итого</h2>
+          <h2 className="text-2xl font-bold text-white">In summary</h2>
 
           <p className="leading-relaxed text-white/80">
-            Семь признаков — это не гарантия, а система ориентиров. Чем больше
-            из них совпало одновременно, тем выше вероятность, что лес вас
-            порадует. Тёплый дождь неделю назад, туманные утра, стабильные
-            +15&nbsp;°C, разведчики-маслята на опушке и грибной аромат в
-            воздухе — если всё это сошлось, бросайте дела и езжайте.
+            The seven signs aren’t a guarantee but a system of reference points. The more
+            of them line up at once, the higher the chance that the forest will
+            reward you. A warm rain a week ago, misty mornings, steady
+            +15&nbsp;°C, scout slippery jacks along the forest edge, and a mushroom aroma in
+            the air — if all of that comes together, drop everything and go.
           </p>
 
           <p className="leading-relaxed text-white/80">
-            А если хотите убрать догадки из уравнения — попробуйте SkyForest.
-            Запишите свой лучший грибной день, включите мониторинг, и сервис
-            сам скажет, когда условия повторятся. Тихая охота станет ещё
-            результативнее, когда за вас считает алгоритм.
+            And if you’d like to take the guesswork out of the equation — give SkyForest a try.
+            Record your best mushroom day, turn on monitoring, and the service
+            will tell you when the conditions repeat. Foraging becomes even more
+            rewarding when an algorithm does the counting for you.
           </p>
         </section>
 
         {/* ── CTA ── */}
         <div className="mt-14 rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl sm:p-12">
           <h2 className="mb-3 text-2xl font-bold text-white">
-            Не пропустите свой грибной день
+            Don’t miss your mushroom day
           </h2>
           <p className="mb-6 text-white/70">
-            SkyForest сравнивает текущую погоду с вашим лучшим грибным днём
-            и подсказывает, когда пора в лес. Регистрация бесплатна.
+            SkyForest compares the current weather with your best mushroom day
+            and tells you when it’s time to head to the forest. Signing up is free.
           </p>
           <Link
             href="/register"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-emerald-500 hover:shadow-xl"
           >
-            Попробовать бесплатно →
+            Try it for free →
           </Link>
         </div>
 

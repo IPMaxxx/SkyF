@@ -4,59 +4,59 @@ import Image from "next/image";
 const ALL_ARTICLES = [
   {
     href: "/blog/kak-opredelit-grib",
-    title: "Как определить гриб по фото: приложения, нейросети и признаки",
+    title: "How to identify a mushroom from a photo: apps, neural networks and key features",
     description:
-      "Точность определителей, что фотографировать и какие признаки проверять. Плюс определитель SkyForest в Telegram.",
+      "How accurate identifiers are, what to photograph and which features to check. Plus the SkyForest identifier on Telegram.",
     image: "/images/blog/blog-kak-opredelit-grib.jpg",
-    readTime: "11 мин",
+    readTime: "11 min",
   },
   {
     href: "/blog/pervye-majskie-boroviki",
-    title: "Первые майские боровики: где и когда искать ранний белый гриб",
+    title: "The first May porcini: where and when to find the early cep",
     description:
-      "Боровик сетчатый — самый ранний белый гриб. Сроки, места, погода и отличия от двойников.",
+      "The summer cep is the earliest porcini. Timing, locations, weather and how to tell it from look-alikes.",
     image: "/images/blog/blog-pervye-majskie-boroviki.jpg",
-    readTime: "10 мин",
+    readTime: "10 min",
   },
   {
     href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
+    title: "Weather for mushrooms: at what temperature and humidity mushrooms grow",
     description:
-      "Какие погодные условия идеальны для роста грибов. Температура, влажность, осадки — что важно знать.",
+      "Which weather conditions are ideal for mushroom growth. Temperature, humidity and rainfall — what matters most.",
     image: "/images/blog/blog-pogoda-dlya-gribov.jpg",
-    readTime: "12 мин",
+    readTime: "12 min",
   },
   {
     href: "/blog/griby-posle-dozhdya",
-    title: "Через сколько дней после дождя появляются грибы",
+    title: "How many days after rain do mushrooms appear",
     description:
-      "Оптимальные сроки после осадков для разных видов. Белые, лисички, опята — у каждого свои «окна».",
+      "The best windows after rainfall for different species. Ceps, chanterelles and honey mushrooms each have their own timing.",
     image: "/images/blog/blog-griby-posle-dozhdya.jpg",
-    readTime: "8 мин",
+    readTime: "8 min",
   },
   {
     href: "/blog/kogda-pora-v-les",
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
+    title: "When it's time to head to the forest: 7 signs the mushrooms are up",
     description:
-      "Практические признаки начала сезона. Температура почвы, первые находки и другие подсказки.",
+      "Practical signs that the season has started. Soil temperature, first finds and other clues.",
     image: "/images/blog/blog-kogda-pora-v-les.jpg",
-    readTime: "6 мин",
+    readTime: "6 min",
   },
   {
     href: "/blog/v-kakom-lesu-iskat-griby",
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+    title: "Which forest to search for mushrooms: coniferous, deciduous or mixed",
     description:
-      "Какие грибы где растут: белые в сосняках, подберёзовики у берёз. Гид по типам лесов.",
+      "Which mushrooms grow where: ceps in pine forests, birch boletes near birches. A guide to forest types.",
     image: "/images/blog/blog-v-kakom-lesu-iskat-griby.jpg",
-    readTime: "10 мин",
+    readTime: "10 min",
   },
   {
     href: "/blog/gde-rastut-griby",
-    title: "Где растут грибы в России и Беларуси",
+    title: "Where mushrooms grow in Russia and Belarus",
     description:
-      "Регионы, леса и конкретные места для тихой охоты. Карта грибных мест и советы по планированию.",
+      "Regions, forests and specific spots for mushroom foraging. A map of mushroom locations and planning tips.",
     image: "/images/blog/blog-gde-rastut-griby.jpg",
-    readTime: "12 мин",
+    readTime: "12 min",
   },
 ];
 
@@ -67,7 +67,7 @@ export function RelatedArticles({ currentSlug }: { currentSlug: string }) {
 
   return (
     <section className="mt-14">
-      <h2 className="mb-6 text-2xl font-bold text-white">Читайте также</h2>
+      <h2 className="mb-6 text-2xl font-bold text-white">Read also</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         {articles.map((a) => (
           <Link

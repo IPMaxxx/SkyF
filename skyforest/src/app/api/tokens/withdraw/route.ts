@@ -81,25 +81,25 @@ export async function POST(request: NextRequest) {
   try {
     const html = `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-        <h2 style="color:#10b981;">Запрос на вывод токенов</h2>
+        <h2 style="color:#10b981;">Token withdrawal request</h2>
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Пользователь</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${escapeHtml(user.email ?? "")}</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">ID пользователя</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${user.id}</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Сумма вывода</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} токенов (~${(numAmount * 0.3).toFixed(2)} BYN)</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Баланс до вывода</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} токенов</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Баланс после вывода</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${spendResult.balance} токенов</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Способ вывода</td><td style="padding:8px;border-bottom:1px solid #eee;">${safeMethod}</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Реквизиты</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${safeDetails}</td></tr>
-          ${safeComment ? `<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Комментарий</td><td style="padding:8px;border-bottom:1px solid #eee;">${safeComment}</td></tr>` : ""}
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">User</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${escapeHtml(user.email ?? "")}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">User ID</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${user.id}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Withdrawal amount</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} tokens (~${(numAmount * 0.3).toFixed(2)} BYN)</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Balance before</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} tokens</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Balance after</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${spendResult.balance} tokens</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Withdrawal method</td><td style="padding:8px;border-bottom:1px solid #eee;">${safeMethod}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Payment details</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${safeDetails}</td></tr>
+          ${safeComment ? `<tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Comment</td><td style="padding:8px;border-bottom:1px solid #eee;">${safeComment}</td></tr>` : ""}
         </table>
-        <p style="color:#666;font-size:13px;">Дата: ${new Date().toLocaleString("ru-RU", { timeZone: "Europe/Minsk" })}</p>
-        <p style="color:#999;font-size:11px;">Токены уже списаны с баланса пользователя. Если заявка отклонена — верните через админ-панель.</p>
+        <p style="color:#666;font-size:13px;">Date: ${new Date().toLocaleString("en-GB", { timeZone: "Europe/Minsk" })}</p>
+        <p style="color:#999;font-size:11px;">Tokens have already been deducted from the user's balance. If the request is rejected, refund them via the admin panel.</p>
       </div>
     `;
 
     await sendEmail(
       BRAND.contacts.email,
-      `Запрос на вывод: ${numAmount} токенов от ${user.email}`,
+      `Withdrawal request: ${numAmount} tokens from ${user.email}`,
       html
     );
   } catch (emailErr) {

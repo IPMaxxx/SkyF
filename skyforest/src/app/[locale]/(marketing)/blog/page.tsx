@@ -21,96 +21,91 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const title =
-    locale === "en"
-      ? "Mushroom picking blog"
-      : "Блог о грибах — советы грибникам";
+  const title = "Mushroom picking blog";
   const description =
-    locale === "en"
-      ? "Articles for mushroom pickers: weather, timing, forest types, and mushroom identification tips."
-      : "Статьи для грибников: погода для грибов, когда идти в лес, где искать грибы и как определить вид.";
+    "Articles for mushroom pickers: weather, timing, forest types, and mushroom identification tips.";
   return marketingPageMetadata({ title, description, path: "/blog", locale });
 }
 
 const ARTICLES = [
   {
     href: "/blog/kak-opredelit-grib",
-    title: "Как определить гриб по фото: приложения, нейросети и признаки",
+    title: "How to identify a mushroom from a photo: apps, neural networks and key features",
     description:
-      "Как работают определители грибов, какая у них точность, что фотографировать и какие признаки проверять вручную. Плюс бесплатный определитель SkyForest в Telegram.",
+      "How mushroom identifiers work, how accurate they are, what to photograph and which features to check by hand. Plus the free SkyForest identifier on Telegram.",
     icon: ScanSearch,
     image: "/images/blog/blog-kak-opredelit-grib.jpg",
-    readTime: "11 мин",
+    readTime: "11 min",
     gradient: "from-sky-500/30 to-cyan-600/20",
   },
   {
     href: "/blog/pervye-majskie-boroviki",
-    title: "Первые майские боровики: где и когда искать ранний белый гриб",
+    title: "The first May porcini: where and when to find the early cep",
     description:
-      "Боровик сетчатый — самый ранний белый гриб. Когда появляется, в каких лесах искать, какая погода нужна и как отличить от двойников.",
+      "The summer cep is the earliest porcini. When it appears, which forests to search, what weather it needs and how to tell it from look-alikes.",
     icon: Sprout,
     image: "/images/blog/blog-pervye-majskie-boroviki.jpg",
-    readTime: "10 мин",
+    readTime: "10 min",
     gradient: "from-emerald-500/30 to-lime-600/20",
   },
   {
     href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
+    title: "Weather for mushrooms: at what temperature and humidity mushrooms grow",
     description:
-      "Разбираемся, какие погодные условия идеальны для роста грибов. Температура, влажность воздуха и почвы — что важно знать перед походом в лес.",
+      "We break down which weather conditions are ideal for mushroom growth. Temperature, air and soil humidity — what to know before heading into the forest.",
     icon: CloudSun,
     image: "/images/blog/blog-pogoda-dlya-gribov.jpg",
-    readTime: "12 мин",
+    readTime: "12 min",
     gradient: "from-amber-500/30 to-orange-600/20",
   },
   {
     href: "/blog/griby-posle-dozhdya",
-    title: "Через сколько дней после дождя появляются грибы",
+    title: "How many days after rain do mushrooms appear",
     description:
-      "Узнайте оптимальные сроки после осадков для разных видов грибов. Белые, подберёзовики, лисички — у каждого свои «окна» после дождя.",
+      "Learn the best windows after rainfall for different mushroom species. Ceps, birch boletes and chanterelles each have their own timing after rain.",
     icon: Droplets,
     image: "/images/blog/blog-griby-posle-dozhdya.jpg",
-    readTime: "8 мин",
+    readTime: "8 min",
     gradient: "from-sky-500/30 to-blue-600/20",
   },
   {
     href: "/blog/kogda-pora-v-les",
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
+    title: "When it's time to head to the forest: 7 signs the mushrooms are up",
     description:
-      "Практические признаки, по которым опытные грибники понимают, что сезон начался. Температура почвы, трава, первые находки и другие подсказки.",
+      "Practical signs that experienced foragers use to know the season has begun. Soil temperature, grass, first finds and other clues.",
     icon: TreePine,
     image: "/images/blog/blog-kogda-pora-v-les.jpg",
-    readTime: "6 мин",
+    readTime: "6 min",
     gradient: "from-emerald-500/30 to-green-600/20",
   },
   {
     href: "/blog/v-kakom-lesu-iskat-griby",
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+    title: "Which forest to search for mushrooms: coniferous, deciduous or mixed",
     description:
-      "Какие грибы где растут: белые в сосняках, подберёзовики у берёз, маслята в молодых ельниках. Гид по типам лесов и их обитателям.",
+      "Which mushrooms grow where: ceps in pine forests, birch boletes near birches, slippery jacks in young spruce stands. A guide to forest types and their inhabitants.",
     icon: Trees,
     image: "/images/blog/blog-v-kakom-lesu-iskat-griby.jpg",
-    readTime: "10 мин",
+    readTime: "10 min",
     gradient: "from-lime-500/30 to-green-600/20",
   },
   {
     href: "/blog/gde-rastut-griby",
-    title: "Где растут грибы в России и Беларуси: полный гид по видам и местам",
+    title: "Where mushrooms grow in Russia and Belarus: a complete guide to species and places",
     description:
-      "Регионы, леса и конкретные места для тихой охоты. Карта грибных мест, сезонность по регионам и советы по планированию поездок.",
+      "Regions, forests and specific spots for mushroom foraging. A map of mushroom locations, seasonality by region and tips for planning trips.",
     icon: MapPin,
     image: "/images/blog/blog-gde-rastut-griby.jpg",
-    readTime: "12 мин",
+    readTime: "12 min",
     gradient: "from-rose-500/30 to-pink-600/20",
   },
   {
     href: "/blog/ezhovik-grebenchatyj",
-    title: "Ежовик гребенчатый: гриб для мозга — что говорит наука",
+    title: "Lion's Mane: the mushroom for the brain — what science says",
     description:
-      "Разбираем клинические исследования Lion's Mane: эринацины vs герициноны, мицелий vs плодовое тело. Только данные из рецензированных журналов.",
+      "We review the clinical research on Lion's Mane: erinacines vs hericenones, mycelium vs fruiting body. Only data from peer-reviewed journals.",
     icon: Brain,
     image: "/images/blog/blog-ezhovik-grebenchatyj.jpg",
-    readTime: "15 мин",
+    readTime: "15 min",
     gradient: "from-violet-500/30 to-purple-600/20",
   },
 ] as const;
@@ -118,11 +113,9 @@ const ARTICLES = [
 export default async function BlogPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "header" });
-  const pageTitle = locale === "en" ? "Mushroom picking blog" : "Блог для грибников";
+  const pageTitle = "Mushroom picking blog";
   const pageLead =
-    locale === "en"
-      ? "Tips on weather, timing, forests, and mushroom identification"
-      : "Советы по тихой охоте: погода, места, сроки и признаки удачного сезона";
+    "Tips on weather, timing, forests, and mushroom identification";
 
   return (
     <div className="min-h-screen">
@@ -172,7 +165,7 @@ export default async function BlogPage({ params }: Props) {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-white/50">{article.readTime}</span>
                     <span className="text-sm font-medium text-primary-light transition-colors group-hover:text-primary-light/90">
-                      Читать →
+                      Read →
                     </span>
                   </div>
                 </div>
@@ -187,26 +180,24 @@ export default async function BlogPage({ params }: Props) {
         <div className="mx-auto max-w-4xl">
           <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-12 text-center backdrop-blur-xl sm:px-12 sm:py-16">
             <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-              SkyForest — ваш умный помощник для тихой охоты
+              SkyForest — your smart assistant for mushroom foraging
             </h2>
             <p className="mb-8 text-white/70">
-              {locale === "en"
-                ? `${BRAND.name} analyzes weather and suggests the best time to pick mushrooms. Free registration.`
-                : "SkyForest анализирует погоду и подсказывает, когда условия идеальны для сбора грибов. Регистрация бесплатна."}
+              {`${BRAND.name} analyzes weather and suggests the best time to pick mushrooms. Free registration.`}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-dark"
               >
-                {locale === "en" ? "Sign up" : "Зарегистрироваться"}
+                Sign up
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/services"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-6 py-4 text-base font-medium text-white transition-colors hover:bg-white/10"
               >
-                {locale === "en" ? "Services" : "Услуги"}
+                Services
               </Link>
             </div>
           </div>

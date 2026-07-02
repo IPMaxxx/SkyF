@@ -16,10 +16,10 @@ export const dynamic = "force-dynamic";
  *
  * Supabase calls this endpoint (Standard Webhooks signed) for every auth email
  * across the SHARED project instead of using the built-in template + global SMTP.
- * We render a brand- and locale-aware email and send it through the app's own
- * SMTP so that:
+ * We render a brand-aware email (English copy for every brand) and send it
+ * through the app's own SMTP so that:
  *   - skyforest.ai registrations → English copy + support@skyforest.ai
- *   - skyforest.by registrations → Russian copy + support@skyforest.by
+ *   - skyforest.by registrations → English copy + support@skyforest.by
  *
  * Enable via Supabase Dashboard → Authentication → Hooks → "Send Email".
  * The generated secret (v1,whsec_...) must be stored in SEND_EMAIL_HOOK_SECRET.
@@ -193,7 +193,8 @@ export async function POST(request: NextRequest) {
     emailData?.site_url,
   );
   const brand = getBrand(brandId);
-  const locale: AuthEmailLocale = brandId === "samplify" ? "en" : "ru";
+  // All transactional auth emails are delivered in English for every brand.
+  const locale: AuthEmailLocale = "en";
 
   const { subject, html } = buildAuthEmail(kind, {
     locale,
