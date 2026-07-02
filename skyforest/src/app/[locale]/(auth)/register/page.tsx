@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BRAND } from "@/lib/brand";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
@@ -51,7 +52,10 @@ function RegisterForm() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        // brand — сигнал для Send Email хука (src/app/api/auth/send-email):
+        //   samplify → английское письмо + support@skyforest.ai
+        //   skyforest → русское письмо + support@skyforest.by
+        data: { full_name: fullName, brand: BRAND.id },
         // token_hash flow (см. /auth/confirm). Шаблон письма в Supabase должен иметь:
         //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{NEXT}}
         emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(redirect)}`,
