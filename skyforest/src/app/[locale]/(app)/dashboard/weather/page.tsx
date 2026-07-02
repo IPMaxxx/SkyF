@@ -194,6 +194,7 @@ export default function WeatherPage() {
   const [rainError, setRainError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showWeatherConfirm, setShowWeatherConfirm] = useState(false);
+  const [showMyLocations, setShowMyLocations] = useState(false);
   const [savedRainList, setSavedRainList] = useState<{ id: string; center_lat: number; center_lng: number; radius_km: number; step_km: number; days: number; created_at: string }[]>([]);
 
   useEffect(() => {
@@ -927,6 +928,23 @@ export default function WeatherPage() {
                 {gridData.length > 0 && (
                   <button
                     type="button"
+                    onClick={() => setShowMyLocations((v) => !v)}
+                    disabled={locations.length === 0}
+                    aria-pressed={showMyLocations}
+                    title={locations.length === 0 ? t("myLocationsNoneHint") : undefined}
+                    className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                      showMyLocations && locations.length > 0
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "bg-white/5 text-foreground/80 hover:bg-white/10"
+                    }`}
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    {t("myLocations")}
+                  </button>
+                )}
+                {gridData.length > 0 && (
+                  <button
+                    type="button"
                     onClick={() => {
                       setGridData([]);
                       setCenterLat(null);
@@ -1046,6 +1064,14 @@ export default function WeatherPage() {
               radius={radius}
               step={renderStep}
               gridData={gridData}
+              userLocations={locations}
+              showUserLocations={showMyLocations}
+              userLocationLabels={{
+                unitMm: t("unitMm"),
+                rainForDays: t("rainSumForDays", { days }),
+                outOfArea: t("myLocationOutOfArea"),
+                nearestPoint: t("myLocationNearest"),
+              }}
               onCenterSelect={(lat, lng) => {
                 if (gridData.length > 0) return;
                 setCenterLat(lat);

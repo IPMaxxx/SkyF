@@ -1,0 +1,1 @@
+mushroom,foraging,forecast,weather,rain,map,forager,fungi,identify,mushrooms,harvest,forest

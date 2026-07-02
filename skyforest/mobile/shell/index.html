@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+    <title>SkyForest</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0f1a12;
+        color: #e8f0ea;
+        font-family: -apple-system, Roboto, system-ui, sans-serif;
+      }
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 16px;
+        text-align: center;
+        padding: 24px;
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 3px solid rgba(98, 168, 99, 0.25);
+        border-top-color: #62a863;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      p {
+        opacity: 0.7;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Это резервная оболочка. В штатном режиме WebView открывает https://skyforest.ai
+      (см. server.url в capacitor.config.ts). Экран показывается только если
+      боевой сервер недоступен.
+    -->
+    <div class="wrap">
+      <div class="spinner"></div>
+      <p>Loading SkyForest…</p>
+    </div>
+  </body>
+</html>

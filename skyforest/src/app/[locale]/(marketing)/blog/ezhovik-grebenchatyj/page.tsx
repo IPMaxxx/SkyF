@@ -5,30 +5,30 @@ import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
   title:
-    "Ежовик гребенчатый: гриб для мозга — что говорит наука",
+    "Lion's Mane: the brain mushroom — what the science says",
   description:
-    "Ежовик гребенчатый (Lion's Mane) — гриб, улучшающий когнитивные функции, память и настроение. Разбираем клинические исследования: эринацины vs герициноны, мицелий vs плодовое тело.",
+    "Lion's Mane (Hericium erinaceus) is a mushroom that supports cognitive function, memory and mood. We review the clinical research: erinacines vs hericenones, mycelium vs fruiting body.",
   keywords: [
-    "ежовик гребенчатый",
-    "львиная грива гриб",
     "lion's mane",
+    "lion's mane mushroom",
     "hericium erinaceus",
-    "гриб для мозга",
-    "ежовик польза",
-    "эринацины",
-    "герициноны",
-    "ноотропный гриб",
-    "ежовик когнитивные функции",
-    "ежовик депрессия",
-    "ежовик память",
-    "мицелий ежовика",
-    "гриб для нервной системы",
-    "фактор роста нервов NGF",
+    "brain mushroom",
+    "lion's mane benefits",
+    "erinacines",
+    "hericenones",
+    "nootropic mushroom",
+    "lion's mane cognitive function",
+    "lion's mane depression",
+    "lion's mane memory",
+    "lion's mane mycelium",
+    "mushroom for the nervous system",
+    "nerve growth factor NGF",
+    "lion's mane clinical research",
   ],
   openGraph: {
-    title: "Ежовик гребенчатый: гриб для мозга — что говорит наука",
+    title: "Lion's Mane: the brain mushroom — what the science says",
     description:
-      "Разбираем клинические исследования ежовика гребенчатого: влияние на память, депрессию, тревогу и нервную систему. Мицелий vs плодовое тело.",
+      "We review the clinical research on Lion's Mane: its effects on memory, depression, anxiety and the nervous system. Mycelium vs fruiting body.",
     url: "https://www.skyforest.by/blog/ezhovik-grebenchatyj",
     siteName: "SkyForest",
     type: "article",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         url: "https://www.skyforest.by/images/blog/blog-ezhovik-grebenchatyj.jpg",
         width: 1792,
         height: 1024,
-        alt: "Ежовик гребенчатый растёт на стволе дерева в осеннем лесу",
+        alt: "Lion's Mane mushroom growing on a tree trunk in an autumn forest",
       },
     ],
   },
@@ -50,9 +50,9 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Article",
   headline:
-    "Ежовик гребенчатый: гриб для мозга — что говорит наука",
+    "Lion's Mane: the brain mushroom — what the science says",
   description:
-    "Разбираем клинические исследования ежовика гребенчатого: влияние на память, депрессию, тревогу и нервную систему. Эринацины, герициноны, мицелий и плодовые тела.",
+    "We review the clinical research on Lion's Mane: its effects on memory, depression, anxiety and the nervous system. Erinacines, hericenones, mycelium and fruiting bodies.",
   author: { "@type": "Organization", name: "SkyForest" },
   publisher: {
     "@type": "Organization",
@@ -63,57 +63,57 @@ const jsonLd = {
   dateModified: "2026-03-11",
   mainEntityOfPage: "https://skyforest.by/blog/ezhovik-grebenchatyj",
   keywords:
-    "ежовик гребенчатый, lion's mane, hericium erinaceus, гриб для мозга, эринацины, герициноны, мицелий, когнитивные функции",
-  inLanguage: "ru",
+    "lion's mane, hericium erinaceus, brain mushroom, erinacines, hericenones, mycelium, cognitive function",
+  inLanguage: "en",
 };
 
 const RELATED = [
   {
     href: "/blog/pogoda-dlya-gribov",
-    title: "Погода для грибов: при какой температуре и влажности растут грибы",
-    desc: "Какие погодные условия идеальны для роста грибов. Температура, влажность, осадки — что важно знать.",
-    time: "12 мин",
+    title: "Weather for mushrooms: what temperature and humidity mushrooms grow in",
+    desc: "Which weather conditions are ideal for mushroom growth. Temperature, humidity, rainfall — what you need to know.",
+    time: "12 min",
   },
   {
     href: "/blog/v-kakom-lesu-iskat-griby",
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
-    desc: "Какие грибы где растут: белые в сосняках, подберёзовики у берёз. Гид по типам лесов.",
-    time: "10 мин",
+    title: "Which forest to look for mushrooms in: coniferous, deciduous or mixed",
+    desc: "Which mushrooms grow where: porcini in pine forests, birch boletes near birches. A guide to forest types.",
+    time: "10 min",
   },
   {
     href: "/blog/gde-rastut-griby",
-    title: "Где растут грибы в России и Беларуси",
-    desc: "Регионы, леса и конкретные места для тихой охоты. Карта грибных мест и советы.",
-    time: "12 мин",
+    title: "Where mushrooms grow in Russia and Belarus",
+    desc: "Regions, forests and specific spots for mushroom foraging. A map of mushroom locations and tips.",
+    time: "12 min",
   },
   {
     href: "/blog/kogda-pora-v-les",
-    title: "Когда пора в лес: 7 признаков, что грибы пошли",
-    desc: "Практические признаки начала сезона. Температура почвы, первые находки и другие подсказки.",
-    time: "6 мин",
+    title: "When it's time to head to the forest: 7 signs the mushrooms are up",
+    desc: "Practical signs that the season has started. Soil temperature, first finds and other clues.",
+    time: "6 min",
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "Чем ежовик гребенчатый полезен для мозга?",
-    a: "Ежовик содержит уникальные вещества — эринацины (в мицелии) и герициноны (в плодовом теле), которые стимулируют выработку фактора роста нервов (NGF). Клинические исследования на людях показали улучшение когнитивных функций, снижение тревоги и депрессии при регулярном приёме. Доказательная база пока ограничена небольшими выборками, но результаты последовательны.",
+    q: "How does Lion's Mane benefit the brain?",
+    a: "Lion's Mane contains unique compounds — erinacines (in the mycelium) and hericenones (in the fruiting body) — that stimulate the production of nerve growth factor (NGF). Clinical studies in humans have shown improved cognitive function and reduced anxiety and depression with regular use. The evidence base is still limited to small samples, but the results are consistent.",
   },
   {
-    q: "Что лучше — мицелий или плодовое тело ежовика?",
-    a: "Зависит от цели. Для когнитивных функций и нейропротекции — мицелий, обогащённый эринацинами (полученный жидкой ферментацией, не на зерне). Именно эринацины проникают через гематоэнцефалический барьер и стимулируют NGF в мозге. Для иммунитета — экстракт плодовых тел с высоким содержанием бета-глюканов. Важно: большинство коммерческих добавок с мицелием выращены на зерне и существенно отличаются от исследовательских экстрактов.",
+    q: "Which is better — Lion's Mane mycelium or fruiting body?",
+    a: "It depends on your goal. For cognitive function and neuroprotection, choose mycelium enriched with erinacines (produced by liquid fermentation, not grown on grain). It is the erinacines that cross the blood-brain barrier and stimulate NGF in the brain. For immunity, choose a fruiting-body extract with a high beta-glucan content. Important: most commercial mycelium supplements are grown on grain and differ substantially from the extracts used in research.",
   },
   {
-    q: "Можно ли найти ежовик гребенчатый в лесу?",
-    a: "Да, ежовик гребенчатый встречается в лесах России и Беларуси — на стволах и пнях лиственных деревьев (дуб, бук, берёза). Но он редок и занесён в Красные книги многих регионов. Чаще его выращивают в специальных условиях для получения БАДов.",
+    q: "Can you find Lion's Mane in the forest?",
+    a: "Yes, Lion's Mane occurs in the forests of Russia and Belarus — on the trunks and stumps of deciduous trees (oak, beech, birch). But it is rare and listed in the Red Data Books of many regions. More often it is cultivated under controlled conditions to produce supplements.",
   },
   {
-    q: "Сколько нужно принимать ежовик для эффекта?",
-    a: "В клинических исследованиях эффекты наблюдались при приёме от 750 мг до 3000 мг в день на протяжении 4–49 недель. Улучшение когнитивных функций нарастало с каждой неделей, но могло снижаться после прекращения приёма.",
+    q: "How much Lion's Mane do you need to take to see an effect?",
+    a: "In clinical studies, effects were observed with doses ranging from 750 mg to 3000 mg per day over 4–49 weeks. Cognitive improvement increased week by week, but could decline after the supplement was discontinued.",
   },
   {
-    q: "Есть ли побочные эффекты у ежовика гребенчатого?",
-    a: "В проведённых клинических испытаниях серьёзных побочных эффектов не зафиксировано. Систематический обзор 2025 года (Frontiers in Nutrition) отмечает возможные побочные эффекты: дискомфорт в желудке, головная боль, аллергические реакции — но они встречаются редко. Перед применением рекомендуется консультация с врачом.",
+    q: "Does Lion's Mane have any side effects?",
+    a: "No serious side effects were recorded in the clinical trials conducted. A 2025 systematic review (Frontiers in Nutrition) notes possible side effects: stomach discomfort, headache and allergic reactions — but these are rare. It is advisable to consult a doctor before use.",
   },
 ];
 
@@ -126,20 +126,20 @@ export default function EzhovikGrebenchatyjPage() {
       />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-        <BlogArticleHeader title="Ежовик гребенчатый: гриб для&nbsp;мозга&nbsp;— что&nbsp;говорит наука" />
+        <BlogArticleHeader title="Lion's Mane: the brain&nbsp;mushroom&nbsp;— what&nbsp;the science says" />
 
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
-          Ежовик гребенчатый: гриб для&nbsp;мозга&nbsp;— что&nbsp;говорит наука
+          Lion’s Mane: the brain&nbsp;mushroom&nbsp;— what&nbsp;the science says
         </h1>
 
         <p className="mb-8 text-sm text-white/40">
-          Обновлено: 11 марта 2026 · 18 мин чтения
+          Updated: March 11, 2026 · 18 min read
         </p>
 
         <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
           <Image
             src="/images/blog/blog-ezhovik-grebenchatyj.jpg"
-            alt="Ежовик гребенчатый (Hericium erinaceus) растёт на стволе дерева в туманном осеннем лесу"
+            alt="Lion's Mane (Hericium erinaceus) growing on a tree trunk in a misty autumn forest"
             fill
             className="object-cover"
             priority
@@ -149,82 +149,86 @@ export default function EzhovikGrebenchatyjPage() {
 
         {/* INTRO */}
         <p className="mb-5 text-lg leading-relaxed text-white/80">
-          Ежовик гребенчатый (<em>Hericium erinaceus</em>), он же «львиная
-          грива», «ямабушитаке», «бородатый зуб» — один из самых необычных
-          грибов на планете. Белый, лохматый, похожий на коралл или бороду
-          сказочного старца — в лесу его не перепутаешь ни с чем. Но внешность —
-          далеко не главное. За последние 20 лет этот гриб стал объектом десятков
-          клинических исследований, и результаты впечатляют: улучшение памяти,
-          снижение тревоги, защита нервной системы.
+          Lion’s Mane (<em>Hericium erinaceus</em>), also known as
+          &laquo;lion’s mane&raquo;, &laquo;yamabushitake&raquo; and
+          &laquo;bearded tooth&raquo;, is one of the most unusual mushrooms on
+          the planet. White, shaggy and resembling a coral or the beard of a
+          fairy-tale elder, it is unmistakable in the forest. But its
+          appearance is far from the main point. Over the past 20 years this
+          mushroom has become the subject of dozens of clinical studies, and
+          the results are striking: improved memory, reduced anxiety and
+          protection of the nervous system.
         </p>
         <p className="mb-5 text-lg leading-relaxed text-white/80">
-          В интернете вокруг ежовика много маркетинга и мало конкретики. Одни
-          продавцы продвигают порошок из плодовых тел, другие — экстракт мицелия,
-          третьи — настойки. Кто прав? Что на самом деле подтверждено наукой?
-          Какие вещества работают и где они содержатся? В этой статье мы
-          разбираем{" "}
+          Online, there is a lot of marketing around Lion’s Mane and few hard
+          facts. Some sellers promote fruiting-body powder, others mycelium
+          extract, and still others tinctures. Who is right? What has actually
+          been confirmed by science? Which compounds work, and where are they
+          found? In this article we review{" "}
           <strong className="text-white">
-            только рецензированные клинические исследования на людях
+            only peer-reviewed clinical studies in humans
           </strong>{" "}
-          — никаких «мышиных» данных и рекламных обещаний.
+          — no &laquo;mouse&raquo; data and no advertising promises.
         </p>
         <p className="mb-8 text-lg leading-relaxed text-white/80">
-          Для любителей тихой охоты ежовик гребенчатый — особая находка. Он
-          встречается в лиственных и смешанных лесах России и Беларуси, растёт на
-          стволах и пнях дуба, бука, берёзы. Правда, найти его непросто — вид
-          редкий и во многих регионах занесён в Красную книгу. Но знать о нём
-          стоит каждому грибнику.
+          For fans of mushroom foraging, Lion’s Mane is a special find. It
+          occurs in deciduous and mixed forests of Russia and Belarus, growing
+          on the trunks and stumps of oak, beech and birch. It is not easy to
+          find, though — the species is rare and listed in the Red Data Book in
+          many regions. But every mushroom hunter should know about it.
         </p>
 
         {/* SECTION 1: Two compounds */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Два класса веществ: эринацины и герициноны
+          Two classes of compounds: erinacines and hericenones
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Главная научная интрига ежовика — в его химии. Гриб производит два
-          принципиально разных класса биоактивных терпеноидов, и они
-          распределены по разным частям организма.
+          The main scientific intrigue of Lion’s Mane lies in its chemistry.
+          The mushroom produces two fundamentally different classes of
+          bioactive terpenoids, and they are distributed across different parts
+          of the organism.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          <strong className="text-white">Эринацины</strong> — цианатные
-          дитерпеноиды, которые содержатся{" "}
-          <strong className="text-white">преимущественно в мицелии</strong>{" "}
-          (грибнице). Это ключевой момент.{" "}
+          <strong className="text-white">Erinacines</strong> are cyathane
+          diterpenoids found{" "}
+          <strong className="text-white">predominantly in the mycelium</strong>.
+          This is the key point.{" "}
           <a
             href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11969743/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-400 underline decoration-emerald-400/30 hover:text-emerald-300"
           >
-            Геномное исследование 2025 года (PMC11969743)
+            A 2025 genomic study (PMC11969743)
           </a>{" "}
-          подтвердило: гены биосинтеза эринацинов (eri-гены) активны
-          в мицелиальной фазе, но подавлены в плодовых телах. В плодовых телах
-          ежовика эринацины практически не обнаруживаются. Мицелий —
-          единственный значимый источник этих соединений.
+          confirmed that the erinacine biosynthesis genes (eri genes) are
+          active in the mycelial phase but suppressed in the fruiting bodies.
+          Erinacines are practically undetectable in the fruiting bodies of
+          Lion’s Mane. The mycelium is the only significant source of these
+          compounds.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          <strong className="text-white">Герициноны</strong> — другой класс
-          терпеноидов, содержащийся в{" "}
-          <strong className="text-white">плодовых телах</strong> (то, что мы
-          видим как «гриб» в лесу). Герициноны тоже стимулируют синтез фактора
-          роста нервов (NGF), обладают иммуномодулирующей и противоопухолевой
-          активностью.           Но — и это принципиально —{" "}
+          <strong className="text-white">Hericenones</strong> are another class
+          of terpenoids, found in the{" "}
+          <strong className="text-white">fruiting bodies</strong> (what we see
+          as the &laquo;mushroom&raquo; in the forest). Hericenones also
+          stimulate the synthesis of nerve growth factor (NGF) and have
+          immunomodulatory and antitumor activity. But — and this is crucial —{" "}
           <strong className="text-white">
-            клинических доказательств их влияния на когнитивные функции пока нет
+            there is as yet no clinical evidence of their effect on cognitive
+            function
           </strong>
-          , в отличие от эринацинов из мицелия. Прямых данных о проникновении
-          герициновов через гематоэнцефалический барьер тоже недостаточно.
+          , unlike the erinacines from the mycelium. Direct evidence that
+          hericenones cross the blood-brain barrier is also insufficient.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Почему это важно? Потому что подавляющее большинство добавок на рынке
-          — это порошок из <em>плодовых тел</em>. Он содержит герициноны,
-          полисахариды, бета-глюканы — полезные вещества для иммунитета. Но
-          если ваша цель — улучшение памяти, концентрации, защита нейронов — вам
-          нужен{" "}
-          <strong className="text-white">мицелий, обогащённый эринацинами</strong>
-          . Именно мицелий использовался в ключевых клинических испытаниях на
-          людях.
+          Why does this matter? Because the vast majority of supplements on the
+          market are powder made from <em>fruiting bodies</em>. It contains
+          hericenones, polysaccharides and beta-glucans — compounds beneficial
+          for immunity. But if your goal is improved memory, concentration and
+          neuronal protection, you need{" "}
+          <strong className="text-white">mycelium enriched with erinacines</strong>
+          . It was mycelium that was used in the key clinical trials in humans.
         </p>
 
         {/* Comparison table */}
@@ -233,58 +237,58 @@ export default function EzhovikGrebenchatyjPage() {
             <thead>
               <tr className="border-b border-white/10">
                 <th className="px-4 py-3 font-semibold text-white">
-                  Параметр
+                  Parameter
                 </th>
                 <th className="px-4 py-3 font-semibold text-white">
-                  Эринацины (мицелий)
+                  Erinacines (mycelium)
                 </th>
                 <th className="px-4 py-3 font-semibold text-white">
-                  Герициноны (плодовое тело)
+                  Hericenones (fruiting body)
                 </th>
               </tr>
             </thead>
             <tbody className="text-white/70">
               <tr className="border-b border-white/5">
-                <td className="px-4 py-3 text-white/90">Источник</td>
-                <td className="px-4 py-3">Мицелий (грибница)</td>
-                <td className="px-4 py-3">Плодовое тело</td>
+                <td className="px-4 py-3 text-white/90">Source</td>
+                <td className="px-4 py-3">Mycelium</td>
+                <td className="px-4 py-3">Fruiting body</td>
               </tr>
               <tr className="border-b border-white/5">
-                <td className="px-4 py-3 text-white/90">Стимуляция NGF</td>
-                <td className="px-4 py-3">Да, мощная</td>
-                <td className="px-4 py-3">Да, умеренная</td>
+                <td className="px-4 py-3 text-white/90">NGF stimulation</td>
+                <td className="px-4 py-3">Yes, strong</td>
+                <td className="px-4 py-3">Yes, moderate</td>
               </tr>
               <tr className="border-b border-white/5">
                 <td className="px-4 py-3 text-white/90">
-                  Когнитивные функции
+                  Cognitive function
                 </td>
                 <td className="px-4 py-3 text-emerald-400">
-                  Подтверждено клинически
+                  Clinically confirmed
                 </td>
                 <td className="px-4 py-3 text-white/50">
-                  Не подтверждено
+                  Not confirmed
                 </td>
               </tr>
               <tr className="border-b border-white/5">
                 <td className="px-4 py-3 text-white/90">
-                  Антидепрессивный эффект
+                  Antidepressant effect
                 </td>
                 <td className="px-4 py-3 text-emerald-400">
-                  Подтверждено клинически
+                  Clinically confirmed
                 </td>
-                <td className="px-4 py-3">Частичные данные</td>
+                <td className="px-4 py-3">Partial data</td>
               </tr>
               <tr className="border-b border-white/5">
-                <td className="px-4 py-3 text-white/90">Иммунитет</td>
-                <td className="px-4 py-3">Да</td>
-                <td className="px-4 py-3 text-emerald-400">Да, выраженный</td>
+                <td className="px-4 py-3 text-white/90">Immunity</td>
+                <td className="px-4 py-3">Yes</td>
+                <td className="px-4 py-3 text-emerald-400">Yes, pronounced</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 text-white/90">
-                  Противоопухолевая активность
+                  Antitumor activity
                 </td>
-                <td className="px-4 py-3">Данные ограничены</td>
-                <td className="px-4 py-3 text-emerald-400">Подтверждена</td>
+                <td className="px-4 py-3">Limited data</td>
+                <td className="px-4 py-3 text-emerald-400">Confirmed</td>
               </tr>
             </tbody>
           </table>
@@ -292,20 +296,20 @@ export default function EzhovikGrebenchatyjPage() {
 
         {/* SECTION 2: Clinical studies */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Клинические исследования на людях
+          Clinical studies in humans
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Перейдём к конкретике. Ниже — только{" "}
+          Let’s get specific. Below are only{" "}
           <strong className="text-white">
-            рандомизированные контролируемые испытания с участием людей
+            randomized controlled trials in human participants
           </strong>
-          , опубликованные в рецензируемых научных журналах. Никаких крыс,
-          пробирок и «традиционной медицины».
+          , published in peer-reviewed scientific journals. No rats, no test
+          tubes and no &laquo;traditional medicine&raquo;.
         </p>
 
         {/* Study 1 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Улучшение когнитивных функций при лёгких нарушениях
+          Improved cognitive function in mild impairment
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Mori K. et al. (2009). Phytotherapy Research, 23(3), 367–372.{" "}
@@ -319,27 +323,28 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          Двойное слепое плацебо-контролируемое исследование. 30 японцев в
-          возрасте 50–80 лет с диагностированными лёгкими когнитивными
-          нарушениями. Одна группа получала таблетки с порошком ежовика
-          (4 × 250 мг, три раза в день — итого 3000 мг/день), другая — плацебо.
-          Курс — 16 недель.
+          A double-blind, placebo-controlled study. 30 Japanese participants
+          aged 50–80 with diagnosed mild cognitive impairment. One group
+          received tablets containing Lion’s Mane powder
+          (4 × 250 mg, three times a day — 3000 mg/day in total), the other a
+          placebo. The course lasted 16 weeks.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат: уже на 8-й неделе группа ежовика показала{" "}
+          Result: as early as week 8, the Lion’s Mane group showed a{" "}
           <strong className="text-white">
-            статистически значимое улучшение когнитивных функций
+            statistically significant improvement in cognitive function
           </strong>{" "}
-          по шкале HDS-R (модифицированная шкала деменции Хасегавы). Показатели
-          продолжали расти к 12-й и 16-й неделям. Побочных эффектов не
-          зафиксировано. Но вот важный момент: через 4 недели после отмены
-          препарата показатели начали снижаться. Это значит, что ежовик
-          работает, пока вы его принимаете — это не «вылечил и забыл».
+          on the HDS-R scale (the revised Hasegawa Dementia Scale). Scores
+          continued to rise through weeks 12 and 16. No side effects were
+          recorded. But here is an important point: four weeks after the
+          supplement was stopped, scores began to decline. This means Lion’s
+          Mane works while you are taking it — it is not a &laquo;cure and
+          forget&raquo; remedy.
         </p>
 
         {/* Study 2 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Снижение депрессии и тревоги
+          Reduced depression and anxiety
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Nagano M. et al. (2010). Biomedical Research, 31(4), 231–237.{" "}
@@ -353,26 +358,26 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          Рандомизированное двойное слепое исследование. 30 женщин в течение 4
-          недель употребляли печенье с порошком ежовика (500 мг на печенье,
-          4 штуки в день) или плацебо-печенье. Оценивались показатели депрессии
-          (CES-D) и неопределённых жалоб (ICI).
+          A randomized, double-blind study. For 4 weeks, 30 women ate cookies
+          containing Lion’s Mane powder (500 mg per cookie, 4 cookies a day) or
+          placebo cookies. Measures of depression (CES-D) and indefinite
+          complaints (ICI) were assessed.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат:{" "}
+          Result: a{" "}
           <strong className="text-white">
-            значимое снижение депрессии и тревожности
+            significant reduction in depression and anxiety
           </strong>{" "}
-          в группе ежовика. Особенно заметно улучшились показатели по
-          раздражительности, тревоге и концентрации. Авторы отмечают, что
-          механизм может быть связан не только со стимуляцией NGF, но и с другими
-          нейротропными эффектами — в частности, с влиянием на уровни серотонина
-          и дофамина.
+          in the Lion’s Mane group. Scores for irritability, anxiety and
+          concentration improved especially markedly. The authors note that the
+          mechanism may be linked not only to NGF stimulation but also to other
+          neurotropic effects — in particular, effects on serotonin and
+          dopamine levels.
         </p>
 
         {/* Study 3 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Улучшение настроения и сна у людей с лишним весом
+          Improved mood and sleep in people who are overweight
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Vigna L. et al. (2019). Evidence-Based Complementary and Alternative
@@ -387,25 +392,25 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          77 добровольцев с избыточным весом или ожирением, у которых наблюдались
-          нарушения настроения и/или сна. 8 недель приёма ежовика на фоне
-          низкокалорийной диеты.
+          77 volunteers who were overweight or obese and experienced mood
+          and/or sleep disturbances. 8 weeks of Lion’s Mane supplementation
+          alongside a low-calorie diet.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат:{" "}
+          Result:{" "}
           <strong className="text-white">
-            уменьшение депрессии, тревоги и улучшение качества сна
+            reduced depression and anxiety and improved sleep quality
           </strong>
-          . Также зафиксировано повышение уровня pro-BDNF (предшественник
-          мозгового нейротрофического фактора) — белка, критически важного для
-          роста и выживания нейронов. Что интересно: эффект сохранялся в течение
-          8 недель после прекращения приёма, что может говорить о структурных
-          изменениях в нейронных связях.
+          . An increase in pro-BDNF (the precursor of brain-derived
+          neurotrophic factor) was also recorded — a protein critically
+          important for the growth and survival of neurons. Interestingly, the
+          effect persisted for 8 weeks after the supplement was stopped, which
+          may indicate structural changes in neural connections.
         </p>
 
         {/* Study 4 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Профилактика болезни Альцгеймера
+          Prevention of Alzheimer’s disease
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Li I-C. et al. (2020). Frontiers in Aging Neuroscience, 12, 155.{" "}
@@ -419,30 +424,29 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          Пилотное двойное слепое плацебо-контролируемое исследование
-          длительностью 49 недель. Пациенты с лёгкой формой болезни Альцгеймера
-          получали{" "}
+          A pilot double-blind, placebo-controlled study lasting 49 weeks.
+          Patients with mild Alzheimer’s disease received{" "}
           <strong className="text-white">
-            мицелий ежовика, обогащённый эринацином А
+            Lion’s Mane mycelium enriched with erinacine A
           </strong>{" "}
-          (3 капсулы по 350 мг в день, содержание эринацина А — 5 мг/г).
+          (3 capsules of 350 mg per day, erinacine A content — 5 mg/g).
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат: группа ежовика показала{" "}
+          Result: the Lion’s Mane group showed a{" "}
           <strong className="text-white">
-            значимое улучшение баллов по шкале MMSE
+            significant improvement in MMSE scores
           </strong>{" "}
-          и показателей повседневной активности (IADL). В плацебо-группе,
-          напротив, зафиксировано снижение уровня BDNF и рост маркеров,
-          ассоциированных с Альцгеймером (бета-амилоид 1–40). Нейровизуализация
-          выявила защитные изменения белого вещества мозга в группе лечения. Это
-          одно из наиболее убедительных клинических исследований эринацинов при
-          нейродегенерации.
+          and in measures of daily living activities (IADL). In the placebo
+          group, by contrast, a decline in BDNF levels and a rise in markers
+          associated with Alzheimer’s (beta-amyloid 1–40) were recorded.
+          Neuroimaging revealed protective changes in the brain’s white matter
+          in the treatment group. This is one of the most convincing clinical
+          studies of erinacines in neurodegeneration.
         </p>
 
         {/* Study 5 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Восстановление слуха у пожилых пациентов
+          Restored hearing in elderly patients
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Li I-C. et al. (2022). Journal of Functional Foods, 97, 105247.{" "}
@@ -456,32 +460,31 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          Двойное слепое рандомизированное плацебо-контролируемое испытание.
-          80 пациентов с нарушениями слуха в возрасте 50–79 лет. Группа лечения
-          получала{" "}
+          A double-blind, randomized, placebo-controlled trial.
+          80 patients with hearing impairment aged 50–79. The treatment group
+          received{" "}
           <strong className="text-white">
-            мицелий ежовика, обогащённый эринацином А
+            Lion’s Mane mycelium enriched with erinacine A
           </strong>{" "}
-          (2000 мг/день) в течение 8 месяцев.
+          (2000 mg/day) for 8 months.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат: у пациентов старше 65 лет наблюдалось{" "}
+          Result: in patients over 65, a{" "}
           <strong className="text-white">
-            значимое улучшение слуха
+            significant improvement in hearing
           </strong>{" "}
-          — как на высоких частотах, так и в распознавании речи. Также
-          зафиксировано{" "}
+          was observed — both at high frequencies and in speech recognition. An{" "}
           <strong className="text-white">
-            повышение уровня NGF (фактора роста нервов)
+            increase in NGF (nerve growth factor)
           </strong>{" "}
-          и BDNF в сыворотке крови. Это исследование — одно из первых,
-          показавших, что эринацины из мицелия могут восстанавливать функцию
-          слухового нерва у пожилых людей.
+          and BDNF levels in blood serum was also recorded. This study is one of
+          the first to show that erinacines from mycelium can restore auditory
+          nerve function in older people.
         </p>
 
         {/* Study 6 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Когнитивные функции у здоровых людей
+          Cognitive function in healthy people
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Li I-C. et al. (2024). Journal of Functional Foods.{" "}
@@ -495,24 +498,24 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          8-недельное двойное слепое рандомизированное плацебо-контролируемое
-          исследование. 33 здоровых добровольца получали мицелий ежовика,
-          обогащённый эринацином А.
+          An 8-week double-blind, randomized, placebo-controlled study.
+          33 healthy volunteers received Lion’s Mane mycelium enriched with
+          erinacine A.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Результат:{" "}
+          Result: a{" "}
           <strong className="text-white">
-            значимое повышение скорости когнитивной обработки информации
+            significant increase in cognitive processing speed
           </strong>
-          , рост уровня BDNF в сыворотке крови и улучшение разнообразия
-          кишечной микробиоты. Это исследование важно тем, что показало: эринацины
-          могут улучшать когнитивные функции не только у пациентов с нарушениями,
-          но и у здоровых людей.
+          , a rise in serum BDNF levels and improved gut microbiota diversity.
+          This study is important because it showed that erinacines can improve
+          cognitive function not only in patients with impairment but also in
+          healthy people.
         </p>
 
         {/* Study 7 */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Систематический обзор: болезнь Альцгеймера и пищевые добавки
+          Systematic review: Alzheimer’s disease and dietary supplements
         </h3>
         <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
           Kang Y. et al. (2022). Systematic Review.{" "}
@@ -526,123 +529,123 @@ export default function EzhovikGrebenchatyjPage() {
           </a>
         </div>
         <p className="mb-5 leading-relaxed text-white/80">
-          Масштабный систематический обзор, в котором было проанализировано более
-          22 000 исследований, посвящённых пищевым добавкам при болезни
-          Альцгеймера. Из всех изученных веществ лишь несколько показали
-          доказанное положительное влияние на когнитивный и функциональный
-          прогноз.
+          A large-scale systematic review that analyzed more than 22,000
+          studies on dietary supplements for Alzheimer’s disease. Of all the
+          compounds examined, only a few showed a proven positive effect on
+          cognitive and functional outcomes.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          В числе эффективных были названы:{" "}
-          <strong className="text-white">мицелий ежовика гребенчатого</strong>,
-          ресвератрол, витамин D и бетаин. Эти четыре вещества улучшили
-          когнитивные показатели, функциональный прогноз и качество жизни
-          пациентов — в отличие от десятков других добавок, которые не показали
-          значимого эффекта. Обратите внимание: речь идёт именно о{" "}
-          <strong className="text-white">мицелии</strong>, а не о плодовых телах.
+          Among those found to be effective were:{" "}
+          <strong className="text-white">Lion’s Mane mycelium</strong>,
+          resveratrol, vitamin D and betaine. These four compounds improved
+          cognitive scores, functional outcomes and patients’ quality of life —
+          unlike dozens of other supplements that showed no significant effect.
+          Note that this specifically refers to the{" "}
+          <strong className="text-white">mycelium</strong>, not the fruiting
+          bodies.
         </p>
 
         {/* Evidence caveat */}
         <h3 className="mb-3 mt-8 text-xl font-bold text-white">
-          Важная оговорка о доказательной базе
+          An important caveat about the evidence base
         </h3>
         <p className="mb-5 leading-relaxed text-white/80">
-          Все перечисленные исследования имеют ограничения: небольшие выборки
-          (от 30 до 80 человек), различные стандарты экстрактов и формы
-          гриба. Говорить о твёрдом научном консенсусе пока рано. Тем не менее
-          направление результатов последовательно: мицелий, обогащённый
-          эринацинами, демонстрирует положительное влияние на когнитивные
-          функции в каждом из проведённых испытаний. Отдельно стоит отметить,
-          что{" "}
+          All the studies listed have limitations: small samples (from 30 to 80
+          people), varying extract standards and forms of the mushroom. It is
+          still too early to speak of a firm scientific consensus.
+          Nevertheless, the direction of the results is consistent: mycelium
+          enriched with erinacines demonstrates a positive effect on cognitive
+          function in every trial conducted. It is also worth noting separately
+          that a{" "}
           <a
             href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12018234/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-400 underline decoration-emerald-400/30 hover:text-emerald-300"
           >
-            исследование 2025 года (Frontiers in Nutrition)
+            2025 study (Frontiers in Nutrition)
           </a>
-          , в котором здоровые молодые люди однократно принимали экстракт
-          плодовых тел (3 г, 10:1), не выявило значимого улучшения когнитивных
-          функций — что косвенно подтверждает ключевую роль эринацинов из
-          мицелия.
+          , in which healthy young people took a single dose of fruiting-body
+          extract (3 g, 10:1), found no significant improvement in cognitive
+          function — which indirectly confirms the key role of erinacines from
+          the mycelium.
         </p>
 
         {/* SECTION 3: Why mycelium */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Почему мицелий, а не плодовое тело
+          Why mycelium, not the fruiting body
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Этот вопрос вызывает горячие споры в грибном сообществе. Одни эксперты
-          настаивают на превосходстве плодовых тел — мол, в них больше
-          бета-глюканов и «настоящего гриба». Другие — и среди них Пол Стеметс
-          (Paul Stamets), один из ведущих микологов мира — отстаивают мицелий как
-          более ценный источник нейроактивных соединений.
+          This question sparks heated debate in the mushroom community. Some
+          experts insist on the superiority of fruiting bodies — arguing that
+          they contain more beta-glucans and &laquo;real mushroom&raquo;.
+          Others — among them Paul Stamets, one of the world’s leading
+          mycologists — champion mycelium as the more valuable source of
+          neuroactive compounds.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Имеющиеся данные указывают в одном направлении. Эринацины —
-          единственные вещества ежовика, для которых{" "}
+          The available data all point in one direction. Erinacines are the
+          only compounds in Lion’s Mane for which{" "}
           <strong className="text-white">
-            в клинических испытаниях показано влияние на когнитивные функции,
-            депрессию и нейрорегенерацию
+            clinical trials have shown effects on cognitive function,
+            depression and neuroregeneration
           </strong>
-          . И эринацины содержатся в мицелии. В плодовых телах их практически
-          нет — это подтверждено{" "}
+          . And erinacines are found in the mycelium. They are practically
+          absent from the fruiting bodies — this was confirmed by a{" "}
           <a
             href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11969743/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-400 underline decoration-emerald-400/30 hover:text-emerald-300"
           >
-            геномным исследованием 2025 года (PMC11969743)
+            2025 genomic study (PMC11969743)
           </a>
           .
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Это не значит, что плодовые тела бесполезны. Герициноны из плодовых
-          тел стимулируют NGF, обладают иммуномодулирующими и противоопухолевыми
-          свойствами. Если ваша цель — общее укрепление иммунитета, порошок
-          плодовых тел — вполне рабочий вариант. Но если вы ищете{" "}
+          This does not mean fruiting bodies are useless. Hericenones from the
+          fruiting bodies stimulate NGF and have immunomodulatory and antitumor
+          properties. If your goal is general immune support, fruiting-body
+          powder is a perfectly workable option. But if you are looking for a{" "}
           <strong className="text-white">
-            ноотропный эффект, улучшение памяти и защиту от нейродегенерации
-          </strong>{" "}
-          — выбирайте добавки на основе мицелия, обогащённого эринацинами.
-          Именно такой мицелий использовался во всех ключевых клинических
-          испытаниях.
+            nootropic effect, improved memory and protection against
+            neurodegeneration
+          </strong>
+          , choose supplements based on mycelium enriched with erinacines. That
+          is exactly the kind of mycelium used in all the key clinical trials.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Однако здесь есть практическая ловушка. Большинство коммерческих
-          добавок с пометкой «mycelium» — это{" "}
-          <strong className="text-white">мицелий, выращенный на зерне</strong>{" "}
-          (рис, овёс, пшеница). В таком порошке до 40–60% массы составляет
-          крахмал от субстрата, а содержание бета-глюканов падает до 1–5%.
-          Эринацинов в таких продуктах может быть мало или не быть вовсе. Это
-          принципиально другой продукт по сравнению с мицелием из клинических
-          исследований, где использовалась жидкая ферментация с контролируемым
-          содержанием эринацина А.
+          There is a practical trap here, however. Most commercial supplements
+          labeled &laquo;mycelium&raquo; are{" "}
+          <strong className="text-white">mycelium grown on grain</strong>{" "}
+          (rice, oats, wheat). In such powder, up to 40–60% of the mass is
+          starch from the substrate, and the beta-glucan content drops to 1–5%.
+          These products may contain little to no erinacines. This is a
+          fundamentally different product from the mycelium in the clinical
+          studies, which used liquid fermentation with a controlled erinacine A
+          content.
         </p>
 
         {/* SECTION 4: NGF */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Фактор роста нервов (NGF) — почему это важно
+          Nerve growth factor (NGF) — why it matters
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          NGF (Nerve Growth Factor) — белок, открытый нобелевским лауреатом
-          Ритой Леви-Монтальчини в 1952 году. Он критически важен для роста,
-          поддержания и выживания нейронов. С возрастом выработка NGF снижается,
-          что связано с ухудшением памяти, когнитивными нарушениями и
-          нейродегенеративными заболеваниями.
+          NGF (Nerve Growth Factor) is a protein discovered by Nobel laureate
+          Rita Levi-Montalcini in 1952. It is critically important for the
+          growth, maintenance and survival of neurons. NGF production declines
+          with age, which is linked to worsening memory, cognitive impairment
+          and neurodegenerative diseases.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Ежовик гребенчатый — один из немногих природных источников веществ,
-          способных{" "}
+          Lion’s Mane is one of the few natural sources of compounds capable of{" "}
           <strong className="text-white">
-            стимулировать синтез NGF в организме
+            stimulating NGF synthesis in the body
           </strong>
-          . Эринацины из мицелия проникают через гематоэнцефалический барьер
-          (что крайне редко для природных соединений) и напрямую индуцируют
-          выработку NGF в центральной нервной системе. Исследование на пожилых
-          пациентах с нарушениями слуха{" "}
+          . Erinacines from the mycelium cross the blood-brain barrier (which is
+          extremely rare for natural compounds) and directly induce NGF
+          production in the central nervous system. A study in elderly patients
+          with hearing impairment{" "}
           <a
             href="https://www.sciencedirect.com/science/article/pii/S1756464622002900"
             target="_blank"
@@ -651,108 +654,111 @@ export default function EzhovikGrebenchatyjPage() {
           >
             (Li et al., 2022)
           </a>{" "}
-          подтвердило: 8 месяцев приёма мицелия, обогащённого эринацином А,
-          значимо повысили уровни NGF и BDNF в сыворотке крови.
+          confirmed that 8 months of taking mycelium enriched with erinacine A
+          significantly raised NGF and BDNF levels in blood serum.
         </p>
 
         {/* SECTION 5: Where to find */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Где растёт ежовик гребенчатый
+          Where Lion’s Mane grows
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Ежовик гребенчатый — сапротроф и слабый паразит лиственных деревьев.
-          Он растёт на стволах и пнях дуба, бука, клёна, берёзы, реже — на
-          вязе и ясене. Предпочитает старые, ослабленные или уже погибшие
-          деревья. В России встречается в Приморском крае, на Кавказе, в
-          Крыму, реже — в средней полосе. В Беларуси фиксируется в Беловежской
-          пуще и Полесских лесах.
+          Lion’s Mane is a saprotroph and weak parasite of deciduous trees. It
+          grows on the trunks and stumps of oak, beech, maple and birch, and
+          more rarely on elm and ash. It prefers old, weakened or already dead
+          trees. In Russia it occurs in Primorsky Krai, the Caucasus and
+          Crimea, and more rarely in the central regions. In Belarus it is
+          recorded in Belovezhskaya Pushcha and the forests of Polesia.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Найти его — настоящая удача. Ежовик занесён в Красные книги многих
-          регионов России и в Красную книгу Республики Беларусь. Если вы
-          встретите его в лесу — сфотографируйте, запомните место и дерево.
-          Плодовое тело появляется на одном и том же стволе годами, обычно в
-          августе–октябре при температуре 15–20°C и высокой влажности.
+          Finding it is a real stroke of luck. Lion’s Mane is listed in the Red
+          Data Books of many regions of Russia and in the Red Data Book of the
+          Republic of Belarus. If you come across it in the forest, photograph
+          it and remember the spot and the tree. The fruiting body appears on
+          the same trunk for years, usually in August–October at temperatures of
+          15–20°C and high humidity.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Для грибника, который отслеживает свои лесные маршруты, ежовик — ещё
-          один повод сохранять координаты интересных находок. В SkyForest можно
-          отметить на карте место, где вы видели ежовик, привязать его к типу
-          леса и отслеживать погодные условия — чтобы вернуться в нужный момент.
+          For a forager who tracks their forest routes, Lion’s Mane is one more
+          reason to save the coordinates of interesting finds. In SkyForest you
+          can mark on the map the spot where you saw Lion’s Mane, link it to the
+          forest type and track the weather conditions — so you can return at
+          the right moment.
         </p>
 
         {/* SECTION 6: How to choose */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Как выбрать добавку с ежовиком
+          How to choose a Lion’s Mane supplement
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Если вы хотите получить нейропротекторный эффект ежовика, но не
-          планируете собирать его в лесу (и правильно — он в Красной книге),
-          вот на что обращать внимание при выборе добавки:
+          If you want to get the neuroprotective benefits of Lion’s Mane but
+          don’t plan to forage for it in the forest (and rightly so — it’s in
+          the Red Data Book), here is what to look for when choosing a
+          supplement:
         </p>
         <ul className="mb-5 list-inside space-y-2 text-white/80">
           <li className="leading-relaxed">
-            <strong className="text-white">Состав:</strong> ищите продукты на
-            основе мицелия, а не только плодовых тел. Идеально — с указанием
-            содержания эринацинов (erinacine A, C). Мицелий должен быть
-            получен методом жидкой ферментации, а не выращен на зерне.
+            <strong className="text-white">Composition:</strong> look for
+            products based on mycelium, not just fruiting bodies. Ideally, with
+            a stated erinacine content (erinacine A, C). The mycelium should be
+            produced by liquid fermentation, not grown on grain.
           </li>
           <li className="leading-relaxed">
-            <strong className="text-white">Дозировка:</strong> в клинических
-            исследованиях использовались дозы от 750 мг до 3000 мг в день.
-            Добавки с дозировкой 250–500 мг могут быть недостаточны.
+            <strong className="text-white">Dosage:</strong> clinical studies
+            used doses from 750 mg to 3000 mg per day. Supplements dosed at
+            250–500 mg may be insufficient.
           </li>
           <li className="leading-relaxed">
-            <strong className="text-white">Длительность:</strong> эффекты
-            нарастают к 4–8 неделе приёма. Принимать менее месяца — вряд ли
-            почувствуете разницу.
+            <strong className="text-white">Duration:</strong> effects build up
+            by weeks 4–8 of use. Take it for less than a month and you’re
+            unlikely to feel a difference.
           </li>
           <li className="leading-relaxed">
-            <strong className="text-white">Сертификат анализа (COA):</strong>{" "}
-            запрашивайте у производителя данные по содержанию бета-глюканов
-            и альфа-глюканов (крахмала). Хороший показатель:
-            бета-глюканы &gt; 20%, альфа-глюканы &lt; 10%. Если крахмала
-            больше 30% — перед вами в основном зерно, а не гриб.
+            <strong className="text-white">Certificate of Analysis (COA):</strong>{" "}
+            ask the manufacturer for data on beta-glucan and alpha-glucan
+            (starch) content. A good benchmark: beta-glucans &gt; 20%,
+            alpha-glucans &lt; 10%. If starch exceeds 30%, you’re mostly looking
+            at grain, not mushroom.
           </li>
           <li className="leading-relaxed">
-            <strong className="text-white">Красные флаги:</strong> надписи
-            «mycelium on grain», «myceliated grain», отсутствие указания
-            содержания эринацинов, стоимость значительно ниже рынка.
+            <strong className="text-white">Red flags:</strong> labels like
+            &laquo;mycelium on grain&raquo; and &laquo;myceliated grain&raquo;,
+            no stated erinacine content, and a price well below market.
           </li>
         </ul>
 
         {/* Summary */}
         <h2 className="mb-5 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Итого
+          The bottom line
         </h2>
         <p className="mb-5 leading-relaxed text-white/80">
-          Ежовик гребенчатый — один из немногих грибов, чьё влияние на нервную
-          систему подтверждено клиническими испытаниями на людях, а не только
-          экспериментами на клеточных культурах. Улучшение памяти, снижение
-          тревоги, улучшение сна, повышение NGF, восстановление слуха — всё это
-          зафиксировано в рецензированных научных журналах.
+          Lion’s Mane is one of the few mushrooms whose effect on the nervous
+          system has been confirmed by clinical trials in humans, not just by
+          experiments on cell cultures. Improved memory, reduced anxiety, better
+          sleep, higher NGF and restored hearing — all of this has been recorded
+          in peer-reviewed scientific journals.
         </p>
         <p className="mb-5 leading-relaxed text-white/80">
-          Ключевой вывод: для когнитивных целей выбирайте{" "}
+          The key takeaway: for cognitive goals, choose{" "}
           <strong className="text-white">
-            мицелий, обогащённый эринацинами
+            mycelium enriched with erinacines
           </strong>{" "}
-          (жидкая ферментация, не на зерне). Плодовые тела хороши для
-          иммунитета, но клинических данных об их влиянии на когнитивные функции
-          нет. Эффект накопительный: минимум 4 недели регулярного приёма, а при
-          прекращении показатели могут снижаться.
+          (liquid fermentation, not grown on grain). Fruiting bodies are good
+          for immunity, but there is no clinical evidence of their effect on
+          cognitive function. The effect is cumulative: at least 4 weeks of
+          regular use, and scores may decline once you stop.
         </p>
         <p className="mb-8 leading-relaxed text-white/80">
-          Важно понимать: доказательная база по ежовику ещё формируется.
-          Исследований мало, выборки небольшие, а продукты на рынке сильно
-          отличаются от экстрактов, использованных учёными. Не стоит
-          воспринимать ежовик как лекарство — но как перспективный объект
-          нейронауки он заслуживает внимания.
+          It’s important to understand: the evidence base on Lion’s Mane is
+          still taking shape. There are few studies, the samples are small, and
+          the products on the market differ greatly from the extracts scientists
+          used. Lion’s Mane shouldn’t be seen as a medicine — but as a promising
+          subject of neuroscience it deserves attention.
         </p>
 
         {/* FAQ */}
         <h2 className="mb-6 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Часто задаваемые вопросы
+          Frequently asked questions
         </h2>
         <div className="space-y-4">
           {FAQ_ITEMS.map((item) => (
@@ -768,7 +774,7 @@ export default function EzhovikGrebenchatyjPage() {
 
         {/* Related */}
         <h2 className="mb-6 mt-16 text-2xl font-bold text-white">
-          Читайте также
+          Read also
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {RELATED.map((r) => (
@@ -791,18 +797,18 @@ export default function EzhovikGrebenchatyjPage() {
         {/* CTA */}
         <div className="mt-16 rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl sm:p-12">
           <h2 className="mb-4 text-2xl font-bold text-white">
-            Отслеживайте погоду для ваших грибных мест
+            Track the weather for your mushroom spots
           </h2>
           <p className="mb-6 text-white/70">
-            SkyForest анализирует осадки, температуру и влажность — и
-            подсказывает лучший день для тихой охоты. Сохраняйте координаты
-            находок, включая редкие виды вроде ежовика.
+            SkyForest analyzes rainfall, temperature and humidity — and suggests
+            the best day for foraging. Save the coordinates of your finds,
+            including rare species like Lion’s Mane.
           </p>
           <Link
             href="/register"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-dark hover:shadow-xl"
           >
-            Попробовать SkyForest →
+            Try SkyForest →
           </Link>
         </div>
       </article>

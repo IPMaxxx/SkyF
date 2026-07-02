@@ -1,0 +1,156 @@
+# Fastlane для мобильных приложений SkyForest (.ai / SAMPLIFY FZCO).
+#
+# Аутентификация в Apple — через App Store Connect API key (fastlane/asc_api_key.json),
+# переиспользуется командный ключ (Team VH4L4R7PKW). Google Play — через
+# service account (fastlane/play-service-account.json).
+#
+# Сборка приложения — Capacitor: WebView открывает https://skyforest.ai,
+# поэтому нативную обёртку достаточно собрать и подписать.
+
+APP_ID = "ai.skyforest.app"
+APP_NAME = "SkyForest"
+ASC_KEY = "fastlane/asc_api_key.json"
+
+P8_PATH = [
+  File.join(__dir__, "AuthKey_TRS8NZAGX5.p8"),
+  File.expand_path("fastlane/AuthKey_TRS8NZAGX5.p8", Dir.pwd),
+  File.expand_path("AuthKey_TRS8NZAGX5.p8", Dir.pwd),
+].map { |p| File.expand_path(p) }.find { |p| File.exist?(p) } ||
+  File.expand_path(File.join(__dir__, "AuthKey_TRS8NZAGX5.p8"))
+
+def asc_key
+  app_store_connect_api_key(
+    key_id: "TRS8NZAGX5",
+    issuer_id: "31303d35-0acc-4d1a-89d4-872e31f2b28f",
+    key_filepath: P8_PATH,
+    duration: 1200,
+    in_house: false,
+  )
+end
+
+# Для нового приложения у редактируемой версии ещё нет ресурса
+# "App Store Review Detail", из-за чего deliver падает с "No data" в
+# fetch_app_store_review_detail. Создаём версию 1.0 и пустой review detail заранее.
+def ensure_review_detail
+  require "spaceship"
+  token = Spaceship::ConnectAPI::Token.create(
+    key_id: "TRS8NZAGX5",
+    issuer_id: "31303d35-0acc-4d1a-89d4-872e31f2b28f",
+    filepath: P8_PATH,
+  )
+  Spaceship::ConnectAPI.token = token
+
+  app = Spaceship::ConnectAPI::App.find(APP_ID)
+  return unless app
+
+  app.ensure_version!("1.0", platform: Spaceship::ConnectAPI::Platform::IOS)
+  version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+  return unless version
+
+  detail = begin
+    version.fetch_app_store_review_detail
+  rescue StandardError
+    nil
+  end
+
+  unless detail
+    UI.message("Создаём App Store Review Detail для версии 1.0")
+    version.create_app_store_review_detail(attributes: {})
+  end
+end
+
+platform :ios do
+  desc "Создать запись приложения в App Store Connect (через ConnectAPI/JWT, без пароля)"
+  lane :create_app do
+    require "spaceship"
+    token = Spaceship::ConnectAPI::Token.create(
+      key_id: "TRS8NZAGX5",
+      issuer_id: "31303d35-0acc-4d1a-89d4-872e31f2b28f",
+      filepath: P8_PATH,
+    )
+    Spaceship::ConnectAPI.token = token
+
+    existing = Spaceship::ConnectAPI::App.find(APP_ID)
+    if existing
+      UI.success("Приложение уже существует в ASC: #{existing.name} (id=#{existing.id})")
+      next
+    end
+
+    app = Spaceship::ConnectAPI::App.create(
+      name: APP_NAME,
+      version_string: "1.0",
+      sku: "skyforest-ai",
+      primary_locale: "en-US",
+      bundle_id: APP_ID,
+      platforms: ["IOS"],
+    )
+    UI.success("Создано приложение в ASC: #{app.name} (id=#{app.id})")
+  end
+
+  desc "Загрузить метаданные (тексты) в App Store Connect"
+  lane :metadata do
+    key = asc_key
+    ensure_review_detail
+    deliver(
+      api_key: key,
+      app_identifier: APP_ID,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_app_version_update: false,
+      force: true,
+      run_precheck_before_submit: false,
+      submit_for_review: false,
+    )
+  end
+
+  desc "Собрать и загрузить в TestFlight"
+  lane :beta do
+    key = asc_key
+
+    # Облачная (automatic) подпись при экспорте недоступна для этого API-ключа
+    # ("Cloud signing permission error"), поэтому подписываем вручную:
+    # локальный сертификат Apple Distribution + App Store профиль, созданный через API.
+    get_provisioning_profile(
+      api_key: key,
+      app_identifier: APP_ID,
+      adhoc: false,
+      platform: "ios",
+      force: true,
+    )
+    profile_name = lane_context[SharedValues::SIGH_NAME]
+
+    build_app(
+      project: "ios/App/App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        signingStyle: "manual",
+        teamID: "VH4L4R7PKW",
+        provisioningProfiles: {
+          APP_ID => profile_name,
+        },
+      },
+      xcargs: "-allowProvisioningUpdates " \
+        "-authenticationKeyPath #{P8_PATH} " \
+        "-authenticationKeyID TRS8NZAGX5 " \
+        "-authenticationKeyIssuerID 31303d35-0acc-4d1a-89d4-872e31f2b28f",
+    )
+    upload_to_testflight(api_key: key, skip_waiting_for_build_processing: true)
+  end
+end
+
+platform :android do
+  desc "Загрузить AAB во внутренний трек Google Play (черновик)"
+  lane :internal do
+    upload_to_play_store(
+      track: "internal",
+      release_status: "draft",
+      aab: "android/app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+    )
+  end
+end

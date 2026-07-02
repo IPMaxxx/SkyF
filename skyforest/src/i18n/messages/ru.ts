@@ -86,6 +86,7 @@ export default {
     legalTitle: "Документы",
     offer: "Оферта",
     privacy: "Конфиденциальность",
+    deleteAccount: "Удаление аккаунта",
     paymentMethods: "Способы оплаты",
     returns: "Возврат товара",
     instruction: "Инструкция",

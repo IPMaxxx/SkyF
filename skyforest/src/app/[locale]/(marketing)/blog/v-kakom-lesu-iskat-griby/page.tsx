@@ -5,35 +5,35 @@ import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
-  title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+  title: "Which Forest to Search for Mushrooms: Coniferous, Deciduous or Mixed",
   description:
-    "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
+    "Learn which mushrooms grow in coniferous, deciduous and mixed forests. A mushroom-and-tree compatibility table. Mycorrhiza and tips for finding good mushroom spots.",
   keywords: [
-    "в каком лесу растут грибы",
-    "грибы в хвойном лесу",
-    "грибы в лиственном лесу",
-    "грибы в смешанном лесу",
-    "где искать грибы",
-    "лес для грибов",
-    "микориза грибов",
-    "грибы под берёзой",
-    "грибы под сосной",
-    "грибы под елью",
-    "грибные места в лесу",
-    "тихая охота",
+    "which forest do mushrooms grow in",
+    "mushrooms in coniferous forest",
+    "mushrooms in deciduous forest",
+    "mushrooms in mixed forest",
+    "where to look for mushrooms",
+    "best forest for mushrooms",
+    "mushroom mycorrhiza",
+    "mushrooms under birch",
+    "mushrooms under pine",
+    "mushrooms under spruce",
+    "mushroom spots in the forest",
+    "mushroom foraging",
   ],
   openGraph: {
-    title: "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+    title: "Which Forest to Search for Mushrooms: Coniferous, Deciduous or Mixed",
     description:
-      "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
+      "Learn which mushrooms grow in coniferous, deciduous and mixed forests. A mushroom-and-tree compatibility table. Mycorrhiza and tips for finding good mushroom spots.",
     url: "https://www.skyforest.by/blog/v-kakom-lesu-iskat-griby",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "https://www.skyforest.by/images/blog/blog-v-kakom-lesu-iskat-griby.jpg", width: 1792, height: 1024, alt: "Разные типы леса — сосновый, берёзовый и смешанный с грибами" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-v-kakom-lesu-iskat-griby.jpg", width: 1792, height: 1024, alt: "Different forest types — pine, birch and mixed woodland with mushrooms" }],
     publishedTime: "2025-09-15T00:00:00+03:00",
     modifiedTime: "2025-09-15T00:00:00+03:00",
     authors: ["SkyForest"],
-    section: "Грибы",
+    section: "Mushrooms",
   },
   alternates: {
     canonical: "https://www.skyforest.by/blog/v-kakom-lesu-iskat-griby",
@@ -46,9 +46,9 @@ const jsonLd = {
     {
       "@type": "Article",
       headline:
-        "В каком лесу искать грибы: хвойный, лиственный или смешанный",
+        "Which Forest to Search for Mushrooms: Coniferous, Deciduous or Mixed",
       description:
-        "Узнайте, какие грибы растут в хвойном, лиственном и смешанном лесу. Таблица совместимости грибов и деревьев. Микориза, советы по поиску грибных мест.",
+        "Learn which mushrooms grow in coniferous, deciduous and mixed forests. A mushroom-and-tree compatibility table. Mycorrhiza and tips for finding good mushroom spots.",
       author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
       publisher: {
         "@type": "Organization",
@@ -65,50 +65,50 @@ const jsonLd = {
         width: 1792,
         height: 1024,
       },
-      inLanguage: "ru",
+      inLanguage: "en",
     },
     {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
-        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
-        { "@type": "ListItem", position: 3, name: "В каком лесу искать грибы" },
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Which Forest to Search for Mushrooms" },
       ],
     },
   ],
 };
 
 const COMPATIBILITY_TABLE = [
-  { tree: "Сосна", mushrooms: "Маслята, рыжики, белый (сосновый), моховик, лисички, зеленушка" },
-  { tree: "Ель", mushrooms: "Белый (еловый), рыжик еловый, мокруха еловая, лисички, сыроежки" },
-  { tree: "Берёза", mushrooms: "Подберёзовик, белый (берёзовый), волнушка, груздь настоящий, лисички, сыроежки" },
-  { tree: "Осина", mushrooms: "Подосиновик, груздь осиновый, сыроежки" },
-  { tree: "Дуб", mushrooms: "Белый (дубовый), моховик, подгруздок, дубовик, лисички" },
-  { tree: "Ольха", mushrooms: "Свинушка, волнушка розовая, млечник" },
-  { tree: "Лещина (орешник)", mushrooms: "Трюфель белый, лисички, сыроежки" },
-  { tree: "Липа", mushrooms: "Груздь чёрный, дубовик, сыроежки" },
+  { tree: "Pine", mushrooms: "Slippery jacks, saffron milk caps, king bolete (pine), bay bolete, chanterelles, man-on-horseback" },
+  { tree: "Spruce", mushrooms: "King bolete (spruce), spruce milk cap, slimy spike-cap, chanterelles, russulas" },
+  { tree: "Birch", mushrooms: "Birch bolete, king bolete (birch), woolly milk cap, true milk cap, chanterelles, russulas" },
+  { tree: "Aspen", mushrooms: "Aspen bolete, aspen milk cap, russulas" },
+  { tree: "Oak", mushrooms: "King bolete (oak), bay bolete, milk-white brittlegill, oak bolete, chanterelles" },
+  { tree: "Alder", mushrooms: "Brown roll-rim, pink woolly milk cap, milk cap" },
+  { tree: "Hazel", mushrooms: "White truffle, chanterelles, russulas" },
+  { tree: "Linden", mushrooms: "Black milk cap, oak bolete, russulas" },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "В каком лесу больше всего грибов?",
-    a: "Больше всего видов и количества грибов — в смешанных лесах. Разнообразие деревьев создаёт больше ниш для микоризных грибов. По данным Института леса НАН Беларуси, видовое разнообразие грибов в смешанных лесах на 30–40% выше, чем в чистых хвойных или лиственных насаждениях.",
+    q: "Which forest has the most mushrooms?",
+    a: "The greatest variety and abundance of mushrooms is found in mixed forests. A diversity of trees creates more niches for mycorrhizal fungi. According to the Forest Institute of the National Academy of Sciences of Belarus, mushroom species diversity in mixed forests is 30–40% higher than in pure coniferous or deciduous stands.",
   },
   {
-    q: "Какие грибы растут только в хвойном лесу?",
-    a: "Строго хвойные виды — маслёнок обыкновенный (только с сосной), рыжик сосновый, рыжик еловый, мокруха еловая, зеленушка. Эти грибы образуют микоризу исключительно с хвойными и не встречаются в чистых лиственных лесах.",
+    q: "Which mushrooms grow only in coniferous forest?",
+    a: "Strictly coniferous species include the slippery jack (only with pine), pine saffron milk cap, spruce saffron milk cap, slimy spike-cap and man-on-horseback. These mushrooms form mycorrhiza exclusively with conifers and are not found in pure deciduous forests.",
   },
   {
-    q: "Почему подберёзовики растут именно под берёзами?",
-    a: "Подберёзовик (Leccinum scabrum) — облигатный микоризообразователь с берёзой. Его мицелий физически оплетает корни берёзы и обменивается с ней питательными веществами. Без берёзы подберёзовик не может сформировать плодовое тело — ему просто неоткуда получать углеводы.",
+    q: "Why do birch boletes grow specifically under birches?",
+    a: "The birch bolete (Leccinum scabrum) is an obligate mycorrhizal partner of birch. Its mycelium physically wraps around the birch's roots and exchanges nutrients with the tree. Without birch, the birch bolete cannot form a fruiting body — it simply has no source of carbohydrates.",
   },
   {
-    q: "Можно ли найти белый гриб в любом лесу?",
-    a: "Белый гриб (Boletus edulis) — один из самых «многостаночных» микоризных грибов. Он образует симбиоз с сосной, елью, берёзой, дубом и буком. Поэтому белые встречаются и в хвойных, и в лиственных, и в смешанных лесах — но в каждом типе леса это свой подвид с незначительными внешними отличиями.",
+    q: "Can you find king bolete in any forest?",
+    a: "The king bolete (Boletus edulis) is one of the most versatile mycorrhizal mushrooms. It forms a symbiosis with pine, spruce, birch, oak and beech. That is why king boletes are found in coniferous, deciduous and mixed forests alike — though in each forest type it is a distinct subspecies with minor visual differences.",
   },
   {
-    q: "Как определить тип леса по деревьям?",
-    a: "Хвойный лес: более 80% деревьев — сосна, ель, пихта. Лиственный: более 80% — берёза, осина, дуб, клён, липа. Смешанный: ни хвойные, ни лиственные не доминируют полностью. Проще всего ориентироваться по подстилке: хвоя и шишки — хвойный, листва — лиственный, и то и другое — смешанный.",
+    q: "How can you identify the forest type by its trees?",
+    a: "Coniferous forest: more than 80% of the trees are pine, spruce or fir. Deciduous: more than 80% are birch, aspen, oak, maple or linden. Mixed: neither conifers nor broadleaf trees fully dominate. The easiest cue is the forest floor: needles and cones mean coniferous, fallen leaves mean deciduous, and a mix of both means a mixed forest.",
   },
 ];
 
@@ -122,21 +122,21 @@ export default function VKakomLesuIskatGribyPage() {
       />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-        <BlogArticleHeader title="В&nbsp;каком лесу искать грибы: хвойный, лиственный
-          или&nbsp;смешанный" />
+        <BlogArticleHeader title="Which&nbsp;forest to search for mushrooms: coniferous, deciduous
+          or&nbsp;mixed" />
 
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
-          В&nbsp;каком лесу искать грибы: хвойный, лиственный
-          или&nbsp;смешанный
+          Which&nbsp;forest to search for mushrooms: coniferous, deciduous
+          or&nbsp;mixed
         </h1>
         <p className="mb-8 text-sm text-white/40">
-          Обновлено: 15 сентября 2025 · 10 мин чтения
+          Updated: September 15, 2025 · Reading time: 10 min
         </p>
 
         <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
           <Image
             src="/images/blog/blog-v-kakom-lesu-iskat-griby.jpg"
-            alt="Грибы в разных типах леса — маслята под соснами, подберёзовики у берёз, боровики в смешанном лесу"
+            alt="Mushrooms in different forest types — slippery jacks under pines, birch boletes near birches, king boletes in mixed woodland"
             fill
             className="object-cover"
             priority
@@ -146,237 +146,248 @@ export default function VKakomLesuIskatGribyPage() {
 
         {/* === Intro === */}
         <p className="mb-6 text-lg leading-relaxed text-white/80">
-          Не каждый лес одинаково грибной — и любой опытный грибник это
-          подтвердит. Можно битый час бродить по красивому сосновому бору и не
-          найти ни одного плодового тела, а потом свернуть в невзрачный
-          березнячок — и за полчаса набрать полную корзину подберёзовиков.
-          Секрет не в везении. Секрет — в&nbsp;
-          <strong className="text-white">типе леса</strong> и тех деревьях,
-          которые в нём растут. Грибы — не случайные жители подстилки. Они
-          связаны с конкретными породами деревьев невидимыми нитями мицелия, и
-          эта связь определяет, <strong className="text-white">в каком лесу
-          растут грибы</strong> того или иного вида.
+          Not every forest is equally good for mushrooms — and any experienced
+          forager will confirm it. You can wander for an hour through a
+          beautiful pine wood without finding a single fruiting body, then turn
+          into an unremarkable little birch grove and fill an entire basket with
+          birch boletes in half an hour. The secret isn’t luck. The secret lies
+          in the&nbsp;
+          <strong className="text-white">forest type</strong> and the trees
+          that grow in it. Mushrooms are not random inhabitants of the forest
+          floor. They are connected to specific tree species by invisible
+          threads of mycelium, and this connection determines{" "}
+          <strong className="text-white">which forest the mushrooms
+          of</strong> a given species grow in.
         </p>
         <p className="mb-6 text-lg leading-relaxed text-white/80">
-          Как описано в учебнике И.И.&nbsp;Сидоровой «Микология» (МГУ, 2020),
-          около 90% лесных съедобных грибов — микоризообразователи: они
-          физически не могут расти без дерева-партнёра. Понимание этого простого
-          факта переворачивает подход к тихой охоте. Вместо того чтобы
-          наугад прочёсывать гектары, грибник начинает <em>читать лес</em>:
-          видит сосну — ожидает маслят, замечает берёзу — присматривается к
-          подберёзовикам, находит дубовую опушку — ищет белые.
+          As described in I.&nbsp;I. Sidorova’s textbook &ldquo;Mycology&rdquo;
+          (Moscow State University, 2020), about 90% of edible forest mushrooms
+          are mycorrhiza-forming: they physically cannot grow without a partner
+          tree. Understanding this simple fact transforms the whole approach to
+          foraging. Instead of combing acres at random, the forager begins to{" "}
+          <em>read the forest</em>: spots a pine and expects slippery jacks,
+          notices a birch and looks closely for birch boletes, finds an oak edge
+          and searches for king boletes.
         </p>
         <p className="mb-12 text-lg leading-relaxed text-white/80">
-          В этой статье мы разберём, какие грибы характерны для хвойного,
-          лиственного и смешанного леса, объясним науку за этим (микориза —
-          красивое слово, но что за ним стоит?), дадим таблицу совместимости
-          грибов и деревьев и расскажем, как находить грибные места
-          по&nbsp;микрорельефу. А в конце — покажем, как технологии помогают
-          выбрать подходящий лес, не&nbsp;выходя из&nbsp;дома.
+          In this article we’ll break down which mushrooms are characteristic of
+          coniferous, deciduous and mixed forests, explain the science behind it
+          (mycorrhiza — a lovely word, but what does it actually mean?), give you
+          a mushroom-and-tree compatibility table, and explain how to find good
+          spots by reading the&nbsp;microrelief. And at the end, we’ll show how
+          technology helps you choose the right forest without&nbsp;leaving
+          home.
         </p>
 
         {/* === Section 1: Mycorrhiza === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Что такое микориза и почему она&nbsp;важна
+          What mycorrhiza is and why it&nbsp;matters
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Слово «микориза» переводится с греческого буквально —{" "}
-          <em>грибокорень</em>. Это симбиоз между мицелием гриба и корнями
-          дерева. Гифы гриба оплетают тонкие корешки (а иногда проникают
-          внутрь клеток) и формируют общую сеть. Через неё дерево отдаёт грибу
-          углеводы — продукты фотосинтеза, которые гриб сам вырабатывать не
-          может. Взамен мицелий «добывает» из почвы воду и минеральные
-          вещества — прежде всего фосфор и азот — и передаёт их дереву.
+          The word &ldquo;mycorrhiza&rdquo; translates literally from Greek
+          as{" "}
+          <em>fungus-root</em>. It is a symbiosis between a fungus’s mycelium and
+          a tree’s roots. The fungal hyphae wrap around the fine rootlets (and
+          sometimes penetrate the cells) and form a shared network. Through it,
+          the tree gives the fungus carbohydrates — the products of
+          photosynthesis, which the fungus cannot produce itself. In return, the
+          mycelium &ldquo;mines&rdquo; water and mineral nutrients from the soil
+          — above all phosphorus and nitrogen — and passes them to the tree.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          По данным Института леса НАН Беларуси, микоризные грибы увеличивают
-          площадь всасывания корневой системы дерева в 10–100 раз. Дерево
-          без микоризы — как человек без кишечной микрофлоры: выживет, но
-          будет болеть и расти хуже. Именно поэтому лесоводы давно
-          используют микоризные препараты при посадке саженцев.
+          According to the Forest Institute of the National Academy of Sciences
+          of Belarus, mycorrhizal fungi increase the absorbing surface of a
+          tree’s root system by a factor of 10–100. A tree without mycorrhiza is
+          like a human without gut microflora: it will survive, but it will be
+          sickly and grow poorly. This is precisely why foresters have long used
+          mycorrhizal preparations when planting seedlings.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Для грибника это означает простую вещь:{" "}
+          For the forager, this means one simple thing:{" "}
           <strong className="text-white">
-            нет дерева-партнёра — нет гриба
+            no partner tree, no mushroom
           </strong>
-          . Маслёнок обыкновенный образует эктомикоризу исключительно с
-          двухвойными соснами. Подберёзовик — только с берёзой. Рыжик
-          еловый — только с елью. Исследование в журнале{" "}
-          <em>Forest Ecology and Management</em> (2019) показало, что даже
-          небольшое изменение в породном составе леса (например, вырубка 30%
-          берёз) приводит к заметному сокращению видового разнообразия
-          микоризных грибов в течение 3–5 лет.
+          . The slippery jack forms ectomycorrhiza exclusively with two-needled
+          pines. The birch bolete — only with birch. The spruce saffron milk cap
+          — only with spruce. A study in the journal{" "}
+          <em>Forest Ecology and Management</em> (2019) showed that even a small
+          change in a forest’s species composition (for example, cutting 30% of
+          the birches) leads to a noticeable decline in the diversity of
+          mycorrhizal fungi within 3–5 years.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          Есть и грибы-«космополиты». Белый гриб, например, образует микоризу
-          с сосной, елью, берёзой и дубом — отсюда и его повсеместное
-          распространение. Лисичка тоже не слишком привередлива: она
-          сотрудничает с елью, сосной, берёзой и дубом. Но большинство видов
-          всё-таки привязаны к одной-двум породам. И зная эту привязку, вы
-          превращаете случайную прогулку по лесу в целенаправленную{" "}
-          <strong className="text-white">тихую охоту</strong>.
+          There are also &ldquo;cosmopolitan&rdquo; mushrooms. The king bolete,
+          for instance, forms mycorrhiza with pine, spruce, birch and oak —
+          hence its widespread distribution. The chanterelle is not too fussy
+          either: it partners with spruce, pine, birch and oak. But most species
+          are still tied to one or two tree species. And by knowing that tie,
+          you turn a random walk in the woods into a purposeful{" "}
+          <strong className="text-white">mushroom hunt</strong>.
         </p>
 
         {/* === Section 2: Coniferous === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Хвойный лес — царство маслят и&nbsp;рыжиков
+          Coniferous forest — the realm of slippery jacks and&nbsp;saffron milk
+          caps
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Хвойный лес — это прежде всего сосняки и ельники. Почва здесь
-          кислая (pH 3,5–5,5), покрытая толстым слоем хвойного опада.
-          Солнечного света на уровне подстилки мало — густые кроны его
-          задерживают. Казалось бы, условия суровые. Но для целого ряда
-          видов <strong className="text-white">грибы в хвойном лесу</strong>{" "}
-          — это самая естественная среда обитания.
+          A coniferous forest is first and foremost pine and spruce woods. The
+          soil here is acidic (pH 3.5–5.5), covered with a thick layer of
+          coniferous litter. Little sunlight reaches the forest floor — the dense
+          canopy holds it back. The conditions might seem harsh. But for a whole
+          range of species,{" "}
+          <strong className="text-white">mushrooms in coniferous forest</strong>{" "}
+          are the most natural of habitats.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Маслята</strong> — визитная карточка
-          соснового леса. Маслёнок обыкновенный (<em>Suillus luteus</em>)
-          растёт исключительно{" "}
-          <strong className="text-white">под сосной</strong>. Особенно он любит
-          молодые посадки: сосняки возрастом 10–30 лет с редким подлеском и
-          моховым покровом. Маслята появляются одними из первых — уже в
-          июне — и плодоносят волнами до октября. Ищите их на песчаных
-          почвах, вдоль лесных дорог и на опушках, где почва прогревается
-          лучше.
+          <strong className="text-white">Slippery jacks</strong> are the calling
+          card of the pine forest. The slippery jack (<em>Suillus luteus</em>)
+          grows exclusively{" "}
+          <strong className="text-white">under pine</strong>. It is especially
+          fond of young plantings: pine stands 10–30 years old with sparse
+          undergrowth and a moss cover. Slippery jacks are among the first to
+          appear — as early as June — and fruit in waves until October. Look for
+          them on sandy soils, along forest roads and at woodland edges, where
+          the soil warms up better.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Рыжики</strong> — ещё одни
-          «хвойные» грибы. Рыжик сосновый (<em>Lactarius deliciosus</em>)
-          встречается <strong className="text-white">под соснами</strong> на
-          песчаных и супесчаных почвах, а рыжик еловый (<em>Lactarius
-          deterrimus</em>) — <strong className="text-white">под елями</strong>,
-          часто среди молодого ельника. Как отмечается в справочнике
-          «Грибы Беларуси» (Гапиенко О.С., 2012), рыжики предпочитают
-          разреженные участки с хорошим освещением — не тёмную чащу, а
-          светлые прогалины, опушки и просеки.
+          <strong className="text-white">Saffron milk caps</strong> are another
+          &ldquo;coniferous&rdquo; mushroom. The pine saffron milk cap
+          (<em>Lactarius deliciosus</em>) is found{" "}
+          <strong className="text-white">under pines</strong> on sandy and
+          sandy-loam soils, while the spruce saffron milk cap (<em>Lactarius
+          deterrimus</em>) grows{" "}
+          <strong className="text-white">under spruces</strong>, often among
+          young spruce stands. As noted in the reference guide &ldquo;Mushrooms
+          of Belarus&rdquo; (O.&nbsp;S. Gapienko, 2012), saffron milk caps prefer
+          open, well-lit spots — not dark thickets, but bright clearings, edges
+          and cuttings.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Белый гриб сосновый</strong>{" "}
-          (<em>Boletus pinophilus</em>) — тёмноголовый красавец с
-          красно-бурой шляпкой. Предпочитает старые сосновые боры
-          с мшистой подстилкой. Растёт небольшими группами, часто на
-          возвышенностях. В отличие от своего берёзового собрата, сосновый
-          белый выбирает более сухие и кислые участки.
+          <strong className="text-white">The pine king bolete</strong>{" "}
+          (<em>Boletus pinophilus</em>) is a dark-capped beauty with a
+          reddish-brown cap. It prefers old pine woods with a mossy floor. It
+          grows in small groups, often on higher ground. Unlike its birch
+          counterpart, the pine king bolete chooses drier and more acidic spots.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          <strong className="text-white">Моховики</strong> и{" "}
-          <strong className="text-white">зеленушки</strong> дополняют
-          хвойную корзину. Моховик жёлто-бурый любит сосняки с черничником,
-          а зеленушка (<em>Tricholoma equestre</em>) — одна из немногих, кого
-          можно собирать даже в конце октября, когда большинство грибов уже
-          сошло. Она прячется в хвойном опаде, и найти её без опыта непросто.
-          Также в ельниках обитает{" "}
-          <strong className="text-white">мокруха еловая</strong> — гриб
-          неброский, но съедобный и вкусный после правильной обработки.
+          <strong className="text-white">Bay boletes</strong> and{" "}
+          <strong className="text-white">man-on-horseback</strong> round out the
+          coniferous basket. The bay bolete loves pine stands with bilberry,
+          while the man-on-horseback (<em>Tricholoma equestre</em>) is one of the
+          few that can be gathered even at the end of October, when most
+          mushrooms have already gone. It hides in the coniferous litter, and
+          finding it without experience is not easy. Spruce stands are also home
+          to the{" "}
+          <strong className="text-white">slimy spike-cap</strong> — an
+          unassuming mushroom, but edible and tasty after proper preparation.
         </p>
 
         {/* === Section 3: Deciduous === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Лиственный лес — дом подберёзовиков и&nbsp;груздей
+          Deciduous forest — home of birch boletes and&nbsp;milk caps
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Лиственные леса — берёзовые рощи, дубравы, осинники — это
-          совершенно другой мир. Почва здесь нейтральная или слабокислая
-          (pH 5,0–7,0), подстилка рыхлая, богатая перегноем. Свет
-          проникает сквозь крону лучше, чем в ельнике: листопадные деревья
-          создают динамичную мозаику света и тени. Всё это формирует
-          идеальную среду для своей группы микоризных грибов.
+          Deciduous forests — birch groves, oak woods, aspen stands — are a
+          completely different world. The soil here is neutral or slightly
+          acidic (pH 5.0–7.0), the litter is loose and rich in humus. Light
+          penetrates the canopy better than in a spruce wood: broadleaf trees
+          create a dynamic mosaic of light and shade. All of this forms the ideal
+          environment for its own group of mycorrhizal fungi.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Подберёзовик</strong>{" "}
-          (<em>Leccinum scabrum</em>) — классический{" "}
-          <strong className="text-white">гриб под берёзой</strong>. Название
-          говорит само за себя: без берёзы он не растёт. Подберёзовики
-          встречаются в чистых берёзовых рощах, на обочинах лесных
-          дорог, в молодых березняках. Они любят влажные, немного
-          заболоченные участки — именно там грибница получает достаточно
-          воды. Сезон длинный: с июня по октябрь, с пиком в августе.
+          <strong className="text-white">The birch bolete</strong>{" "}
+          (<em>Leccinum scabrum</em>) is the classic{" "}
+          <strong className="text-white">mushroom under birch</strong>. The name
+          speaks for itself: it won’t grow without birch. Birch boletes are found
+          in pure birch groves, on the verges of forest roads, and in young birch
+          stands. They love damp, slightly boggy spots — that is where the
+          mycelium gets enough water. The season is long: from June through
+          October, peaking in August.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Подосиновик</strong>{" "}
-          (<em>Leccinum aurantiacum</em>) — ещё один король лиственного
-          леса. Несмотря на название, он образует микоризу не только с
-          осиной, но и с берёзой, тополем и ивой. Подосиновик —
-          крупный, мясистый, растёт быстро. Опытные грибники знают: если
-          нашёл один — ищи рядом, они часто растут «семьями» по 3–7 штук.
-          Предпочитает влажные участки с высокой травой на границе леса и
-          полян.
+          <strong className="text-white">The aspen bolete</strong>{" "}
+          (<em>Leccinum aurantiacum</em>) is another king of the deciduous
+          forest. Despite its name, it forms mycorrhiza not only with aspen but
+          also with birch, poplar and willow. The aspen bolete is large, fleshy
+          and fast-growing. Experienced foragers know: if you find one, look
+          nearby — they often grow in &ldquo;families&rdquo; of 3–7. It prefers
+          damp spots with tall grass at the boundary between forest and clearing.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Грузди</strong> — жители берёзовых
-          и берёзово-осиновых лесов. Груздь настоящий{" "}
-          (<em>Lactarius resimus</em>) образует микоризу с берёзой и
-          встречается в чистых берёзовых рощах с подстилкой из
-          прошлогодней листвы. Груздь осиновый{" "}
-          (<em>Lactarius controversus</em>) — под осинами и тополями.
-          Грузди прячутся: их приходится буквально выковыривать
-          из-под слоя листвы. По данным кафедры микологии и альгологии
-          МГУ, груздь настоящий формирует микоризу только с берёзой
-          на почвах с достаточным содержанием кальция.
+          <strong className="text-white">Milk caps</strong> are inhabitants of
+          birch and birch-aspen forests. The true milk cap{" "}
+          (<em>Lactarius resimus</em>) forms mycorrhiza with birch and is found
+          in pure birch groves with a litter of last year’s leaves. The aspen
+          milk cap{" "}
+          (<em>Lactarius controversus</em>) grows under aspens and poplars. Milk
+          caps hide: you literally have to dig them out from under the layer of
+          leaves. According to the Department of Mycology and Algology at Moscow
+          State University, the true milk cap forms mycorrhiza only with birch on
+          soils with a sufficient calcium content.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          <strong className="text-white">Волнушки</strong> — розовая и
-          белая — тоже «берёзовые» грибы. Волнушка розовая{" "}
-          (<em>Lactarius torminosus</em>) массово появляется в берёзовых
-          лесах с конца июля. Она менее капризна, чем груздь, и
-          часто растёт огромными полянами — главное, чтобы рядом была
-          берёза и достаточная влажность. В дубравах же ищите{" "}
-          <strong className="text-white">белый гриб дубовый</strong>{" "}
-          (<em>Boletus reticulatus</em>) со светлой шляпкой и сетчатой
-          ножкой, а также <strong className="text-white">дубовик</strong>{" "}
-          — мощный гриб с тёмной шляпкой и краснеющей на срезе мякотью.
+          <strong className="text-white">Woolly milk caps</strong> — both pink
+          and white — are also &ldquo;birch&rdquo; mushrooms. The pink woolly
+          milk cap{" "}
+          (<em>Lactarius torminosus</em>) appears in large numbers in birch
+          forests from late July. It is less capricious than the true milk cap
+          and often grows in huge patches — the main thing is that there’s a
+          birch nearby and enough moisture. In oak woods, look for the{" "}
+          <strong className="text-white">oak king bolete</strong>{" "}
+          (<em>Boletus reticulatus</em>) with its pale cap and netted stem, as
+          well as the <strong className="text-white">oak bolete</strong>{" "}
+          — a robust mushroom with a dark cap and flesh that reddens when cut.
         </p>
 
         {/* === Section 4: Mixed === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Смешанный лес — идеальный вариант для&nbsp;грибника
+          Mixed forest — the ideal choice for the&nbsp;forager
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Если вы хотите максимум видового разнообразия в одной корзине —
-          отправляйтесь в <strong className="text-white">смешанный
-          лес</strong>. Там сосна соседствует с берёзой, ель — с осиной,
-          а на опушках встречается дуб. Каждое дерево «привело с собой»
-          свой набор микоризных партнёров, и в итоге на одном гектаре
-          смешанного леса можно встретить грибы, которые в чистом
-          хвойном или лиственном лесу никогда бы не оказались рядом.
+          If you want maximum species diversity in a single basket, head for a{" "}
+          <strong className="text-white">mixed
+          forest</strong>. There, pine stands beside birch, spruce beside aspen,
+          and oak turns up at the edges. Each tree has &ldquo;brought along&rdquo;
+          its own set of mycorrhizal partners, and as a result, a single hectare
+          of mixed forest can hold mushrooms that would never have ended up side
+          by side in a pure coniferous or deciduous forest.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          В экологии это называется{" "}
-          <strong className="text-white">краевой эффект</strong> (edge
-          effect) — на границе двух экосистем видовое разнообразие
-          всегда выше, чем внутри каждой из них. Исследование в журнале{" "}
-          <em>Forest Ecology and Management</em> (2019) подтвердило: в
-          переходных зонах между хвойным и лиственным лесом
-          количество видов макромицетов на 35–45% выше, чем в чистых
-          древостоях. Для грибника эти границы — настоящее Эльдорадо.
+          In ecology this is called the{" "}
+          <strong className="text-white">edge effect</strong> — at the boundary
+          of two ecosystems, species diversity is always higher than inside
+          either one. A study in the journal{" "}
+          <em>Forest Ecology and Management</em> (2019) confirmed that in
+          transition zones between coniferous and deciduous forest, the number of
+          macrofungi species is 35–45% higher than in pure stands. For the
+          forager, these boundaries are a genuine El Dorado.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Практический смысл прост. В смешанном лесу вы можете за одну
-          прогулку найти маслят под сосной, подберёзовиков у берёзы,
-          белые грибы в ельнике и волнушки на берёзовой опушке.
-          Пустым из такого леса уйти сложнее — всегда найдётся хотя
-          бы один вид, для которого сейчас подходящие условия.
+          The practical takeaway is simple. In a mixed forest you can find, in a
+          single walk, slippery jacks under a pine, birch boletes near a birch,
+          king boletes in a spruce stand and woolly milk caps at a birch edge.
+          It’s harder to leave such a forest empty-handed — there is always at
+          least one species for which conditions are right just now.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          Особенно ценятся смешанные леса с преобладанием сосны и берёзы
-          на среднеувлажнённых песчаных почвах — это типичный ландшафт
-          центральной Беларуси и средней полосы России. Как отмечают
-          специалисты Института леса НАН Беларуси, именно такие леса
-          дают наибольший урожай съедобных грибов в пересчёте на
-          гектар. В народе про такие места говорят — «лес для грибов».
+          Especially prized are mixed forests dominated by pine and birch on
+          moderately moist sandy soils — this is the typical landscape of central
+          Belarus and central Russia. As specialists at the Forest Institute of
+          the National Academy of Sciences of Belarus point out, it is precisely
+          such forests that yield the largest harvest of edible mushrooms per
+          hectare. People call such places &ldquo;a forest made for mushrooms.&rdquo;
         </p>
 
         {/* === Section 5: Compatibility Table === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Грибы и деревья: таблица совместимости
+          Mushrooms and trees: a compatibility table
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Ниже — сводная таблица, которую удобно сохранить себе перед
-          выходом в лес. Она показывает, какие грибы образуют микоризу
-          с какими деревьями. Если вы видите в лесу конкретную породу —
-          сверяетесь с таблицей и знаете, что искать под ногами.
+          Below is a summary table that’s handy to save before heading into the
+          forest. It shows which mushrooms form mycorrhiza with which trees. When
+          you spot a particular tree species in the forest, you check the table
+          and know exactly what to look for underfoot.
         </p>
 
         <div className="mb-8 overflow-x-auto">
@@ -384,10 +395,10 @@ export default function VKakomLesuIskatGribyPage() {
             <thead>
               <tr className="border-b border-white/20">
                 <th className="px-4 py-3 text-left font-semibold text-white">
-                  Дерево
+                  Tree
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-white">
-                  Грибы-партнёры
+                  Partner mushrooms
                 </th>
               </tr>
             </thead>
@@ -405,109 +416,107 @@ export default function VKakomLesuIskatGribyPage() {
         </div>
 
         <p className="mb-12 text-sm leading-relaxed text-white/50">
-          * Таблица составлена по материалам справочника «Грибы Беларуси»
-          (Гапиенко О.С., 2012) и учебника И.И.&nbsp;Сидоровой «Микология»
-          (МГУ, 2020). Указаны наиболее распространённые виды; полный
-          перечень микоризных связей значительно шире.
+          * The table is compiled from the reference guide &ldquo;Mushrooms of
+          Belarus&rdquo; (O.&nbsp;S. Gapienko, 2012) and I.&nbsp;I. Sidorova’s
+          textbook &ldquo;Mycology&rdquo; (Moscow State University, 2020). The
+          most common species are listed; the full range of mycorrhizal
+          associations is considerably wider.
         </p>
 
         {/* === Section 6: How to Find a Spot === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Как найти грибное место в&nbsp;лесу
+          How to find a mushroom spot in the&nbsp;forest
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Знать, <strong className="text-white">где искать грибы</strong> по
-          типу леса — полдела. Вторая половина — уметь читать
-          микрорельеф внутри самого леса. Грибы распределяются
-          неравномерно: одни участки буквально усеяны плодовыми телами,
-          а в ста метрах — ни одного. Вот на что обращать внимание.
+          Knowing <strong className="text-white">where to look for
+          mushrooms</strong> by forest type is only half the job. The other half
+          is being able to read the microrelief within the forest itself.
+          Mushrooms are distributed unevenly: some patches are literally strewn
+          with fruiting bodies, while a hundred meters away there isn’t a single
+          one. Here’s what to watch for.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Опушки и края леса.</strong>{" "}
-          Граница леса и открытого пространства — классическое грибное
-          место. Здесь больше света, почва лучше прогревается, а
-          после дождя влага задерживается дольше, чем на открытом
-          поле. Краевой эффект работает и здесь: на опушке
-          сталкиваются лесная и луговая экосистемы, создавая
-          дополнительные ниши.
+          <strong className="text-white">Woodland edges and forest margins.</strong>{" "}
+          The boundary between forest and open space is a classic mushroom spot.
+          There’s more light here, the soil warms up better, and after rain the
+          moisture lingers longer than in an open field. The edge effect works
+          here too: at a woodland margin, the forest and meadow ecosystems meet,
+          creating additional niches.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Просеки и лесные дороги.</strong>{" "}
-          Вдоль просек условия похожи на опушечные: больше света, больше
-          прогрева. Маслята, к примеру, особенно любят расти вдоль
-          лесных грунтовых дорог в сосновых посадках. Обочины
-          тропинок — тоже хорошее место, особенно если тропинка
-          проходит вдоль границы хвойного и лиственного участка.
+          <strong className="text-white">Cuttings and forest roads.</strong>{" "}
+          Along cuttings, conditions resemble those at woodland edges: more
+          light, more warmth. Slippery jacks, for example, are especially fond of
+          growing along dirt forest roads in pine plantings. The verges of paths
+          are also a good spot, especially if the path runs along the boundary of
+          a coniferous and a deciduous area.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Мох и черничник.</strong>{" "}
-          Моховой покров — верный спутник многих грибов. Мох
-          удерживает влагу, создаёт стабильный микроклимат и
-          защищает мицелий от пересыхания. Белые грибы и лисички
-          часто растут во мхе. Черничник в сосновом лесу — ещё
-          один маркер: если кусты черники обильно плодоносят,
-          значит, условия для грибницы тоже подходящие.
+          <strong className="text-white">Moss and bilberry.</strong>{" "}
+          A moss cover is a reliable companion of many mushrooms. Moss retains
+          moisture, creates a stable microclimate and protects the mycelium from
+          drying out. King boletes and chanterelles often grow in moss. Bilberry
+          in a pine forest is another marker: if the bilberry bushes are fruiting
+          abundantly, then conditions are right for the mycelium too.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Небольшие возвышенности и
-          склоны.</strong>{" "}
-          Грибы не любят застой воды. Пологие склоны и невысокие
-          холмы в лесу обеспечивают хороший дренаж — влага есть, но
-          она не стоит. Белые грибы часто встречаются именно на таких
-          «горках», особенно если они покрыты мхом. Низины с
-          застойной водой — наоборот, зона для немногих видов
-          (мокрух, некоторых сыроежек).
+          <strong className="text-white">Low rises and
+          slopes.</strong>{" "}
+          Mushrooms don’t like standing water. Gentle slopes and low hills in the
+          forest provide good drainage — moisture is present, but it doesn’t
+          pool. King boletes are often found on exactly these
+          &ldquo;knolls,&rdquo; especially if they’re covered with moss.
+          Low-lying spots with stagnant water are, conversely, the domain of only
+          a few species (slimy spike-caps, some russulas).
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          <strong className="text-white">Деревья-ориентиры.</strong>{" "}
-          Найдя одиночную берёзу посреди сосняка, обязательно
-          обследуйте круг радиусом 5–10 метров вокруг неё: там
-          могут расти подберёзовики, которых больше нигде в этом
-          лесу не будет. То же касается одиночных сосен в
-          лиственном лесу — под ними можно обнаружить маслят.
-          Такие деревья — точки аномального разнообразия, и
-          опытные грибники запоминают их координаты на годы.
+          <strong className="text-white">Landmark trees.</strong>{" "}
+          If you find a lone birch in the middle of a pine wood, be sure to
+          examine a circle 5–10 meters in radius around it: birch boletes may
+          grow there that you won’t find anywhere else in that forest. The same
+          goes for lone pines in a deciduous forest — you may find slippery jacks
+          beneath them. Such trees are points of anomalous diversity, and
+          experienced foragers remember their coordinates for years.
         </p>
 
         {/* === Section 7: Technology === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Поиск леса с помощью технологий
+          Finding a forest with the help of technology
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Итак, мы разобрались: чтобы найти нужные грибы, нужно
-          найти правильный лес — с правильными деревьями, подходящей
-          почвой и рельефом. Но как выбрать лес заранее, особенно
-          если вы ищете новое место? Раньше оставалось только
-          ехать наугад или полагаться на советы знакомых.
+          So, we’ve established: to find the mushrooms you want, you need to find
+          the right forest — with the right trees, suitable soil and terrain. But
+          how do you choose a forest in advance, especially if you’re looking for
+          a new spot? In the past, all you could do was drive out on a hunch or
+          rely on tips from friends.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Функция «Поиск леса» в{" "}
+          The &ldquo;Forest Search&rdquo; feature in{" "}
           <Link
             href="/"
             className="text-emerald-400 underline decoration-emerald-400/30 underline-offset-2 transition-colors hover:text-emerald-300"
           >
             SkyForest
           </Link>{" "}
-          анализирует спутниковые данные и определяет тип леса, породы
-          деревьев и лесной покров для любой точки на карте. Вы можете
-          найти подходящий лес, не выходя из дома: указываете район —
-          система показывает, где сосняк, где берёзовая роща, а где
-          смешанный лес с нужным вам сочетанием пород. Зная таблицу
-          совместимости грибов и деревьев, вы точно понимаете, что
-          искать в каждом конкретном лесу.
+          analyzes satellite data and determines the forest type, tree species
+          and forest cover for any point on the map. You can find a suitable
+          forest without leaving home: you specify an area, and the system shows
+          where there’s a pine wood, where a birch grove, and where a mixed
+          forest with the combination of species you need. Knowing the
+          mushroom-and-tree compatibility table, you know exactly what to look for
+          in each particular forest.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          А если совместить данные о типе леса с мониторингом погоды —
-          осадками, температурой, влажностью — картина становится
-          полной. Вы не просто знаете, <em>куда</em> ехать, но и{" "}
-          <em>когда</em>. Именно для этого мы и строим SkyForest:
-          чтобы каждый выход на тихую охоту заканчивался полной
-          корзиной.
+          And if you combine forest-type data with weather monitoring —
+          precipitation, temperature, humidity — the picture becomes complete.
+          You not only know <em>where</em> to go, but also{" "}
+          <em>when</em>. That is exactly why we’re building SkyForest: so that
+          every mushroom hunt ends with a full basket.
         </p>
 
         {/* === FAQ === */}
         <h2 className="mb-6 mt-12 text-2xl font-bold text-white sm:text-3xl">
-          Часто задаваемые вопросы
+          Frequently asked questions
         </h2>
         <div className="mb-12 space-y-6">
           {FAQ_ITEMS.map((item, i) => (
@@ -524,19 +533,19 @@ export default function VKakomLesuIskatGribyPage() {
         {/* === CTA === */}
         <div className="my-16 rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl sm:px-10 sm:py-14">
           <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
-            Найдите свой грибной лес
+            Find your mushroom forest
           </h2>
           <p className="mb-8 leading-relaxed text-white/70">
-            SkyForest определяет тип леса, породы деревьев и
-            погодные условия для любой точки на карте. Выбирайте
-            лес под нужные грибы — и выходите на тихую охоту
-            с уверенностью.
+            SkyForest determines the forest type, tree species and weather
+            conditions for any point on the map. Choose a forest to match the
+            mushrooms you want — and head out on your mushroom hunt with
+            confidence.
           </p>
           <Link
             href="/register"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-emerald-500 hover:shadow-xl"
           >
-            Попробовать SkyForest →
+            Try SkyForest →
           </Link>
         </div>
 

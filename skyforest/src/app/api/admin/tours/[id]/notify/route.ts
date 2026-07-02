@@ -91,7 +91,7 @@ export async function POST(_request: Request, { params }: Ctx) {
     tourDate,
     tourUrl,
   });
-  const subject = `Skyforest: назначена дата аукциона — ${tour.title}`;
+  const subject = `Skyforest: auction date scheduled — ${tour.title}`;
 
   let sent = 0;
   let skipped = 0;

@@ -1,0 +1,9 @@
+app_identifier("ai.skyforest.app")
+apple_id("ceo@adorisgroup.com")
+team_id("VH4L4R7PKW")
+
+# Google Play (Android submit)
+for_platform :android do
+  package_name("ai.skyforest.app")
+  json_key_file("fastlane/play-service-account.json")
+end

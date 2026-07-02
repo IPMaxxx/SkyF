@@ -2,6 +2,8 @@ import { SkipLink } from "@/components/SkipLink";
 import { PwaInstallProvider } from "@/lib/pwa/PwaInstallProvider";
 import { MobileInstallBanner } from "@/components/pwa/MobileInstallBanner";
 import { IosInstallHelpModal } from "@/components/pwa/IosInstallHelpModal";
+import { NativeAppProvider } from "@/lib/native/NativeAppProvider";
+import { BiometricLockGate } from "@/components/native/BiometricLockGate";
 import { routing } from "@/i18n/routing";
 import { getSiteJsonLd } from "@/lib/siteJsonLd";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -91,6 +93,8 @@ export default async function LocaleLayout({ children, params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <SkipLink />
+        <NativeAppProvider />
+        <BiometricLockGate />
         {children}
         <MobileInstallBanner />
         <IosInstallHelpModal />

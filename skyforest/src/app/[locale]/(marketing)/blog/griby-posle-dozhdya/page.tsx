@@ -5,38 +5,38 @@ import { RelatedArticles } from "@/components/marketing/RelatedArticles";
 import { BlogArticleHeader } from "@/components/marketing/BlogArticleHeader";
 
 export const metadata: Metadata = {
-  title: "Через сколько дней после дождя появляются грибы — подробный гид",
+  title: "How Many Days After Rain Do Mushrooms Appear — A Detailed Guide",
   description:
-    "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам, научные данные и советы.",
+    "When should you go mushroom picking after rain? Suillus appear in 2-3 days, honey mushrooms in 5-7, porcini in 7-10. A timing table by species, scientific data and practical tips.",
   keywords: [
-    "грибы после дождя",
-    "через сколько дней после дождя растут грибы",
-    "когда появляются грибы после дождя",
-    "грибной дождь",
-    "дождь и грибы",
-    "осадки для грибов",
-    "грибы после дождя через сколько дней",
-    "когда собирать грибы после дождя",
-    "тихая охота",
-    "мицелий",
-    "грибница",
-    "белый гриб после дождя",
-    "маслята после дождя",
-    "опята после дождя",
-    "лисички после дождя",
+    "mushrooms after rain",
+    "how many days after rain do mushrooms grow",
+    "when do mushrooms appear after rain",
+    "mushroom rain",
+    "rain and mushrooms",
+    "rainfall for mushrooms",
+    "how many days after rain to pick mushrooms",
+    "when to pick mushrooms after rain",
+    "mushroom foraging",
+    "mycelium",
+    "mushroom spawn",
+    "porcini after rain",
+    "suillus after rain",
+    "honey mushrooms after rain",
+    "chanterelles after rain",
   ],
   openGraph: {
-    title: "Через сколько дней после дождя появляются грибы — подробный гид",
+    title: "How Many Days After Rain Do Mushrooms Appear — A Detailed Guide",
     description:
-      "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам.",
+      "When should you go mushroom picking after rain? Suillus appear in 2-3 days, honey mushrooms in 5-7, porcini in 7-10. A timing table by species.",
     url: "https://www.skyforest.by/blog/griby-posle-dozhdya",
     siteName: "SkyForest",
     type: "article",
-    images: [{ url: "https://www.skyforest.by/images/blog/blog-griby-posle-dozhdya.jpg", width: 1792, height: 1024, alt: "Грибы после дождя — лисички и боровики под каплями дождя" }],
+    images: [{ url: "https://www.skyforest.by/images/blog/blog-griby-posle-dozhdya.jpg", width: 1792, height: 1024, alt: "Mushrooms after rain — chanterelles and porcini under raindrops" }],
     publishedTime: "2025-09-05T00:00:00+03:00",
     modifiedTime: "2025-09-05T00:00:00+03:00",
     authors: ["SkyForest"],
-    section: "Грибы",
+    section: "Mushrooms",
   },
   alternates: { canonical: "https://www.skyforest.by/blog/griby-posle-dozhdya" },
 };
@@ -47,9 +47,9 @@ const jsonLd = {
     {
       "@type": "Article",
       headline:
-        "Через сколько дней после дождя появляются грибы — подробный гид",
+        "How Many Days After Rain Do Mushrooms Appear — A Detailed Guide",
       description:
-        "Когда идти за грибами после дождя? Через 2-3 дня появляются маслята, через 5-7 — опята, через 7-10 — белые грибы. Таблица сроков по видам, научные данные и советы.",
+        "When should you go mushroom picking after rain? Suillus appear in 2-3 days, honey mushrooms in 5-7, porcini in 7-10. A timing table by species, scientific data and practical tips.",
       author: { "@type": "Organization", name: "SkyForest", url: "https://www.skyforest.by" },
       publisher: {
         "@type": "Organization",
@@ -66,14 +66,14 @@ const jsonLd = {
         width: 1792,
         height: 1024,
       },
-      inLanguage: "ru",
+      inLanguage: "en",
     },
     {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Главная", item: "https://www.skyforest.by" },
-        { "@type": "ListItem", position: 2, name: "Блог", item: "https://www.skyforest.by/blog" },
-        { "@type": "ListItem", position: 3, name: "Грибы после дождя" },
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://www.skyforest.by" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.skyforest.by/blog" },
+        { "@type": "ListItem", position: 3, name: "Mushrooms After Rain" },
       ],
     },
   ],
@@ -81,37 +81,37 @@ const jsonLd = {
 
 const FAQ_ITEMS = [
   {
-    q: "Через сколько дней после дождя можно идти за грибами?",
-    a: "Зависит от вида. Маслята появляются уже через 2–3 дня после хорошего дождя, сыроежки — через 3–5, опята — через 5–7, а белые грибы — через 7–10 дней. Главное условие — тёплая погода (15–20 °C) после осадков.",
+    q: "How many days after rain can you go mushroom picking?",
+    a: "It depends on the species. Suillus appear as early as 2–3 days after a good rain, russulas in 3–5, honey mushrooms in 5–7, and porcini in 7–10 days. The key condition is warm weather (15–20 °C) following the rainfall.",
   },
   {
-    q: "Какой дождь лучше всего подходит для грибов?",
-    a: "Идеальный «грибной дождь» — тёплый, моросящий, продолжительный. Он равномерно пропитывает лесную подстилку и верхний слой почвы. Сильный ливень менее эффективен: вода не успевает впитаться и стекает по поверхности.",
+    q: "What kind of rain is best for mushrooms?",
+    a: "The ideal “mushroom rain” is warm, drizzly and long-lasting. It soaks the forest floor and the top layer of soil evenly. A heavy downpour is less effective: the water doesn't have time to soak in and simply runs off the surface.",
   },
   {
-    q: "Почему после дождя грибы иногда не появляются?",
-    a: "Причин несколько: температура ниже 10 °C после осадков, длительная засуха перед дождём (мицелий мог пересохнуть), сильный ветер, высушивший почву, или слишком короткий дождь, который не промочил лесную подстилку.",
+    q: "Why do mushrooms sometimes fail to appear after rain?",
+    a: "There are several reasons: temperatures below 10 °C after the rainfall, a long drought before the rain (the mycelium may have dried out), strong winds that dried the soil, or a rain too brief to soak the forest floor.",
   },
   {
-    q: "Растут ли грибы после холодного дождя?",
-    a: "Холодный дождь при температуре ниже 8–10 °C практически не стимулирует рост плодовых тел. Мицелий активно развивается в диапазоне 15–22 °C. Исключение — осенние опята, которым достаточно 10–15 °C.",
+    q: "Do mushrooms grow after a cold rain?",
+    a: "A cold rain at temperatures below 8–10 °C does almost nothing to stimulate the growth of fruiting bodies. Mycelium develops actively in the 15–22 °C range. The exception is autumn honey mushrooms, which are content with 10–15 °C.",
   },
   {
-    q: "Как узнать, шёл ли дождь в конкретном лесу?",
-    a: "Используйте карту осадков в SkyForest — сервис показывает, где именно и сколько шли дожди за последние дни. Это точнее, чем общий прогноз по городу, ведь летние дожди часто носят локальный характер.",
+    q: "How can you tell whether it rained in a specific forest?",
+    a: "Use the rainfall map in SkyForest — the service shows exactly where and how much rain has fallen over the past few days. This is more precise than a general city forecast, since summer rains are often highly localized.",
   },
 ];
 
 
 const TIMING_TABLE = [
-  { species: "Маслята", days: "2–3 дня", temp: "15–20 °C", note: "Появляются одними из первых, особенно в молодых сосняках" },
-  { species: "Сыроежки", days: "3–5 дней", temp: "12–20 °C", note: "Самые «отзывчивые» — растут почти при любых условиях" },
-  { species: "Подберёзовики", days: "4–6 дней", temp: "14–20 °C", note: "Быстро набирают массу, но и червивеют быстро" },
-  { species: "Лисички", days: "4–7 дней", temp: "16–22 °C", note: "Любят влажные мшистые места, растут волнами" },
-  { species: "Подосиновики", days: "5–7 дней", temp: "14–20 °C", note: "Предпочитают смешанные леса с осинами и берёзами" },
-  { species: "Опята", days: "5–7 дней", temp: "10–18 °C", note: "Осенние опята могут расти при более низких температурах" },
-  { species: "Белые грибы", days: "7–10 дней", temp: "15–22 °C", note: "Требуют стабильного тепла и влажности" },
-  { species: "Грузди", days: "7–12 дней", temp: "12–18 °C", note: "Появляются позже других, часто прячутся под листвой" },
+  { species: "Suillus (slippery jacks)", days: "2–3 days", temp: "15–20 °C", note: "Among the first to appear, especially in young pine stands" },
+  { species: "Russulas", days: "3–5 days", temp: "12–20 °C", note: "The most “responsive” — they grow in almost any conditions" },
+  { species: "Birch boletes", days: "4–6 days", temp: "14–20 °C", note: "Gain mass quickly, but also get wormy fast" },
+  { species: "Chanterelles", days: "4–7 days", temp: "16–22 °C", note: "Prefer damp, mossy spots and grow in waves" },
+  { species: "Aspen boletes", days: "5–7 days", temp: "14–20 °C", note: "Prefer mixed forests with aspens and birches" },
+  { species: "Honey mushrooms", days: "5–7 days", temp: "10–18 °C", note: "Autumn honey mushrooms can grow at lower temperatures" },
+  { species: "Porcini", days: "7–10 days", temp: "15–22 °C", note: "Require steady warmth and humidity" },
+  { species: "Milk caps", days: "7–12 days", temp: "12–18 °C", note: "Appear later than others and often hide under leaf litter" },
 ];
 
 export default function GribyPosleDozhdyaPage() {
@@ -124,20 +124,20 @@ export default function GribyPosleDozhdyaPage() {
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
         {/* Back link */}
-        <BlogArticleHeader title="Через сколько дней после дождя появляются грибы" />
+        <BlogArticleHeader title="How many days after rain do mushrooms appear" />
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
-          Через сколько дней после дождя появляются грибы
+          How many days after rain do mushrooms appear
         </h1>
         <p className="mb-8 text-sm text-white/40">
-          Обновлено: 5 сентября 2025 · 8 мин чтения
+          Updated: September 5, 2025 · 8 min read
         </p>
 
         <div className="relative mb-10 aspect-[16/9] w-full overflow-hidden rounded-2xl">
           <Image
             src="/images/blog/blog-griby-posle-dozhdya.jpg"
-            alt="Лисички и боровики пробиваются сквозь мокрую лесную подстилку под каплями дождя"
+            alt="Chanterelles and porcini pushing through the wet forest floor under raindrops"
             fill
             className="object-cover"
             priority
@@ -147,97 +147,103 @@ export default function GribyPosleDozhdyaPage() {
 
         {/* === Intro === */}
         <p className="mb-6 text-lg leading-relaxed text-white/80">
-          «После дождичка в четверг» — народная присказка неспроста связывает дождь
-          и грибы. Любой опытный грибник подтвердит: стоит пройти хорошему тёплому
-          дождю, и через несколько дней лес буквально оживает. Грибница, месяцами
-          таившаяся в лесной подстилке, получает долгожданную влагу и выбрасывает
-          плодовые тела. В народе так и говорят — <strong className="text-white">пошли грибы</strong>.
+          It&rsquo;s no accident that folk wisdom links rain and mushrooms so closely.
+          Any experienced forager will confirm it: let a good warm rain pass
+          through, and within a few days the forest practically comes alive. The
+          mycelium, hidden away for months in the forest floor, finally gets the
+          moisture it has been waiting for and sends up its fruiting bodies. As
+          the old saying goes — <strong className="text-white">the mushrooms are up</strong>.
         </p>
         <p className="mb-6 text-lg leading-relaxed text-white/80">
-          Но вот вопрос, который мучает каждого любителя тихой охоты:{" "}
-          <em>через сколько дней после дождя растут грибы</em>? Бежать в лес
-          завтра, ждать неделю или смотреть по ситуации? Ответ зависит от вида
-          гриба, типа осадков, температуры воздуха и даже от того, какая погода
-          была до дождя. В этом гиде мы разберём всё по порядку — с научными
-          данными, таблицей сроков и практическими советами.
+          But here&rsquo;s the question that torments every foraging enthusiast:{" "}
+          <em>how many days after rain do mushrooms grow</em>? Should you rush
+          into the forest tomorrow, wait a week, or play it by ear? The answer
+          depends on the species of mushroom, the type of rainfall, the air
+          temperature, and even what the weather was like before the rain. In
+          this guide we&rsquo;ll go through it all step by step — with scientific
+          data, a timing table and practical advice.
         </p>
         <p className="mb-12 text-lg leading-relaxed text-white/80">
-          Мы собрали информацию из открытых исследований Института леса НАН
-          Беларуси, публикаций кафедры микологии и альгологии МГУ и опыта
-          грибников с многолетним стажем. Если вам важно не просто надеяться на
-          удачу, а понимать, <strong className="text-white">когда появляются грибы после дождя</strong>{" "}
-          и почему — читайте дальше.
+          We&rsquo;ve compiled information from published research by the Forest
+          Institute of the National Academy of Sciences of Belarus, publications
+          from the Department of Mycology and Algology at Moscow State
+          University, and the experience of foragers with decades under their
+          belts. If it matters to you not simply to rely on luck but to
+          understand <strong className="text-white">when mushrooms appear after rain</strong>{" "}
+          and why — read on.
         </p>
 
         {/* === Section 1: Biology === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Как дождь запускает рост грибов
+          How rain triggers mushroom growth
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Чтобы понять, почему <strong className="text-white">грибы после дождя</strong> появляются
-          именно через определённое время, нужно разобраться в биологии мицелия.
-          Грибница — это разветвлённая сеть тончайших нитей (гиф), пронизывающая
-          почву и лесную подстилку. В сухую погоду мицелий находится в состоянии
-          покоя: он жив, но не наращивает биомассу. По данным кафедры микологии и
-          альгологии МГУ, влажность субстрата ниже 40% практически останавливает
-          вегетативный рост грибницы.
+          To understand why <strong className="text-white">mushrooms after rain</strong> appear
+          only after a certain amount of time, you need to look at the biology
+          of the mycelium. The mycelium is a branching network of extremely fine
+          threads (hyphae) that permeates the soil and the forest floor. In dry
+          weather the mycelium is dormant: it&rsquo;s alive, but it isn&rsquo;t building up
+          biomass. According to the Department of Mycology and Algology at Moscow
+          State University, substrate moisture below 40% brings the vegetative
+          growth of the mycelium almost to a halt.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Когда дождевая вода проникает в верхние слои почвы (5–15 см), она
-          запускает целый каскад процессов. Гифы начинают активно впитывать воду,
-          набухают и ускоряют деление клеток. Одновременно повышается
-          осмотическое давление внутри клеток мицелия — именно за счёт него
-          плодовое тело «выстреливает» из-под земли с удивительной скоростью.
-          В монографии «Грибы: их строение и жизнедеятельность» (Кудряшева, 2019)
-          приводятся данные: белый гриб способен увеличиваться на 1–2 см в сутки
-          при оптимальных условиях.
+          When rainwater penetrates the upper layers of soil (5–15 cm), it sets
+          off a whole cascade of processes. The hyphae begin to absorb water
+          actively, swell and speed up cell division. At the same time the
+          osmotic pressure inside the mycelium&rsquo;s cells rises — and it is this
+          pressure that lets the fruiting body “shoot up” out of the ground with
+          remarkable speed. The monograph “Fungi: Their Structure and Vital
+          Processes” (Kudryasheva, 2019) cites data showing that a porcini can
+          grow 1–2 cm per day under optimal conditions.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Но влага — только половина уравнения. Для формирования плодового тела
-          мицелию нужно накопить достаточно питательных веществ. Грибница
-          разлагает органику в лесной подстилке — опавшие листья, хвою,
-          древесину — и преобразует её в строительный материал. Этот процесс
-          тоже ускоряется во влажной среде. Поэтому чем дольше длится период
-          благоприятных осадков, тем обильнее будет <strong className="text-white">грибной слой</strong>.
+          But moisture is only half the equation. To form a fruiting body, the
+          mycelium needs to accumulate enough nutrients. It breaks down the
+          organic matter in the forest floor — fallen leaves, needles, wood —
+          and converts it into building material. This process, too, speeds up
+          in a moist environment. That&rsquo;s why the longer a spell of favorable
+          rainfall lasts, the more abundant the{" "}
+          <strong className="text-white">mushroom flush</strong> will be.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          Исследования Института леса НАН Беларуси показали, что оптимальная
-          влажность почвы для появления плодовых тел большинства съедобных
-          грибов составляет 60–80%. При этом мицелий способен «запоминать»
-          благоприятные условия: если грибница хорошо развита и получала
-          достаточно влаги в предыдущие недели, грибы после дождя появляются
-          быстрее. Именно поэтому на проверенных грибных местах урожай всегда
-          стабильнее.
+          Research by the Forest Institute of the National Academy of Sciences
+          of Belarus has shown that the optimal soil moisture for the appearance
+          of fruiting bodies in most edible mushrooms is 60–80%. Moreover, the
+          mycelium is able to “remember” favorable conditions: if it is
+          well developed and has received enough moisture in the preceding weeks,
+          mushrooms appear more quickly after rain. That&rsquo;s precisely why the
+          harvest is always more reliable at proven mushroom spots.
         </p>
 
         {/* === Section 2: Timing Table === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Через сколько дней ждать грибы: таблица по видам
+          How many days to wait for mushrooms: a table by species
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Один из самых частых вопросов —{" "}
-          <em>грибы после дождя через сколько дней</em> можно собирать? Ниже
-          приводим таблицу, составленную на основе наблюдений грибников и данных
-          микологических исследований. Важно понимать: это{" "}
-          <strong className="text-white">усреднённые данные</strong>. В каждой
-          конкретной локации сроки могут заметно отличаться — влияет тип почвы,
-          густота леса, высота над уровнем моря, близость водоёмов и даже
-          сторона склона. В южных регионах грибы появляются быстрее, в северных
-          — медленнее. На песчаных почвах влага уходит за сутки, на глинистых
-          держится неделю. Поэтому воспринимайте таблицу как ориентир, а не как
-          точное расписание — свои поправки вы выработаете с опытом для каждого
-          знакомого леса.
+          One of the most common questions is:{" "}
+          <em>how many days after rain</em> can you pick mushrooms? Below is a
+          table compiled from foragers&rsquo; observations and data from mycological
+          research. It&rsquo;s important to understand that these are{" "}
+          <strong className="text-white">average figures</strong>. In any given
+          location the timing can differ noticeably — it&rsquo;s affected by soil type,
+          forest density, elevation above sea level, proximity to bodies of water,
+          and even which way the slope faces. In southern regions mushrooms
+          appear faster; in northern ones, slower. On sandy soils the moisture is
+          gone within a day; on clay soils it lingers for a week. So treat the
+          table as a rough guide rather than a precise schedule — you&rsquo;ll work out
+          your own adjustments over time for each familiar forest.
         </p>
 
         <div className="mb-8 overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-white/20">
-                <th className="px-3 py-3 text-left font-semibold text-white">Вид гриба</th>
-                <th className="px-3 py-3 text-left font-semibold text-white">Срок после дождя</th>
-                <th className="px-3 py-3 text-left font-semibold text-white">Оптимальная t°</th>
+                <th className="px-3 py-3 text-left font-semibold text-white">Mushroom species</th>
+                <th className="px-3 py-3 text-left font-semibold text-white">Time after rain</th>
+                <th className="px-3 py-3 text-left font-semibold text-white">Optimal t°</th>
                 <th className="hidden px-3 py-3 text-left font-semibold text-white sm:table-cell">
-                  Примечание
+                  Notes
                 </th>
               </tr>
             </thead>
@@ -255,184 +261,189 @@ export default function GribyPosleDozhdyaPage() {
         </div>
 
         <p className="mb-12 leading-relaxed text-white/80">
-          Как видно из таблицы, быстрее всего реагируют на{" "}
-          <strong className="text-white">дождь и грибы</strong> с мелкими плодовыми телами —
-          маслята, сыроежки. Крупные виды вроде белого гриба и груздей требуют
-          больше времени на формирование массивного плодового тела. Опытные
-          грибники планируют несколько выходов: первый — через 3–4 дня за
-          «мелочью», второй — через неделю за благородными грибами.
+          As the table shows, the quickest to respond to{" "}
+          <strong className="text-white">rain and mushrooms</strong> are the species with small
+          fruiting bodies — suillus and russulas. Larger species like porcini and
+          milk caps need more time to form their massive fruiting bodies.
+          Experienced foragers plan several outings: the first around 3–4 days
+          later for the “small fry,” and the second a week on for the choice
+          mushrooms.
         </p>
 
         {/* === Section 3: Rain Type === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Какой дождь нужен грибам
+          What kind of rain mushrooms need
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Не любой дождь — <strong className="text-white">грибной дождь</strong>. В народе это
-          понятие давно обрело конкретный смысл: тёплый, моросящий, летний дождик,
-          часто при солнце. И народная мудрость здесь совпадает с наукой. Давайте
-          разберёмся, какие <strong className="text-white">осадки для грибов</strong> наиболее
-          эффективны.
+          Not just any rain qualifies as a{" "}
+          <strong className="text-white">mushroom rain</strong>. In folklore the term long ago
+          took on a specific meaning: a warm, drizzly summer rain, often with the
+          sun still shining. And here folk wisdom lines up with science. Let&rsquo;s
+          look at which <strong className="text-white">types of rainfall</strong> are most
+          effective for mushrooms.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Тёплый моросящий дождь (грибной дождь).</strong>{" "}
-          Идеальный вариант. Мелкие капли медленно пропитывают лесную подстилку,
-          хвою, мох. Вода проникает на глубину 10–15 см, где залегает основная
-          масса мицелия. Если такой дождь идёт несколько часов, а лучше —
-          с перерывами на протяжении суток-двух, грибница получает равномерное
-          увлажнение. Именно после таких осадков грибники фиксируют самые
-          обильные слои.
+          <strong className="text-white">A warm drizzly rain (a mushroom rain).</strong>{" "}
+          The ideal case. Fine droplets slowly soak the forest floor, needles and
+          moss. The water reaches a depth of 10–15 cm, where the bulk of the
+          mycelium lies. If such a rain falls for several hours — better still,
+          on and off over a day or two — the mycelium gets evenly moistened. It&rsquo;s
+          after rainfall like this that foragers record the most abundant flushes.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Кратковременный ливень.</strong>{" "}
-          Менее эффективен, чем кажется. Интенсивный поток воды не успевает
-          впитаться — основная масса стекает по поверхности, особенно на
-          склонах и в хвойных лесах с толстой подстилкой из иголок. После
-          ливня верхний слой быстро просыхает на ветру и солнце. Однако если
-          ливень сопровождается последующей облачностью и умеренной
-          температурой — эффект может быть хорошим.
+          <strong className="text-white">A brief downpour.</strong>{" "}
+          Less effective than it seems. An intense flow of water doesn&rsquo;t have
+          time to soak in — most of it runs off the surface, especially on slopes
+          and in coniferous forests with a thick carpet of needles. After a
+          downpour the top layer quickly dries out in the wind and sun. That said,
+          if the downpour is followed by cloud cover and moderate temperatures,
+          the effect can be good.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">Затяжные дожди на несколько дней.</strong>{" "}
-          Казалось бы, чем больше воды — тем лучше. Но нет. Многодневные ливни
-          переувлажняют почву, вытесняют из неё кислород, а мицелий, как и
-          любой живой организм, нуждается в аэрации. По данным исследований
-          Института леса НАН Беларуси, при влажности почвы свыше 90% рост
-          плодовых тел замедляется. Кроме того, затяжные дожди часто
-          сопровождаются понижением температуры, что дополнительно тормозит
-          развитие грибов.
+          <strong className="text-white">Prolonged rains lasting several days.</strong>{" "}
+          You&rsquo;d think the more water the better. But no. Days-long rains
+          waterlog the soil and force the oxygen out of it, and the mycelium,
+          like any living organism, needs aeration. According to research by the
+          Forest Institute of the National Academy of Sciences of Belarus, once
+          soil moisture exceeds 90% the growth of fruiting bodies slows down.
+          On top of that, prolonged rains are often accompanied by a drop in
+          temperature, which further holds back mushroom development.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          <strong className="text-white">Холодный осенний дождь.</strong>{" "}
-          Осенью характер дождей меняется: температура воздуха падает, осадки
-          становятся затяжными и прохладными. В таких условиях большинство
-          летних видов уже не реагируют на влагу. Однако для осенних опят и
-          груздей это как раз подходящая погода — им достаточно 10–15 °C.
-          Поэтому осенью ориентируйтесь не столько на дождь, сколько на
-          устойчивую температуру выше 8 °C.
+          <strong className="text-white">A cold autumn rain.</strong>{" "}
+          In autumn the character of the rain changes: the air temperature falls
+          and the rainfall becomes drawn-out and chilly. Under such conditions
+          most summer species no longer respond to the moisture. For autumn honey
+          mushrooms and milk caps, however, this is exactly the right weather —
+          10–15 °C is enough for them. So in autumn, focus less on the rain
+          itself and more on a steady temperature above 8 °C.
         </p>
 
         {/* === Section 4: Temperature === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Температура после дождя — второй ключевой фактор
+          Temperature after the rain — the second key factor
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Даже идеальный грибной дождь не даст результата, если после него
-          температура упадёт ниже 10 °C. Мицелий — это живой организм,
-          скорость роста которого напрямую зависит от температуры окружающей
-          среды. В монографии «Грибы: их строение и жизнедеятельность»
-          (Кудряшева, 2019) приводится так называемая «кривая роста»: при 5 °C
-          деление клеток мицелия практически останавливается, при 10 °C идёт
-          медленно, а пик активности приходится на диапазон 18–22 °C.
+          Even a perfect mushroom rain won&rsquo;t deliver if the temperature drops
+          below 10 °C afterward. The mycelium is a living organism whose growth
+          rate depends directly on the temperature of its surroundings. The
+          monograph “Fungi: Their Structure and Vital Processes” (Kudryasheva,
+          2019) presents a so-called “growth curve”: at 5 °C the division of
+          mycelial cells practically stops, at 10 °C it proceeds slowly, and the
+          peak of activity falls in the 18–22 °C range.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Вот почему самые урожайные периоды — это тёплые дни после летних
-          дождей. В июле-августе, когда дневная температура держится в районе
-          20–25 °C, а ночная не опускается ниже 12–15 °C, грибы растут с
-          максимальной скоростью. Маслята могут вымахать за двое суток,
-          подберёзовик достигает товарного размера за 3–4 дня.
+          That&rsquo;s why the most productive periods are warm days following summer
+          rains. In July and August, when the daytime temperature stays around
+          20–25 °C and the nighttime temperature doesn&rsquo;t fall below 12–15 °C,
+          mushrooms grow at their fastest. Suillus can shoot up in a couple of
+          days, and a birch bolete reaches market size in 3–4 days.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Отдельного внимания заслуживает <strong className="text-white">температура почвы</strong>.
-          Она меняется медленнее, чем температура воздуха, и именно на неё
-          «ориентируется» мицелий. Даже если ночью похолодало до 8 °C, но
-          днём солнце прогрело землю до 16–18 °C — грибница продолжает расти.
-          Наоборот: если после длительного холода резко потеплело, почва ещё
-          несколько дней остаётся прохладной, и грибы появятся позже ожидаемого.
+          The <strong className="text-white">soil temperature</strong> deserves special
+          attention. It changes more slowly than the air temperature, and it&rsquo;s
+          soil temperature that the mycelium “goes by.” Even if the night cooled
+          to 8 °C, but the daytime sun warmed the ground to 16–18 °C, the
+          mycelium keeps growing. Conversely, if a sharp warm-up follows a long
+          cold spell, the soil stays cool for several more days and the mushrooms
+          will appear later than expected.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          Практический совет: обращайте внимание не только на текущий прогноз,
-          но и на среднесуточную температуру за последние 3–5 дней после дождя.
-          Если она стабильно выше 15 °C — можно смело планировать выход.
-          Если скачет от 8 до 22 °C — подождите стабилизации. Споры могут
-          прорасти и при перепадах, но плодовые тела будут мелкими и
-          немногочисленными.
+          A practical tip: pay attention not only to the current forecast but
+          also to the average daily temperature over the last 3–5 days after the
+          rain. If it has stayed steadily above 15 °C, you can confidently plan
+          an outing. If it&rsquo;s swinging between 8 and 22 °C, wait for it to settle.
+          Spores may germinate even amid swings, but the fruiting bodies will be
+          small and few.
         </p>
 
         {/* === Section 5: Why No Mushrooms === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Почему после дождя грибы иногда не появляются
+          Why mushrooms sometimes fail to appear after rain
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Каждый грибник хотя бы раз попадал в ситуацию: прошёл хороший дождь,
-          тепло, влажно — а в лесу пусто. Разочарование. Но у этого всегда есть
-          объяснение. Вот основные причины, почему{" "}
-          <strong className="text-white">когда собирать грибы после дождя</strong> — не всегда
-          простой вопрос.
+          Every forager has found themselves in this situation at least once: a
+          good rain has passed, it&rsquo;s warm and damp — and yet the forest is
+          empty. Disappointing. But there&rsquo;s always an explanation. Here are the
+          main reasons why <strong className="text-white">knowing when to pick mushrooms after rain</strong>{" "}
+          isn&rsquo;t always a simple question.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">1. Длительная засуха перед дождём.</strong>{" "}
-          Если лес не получал влаги 2–3 недели, мицелий может частично погибнуть
-          или перейти в глубокий анабиоз. Одного дождя бывает недостаточно для
-          его «пробуждения». В таких случаях грибница сначала восстанавливает
-          свою сеть и только потом формирует плодовые тела. Задержка может
-          составить 2–3 дополнительные недели.
+          <strong className="text-white">1. A long drought before the rain.</strong>{" "}
+          If the forest hasn&rsquo;t had moisture for 2–3 weeks, the mycelium may
+          partly die off or slip into deep dormancy. A single rain is sometimes
+          not enough to “wake it up.” In such cases the mycelium first rebuilds
+          its network and only then forms fruiting bodies. The delay can run to
+          an extra 2–3 weeks.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">2. Резкое похолодание.</strong>{" "}
-          Температура упала ниже 8–10 °C сразу после дождя — и мицелий
-          «замёрз». Вода в почве есть, а тепла нет. Грибница ждёт. Если
-          потепление наступит через несколько дней, грибы всё равно пойдут,
-          но с задержкой. Если холод затянется — придётся ждать следующего
-          цикла «дождь + тепло».
+          <strong className="text-white">2. A sudden cold snap.</strong>{" "}
+          The temperature dropped below 8–10 °C right after the rain and the
+          mycelium “froze.” There&rsquo;s water in the soil, but no warmth. The mycelium
+          waits. If a warm-up comes within a few days, the mushrooms will still
+          come, just with a delay. If the cold drags on, you&rsquo;ll have to wait for
+          the next “rain + warmth” cycle.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">3. Сильный ветер после дождя.</strong>{" "}
-          Ветер — враг грибника. Он быстро высушивает верхний слой почвы и
-          лесной подстилки. Даже если дождь был обильным, 1–2 дня сильного
-          ветра при солнце могут свести эффект к нулю. Влага испаряется
-          раньше, чем мицелий успевает ею воспользоваться.
+          <strong className="text-white">3. Strong wind after the rain.</strong>{" "}
+          Wind is a forager&rsquo;s enemy. It quickly dries out the top layer of soil
+          and forest floor. Even if the rain was heavy, 1–2 days of strong wind
+          under the sun can reduce the effect to nothing. The moisture evaporates
+          before the mycelium has a chance to use it.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          <strong className="text-white">4. Короткий или слабый дождь.</strong>{" "}
-          Дождь, который промочил только верхние 2–3 см почвы, не достигает
-          зоны активного мицелия. Для большинства видов нужно, чтобы влага
-          проникла на глубину не менее 8–10 см. По данным кафедры микологии и
-          альгологии МГУ, для этого требуется не менее 10–15 мм осадков.
+          <strong className="text-white">4. A short or weak rain.</strong>{" "}
+          A rain that soaked only the top 2–3 cm of soil doesn&rsquo;t reach the zone
+          of active mycelium. For most species the moisture needs to penetrate to
+          a depth of at least 8–10 cm. According to the Department of Mycology and
+          Algology at Moscow State University, this requires at least 10–15 mm of
+          rainfall.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          <strong className="text-white">5. Истощённая грибница.</strong>{" "}
-          Если на одном и том же месте грибы собирают каждый год и помногу,
-          мицелий может истощиться. Ему нужны ресурсы — разлагаемая органика,
-          симбиоз с деревьями (для микоризных видов). Если лес «вычищен» или
-          деревья-партнёры погибли, никакой дождь не поможет. Впрочем, это
-          скорее долгосрочная проблема, а не причина единичного неурожая.
+          <strong className="text-white">5. An exhausted mycelium.</strong>{" "}
+          If mushrooms are picked from the same spot every year and in large
+          quantities, the mycelium can become exhausted. It needs resources —
+          decomposing organic matter and symbiosis with trees (for mycorrhizal
+          species). If the forest has been “cleared out” or the partner trees
+          have died, no amount of rain will help. That said, this is more of a
+          long-term problem than the cause of a single poor harvest.
         </p>
 
         {/* === Section 6: SkyForest CTA === */}
         <h2 className="mb-4 mt-12 text-2xl font-bold text-white">
-          Как отследить осадки для грибных мест
+          How to track rainfall for your mushroom spots
         </h2>
         <p className="mb-6 leading-relaxed text-white/80">
-          Главная сложность — понять, шёл ли дождь именно в том лесу, куда вы
-          планируете поехать. Прогноз по городу часто бесполезен: летние дожди
-          локальны, и в 20 км от города может быть совершенно другая картина.
-          Классический способ — звонить знакомым в деревне или проверять
-          спутниковые данные по осадкам.
+          The main challenge is figuring out whether it actually rained in the
+          very forest you&rsquo;re planning to visit. A city forecast is often useless:
+          summer rains are local, and 20 km outside town the picture can be
+          completely different. The classic approach is to call friends out in
+          the countryside or check satellite rainfall data.
         </p>
         <p className="mb-6 leading-relaxed text-white/80">
-          Есть более удобный вариант. Карта осадков в{" "}
+          There&rsquo;s a more convenient option. The rainfall map in{" "}
           <Link href="/" className="text-emerald-400 underline decoration-emerald-400/30 underline-offset-2 transition-colors hover:text-emerald-300">
             SkyForest
           </Link>{" "}
-          показывает, где именно шли дожди за последние дни — с привязкой к
-          конкретным лесным массивам. Вы видите не абстрактные «осадки по области»,
-          а точные данные для ваших грибных мест. А мониторинг погоды
-          автоматически сравнивает текущие условия с вашим лучшим грибным днём —
-          так вы сразу понимаете, насколько ситуация сейчас близка к идеалу.
+          shows exactly where it has rained over the past few days — tied to
+          specific forest areas. You don&rsquo;t see abstract “rainfall across the
+          region,” but precise data for your own mushroom spots. And the weather
+          monitoring automatically compares the current conditions with your best
+          mushroom day — so you immediately understand how close the situation is
+          to ideal right now.
         </p>
         <p className="mb-12 leading-relaxed text-white/80">
-          Допустим, три дня назад в Логойском районе выпало 18 мм осадков,
-          среднесуточная температура — 17 °C. По нашей таблице, уже через день
-          можно ехать за маслятами и сыроежками, а через 4–5 дней — за
-          подберёзовиками. Вместо гадания — конкретный план. Именно для этого
-          мы и создали SkyForest: чтобы тихая охота была не лотереей, а
-          осознанным решением.
+          Say that three days ago the Lahoisk district got 18 mm of rain, with an
+          average daily temperature of 17 °C. By our table, in just a day you can
+          head out for suillus and russulas, and in 4–5 days for birch boletes.
+          Instead of guesswork — a concrete plan. That&rsquo;s exactly why we built
+          SkyForest: so that foraging is a considered decision rather than a
+          lottery.
         </p>
 
         {/* === FAQ === */}
         <h2 className="mb-6 mt-12 text-2xl font-bold text-white">
-          Часто задаваемые вопросы
+          Frequently asked questions
         </h2>
         <div className="mb-12 space-y-6">
           {FAQ_ITEMS.map((item, i) => (
@@ -452,17 +463,17 @@ export default function GribyPosleDozhdyaPage() {
         {/* === CTA === */}
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl sm:px-10 sm:py-14">
           <h2 className="mb-3 text-2xl font-bold text-white sm:text-3xl">
-            Узнайте, когда в ваших местах пошли грибы
+            Find out when the mushrooms are up in your area
           </h2>
           <p className="mb-6 text-white/70">
-            SkyForest анализирует осадки, температуру и влажность — и подсказывает
-            лучший день для тихой охоты. Регистрация бесплатна.
+            SkyForest analyzes rainfall, temperature and humidity — and points
+            you to the best day for foraging. Registration is free.
           </p>
           <Link
             href="/register"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-emerald-500 hover:shadow-xl"
           >
-            Попробовать SkyForest →
+            Try SkyForest →
           </Link>
         </div>
       </article>

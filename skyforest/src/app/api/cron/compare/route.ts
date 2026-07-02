@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         try {
           await sendEmail(
             userEmail,
-            `Skyforest: недостаточно токенов для автосравнения`,
+            `Skyforest: not enough tokens for automatic comparison`,
             buildInsufficientTokensEmail(bestDay.name, balance)
           );
         } catch (emailErr) {
@@ -174,12 +174,12 @@ export async function GET(request: NextRequest) {
         })
         .eq("id", ac.id);
 
-      const compareDate = new Date(today).toLocaleDateString("ru-RU", {
+      const compareDate = new Date(today).toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
-      const bestDate = new Date(bestDay.best_date).toLocaleDateString("ru-RU", {
+      const bestDate = new Date(bestDay.best_date).toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
 
       await sendEmail(
         userEmail,
-        `Skyforest: совпадение ${Math.round(result.overall)}% — ${ac.name || bestDay.name} → ${loc.name}`,
+        `Skyforest: ${Math.round(result.overall)}% match — ${ac.name || bestDay.name} → ${loc.name}`,
         buildCompareEmail({
           bestDayName: bestDay.name,
           locationName: loc.name,

@@ -86,6 +86,7 @@ export default {
     legalTitle: "Legal",
     offer: "Terms of service",
     privacy: "Privacy",
+    deleteAccount: "Delete account",
     paymentMethods: "Payment methods",
     returns: "Returns",
     instruction: "Instructions",

@@ -10,6 +10,7 @@ import { EditProfileName } from "@/components/app/EditProfileName";
 import { EditContactLink } from "@/components/app/EditContactLink";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
+import { BiometricLockSetting } from "@/components/native/BiometricLockSetting";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -104,6 +105,8 @@ export default async function AccountPage({ params }: Props) {
         </h2>
         <TwoFactorSetup />
       </div>
+
+      <BiometricLockSetting />
 
       <div className="glass mb-6 rounded-2xl p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">

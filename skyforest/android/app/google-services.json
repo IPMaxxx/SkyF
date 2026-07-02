@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1052243839791",
+    "project_id": "skyforest-ai",
+    "storage_bucket": "skyforest-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052243839791:android:1bd608e9f65dc8a5526fda",
+        "android_client_info": {
+          "package_name": "ai.skyforest.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1052243839791-vqqul231nk7fak26be5pe2l2a6kmunk4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ai.skyforest.app",
+            "certificate_hash": "3d0cf0ecd8001c205c48ac4be01efa197209613d"
+          }
+        },
+        {
+          "client_id": "1052243839791-pd35q82h23l9avui8p9036heqnamtld2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyB6-j0ZhtmU4Wsjra5WsD11n7IuVJgVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052243839791-pd35q82h23l9avui8p9036heqnamtld2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1052243839791-5c97b46921v3lukla3nesdss083lenfr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ai.skyforest.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
