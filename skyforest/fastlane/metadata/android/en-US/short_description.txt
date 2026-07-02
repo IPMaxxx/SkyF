@@ -1,1 +1,1 @@
-Weather assistant for mushroom foragers: know the best days and spots to go.
+Predict the perfect foraging time, check rain maps, and identify mushrooms!
