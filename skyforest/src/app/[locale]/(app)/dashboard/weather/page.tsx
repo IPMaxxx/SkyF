@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -157,7 +158,13 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
 export default function WeatherPage() {
   const t = useTranslations("weather");
   const locale = useLocale();
-  const [tab, setTab] = useState<Tab>("weather");
+  const searchParams = useSearchParams();
+  // Координаты из внешнего перехода (например, попап на карте дашборда).
+  const initLat = searchParams.get("lat");
+  const initLng = searchParams.get("lng");
+  const initTab = searchParams.get("tab");
+  const hasQueryCoords = Boolean(initLat && initLng);
+  const [tab, setTab] = useState<Tab>(initTab === "rain-map" ? "rain-map" : "weather");
   const [showGuide, setShowGuide] = useState(false);
   const { locations, loading: appLoading } = useAppData();
 
@@ -225,20 +232,35 @@ export default function WeatherPage() {
 
       if (rainRes.data && rainRes.data.length > 0) {
         setSavedRainList(rainRes.data);
-        const last = rainRes.data[0];
-        setCenterLat(last.center_lat);
-        setCenterLng(last.center_lng);
-        setRadius(last.radius_km);
-        setStep(last.step_km);
-        setDays(last.days);
-        const { data: fullLast } = await supabase.from("saved_rain_maps").select("grid_data").eq("id", last.id).single();
-        if (fullLast) setGridData(fullLast.grid_data);
+        // Если пришли с координатами из внешнего перехода — не перетираем
+        // центр/сетку последней сохранённой картой, оставляем точку из URL.
+        if (!hasQueryCoords) {
+          const last = rainRes.data[0];
+          setCenterLat(last.center_lat);
+          setCenterLng(last.center_lng);
+          setRadius(last.radius_km);
+          setStep(last.step_km);
+          setDays(last.days);
+          const { data: fullLast } = await supabase.from("saved_rain_maps").select("grid_data").eq("id", last.id).single();
+          if (fullLast) setGridData(fullLast.grid_data);
+        }
       }
 
       setPageDataLoaded(true);
     };
     load();
-  }, [pageDataLoaded]);
+  }, [pageDataLoaded, hasQueryCoords]);
+
+  // Центр карты осадков из URL (переход с попапа на карте дашборда).
+  useEffect(() => {
+    if (!initLat || !initLng) return;
+    const la = parseFloat(initLat);
+    const ln = parseFloat(initLng);
+    if (Number.isNaN(la) || Number.isNaN(ln)) return;
+    setCenterLat(la);
+    setCenterLng(ln);
+    setTab("rain-map");
+  }, [initLat, initLng]);
 
   const loadingLocs = appLoading || !pageDataLoaded;
   const selectedLocation = locations.find((l) => l.id === selectedId);

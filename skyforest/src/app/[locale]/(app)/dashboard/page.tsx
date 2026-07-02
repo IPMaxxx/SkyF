@@ -17,13 +17,18 @@ import {
   Lock,
   Search,
   Sparkles,
+  ScanSearch,
 } from "lucide-react";
 import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 import { useAppData } from "@/lib/AppDataContext";
 import { useTokens } from "@/lib/TokenContext";
 import { TransactionHistory } from "@/components/app/TransactionHistory";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
+import { MapActionPanel } from "@/components/app/MapActionPanel";
+import type { MapSelection } from "@/components/app/DashboardMap";
+import type { Location } from "@/lib/supabase/types";
 import { useTranslations, useLocale } from "next-intl";
+import { useIsNative } from "@/lib/native/useIsNative";
 
 function MapLoadingFallback() {
   const t = useTranslations("dashboard.home");
@@ -57,6 +62,9 @@ type MainCard = {
 function LazyDashboardMap(props: {
   locations: ReturnType<typeof useAppData>["locations"];
   bestDays: ReturnType<typeof useAppData>["bestDays"];
+  native?: boolean;
+  nativeSelectedPoint?: { lat: number; lng: number } | null;
+  onPointSelect?: (sel: MapSelection) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -79,7 +87,13 @@ function LazyDashboardMap(props: {
   return (
     <div ref={ref}>
       {visible ? (
-        <DashboardMap locations={props.locations} bestDays={props.bestDays} />
+        <DashboardMap
+          locations={props.locations}
+          bestDays={props.bestDays}
+          native={props.native}
+          nativeSelectedPoint={props.nativeSelectedPoint}
+          onPointSelect={props.onPointSelect}
+        />
       ) : (
         <MapLoadingFallback />
       )}
@@ -90,11 +104,19 @@ function LazyDashboardMap(props: {
 export default function DashboardPage() {
   const t = useTranslations("dashboard.home");
   const locale = useLocale();
+  const isNative = useIsNative();
   const dateLocale = locale === "en" ? "en-GB" : "ru-RU";
-  const { locations, bestDays: allBestDays, loading } = useAppData();
+  const { locations, bestDays: allBestDays, loading, addLocation } = useAppData();
   const { balance, loading: balanceLoading } = useTokens();
   const [showAllDays, setShowAllDays] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
+  // Native: выбранная на карте точка (сохранённая локация / грибной день / пусто).
+  const [selection, setSelection] = useState<MapSelection | null>(null);
+
+  const handleLocationCreated = (loc: Location) => {
+    addLocation(loc);
+    setSelection({ kind: "location", lat: loc.lat, lng: loc.lng, location: loc });
+  };
   const DAYS_PREVIEW = 6;
   const bestDays = showAllDays ? allBestDays : allBestDays.slice(0, DAYS_PREVIEW);
   const hasMoreDays = allBestDays.length > DAYS_PREVIEW;
@@ -140,6 +162,14 @@ export default function DashboardPage() {
         iconBg: "from-emerald-500/20 to-teal-500/20",
       },
       {
+        title: t("cardIdentifyTitle"),
+        desc: t("cardIdentifyDesc"),
+        icon: ScanSearch,
+        href: "/dashboard/identify",
+        color: "from-orange-500 to-amber-600",
+        iconBg: "from-orange-500/20 to-amber-500/20",
+      },
+      {
         title: t("cardMarketTitle"),
         desc: t("cardMarketDesc"),
         icon: Store,
@@ -163,27 +193,37 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t("title")}</h1>
-        <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("subtitle")}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href="/dashboard/locations/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t("addLocation")}
-          </Link>
-          <Link
-            href="/dashboard/best-day/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t("addBestDay")}
-          </Link>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+          {isNative ? t("titleNative") : t("title")}
+        </h1>
+        {/* Native: под заголовком — только подсказка к карте (описание, кнопки
+            быстрых действий и welcome-блок скрыты). На вебе всё как раньше. */}
+        {isNative ? (
+          <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("mapHint")}</p>
+        ) : (
+          <>
+            <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("subtitle")}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/locations/new"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {t("addLocation")}
+              </Link>
+              <Link
+                href="/dashboard/best-day/new"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {t("addBestDay")}
+              </Link>
+            </div>
+          </>
+        )}
       </div>
 
-      {isEmpty && !loading && (
+      {!isNative && isEmpty && !loading && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary-light">
@@ -199,11 +239,38 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {(!hasLocations || !hasBestDays) && !loading && (
+      {/* Онбординг «С чего начать»: на вебе — здесь, как раньше. В native блок
+          переехал на страницу Monitor (/dashboard/compare), поэтому тут скрыт. */}
+      {!isNative && (!hasLocations || !hasBestDays) && !loading && (
         <OnboardingSteps hasLocations={hasLocations} hasBestDays={hasBestDays} />
       )}
 
-      {(() => {
+      {/* Native: карта сразу под welcome — быстрая ценность (тап по карте →
+          координаты + прогноз погоды / тип леса). Показываем всегда, даже без
+          локаций. На вебе карта остаётся ниже (см. блок с условием has*). */}
+      {isNative && !loading && (
+        <div className="mb-6 space-y-3">
+          <LazyDashboardMap
+            locations={locations}
+            bestDays={allBestDays}
+            native
+            nativeSelectedPoint={
+              selection?.kind === "empty"
+                ? { lat: selection.lat, lng: selection.lng }
+                : null
+            }
+            onPointSelect={setSelection}
+          />
+          <MapActionPanel
+            selection={selection}
+            onLocationCreated={handleLocationCreated}
+          />
+        </div>
+      )}
+
+      {/* Native: карточки Weather (герой) и Monitor убраны — они есть в таб-баре.
+          Взаимодействие с погодой/лесом идёт через панель под картой. */}
+      {!isNative && (() => {
         const weatherCard = mainCards[0];
         const blocked = weatherCard.needsLocation && !hasLocations;
 
@@ -272,8 +339,14 @@ export default function DashboardPage() {
         );
       })()}
 
+      {/* Native: карточки разделов (Forest search / Identify / Marketplace и др.)
+          убраны с главной — эти действия доступны в нижнем таб-баре и в панели
+          под картой. На вебе сетка карточек остаётся как раньше. */}
+      {!isNative && (
       <div className="grid gap-4 sm:grid-cols-3">
-        {mainCards.slice(1).map((card) => {
+        {mainCards
+          .slice(1)
+          .map((card) => {
           const blockedByLocation = card.needsLocation && !hasLocations;
           const blockedByBestDay = card.needsBestDay && !hasBestDays;
           const blocked = blockedByLocation || blockedByBestDay;
@@ -346,8 +419,9 @@ export default function DashboardPage() {
           );
         })}
       </div>
+      )}
 
-      {(hasLocations || hasBestDays) && !loading && (
+      {!isNative && (hasLocations || hasBestDays) && !loading && (
         <div className="mt-8 sm:mt-10">
           <LazyDashboardMap locations={locations} bestDays={allBestDays} />
         </div>
@@ -488,6 +562,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Секция токенов (баланс + история) скрыта в native — только индикатор;
+          покупка/списание токенов на бэкенде работают как прежде. */}
+      {!isNative && (
       <div className="mt-8 sm:mt-10">
         <div className="mb-4 flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
@@ -518,8 +595,11 @@ export default function DashboardPage() {
           <TransactionHistory compact limit={10} />
         </div>
       </div>
+      )}
 
-      <MushroomBotCard />
+      {/* Секция «Бот-определитель грибов» скрыта в native — определение реализовано
+          прямо в приложении (таб «Определить»), бот не нужен. На вебе остаётся. */}
+      {!isNative && <MushroomBotCard />}
 
       {loading && (
         <div className="mt-12 flex justify-center" aria-live="polite">

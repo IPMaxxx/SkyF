@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { CompareChart } from "@/components/app/CompareChart";
 import { NewLocationModal } from "@/components/app/NewLocationModal";
+import { OnboardingSteps } from "@/components/app/OnboardingSteps";
+import { useIsNative } from "@/lib/native/useIsNative";
 import type { BestDay, Location, WeatherDay } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
 import { useAppData } from "@/lib/AppDataContext";
@@ -188,6 +190,7 @@ export default function ComparePage() {
     })[key];
 
   const { locations, bestDays, loading: appLoading, addLocation } = useAppData();
+  const isNative = useIsNative();
   const [comparisons, setComparisons] = useState<Comparison[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -615,6 +618,15 @@ export default function ComparePage() {
       <Link href="/dashboard" className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> {t("back")}
       </Link>
+
+      {/* Онбординг «С чего начать» — в native переехал сюда с дашборда. На вебе
+          онбординг остаётся на дашборде, поэтому здесь показываем только в native. */}
+      {isNative && (locations.length === 0 || bestDays.length === 0) && (
+        <OnboardingSteps
+          hasLocations={locations.length > 0}
+          hasBestDays={bestDays.length > 0}
+        />
+      )}
 
       <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

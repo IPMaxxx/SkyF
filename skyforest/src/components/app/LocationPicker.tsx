@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { LocateFixed, Loader2 } from "lucide-react";
+import { getCurrentPosition } from "@/lib/native/geolocation";
 
 const pinIcon = new L.DivIcon({
   className: "",
@@ -54,8 +56,23 @@ interface Props {
 
 export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSelect }: Props) {
   const [mounted, setMounted] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
   useEffect(() => setMounted(true), []);
+
+  const handleLocate = async () => {
+    setGeoError("");
+    setLocating(true);
+    try {
+      const { lat: gLat, lng: gLng } = await getCurrentPosition();
+      onSelect(gLat, gLng);
+    } catch {
+      setGeoError("Не удалось определить местоположение");
+    } finally {
+      setLocating(false);
+    }
+  };
   if (!mounted) {
     return (
       <div className="flex h-[400px] items-center justify-center rounded-xl bg-muted">
@@ -65,7 +82,26 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className="relative overflow-hidden rounded-xl border border-border">
+      <button
+        type="button"
+        onClick={handleLocate}
+        disabled={locating}
+        aria-label="Моё местоположение"
+        title="Моё местоположение"
+        className="absolute bottom-3 right-3 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors hover:bg-primary-dark disabled:opacity-60"
+      >
+        {locating ? (
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+        ) : (
+          <LocateFixed className="h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
+      {geoError && (
+        <div className="absolute bottom-3 left-3 z-[1000] rounded-lg bg-red-500/90 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+          {geoError}
+        </div>
+      )}
       <MapContainer
         center={lat && lng ? [lat, lng] : BELARUS_CENTER}
         zoom={lat && lng ? 12 : 7}

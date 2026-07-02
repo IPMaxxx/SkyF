@@ -3,6 +3,7 @@ import { PwaInstallProvider } from "@/lib/pwa/PwaInstallProvider";
 import { MobileInstallBanner } from "@/components/pwa/MobileInstallBanner";
 import { IosInstallHelpModal } from "@/components/pwa/IosInstallHelpModal";
 import { NativeAppProvider } from "@/lib/native/NativeAppProvider";
+import { WebOnly } from "@/components/native/NativeOnly";
 import { BiometricLockGate } from "@/components/native/BiometricLockGate";
 import { routing } from "@/i18n/routing";
 import { getSiteJsonLd } from "@/lib/siteJsonLd";
@@ -96,8 +97,11 @@ export default async function LocaleLayout({ children, params }: Props) {
         <NativeAppProvider />
         <BiometricLockGate />
         {children}
-        <MobileInstallBanner />
-        <IosInstallHelpModal />
+        {/* PWA-подсказки только в вебе/браузере — в нативном приложении не нужны */}
+        <WebOnly>
+          <MobileInstallBanner />
+          <IosInstallHelpModal />
+        </WebOnly>
       </PwaInstallProvider>
     </NextIntlClientProvider>
   );

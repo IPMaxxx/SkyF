@@ -14,6 +14,7 @@ import {
   X,
   Store,
   Trees,
+  ScanSearch,
   GitCompareArrows,
   CloudSun,
   Ticket,
@@ -27,6 +28,7 @@ import {
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { useIsNative } from "@/lib/native/useIsNative";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HEADER_NAV } from "@/lib/siteNav";
@@ -44,6 +46,7 @@ const CRITICAL_BALANCE_THRESHOLD = 4;
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const isNative = useIsNative();
   const t = useTranslations("appHeader");
   const tHeader = useTranslations("header");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -83,6 +86,11 @@ export function AppHeader() {
         href: "/dashboard/forest-search",
         label: t("forestSearch"),
         icon: Trees,
+      },
+      {
+        href: "/dashboard/identify",
+        label: t("identify"),
+        icon: ScanSearch,
       },
       {
         href: "/dashboard/marketplace",
@@ -205,7 +213,7 @@ export function AppHeader() {
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex flex-shrink-0 items-center gap-2">
           <Link
-            href="/"
+            href={isNative ? "/dashboard" : "/"}
             className="flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
             aria-label="SkyForest"
           >
@@ -316,31 +324,34 @@ export function AppHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link
-            href="/payment"
-            title={balanceTitle}
-            aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
-            className={cn(
-              "relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
-              balanceStyles
-            )}
-          >
-            <Coins className="h-4 w-4" aria-hidden="true" />
-            {balanceLoading ? (
-              <span className="inline-block h-3 w-6 animate-pulse rounded bg-amber-500/20" />
-            ) : (
-              <span>{balanceValue}</span>
-            )}
-            {isCritical && (
-              <span
-                className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center"
-                aria-hidden="true"
-              >
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-              </span>
-            )}
-          </Link>
+          {/* Баланс токенов скрыт в нативной оболочке (только индикатор; списание работает) */}
+          {!isNative && (
+            <Link
+              href="/payment"
+              title={balanceTitle}
+              aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
+              className={cn(
+                "relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+                balanceStyles
+              )}
+            >
+              <Coins className="h-4 w-4" aria-hidden="true" />
+              {balanceLoading ? (
+                <span className="inline-block h-3 w-6 animate-pulse rounded bg-amber-500/20" />
+              ) : (
+                <span>{balanceValue}</span>
+              )}
+              {isCritical && (
+                <span
+                  className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center"
+                  aria-hidden="true"
+                >
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+              )}
+            </Link>
+          )}
 
           <Link
             href="/dashboard/marketplace/chats"
@@ -456,25 +467,28 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2 lg:hidden">
           <LocaleSwitcher />
-          <Link
-            href="/payment"
-            aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
-            title={balanceTitle}
-            className={cn(
-              "relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
-              isCritical
-                ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
-                : isLow
-                  ? "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40"
-                  : "bg-amber-500/15 text-amber-400"
-            )}
-          >
-            <Coins className="h-4 w-4" aria-hidden="true" />
-            {balanceLoading ? "..." : balanceValue}
-            {isCritical && (
-              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-            )}
-          </Link>
+          {/* Баланс токенов скрыт в нативной оболочке (только индикатор; списание работает) */}
+          {!isNative && (
+            <Link
+              href="/payment"
+              aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
+              title={balanceTitle}
+              className={cn(
+                "relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+                isCritical
+                  ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
+                  : isLow
+                    ? "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40"
+                    : "bg-amber-500/15 text-amber-400"
+              )}
+            >
+              <Coins className="h-4 w-4" aria-hidden="true" />
+              {balanceLoading ? "..." : balanceValue}
+              {isCritical && (
+                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              )}
+            </Link>
+          )}
           <Link
             href="/dashboard/marketplace/chats"
             aria-label={t("messages")}
@@ -512,10 +526,21 @@ export function AppHeader() {
           />
           <div
             id="app-mobile-nav"
-            className="relative z-40 border-t border-white/10 bg-[#0d1a12] px-4 pb-4 pt-2 lg:hidden"
+            className={cn(
+              "relative z-40 border-t border-white/10 bg-[#0d1a12] px-4 pt-2 lg:hidden",
+              // В native даём скролл длинному меню и учитываем safe-area снизу;
+              // веб-версия остаётся без изменений (просто pb-4).
+              isNative
+                ? "max-h-[calc(100dvh-3.5rem)] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
+                : "pb-4"
+            )}
           >
             <nav className="space-y-1" aria-label={t("home")}>
               {NAV.map((item, index) => {
+                // В native скрываем «Грибные туры» (на вебе пункт остаётся).
+                if (isNative && item.href === "/dashboard/mushroom-tours") {
+                  return null;
+                }
                 const active = isActive(item);
 
                 if (index === 0) {
@@ -535,19 +560,26 @@ export function AppHeader() {
                         <item.icon className="h-5 w-5" aria-hidden="true" />
                         {item.label}
                       </Link>
-                      <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-foreground/45">
-                        {t("siteSections")}
-                      </p>
-                      {siteNavLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={closeAll}
-                          className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/75 transition-colors hover:bg-white/5 hover:text-foreground"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                      {/* Сайтовые ссылки на вебе показываем сразу под «Главной»
+                          (текущее веб-поведение). В native они уносятся вниз
+                          в отдельную группу «Site Section». */}
+                      {!isNative && (
+                        <>
+                          <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-foreground/45">
+                            {t("siteSections")}
+                          </p>
+                          {siteNavLinks.map((link) => (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              onClick={closeAll}
+                              className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/75 transition-colors hover:bg-white/5 hover:text-foreground"
+                            >
+                              {link.label}
+                            </Link>
+                          ))}
+                        </>
+                      )}
                     </div>
                   );
                 }
@@ -571,19 +603,22 @@ export function AppHeader() {
                 );
               })}
 
-              <Link
-                href="/payment"
-                onClick={closeAll}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                  pathname === "/payment" || pathname.startsWith("/payment/")
-                    ? "bg-amber-500/20 text-amber-300"
-                    : "text-amber-400 hover:bg-white/5"
-                )}
-              >
-                <Coins className="h-5 w-5" aria-hidden="true" />
-                {t("tokens")}
-              </Link>
+              {/* Токены скрыты в нативной оболочке (только индикатор; списание работает) */}
+              {!isNative && (
+                <Link
+                  href="/payment"
+                  onClick={closeAll}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    pathname === "/payment" || pathname.startsWith("/payment/")
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "text-amber-400 hover:bg-white/5"
+                  )}
+                >
+                  <Coins className="h-5 w-5" aria-hidden="true" />
+                  {t("tokens")}
+                </Link>
+              )}
 
               <div className="my-2 border-t border-white/10" />
 
@@ -646,6 +681,28 @@ export function AppHeader() {
                 <LogOut className="h-5 w-5" aria-hidden="true" />
                 {t("logout")}
               </button>
+
+              {/* Раздел сайта — только в native, отдельной группой снизу.
+                  Веб-меню сюда не попадает (сайтовые ссылки на вебе показаны
+                  вверху под «Главной»). */}
+              {isNative && (
+                <>
+                  <div className="my-2 border-t border-white/10" />
+                  <p className="px-4 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-foreground/45">
+                    {t("siteSections")}
+                  </p>
+                  {siteNavLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeAll}
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/75 transition-colors hover:bg-white/5 hover:text-foreground"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </>
+              )}
             </nav>
           </div>
         </>

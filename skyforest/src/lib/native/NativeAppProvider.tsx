@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { isNativeApp, getPlatform } from "./capacitor";
 
 /**
@@ -17,6 +18,36 @@ import { isNativeApp, getPlatform } from "./capacitor";
  */
 export function NativeAppProvider() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Стартовый маршрут native: при холодном запуске с корня «/».
+  //  - есть сессия → сразу в кабинет /dashboard;
+  //  - нет сессии → на экран входа /login (в native стартуем не с лендинга).
+  // `pathname` из i18n-навигации не содержит префикс локали, поэтому «/»
+  // покрывает и ru, и en. Deep links задают непустой путь и сюда не попадают,
+  // web не затрагивается.
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    if (pathname !== "/") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (cancelled) return;
+        router.replace(session ? "/dashboard" : "/login");
+      } catch {
+        // ошибка получения сессии — считаем, что не авторизован
+        if (!cancelled) router.replace("/login");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isNativeApp()) return;

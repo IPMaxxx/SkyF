@@ -51,7 +51,14 @@ function AppleIcon() {
  *  - В нативной оболочке (Capacitor) вызываем нативный SDK → idToken → Supabase.
  *  - В браузере/PWA работает штатный web-OAuth Supabase с редиректом на /auth/callback.
  */
-export function SocialLoginButtons({ redirect }: { redirect: string }) {
+export function SocialLoginButtons({
+  redirect,
+  hideDivider = false,
+}: {
+  redirect: string;
+  /** Скрыть верхний разделитель «или» (для native-логина, где соц-кнопки идут первыми). */
+  hideDivider?: boolean;
+}) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [busy, setBusy] = useState<Provider | null>(null);
@@ -104,13 +111,15 @@ export function SocialLoginButtons({ redirect }: { redirect: string }) {
 
   return (
     <div className="mb-6">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-          {t("orContinueWith")}
-        </span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {!hideDivider && (
+        <div className="mb-4 flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            {t("orContinueWith")}
+          </span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      )}
 
       {error && (
         <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
