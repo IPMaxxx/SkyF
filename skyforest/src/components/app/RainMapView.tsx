@@ -35,6 +35,20 @@ interface GridPoint {
   dates?: string[];
 }
 
+interface UserLocation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+interface UserLocationLabels {
+  unitMm: string;
+  rainForDays: string;
+  outOfArea: string;
+  nearestPoint: string;
+}
+
 interface Props {
   centerLat: number | null;
   centerLng: number | null;
@@ -42,6 +56,55 @@ interface Props {
   step: number;
   gridData: GridPoint[];
   onCenterSelect: (lat: number, lng: number) => void;
+  userLocations?: UserLocation[];
+  showUserLocations?: boolean;
+  userLocationLabels?: UserLocationLabels;
+}
+
+// Приблизительное расстояние в км (равнопрямоугольная проекция).
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const dLat = (bLat - aLat) * 111.32;
+  const dLng =
+    (bLng - aLng) * 111.32 * Math.cos((((aLat + bLat) / 2) * Math.PI) / 180);
+  return Math.sqrt(dLat * dLat + dLng * dLng);
+}
+
+// Ближайшая точка сетки осадков к заданным координатам.
+function nearestGridPoint(
+  lat: number,
+  lng: number,
+  grid: GridPoint[]
+): { point: GridPoint; distKm: number } | null {
+  let best: GridPoint | null = null;
+  let bestDist = Infinity;
+  for (const p of grid) {
+    const d = distanceKm(lat, lng, p.lat, p.lng);
+    if (d < bestDist) {
+      bestDist = d;
+      best = p;
+    }
+  }
+  return best ? { point: best, distKm: bestDist } : null;
+}
+
+// Маркер пользовательской локации: изумрудная «булавка» с бейджем осадков.
+function userLocationIcon(badgeText: string | null): L.DivIcon {
+  const badge = badgeText
+    ? `<div style="position:absolute;bottom:34px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fff;color:#065f46;font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.35);border:1px solid #10b981">${badgeText}</div>`
+    : "";
+  return new L.DivIcon({
+    className: "",
+    html: `<div style="position:relative;width:28px;height:34px">
+      ${badge}
+      <svg width="28" height="34" viewBox="0 0 24 30" fill="#10b981" stroke="#fff" stroke-width="2" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))">
+        <path d="M12 1C6.5 1 2 5.4 2 10.8 2 18 12 29 12 29s10-11 10-18.2C22 5.4 17.5 1 12 1Z"/>
+        <circle cx="12" cy="11" r="3.5" fill="#fff" stroke="none"/>
+      </svg>
+    </div>`,
+    iconSize: [28, 34],
+    iconAnchor: [14, 30],
+    popupAnchor: [0, -28],
+  });
 }
 
 function rainColor(rain: number, maxRain: number): string {
@@ -191,6 +254,9 @@ export function RainMapView({
   step,
   gridData,
   onCenterSelect,
+  userLocations = [],
+  showUserLocations = false,
+  userLocationLabels,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -205,6 +271,12 @@ export function RainMapView({
 
   const maxRain = gridData.length > 0 ? Math.max(...gridData.map((p) => p.rain_total), 1) : 1;
   const cellRadius = (step * 1000) / 2;
+
+  // Локация считается «покрытой» картой, если ближайшая точка сетки не дальше
+  // полутора шагов — за пределами круга расстояние быстро растёт.
+  const sampleThresholdKm = Math.max(step, 2) * 1.5;
+  const showLocations =
+    showUserLocations && gridData.length > 0 && userLocations.length > 0;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border h-full">
@@ -255,6 +327,54 @@ export function RainMapView({
             </Popup>
           </Circle>
         ))}
+
+        {showLocations &&
+          userLocations.map((loc) => {
+            const nearest = nearestGridPoint(loc.lat, loc.lng, gridData);
+            const inArea = nearest !== null && nearest.distKm <= sampleThresholdKm;
+            const rainVal = inArea ? nearest!.point.rain_total : null;
+            const unit = userLocationLabels?.unitMm ?? "мм";
+            const badge =
+              rainVal !== null ? `${rainVal.toFixed(1)} ${unit}` : null;
+            return (
+              <Marker
+                key={`loc-${loc.id}`}
+                position={[loc.lat, loc.lng]}
+                icon={userLocationIcon(badge)}
+                zIndexOffset={1000}
+              >
+                <Popup>
+                  <div className="text-sm min-w-[180px]">
+                    <p className="font-bold text-emerald-600 text-base flex items-center gap-1">
+                      📍 {loc.name}
+                    </p>
+                    {rainVal !== null ? (
+                      <p className="text-gray-700 mt-1">
+                        🌧 {rainVal.toFixed(1)} {unit}
+                        <span className="text-gray-400 text-xs">
+                          {" "}
+                          · {userLocationLabels?.rainForDays ?? ""}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 mt-1">
+                        {userLocationLabels?.outOfArea ?? ""}
+                      </p>
+                    )}
+                    {nearest && (
+                      <p className="text-xs text-gray-400 mt-1.5 border-t border-gray-200 pt-1">
+                        ≈{nearest.distKm.toFixed(1)}{" "}
+                        {userLocationLabels?.nearestPoint ?? ""}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
       </MapContainer>
     </div>
   );
