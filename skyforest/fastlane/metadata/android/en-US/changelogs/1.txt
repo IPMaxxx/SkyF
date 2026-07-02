@@ -1,0 +1,1 @@
+Initial release of SkyForest — your mushroom-foraging weather assistant. Track the best days and spots to go.

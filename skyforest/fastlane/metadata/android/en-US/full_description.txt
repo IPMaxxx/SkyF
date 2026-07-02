@@ -1,0 +1,19 @@
+SkyForest is a weather assistant for mushroom foragers. It analyzes weather conditions at your favorite spots and tells you when the odds of a good harvest are highest.
+
+How it works:
+- Save your foraging locations on the map.
+- Record your "best days" — successful trips with the species you found.
+- SkyForest compares current and forecast weather against your best days and gives you a match score, so you know when to head out.
+
+Features:
+- 14-day weather analysis and rain map for any location.
+- Pattern comparison against your golden days.
+- Automatic monitoring with alerts when conditions line up.
+- Forest search by radius, land cover and tree species.
+- Mushroom species reference powered by iNaturalist.
+- Community marketplace for anonymized weather patterns.
+- Guided mushroom tours with a token-based auction.
+
+SkyForest works worldwide and helps beginners and seasoned pickers make smarter decisions about when and where to forage.
+
+Some features use in-app tokens, which can be purchased inside the app.
