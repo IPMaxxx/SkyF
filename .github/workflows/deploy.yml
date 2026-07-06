@@ -18,7 +18,11 @@ jobs:
             cd /var/www/html/skyforest.by
             [ -d .git ] || { echo "ОШИБКА: папка .git отсутствует — репозиторий нужно восстановить вручную"; exit 1; }
             echo "==> Pulling latest changes..."
-            git pull origin main
+            # npm install на сервере правит package-lock.json, из-за чего обычный
+            # git pull падал ("local changes would be overwritten"). Локальных
+            # коммитов на сервере нет — жёстко сбрасываемся на origin/main.
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "==> Diagnostics (раскладка сервера)..."
             echo "--- содержимое корня ---"
