@@ -6,6 +6,7 @@ import compare from "./compare.ru";
 import forestSearch from "./forestSearch.ru";
 import marketplace from "./marketplace.ru";
 import identify from "./identify.ru";
+import track from "./track.ru";
 
 export default {
   metadata: {
@@ -64,6 +65,36 @@ export default {
     login: "Войти",
     start: "Начать",
     menu: "Меню",
+  },
+  common: {
+    loading: "Загрузка...",
+    loadingMap: "Загрузка карты...",
+    back: "Назад",
+    cancel: "Отмена",
+    save: "Сохранить",
+    delete: "Удалить",
+    close: "Закрыть",
+    apply: "Применить",
+    nothingFound: "Ничего не найдено",
+    networkError: "Ошибка сети",
+    authRequired: "Необходимо авторизоваться",
+    saveError: "Ошибка сохранения",
+    spendError: "Ошибка списания токенов",
+    user: "Пользователь",
+    mapLayerMap: "Карта",
+    mapLayerSatellite: "Спутник",
+    myLocation: "Моё местоположение",
+    geoError: "Не удалось определить местоположение",
+    unitMm: "мм",
+    unitKmH: "км/ч",
+    unitKm: "км",
+    tokensShort: "т.",
+    howItWorks: "Как это работает",
+    howItWorksAria: "Как это работает — открыть справку",
+    seasonWinter: "Зима",
+    seasonSpring: "Весна",
+    seasonSummer: "Лето",
+    seasonAutumn: "Осень",
   },
   a11y: {
     skipToContent: "Перейти к основному содержимому",
@@ -143,6 +174,7 @@ export default {
     compare: "Мониторинг",
     forestSearch: "Поиск леса",
     identify: "Определить гриб",
+    track: "Путь назад",
     marketplace: "Маркетплейс",
     mushroomTours: "Грибные туры",
     messages: "Сообщения",
@@ -159,6 +191,7 @@ export default {
     onboardingProgress: "Шаг {step} из {total}",
     siteSections: "Разделы сайта",
     more: "Ещё",
+    accountTab: "Аккаунт",
   },
   appMeta: {
     title: "Приложение",
@@ -544,6 +577,8 @@ export default {
     mockHumidity: "Влажность",
     mockRain: "Осадки",
     mockWind: "Ветер",
+    mockRainValue: "12 мм",
+    mockWindValue: "3 м/с",
     mockHint: "Условия близки к эталону — хорошее время для сбора",
     s1n: "01",
     s1t: "Добавьте локации",
@@ -629,6 +664,10 @@ export default {
     confirmPasswordLabel: "Подтвердите пароль",
     setNewPassword: "Установить новый пароль",
     forgotBack: "Назад к входу",
+    resetLinkInvalidTitle: "Ссылка недействительна",
+    resetLinkInvalidBody:
+      "Ссылка для восстановления пароля устарела или уже была использована. Запросите новую — мы пришлём свежее письмо.",
+    resetLinkRequestNew: "Запросить новое письмо",
   },
   pages: {
     services: {
@@ -689,4 +728,5 @@ export default {
   forestSearch,
   marketplace,
   identify,
+  track,
 } as const;

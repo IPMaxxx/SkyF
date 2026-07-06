@@ -1,6 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface UserNameProps {
   name: string | null | undefined;
@@ -12,11 +13,12 @@ interface UserNameProps {
 export function UserName({
   name,
   accountType,
-  fallback = "Пользователь",
+  fallback,
   className = "",
 }: UserNameProps) {
+  const t = useTranslations("common");
   const isAdmin = accountType === "admin";
-  const displayName = name || fallback;
+  const displayName = name || fallback || t("user");
 
   if (isAdmin) {
     return (

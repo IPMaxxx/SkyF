@@ -105,16 +105,15 @@ export default function ResetPasswordPage() {
           ) : sessionReady === false ? (
             <div className="text-center">
               <AlertCircle className="mx-auto mb-4 h-12 w-12 text-amber-500" />
-              <h2 className="mb-2 text-lg font-semibold">Ссылка недействительна</h2>
+              <h2 className="mb-2 text-lg font-semibold">{t("resetLinkInvalidTitle")}</h2>
               <p className="mb-6 text-sm text-muted-foreground">
-                Ссылка для восстановления пароля устарела или уже была использована.
-                Запросите новую — мы пришлём свежее письмо.
+                {t("resetLinkInvalidBody")}
               </p>
               <Link
                 href="/forgot-password"
                 className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
               >
-                Запросить новое письмо
+                {t("resetLinkRequestNew")}
               </Link>
             </div>
           ) : (

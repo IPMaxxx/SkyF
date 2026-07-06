@@ -329,7 +329,7 @@ export default function AuctionHallPage() {
                 {t("opensIn")}
               </p>
               <p className="font-mono text-3xl font-bold text-sky-300">
-                {formatCountdown((tour.auction_start_at ? new Date(tour.auction_start_at).getTime() : 0) - now)}
+                {formatCountdown((tour.auction_start_at ? new Date(tour.auction_start_at).getTime() : 0) - now, locale)}
               </p>
             </div>
           )}
@@ -340,7 +340,7 @@ export default function AuctionHallPage() {
                 {t("timeLeft")}
               </p>
               <p className="font-mono text-3xl font-bold text-emerald-400">
-                {formatCountdown(endMs - now)}
+                {formatCountdown(endMs - now, locale)}
               </p>
             </div>
           )}
@@ -533,6 +533,7 @@ function MyResult({
   onAction: (a: "confirm" | "decline") => void;
   now: number;
 }) {
+  const locale = useLocale();
   const deadlineMs = me.confirm_deadline ? new Date(me.confirm_deadline).getTime() : 0;
   const withinWindow = deadlineMs > now;
 
@@ -546,7 +547,7 @@ function MyResult({
         {me.confirm_deadline && (
           <p className="mb-3 text-xs text-muted-foreground">
             {t("confirmBy")}: {new Date(me.confirm_deadline).toLocaleString()}
-            {withinWindow ? ` (${formatCountdown(deadlineMs - now)})` : ""}
+            {withinWindow ? ` (${formatCountdown(deadlineMs - now, locale)})` : ""}
           </p>
         )}
         <div className="flex gap-2">

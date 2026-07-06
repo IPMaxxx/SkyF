@@ -156,4 +156,5 @@ export default {
   },
   unitMm: "мм",
   unitKmH: "км/ч",
+  unitKm: "км",
 } as const;

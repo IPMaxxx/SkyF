@@ -7,13 +7,13 @@ import {
   CloudRain,
   ScanSearch,
   GitCompareArrows,
-  MoreHorizontal,
+  CircleUser,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = {
   href: string;
-  labelKey: "home" | "weather" | "identify" | "compare" | "more";
+  labelKey: "home" | "weather" | "identify" | "compare" | "accountTab";
   icon: typeof LayoutDashboard;
   exact?: boolean;
   /** Центральная акцентная кнопка (флагманская фича — определение гриба). */
@@ -30,7 +30,7 @@ const TABS: Tab[] = [
     accent: true,
   },
   { href: "/dashboard/compare", labelKey: "compare", icon: GitCompareArrows },
-  { href: "/account", labelKey: "more", icon: MoreHorizontal },
+  { href: "/account", labelKey: "accountTab", icon: CircleUser },
 ];
 
 /**
@@ -66,13 +66,13 @@ export function NativeTabBar() {
                 >
                   <span
                     className={cn(
-                      "-mt-6 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#0d1a12] text-white shadow-lg transition-colors",
+                      "-mt-9 flex h-[68px] w-[68px] items-center justify-center rounded-full border-4 border-[#0d1a12] text-white shadow-lg transition-colors",
                       active
                         ? "bg-primary-light"
                         : "bg-primary hover:bg-primary-light",
                     )}
                   >
-                    <tab.icon className="h-6 w-6" aria-hidden="true" />
+                    <tab.icon className="h-8 w-8" aria-hidden="true" />
                   </span>
                   <span
                     className={cn(

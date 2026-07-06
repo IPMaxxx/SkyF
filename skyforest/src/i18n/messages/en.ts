@@ -6,6 +6,7 @@ import compare from "./compare.en";
 import forestSearch from "./forestSearch.en";
 import marketplace from "./marketplace.en";
 import identify from "./identify.en";
+import track from "./track.en";
 
 export default {
   metadata: {
@@ -64,6 +65,36 @@ export default {
     login: "Log in",
     start: "Get started",
     menu: "Menu",
+  },
+  common: {
+    loading: "Loading...",
+    loadingMap: "Loading map...",
+    back: "Back",
+    cancel: "Cancel",
+    save: "Save",
+    delete: "Delete",
+    close: "Close",
+    apply: "Apply",
+    nothingFound: "Nothing found",
+    networkError: "Network error",
+    authRequired: "You need to sign in",
+    saveError: "Failed to save",
+    spendError: "Failed to charge tokens",
+    user: "User",
+    mapLayerMap: "Map",
+    mapLayerSatellite: "Satellite",
+    myLocation: "My location",
+    geoError: "Could not determine your location",
+    unitMm: "mm",
+    unitKmH: "km/h",
+    unitKm: "km",
+    tokensShort: "tok.",
+    howItWorks: "How it works",
+    howItWorksAria: "How it works — open help",
+    seasonWinter: "Winter",
+    seasonSpring: "Spring",
+    seasonSummer: "Summer",
+    seasonAutumn: "Autumn",
   },
   a11y: {
     skipToContent: "Skip to main content",
@@ -143,6 +174,7 @@ export default {
     compare: "Monitoring",
     forestSearch: "Forest search",
     identify: "Identify mushroom",
+    track: "Way back",
     marketplace: "Marketplace",
     mushroomTours: "Mushroom tours",
     messages: "Messages",
@@ -159,6 +191,7 @@ export default {
     onboardingProgress: "Step {step} of {total}",
     siteSections: "Site sections",
     more: "More",
+    accountTab: "Account",
   },
   appMeta: {
     title: "App",
@@ -542,6 +575,8 @@ export default {
     mockHumidity: "Humidity",
     mockRain: "Rain",
     mockWind: "Wind",
+    mockRainValue: "12 mm",
+    mockWindValue: "3 m/s",
     mockHint: "Conditions are close to reference — good time to pick",
     s1n: "01",
     s1t: "Add locations",
@@ -625,6 +660,10 @@ export default {
     confirmPasswordLabel: "Confirm password",
     setNewPassword: "Set new password",
     forgotBack: "Back to login",
+    resetLinkInvalidTitle: "Link is invalid",
+    resetLinkInvalidBody:
+      "This password reset link has expired or was already used. Request a new one and we’ll send you a fresh email.",
+    resetLinkRequestNew: "Request a new email",
   },
   pages: {
     services: {
@@ -685,4 +724,5 @@ export default {
   forestSearch,
   marketplace,
   identify,
+  track,
 } as const;

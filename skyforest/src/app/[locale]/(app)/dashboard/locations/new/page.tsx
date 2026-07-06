@@ -10,17 +10,23 @@ import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import { DifficultySelect } from "@/components/app/DifficultySelect";
 import { useAppData } from "@/lib/AppDataContext";
 import type { LocationDifficulty } from "@/lib/supabase/types";
+import { useLocale, useTranslations } from "next-intl";
+
+function MapLoading() {
+  const t = useTranslations("common");
+  return (
+    <div className="flex h-[400px] items-center justify-center rounded-xl bg-white/5">
+      <p className="text-sm text-muted-foreground">{t("loadingMap")}</p>
+    </div>
+  );
+}
 
 const LocationPicker = dynamic(
   () =>
     import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[400px] items-center justify-center rounded-xl bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
-      </div>
-    ),
+    loading: () => <MapLoading />,
   }
 );
 
@@ -52,6 +58,9 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function NewLocationPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("dashboard.locationForm");
+  const tc = useTranslations("common");
   const { addLocation } = useAppData();
   const [name, setName] = useState("");
   const [lat, setLat] = useState<number | null>(null);
@@ -102,7 +111,7 @@ export default function NewLocationPage() {
           format: "json",
           addressdetails: "1",
           limit: "6",
-          "accept-language": "ru",
+          "accept-language": locale,
         })
       );
       const data: GeoResult[] = await res.json();
@@ -113,7 +122,7 @@ export default function NewLocationPage() {
     } finally {
       setSearchLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
@@ -178,11 +187,11 @@ export default function NewLocationPage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setError("Введите название локации");
+      setError(t("errName"));
       return;
     }
     if (lat === null || lng === null) {
-      setError("Кликните на карту, чтобы выбрать точку");
+      setError(t("errPoint"));
       return;
     }
 
@@ -195,7 +204,7 @@ export default function NewLocationPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setError("Необходимо авторизоваться");
+      setError(tc("authRequired"));
       setSaving(false);
       return;
     }
@@ -231,7 +240,7 @@ export default function NewLocationPage() {
         className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад
+        {tc("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6">
@@ -240,9 +249,9 @@ export default function NewLocationPage() {
             <MapPin className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold">Добавить локацию</h1>
+            <h1 className="text-lg sm:text-xl font-bold">{t("newTitle")}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Укажите место, где вы ходите за грибами
+              {t("newSubtitle")}
             </p>
           </div>
         </div>
@@ -250,11 +259,10 @@ export default function NewLocationPage() {
 
       <div className="mb-4 sm:mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Локация — это точка на карте, где вы обычно ходите за грибами.
-          Добавьте её один раз, и потом сможете отслеживать погоду и сравнивать условия.
+          {t("intro1")} {t("intro2")}
         </p>
         <div className="mt-2">
-          <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs text-emerald-400">Бесплатно</span>
+          <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs text-emerald-400">{t("freeBadge")}</span>
         </div>
       </div>
 
@@ -262,7 +270,7 @@ export default function NewLocationPage() {
         {/* Geocoding search */}
         <div ref={searchRef} className="relative">
           <label className="mb-1.5 block text-sm font-medium">
-            Поиск по названию или координатам
+            {t("searchLabel")}
           </label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -273,7 +281,7 @@ export default function NewLocationPage() {
               onFocus={() => {
                 if (searchResults.length > 0) setShowResults(true);
               }}
-              placeholder="Город, деревня или 53.90, 27.56"
+              placeholder={t("searchPlaceholder")}
               className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
             {searchQuery && (
@@ -319,21 +327,21 @@ export default function NewLocationPage() {
 
           {showResults && searchResults.length === 0 && !searchLoading && debouncedQuery.length >= 2 && (
             <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-xl border border-white/10 bg-[#1a2e1f]/98 px-4 py-3 shadow-2xl backdrop-blur-xl">
-              <p className="text-sm text-muted-foreground">Ничего не найдено</p>
+              <p className="text-sm text-muted-foreground">{tc("nothingFound")}</p>
             </div>
           )}
         </div>
 
         <div>
           <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-            Название локации
+            {t("nameLabel")}
           </label>
           <input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Например: Лес у деревни Заречье"
+            placeholder={t("namePlaceholder")}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -342,13 +350,13 @@ export default function NewLocationPage() {
 
         <div>
           <label htmlFor="loc-desc" className="mb-1.5 block text-sm font-medium">
-            Описание локации
+            {t("descLabel")}
           </label>
           <textarea
             id="loc-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+            placeholder={t("descPlaceholder")}
             rows={3}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
           />
@@ -356,10 +364,10 @@ export default function NewLocationPage() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium">
-            Точка на карте
+            {t("pointLabel")}
           </label>
           <p className="mb-2 text-xs text-muted-foreground">
-            Найдите место через поиск или кликните на карту, чтобы поставить пин
+            {t("pointHintNew")}
           </p>
           <LocationPicker
             lat={lat}
@@ -376,7 +384,7 @@ export default function NewLocationPage() {
           />
           {lat !== null && lng !== null && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Координаты: {lat.toFixed(6)}, {lng.toFixed(6)}
+              {t("coords", { coords: `${lat.toFixed(6)}, ${lng.toFixed(6)}` })}
             </p>
           )}
         </div>
@@ -384,7 +392,7 @@ export default function NewLocationPage() {
         {/* Forest Info Preview */}
         {lat !== null && lng !== null && (
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Информация о лесе</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("forestInfoLabel")}</label>
             <ForestInfoPanel lat={lat} lng={lng} forestInfo={null} />
           </div>
         )}
@@ -406,7 +414,7 @@ export default function NewLocationPage() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Сохранить локацию · Бесплатно
+          {t("saveFree")}
         </button>
       </div>
     </div>

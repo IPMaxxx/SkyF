@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "next-intl";
 import { ShieldCheck, ShieldOff, Loader2, Copy, Check } from "lucide-react";
 
 type Step = "idle" | "enrolling" | "confirming" | "disabling";
 
 export function TwoFactorSetup() {
+  const t = useTranslations("account.twoFa");
+  const tc = useTranslations("common");
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<Step>("idle");
@@ -53,7 +56,7 @@ export function TwoFactorSetup() {
     });
 
     if (enrollErr || !data) {
-      setError(enrollErr?.message || "Ошибка подключения 2FA");
+      setError(enrollErr?.message || t("enableError"));
       setStep("idle");
       return;
     }
@@ -103,7 +106,7 @@ export function TwoFactorSetup() {
       await supabase.auth.mfa.challenge({ factorId });
 
     if (chErr || !challenge) {
-      setError("Ошибка верификации");
+      setError(t("verifyError"));
       setVerifying(false);
       return;
     }
@@ -115,7 +118,7 @@ export function TwoFactorSetup() {
     });
 
     if (vErr) {
-      setError("Неверный код. Попробуйте ещё раз.");
+      setError(t("wrongCode"));
       setCode(["", "", "", "", "", ""]);
       inputsRef.current[0]?.focus();
       setVerifying(false);
@@ -126,7 +129,7 @@ export function TwoFactorSetup() {
     setStep("idle");
     setQrCode(null);
     setSecret(null);
-    setSuccess("Двухфакторная аутентификация включена");
+    setSuccess(t("enabledToast"));
     setVerifying(false);
   };
 
@@ -140,7 +143,7 @@ export function TwoFactorSetup() {
     const { error: unenrollErr } = await supabase.auth.mfa.unenroll({ factorId });
 
     if (unenrollErr) {
-      setError(unenrollErr.message || "Ошибка отключения 2FA");
+      setError(unenrollErr.message || t("disableError"));
       setStep("idle");
       return;
     }
@@ -148,7 +151,7 @@ export function TwoFactorSetup() {
     setEnabled(false);
     setFactorId(null);
     setStep("idle");
-    setSuccess("Двухфакторная аутентификация отключена");
+    setSuccess(t("disabledToast"));
   };
 
   const copySecret = async () => {
@@ -162,7 +165,7 @@ export function TwoFactorSetup() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Загрузка...
+        {tc("loading")}
       </div>
     );
   }
@@ -194,12 +197,10 @@ export function TwoFactorSetup() {
             )}
             <div>
               <p className="text-sm font-medium">
-                {enabled ? "2FA включена" : "2FA отключена"}
+                {enabled ? t("statusOn") : t("statusOff")}
               </p>
               <p className="text-xs text-muted-foreground">
-                {enabled
-                  ? "Аккаунт защищён приложением-аутентификатором"
-                  : "Добавьте дополнительную защиту аккаунта"}
+{enabled ? t("protectedHint") : t("addHint")}
               </p>
             </div>
           </div>
@@ -208,14 +209,14 @@ export function TwoFactorSetup() {
               onClick={handleDisable}
               className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
             >
-              Отключить
+              {t("disable")}
             </button>
           ) : (
             <button
               onClick={handleEnroll}
               className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
             >
-              Включить
+              {t("enable")}
             </button>
           )}
         </div>
@@ -224,20 +225,20 @@ export function TwoFactorSetup() {
       {step === "confirming" && qrCode && (
         <div>
           <p className="mb-3 text-sm font-medium">
-            Отсканируйте QR-код в приложении-аутентификаторе
+            {t("scanQr")}
           </p>
           <p className="mb-4 text-xs text-muted-foreground">
-            Google Authenticator, Authy или другое TOTP-приложение
+            {t("appsHint")}
           </p>
 
           <div className="mb-4 flex justify-center rounded-xl bg-white p-4">
-            <img src={qrCode} alt="QR-код для 2FA" className="h-48 w-48" />
+            <img src={qrCode} alt={t("qrAlt")} className="h-48 w-48" />
           </div>
 
           {secret && (
             <div className="mb-4">
               <p className="mb-1 text-xs text-muted-foreground">
-                Или введите ключ вручную:
+                {t("manualKey")}
               </p>
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
                 <code className="flex-1 break-all text-xs font-mono text-gray-700">
@@ -257,7 +258,7 @@ export function TwoFactorSetup() {
             </div>
           )}
 
-          <p className="mb-3 text-sm font-medium">Введите код из приложения</p>
+          <p className="mb-3 text-sm font-medium">{t("enterCode")}</p>
 
           {error && (
             <div className="mb-3 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
@@ -285,7 +286,7 @@ export function TwoFactorSetup() {
           {verifying && (
             <div className="mb-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Проверка...
+              {t("checking")}
             </div>
           )}
 
@@ -299,7 +300,7 @@ export function TwoFactorSetup() {
             }}
             className="w-full rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50"
           >
-            Отмена
+            {tc("cancel")}
           </button>
         </div>
       )}
@@ -307,14 +308,14 @@ export function TwoFactorSetup() {
       {step === "disabling" && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Отключение 2FA...
+          {t("disabling")}
         </div>
       )}
 
       {step === "enrolling" && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Подготовка...
+          {t("preparing")}
         </div>
       )}
     </div>

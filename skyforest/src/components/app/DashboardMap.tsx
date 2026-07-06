@@ -1,14 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { LocateFixed, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { getCurrentPosition } from "@/lib/native/geolocation";
 import type { Location } from "@/lib/supabase/types";
 import type { BestDaySummary } from "@/lib/AppDataContext";
+
+/**
+ * Native: диаметр области (~10 км), на которую зумируется карта при выборе
+ * точки или определении своей геопозиции. `LatLng.toBounds(size)` строит
+ * квадрат со стороной `size` метров вокруг точки — fitBounds по нему даёт
+ * нужный масштаб.
+ */
+const NATIVE_ZOOM_DIAMETER_M = 10_000;
 
 const locationIcon = new L.DivIcon({
   className: "",
@@ -143,6 +154,68 @@ function QueryMarker({
   );
 }
 
+/** Пробрасывает инстанс leaflet-карты наружу (для flyTo из обработчиков). */
+function MapRefBinder({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+    return () => {
+      mapRef.current = null;
+    };
+  }, [map, mapRef]);
+  return null;
+}
+
+/**
+ * Native: FAB «Моя геопозиция» поверх карты. По тапу — getCurrentPosition()
+ * и зум на пользователя (диаметр ~10 км). Zoom-контролы leaflet — слева
+ * сверху, LayersControl — справа сверху, поэтому FAB внизу справа.
+ */
+function LocateButton({ label, deniedMessage }: { label: string; deniedMessage: string }) {
+  const map = useMap();
+  const [locating, setLocating] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  // Тап по кнопке не должен долетать до карты (иначе выберется точка).
+  useEffect(() => {
+    if (!btnRef.current) return;
+    L.DomEvent.disableClickPropagation(btnRef.current);
+  }, []);
+
+  const handleLocate = async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      map.flyToBounds(
+        L.latLng(pos.lat, pos.lng).toBounds(NATIVE_ZOOM_DIAMETER_M),
+        { duration: 0.8 },
+      );
+    } catch {
+      toast.error(deniedMessage);
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  return (
+    <button
+      ref={btnRef}
+      type="button"
+      onClick={handleLocate}
+      aria-label={label}
+      title={label}
+      className="absolute bottom-3 right-3 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-colors hover:bg-gray-100 active:bg-gray-200"
+    >
+      {locating ? (
+        <Loader2 className="h-5 w-5 animate-spin text-emerald-600" aria-hidden="true" />
+      ) : (
+        <LocateFixed className="h-5 w-5" aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
 function FitBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
   const fitted = useRef(false);
@@ -185,9 +258,28 @@ export function DashboardMap({
   const [queryPoint, setQueryPoint] = useState<{ lat: number; lng: number } | null>(null);
   const router = useRouter();
   const tActions = useTranslations("dashboard.mapActions");
+  const tMap = useTranslations("dashboard.map");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const isNative = useIsNative();
+  const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  /**
+   * Native: выбор точки (тап по карте или маркеру) — помимо колбэка наружу,
+   * плавно зумируем карту на точку с областью «диаметр ~10 км».
+   */
+  const handleNativeSelect = useCallback(
+    (sel: MapSelection) => {
+      onPointSelect?.(sel);
+      mapRef.current?.flyToBounds(
+        L.latLng(sel.lat, sel.lng).toBounds(NATIVE_ZOOM_DIAMETER_M),
+        { duration: 0.8 },
+      );
+    },
+    [onPointSelect],
+  );
 
   const locMap = useMemo(
     () => new Map(locations.map((l) => [l.id, l])),
@@ -232,15 +324,15 @@ export function DashboardMap({
   if (!mounted) {
     return (
       <div className="flex h-[300px] sm:h-[360px] items-center justify-center rounded-xl bg-muted">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{tc("loadingMap")}</p>
       </div>
     );
   }
 
   const filterButtons: { value: Filter; label: string }[] = [
-    { value: "all", label: "Все" },
-    { value: "locations", label: "Локации" },
-    { value: "bestDays", label: "Грибные дни" },
+    { value: "all", label: tMap("filterAll") },
+    { value: "locations", label: tMap("locations") },
+    { value: "bestDays", label: tMap("bestDays") },
   ];
 
   return (
@@ -253,10 +345,10 @@ export function DashboardMap({
         attributionControl={false}
       >
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Карта">
+          <LayersControl.BaseLayer checked name={tc("mapLayerMap")}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Спутник">
+          <LayersControl.BaseLayer name={tc("mapLayerSatellite")}>
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               maxZoom={19}
@@ -274,7 +366,7 @@ export function DashboardMap({
                 native
                   ? {
                       click: () =>
-                        onPointSelect?.({
+                        handleNativeSelect({
                           kind: "location",
                           lat: loc.lat,
                           lng: loc.lng,
@@ -304,7 +396,7 @@ export function DashboardMap({
                       textDecoration: "none",
                     }}
                   >
-                    Открыть →
+                    {tMap("open")}
                   </a>
                 </div>
               </Popup>
@@ -325,7 +417,7 @@ export function DashboardMap({
                   native && groupLoc
                     ? {
                         click: () =>
-                          onPointSelect?.({
+                          handleNativeSelect({
                             kind: "bestDay",
                             lat: first.lat,
                             lng: first.lng,
@@ -358,7 +450,7 @@ export function DashboardMap({
                           <div style={{ minWidth: 0 }}>
                             <p style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>{bd.name}</p>
                             <p style={{ color: "#888", fontSize: 11, margin: 0 }}>
-                              {new Date(bd.best_date).toLocaleDateString("ru-RU")}
+                              {new Date(bd.best_date).toLocaleDateString(locale)}
                               {bd.mushroom ? ` · ${bd.mushroom.common_name || bd.mushroom.latin_name}` : ""}
                             </p>
                           </div>
@@ -376,7 +468,7 @@ export function DashboardMap({
                             textDecoration: "none",
                           }}
                         >
-                          Открыть →
+                          {tMap("open")}
                         </a>
                       </div>
                     ))}
@@ -390,12 +482,22 @@ export function DashboardMap({
         <MapClickHandler
           onPick={(lat, lng) => {
             if (native) {
-              onPointSelect?.({ kind: "empty", lat, lng });
+              handleNativeSelect({ kind: "empty", lat, lng });
             } else {
               setQueryPoint({ lat, lng });
             }
           }}
         />
+
+        {native && (
+          <>
+            <MapRefBinder mapRef={mapRef} />
+            <LocateButton
+              label={tActions("locateMe")}
+              deniedMessage={tActions("locateDenied")}
+            />
+          </>
+        )}
 
         {native && nativeSelectedPoint && (
           <Marker
@@ -437,13 +539,13 @@ export function DashboardMap({
           {showLocations && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 rounded-full bg-emerald-500 border border-white shadow-sm" />
-              Локации
+              {tMap("locations")}
             </span>
           )}
           {showBestDays && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 rounded-full bg-amber-500 border border-white shadow-sm" />
-              Грибные дни
+              {tMap("bestDays")}
             </span>
           )}
         </div>

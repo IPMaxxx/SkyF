@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslations } from "next-intl";
 
 const pinIcon = new L.DivIcon({
   className: "",
@@ -21,13 +22,14 @@ interface Props {
 }
 
 export function TourMap({ lat, lng, height = "h-[280px]" }: Props) {
+  const t = useTranslations("common");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
     return (
       <div className={`flex ${height} items-center justify-center rounded-xl bg-muted`}>
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{t("loadingMap")}</p>
       </div>
     );
   }
@@ -42,10 +44,10 @@ export function TourMap({ lat, lng, height = "h-[280px]" }: Props) {
         attributionControl={false}
       >
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Карта">
+          <LayersControl.BaseLayer checked name={t("mapLayerMap")}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Спутник">
+          <LayersControl.BaseLayer name={t("mapLayerSatellite")}>
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               maxZoom={19}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -20,11 +21,14 @@ interface Props {
 }
 
 export function CompareChart({ reference, current, dayScores }: Props) {
+  const t = useTranslations("compare");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const len = Math.min(reference.length, current.length);
 
   const tempData = Array.from({ length: len }, (_, i) => ({
     day: i + 1,
-    date: new Date(current[i].date).toLocaleDateString("ru-RU", {
+    date: new Date(current[i].date).toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
     }),
@@ -34,7 +38,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
 
   const rainData = Array.from({ length: len }, (_, i) => ({
     day: i + 1,
-    date: new Date(current[i].date).toLocaleDateString("ru-RU", {
+    date: new Date(current[i].date).toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
     }),
@@ -44,7 +48,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
 
   const scoreData = Array.from({ length: len }, (_, i) => ({
     day: i + 1,
-    date: new Date(current[i].date).toLocaleDateString("ru-RU", {
+    date: new Date(current[i].date).toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
     }),
@@ -67,7 +71,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
       {/* Temperature comparison */}
       <div className="glass rounded-2xl p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-          Температура: эталон vs текущая
+          {t("chartTempTitle")}
         </h3>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -77,8 +81,8 @@ export function CompareChart({ reference, current, dayScores }: Props) {
               <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit="°" />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
-              <Line type="monotone" dataKey="refTemp" name="Эталон t°" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: "#f59e0b" }} strokeDasharray="6 3" />
-              <Line type="monotone" dataKey="curTemp" name="Текущая t°" stroke="#22d3ee" strokeWidth={2.5} dot={{ r: 3, fill: "#22d3ee" }} />
+              <Line type="monotone" dataKey="refTemp" name={t("chartLegendRefTemp")} stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: "#f59e0b" }} strokeDasharray="6 3" />
+              <Line type="monotone" dataKey="curTemp" name={t("chartLegendCurTemp")} stroke="#22d3ee" strokeWidth={2.5} dot={{ r: 3, fill: "#22d3ee" }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -87,18 +91,18 @@ export function CompareChart({ reference, current, dayScores }: Props) {
       {/* Rain comparison */}
       <div className="glass rounded-2xl p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-          Дождь: эталон vs текущий
+          {t("chartRainTitle")}
         </h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={rainData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} tickLine={false} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit=" мм" />
+              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit={` ${tc("unitMm")}`} />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
-              <Bar dataKey="refRain" name="Эталон (мм)" fill="#f59e0b" opacity={0.6} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="curRain" name="Текущий (мм)" fill="#22d3ee" opacity={0.8} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="refRain" name={t("chartLegendRefRain")} fill="#f59e0b" opacity={0.6} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="curRain" name={t("chartLegendCurRain")} fill="#22d3ee" opacity={0.8} radius={[3, 3, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -107,7 +111,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
       {/* Match score by day */}
       <div className="glass rounded-2xl p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-          Совпадение по дням
+          {t("chartScoreTitle")}
         </h3>
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +122,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
               <Tooltip {...tooltipStyle} />
               <Bar
                 dataKey="score"
-                name="Совпадение %"
+                name={t("chartLegendScore")}
                 radius={[4, 4, 0, 0]}
                 opacity={0.85}
                 fill="#62a863"

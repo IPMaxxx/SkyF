@@ -7,16 +7,22 @@ import type { Location } from "@/lib/supabase/types";
 import { MapPin, Save, Loader2, X, Search } from "lucide-react";
 import { DifficultySelect } from "@/components/app/DifficultySelect";
 import type { LocationDifficulty } from "@/lib/supabase/types";
+import { useTranslations } from "next-intl";
+
+function MapLoading() {
+  const t = useTranslations("common");
+  return (
+    <div className="flex h-[300px] items-center justify-center rounded-xl bg-white/5">
+      <p className="text-sm text-muted-foreground">{t("loadingMap")}</p>
+    </div>
+  );
+}
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[300px] items-center justify-center rounded-xl bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
-      </div>
-    ),
+    loading: () => <MapLoading />,
   }
 );
 
@@ -42,6 +48,8 @@ interface Props {
 }
 
 export function NewLocationModal({ open, onClose, onCreated }: Props) {
+  const t = useTranslations("dashboard.locationForm");
+  const tc = useTranslations("common");
   const [name, setName] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -111,15 +119,15 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!name.trim()) { setError("Введите название локации"); return; }
-    if (lat === null || lng === null) { setError("Кликните на карту, чтобы выбрать точку"); return; }
+    if (!name.trim()) { setError(t("errName")); return; }
+    if (lat === null || lng === null) { setError(t("errPoint")); return; }
 
     setSaving(true);
     setError("");
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("Необходимо авторизоваться"); setSaving(false); return; }
+    if (!user) { setError(tc("authRequired")); setSaving(false); return; }
 
     const { data, error: dbError } = await supabase
       .from("locations")
@@ -128,7 +136,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
       .single();
 
     if (dbError || !data) {
-      setError(dbError?.message || "Ошибка сохранения");
+      setError(dbError?.message || tc("saveError"));
       setSaving(false);
       return;
     }
@@ -150,7 +158,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
               <MapPin className="h-4 w-4 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-semibold">Новая локация</h2>
+            <h2 className="text-lg font-semibold">{t("modalTitle")}</h2>
           </div>
           <button
             type="button"
@@ -164,7 +172,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
         <div className="space-y-4">
           {/* Geocoding search */}
           <div ref={searchRef} className="relative">
-            <label className="mb-1.5 block text-sm font-medium">Поиск по названию</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("searchLabelShort")}</label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -172,7 +180,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
-                placeholder="Город, деревня, улица..."
+                placeholder={t("searchPlaceholderShort")}
                 className="w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchLoading && (
@@ -203,14 +211,14 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
 
           <div>
             <label htmlFor="loc-name" className="mb-1.5 block text-sm font-medium">
-              Название
+              {t("nameLabelShort")}
             </label>
             <input
               id="loc-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Например: Лес у деревни Заречье"
+              placeholder={t("namePlaceholder")}
               className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -219,22 +227,22 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
 
           <div>
             <label htmlFor="modal-loc-desc" className="mb-1.5 block text-sm font-medium">
-              Описание локации
+              {t("descLabel")}
             </label>
             <textarea
               id="modal-loc-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+              placeholder={t("descPlaceholder")}
               rows={2}
               className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Точка на карте</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("pointLabel")}</label>
             <p className="mb-2 text-xs text-muted-foreground">
-              Найдите через поиск или кликните на карту
+              {t("pointHintShort")}
             </p>
             <LocationPicker
               lat={lat}
@@ -246,7 +254,7 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
             />
             {lat !== null && lng !== null && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Координаты: {lat.toFixed(6)}, {lng.toFixed(6)}
+                {t("coords", { coords: `${lat.toFixed(6)}, ${lng.toFixed(6)}` })}
               </p>
             )}
           </div>
@@ -265,14 +273,14 @@ export function NewLocationModal({ open, onClose, onCreated }: Props) {
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Сохранить
+              {tc("save")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
             >
-              Отмена
+              {tc("cancel")}
             </button>
           </div>
         </div>

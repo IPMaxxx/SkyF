@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { X, Coins, Loader2, Store, AlertCircle } from "lucide-react";
-import { getSeasonLabel, getSeason } from "@/lib/supabase/types";
-import type { BestDay } from "@/lib/supabase/types";
+import { getSeason } from "@/lib/supabase/types";
+import type { BestDay, Season } from "@/lib/supabase/types";
+import { useTranslations } from "next-intl";
+
+const SEASON_KEYS: Record<Season, "seasonWinter" | "seasonSpring" | "seasonSummer" | "seasonAutumn"> = {
+  winter: "seasonWinter",
+  spring: "seasonSpring",
+  summer: "seasonSummer",
+  autumn: "seasonAutumn",
+};
 
 const LISTING_FEE = 10;
 
@@ -15,6 +23,8 @@ interface Props {
 }
 
 export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
+  const t = useTranslations("marketplace.sellModal");
+  const tc = useTranslations("common");
   const [price, setPrice] = useState<number>(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,11 +36,11 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
 
   const handleSubmit = async () => {
     if (!hasPhotos) {
-      setError("Добавьте хотя бы одно фото, чтобы выставить на продажу");
+      setError(t("needPhoto"));
       return;
     }
     if (price < 1) {
-      setError("Минимальная цена — 1 токен");
+      setError(t("minPrice"));
       return;
     }
 
@@ -46,7 +56,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Ошибка при выставлении на продажу");
+        setError(data.error || t("listError"));
         setLoading(false);
         return;
       }
@@ -54,7 +64,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
       onListed();
       onClose();
     } catch {
-      setError("Ошибка сети");
+      setError(tc("networkError"));
     } finally {
       setLoading(false);
     }
@@ -100,14 +110,14 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
           {!hasPhotos && (
             <div className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">
               <p className="text-xs text-red-400 font-medium">
-                Добавьте хотя бы одно фото, чтобы выставить на продажу
+                {t("needPhoto")}
               </p>
             </div>
           )}
 
           {/* Price + fees in compact layout */}
           <div className="mb-3">
-            <label className="mb-1 block text-sm font-medium">Цена в токенах</label>
+            <label className="mb-1 block text-sm font-medium">{t("priceLabel")}</label>
             <div className="relative">
               <Coins className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
               <input
@@ -123,16 +133,16 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
           {/* Fees — inline compact */}
           <div className="mb-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs space-y-1">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Размещение:</span>
-              <span className="text-amber-400 font-medium">−{LISTING_FEE} т.</span>
+              <span className="text-muted-foreground">{t("listingFee")}</span>
+              <span className="text-amber-400 font-medium">−{LISTING_FEE} {t("tokensAbbr")}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Комиссия (20%):</span>
-              <span className="text-amber-400 font-medium">−{commission} т.</span>
+              <span className="text-muted-foreground">{t("commission")}</span>
+              <span className="text-amber-400 font-medium">−{commission} {t("tokensAbbr")}</span>
             </div>
             <div className="flex justify-between border-t border-white/10 pt-1">
-              <span className="font-medium">Вы получите:</span>
-              <span className="font-bold text-emerald-400">{price - commission} т.</span>
+              <span className="font-medium">{t("youGet")}</span>
+              <span className="font-bold text-emerald-400">{price - commission} {t("tokensAbbr")}</span>
             </div>
           </div>
 
@@ -140,18 +150,17 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
           <details className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs">
             <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-amber-400 font-medium">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-              Что увидит покупатель
+              {t("buyerSees")}
             </summary>
             <div className="px-3 pb-2 text-amber-300/80 leading-relaxed">
-              <p>Описание, название, сезон ({getSeasonLabel(season)}), фото, вид гриба, тип леса.</p>
-              <p className="mt-1 text-amber-400/70">Скрыто до покупки: координаты, погодный паттерн.</p>
+              <p>{t("buyerSeesBody", { season: tc(SEASON_KEYS[season]) })}</p>
+              <p className="mt-1 text-amber-400/70">{t("hiddenUntilPurchase")}</p>
             </div>
           </details>
 
           {/* Moderation disclaimer */}
           <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground/60">
-            Размещая локацию, вы соглашаетесь, что администратор может удалить объявление.
-            В этом случае {LISTING_FEE} т. за размещение будут возвращены.
+            {t("moderation", { fee: LISTING_FEE })}
           </p>
 
           {error && (
@@ -167,7 +176,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
             onClick={onClose}
             className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
           >
-            Отмена
+            {tc("cancel")}
           </button>
           <button
             onClick={handleSubmit}
@@ -175,7 +184,7 @@ export function SellBestDayModal({ open, onClose, bestDay, onListed }: Props) {
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
-            Выставить за {price} т.
+            {t("submit", { price })}
           </button>
         </div>
       </div>

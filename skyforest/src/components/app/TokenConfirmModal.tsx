@@ -1,6 +1,7 @@
 "use client";
 
 import { Coins, AlertTriangle, Loader2 } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { formatTokenUsd } from "@/lib/tokens";
 
@@ -57,10 +58,11 @@ export function TokenConfirmModal({
   // На вебе всегда false (в т.ч. при гидрации) — веб-вид модалки не меняется.
   // В нативной оболочке дополнительно показываем сумму в долларах, как на сайте.
   const native = useIsNative();
+  const intlLocale = useLocale();
 
   if (!open) return null;
 
-  const L = locale === "en" ? MODAL_UI.en : MODAL_UI.ru;
+  const L = (locale ?? intlLocale) === "en" ? MODAL_UI.en : MODAL_UI.ru;
   const currentBalance = balance ?? 0;
   const afterBalance = free ? currentBalance : currentBalance - cost;
   const notEnough = !free && afterBalance < 0;

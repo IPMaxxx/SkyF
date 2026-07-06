@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LocateFixed, Loader2 } from "lucide-react";
 import { getCurrentPosition } from "@/lib/native/geolocation";
+import { useTranslations } from "next-intl";
 
 const pinIcon = new L.DivIcon({
   className: "",
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSelect }: Props) {
+  const t = useTranslations("common");
   const [mounted, setMounted] = useState(false);
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState("");
@@ -68,7 +70,7 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
       const { lat: gLat, lng: gLng } = await getCurrentPosition();
       onSelect(gLat, gLng);
     } catch {
-      setGeoError("Не удалось определить местоположение");
+      setGeoError(t("geoError"));
     } finally {
       setLocating(false);
     }
@@ -76,7 +78,7 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
   if (!mounted) {
     return (
       <div className="flex h-[400px] items-center justify-center rounded-xl bg-muted">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{t("loadingMap")}</p>
       </div>
     );
   }
@@ -87,8 +89,8 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
         type="button"
         onClick={handleLocate}
         disabled={locating}
-        aria-label="Моё местоположение"
-        title="Моё местоположение"
+        aria-label={t("myLocation")}
+        title={t("myLocation")}
         className="absolute bottom-3 right-3 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors hover:bg-primary-dark disabled:opacity-60"
       >
         {locating ? (
@@ -110,10 +112,10 @@ export function LocationPicker({ lat, lng, flyToLat, flyToLng, flyToZoom, onSele
         attributionControl={false}
       >
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Карта">
+          <LayersControl.BaseLayer checked name={t("mapLayerMap")}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Спутник">
+          <LayersControl.BaseLayer name={t("mapLayerSatellite")}>
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               maxZoom={19}

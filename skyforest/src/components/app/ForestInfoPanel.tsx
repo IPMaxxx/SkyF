@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useLocale } from "next-intl";
 import type { ForestInfo, TreeSpecies } from "@/lib/supabase/types";
 import {
   Trees, Leaf, Loader2, RefreshCw, ChevronDown, ChevronUp,
@@ -129,7 +130,8 @@ const UI = {
 } as const;
 
 export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded, autoLoad, locale }: Props) {
-  const lang: Lang = locale === "en" ? "en" : "ru";
+  const intlLocale = useLocale();
+  const lang: Lang = (locale ?? intlLocale) === "en" ? "en" : "ru";
   const T = UI[lang];
   const [info, setInfo] = useState<ForestInfo | null>(initial);
   const [loading, setLoading] = useState(false);

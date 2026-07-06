@@ -123,7 +123,7 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
           <div className="mt-4 rounded-xl bg-primary/10 px-4 py-3 text-center">
             <p className="text-xs text-muted-foreground">{t("public.startsIn")}</p>
             <p className="font-mono text-2xl font-bold text-primary-light">
-              {formatCountdown(startMs - now)}
+              {formatCountdown(startMs - now, locale)}
             </p>
           </div>
         )}
@@ -131,7 +131,7 @@ export function TourPublicView({ tour }: { tour: MushroomTour }) {
           <div className="mt-4 rounded-xl bg-emerald-500/15 px-4 py-3 text-center">
             <p className="text-xs text-emerald-300/80">{t("timeLeft")}</p>
             <p className="font-mono text-2xl font-bold text-emerald-400">
-              {formatCountdown(endMs - now)}
+              {formatCountdown(endMs - now, locale)}
             </p>
           </div>
         )}
