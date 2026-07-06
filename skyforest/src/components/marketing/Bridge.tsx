@@ -117,7 +117,7 @@ export async function Bridge() {
                           {t("mockRain")}
                         </p>
                         <p className="text-sm font-semibold text-white">
-                          12 мм
+                          {t("mockRainValue")}
                         </p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
@@ -125,7 +125,7 @@ export async function Bridge() {
                           {t("mockWind")}
                         </p>
                         <p className="text-sm font-semibold text-white">
-                          3 м/с
+                          {t("mockWindValue")}
                         </p>
                       </div>
                     </div>

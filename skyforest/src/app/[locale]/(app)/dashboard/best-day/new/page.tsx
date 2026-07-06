@@ -15,6 +15,7 @@ import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Star,
   ArrowLeft,
@@ -38,6 +39,9 @@ interface MushroomResult {
 
 export default function NewBestDayPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("dashboard.bestDayForm");
+  const tc = useTranslations("common");
   const { locations, loading: appLoading, addLocation, updateLocation, addBestDay } = useAppData();
   const [selectedLocId, setSelectedLocId] = useState("");
   const [name, setName] = useState("");
@@ -70,26 +74,26 @@ export default function NewBestDayPage() {
 
   const requestGetData = () => {
     if (!name.trim()) {
-      setError("Введите название для этого лучшего дня");
+      setError(t("errName"));
       return;
     }
     if (!selectedLocation || !selectedLocId) {
-      setError("Выберите локацию");
+      setError(t("errLocation"));
       return;
     }
     if (!bestDate) {
-      setError("Укажите дату");
+      setError(t("errDate"));
       return;
     }
     const selected = new Date(`${bestDate}T00:00:00`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (Number.isNaN(selected.getTime()) || selected.getTime() > today.getTime()) {
-      setError("Дата грибного дня не может быть в будущем");
+      setError(t("errDateFuture"));
       return;
     }
     if (!mushroom) {
-      setError("Выберите вид гриба");
+      setError(t("errMushroom"));
       return;
     }
     setError("");
@@ -103,7 +107,7 @@ export default function NewBestDayPage() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Необходимо авторизоваться");
+      setError(tc("authRequired"));
       setSaving(false);
       return;
     }
@@ -131,7 +135,7 @@ export default function NewBestDayPage() {
         .single();
 
       if (mErr || !newMushroom) {
-        setError("Ошибка сохранения вида гриба: " + (mErr?.message || ""));
+        setError(t("errSaveMushroom") + (mErr?.message || ""));
         setSaving(false);
         return;
       }
@@ -170,7 +174,7 @@ export default function NewBestDayPage() {
       } as never);
     }
 
-    toast.success("Грибной день сохранён");
+    toast.success(t("toastSaved"));
     router.push("/dashboard");
     router.refresh();
   };
@@ -190,31 +194,31 @@ export default function NewBestDayPage() {
       );
       const data = await res.json();
       if (!res.ok || data.error) {
-        setError(data.error || "Ошибка загрузки данных о погоде");
+        setError(data.error || t("errWeatherLoad"));
         setLoadingWeather(false);
         return;
       }
       if (!Array.isArray(data.days) || data.days.length === 0) {
-        setError("Не удалось получить данные о погоде");
+        setError(t("errWeatherFetch"));
         setLoadingWeather(false);
         return;
       }
       days = data.days as WeatherDay[];
     } catch {
-      setError("Ошибка загрузки данных о погоде");
+      setError(t("errWeatherLoad"));
       setLoadingWeather(false);
       return;
     }
 
     // Списываем токены только после того, как погода успешно получена —
     // чтобы ошибка API (например, дата вне допустимого диапазона) не сжигала баланс.
-    const spendResult = await spend("best_day_create", "Загрузка погоды для грибного дня");
+    const spendResult = await spend("best_day_create", t("spendReason"));
     if (!spendResult.success) {
-      setError(spendResult.error || "Недостаточно токенов");
+      setError(spendResult.error || t("errNotEnoughTokens"));
       setLoadingWeather(false);
       return;
     }
-    toast.success(`Списан ${TOKEN_COSTS.best_day_create} токен`);
+    toast.success(t("toastCharged", { n: TOKEN_COSTS.best_day_create }));
 
     setWeatherDays(days);
     try {
@@ -234,7 +238,7 @@ export default function NewBestDayPage() {
     setGeoWarnings([]);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("Необходимо авторизоваться"); setUploadingPhoto(false); return; }
+    if (!user) { setError(tc("authRequired")); setUploadingPhoto(false); return; }
 
     const tempId = savedBestDayId || "new";
     const newUrls: string[] = [];
@@ -245,7 +249,7 @@ export default function NewBestDayPage() {
         const geoCheck = await checkPhotoLocation(file, selectedLocation.lat, selectedLocation.lng);
         if (!geoCheck.ok) {
           warnings.push(
-            `${file.name}: фото из другой локации (${geoCheck.distance} км от указанной точки)`
+            t("photoOtherLocation", { file: file.name, km: geoCheck.distance ?? 0 })
           );
           continue;
         }
@@ -259,7 +263,7 @@ export default function NewBestDayPage() {
         .upload(path, file, { cacheControl: "3600", upsert: false });
 
       if (uploadErr) {
-        setError(`Ошибка загрузки: ${uploadErr.message}`);
+        setError(t("errUpload", { msg: uploadErr.message }));
         continue;
       }
 
@@ -289,23 +293,23 @@ export default function NewBestDayPage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setError("Введите название для этого лучшего дня");
+      setError(t("errName"));
       return;
     }
     if (!selectedLocId) {
-      setError("Выберите локацию");
+      setError(t("errLocation"));
       return;
     }
     if (!bestDate) {
-      setError("Укажите дату");
+      setError(t("errDate"));
       return;
     }
     if (!mushroom) {
-      setError("Выберите вид гриба");
+      setError(t("errMushroom"));
       return;
     }
     if (weatherDays.length === 0) {
-      setError("Сначала нажмите «Загрузить погоду» для загрузки погодных данных");
+      setError(t("errWeatherFirst"));
       return;
     }
     setError("");
@@ -319,7 +323,7 @@ export default function NewBestDayPage() {
         className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад
+        {tc("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
@@ -327,20 +331,19 @@ export default function NewBestDayPage() {
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">Грибной день</h1>
+          <h1 className="text-lg sm:text-xl font-bold">{t("newTitle")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Запишите удачный день сбора грибов
+            {t("newSubtitle")}
           </p>
         </div>
       </div>
 
       <div className="mb-4 sm:mb-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 sm:p-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Вспомните день, когда вы нашли много грибов. Укажите дату и локацию — мы загрузим погоду за тот период.
-          Этот погодный «отпечаток» станет эталоном: система будет искать похожие условия и оповестит вас.
+          {t("intro")}
         </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">Стоимость — 2 токена</span>
+          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("costBadge")}</span>
         </div>
       </div>
 
@@ -348,24 +351,24 @@ export default function NewBestDayPage() {
         {/* Name */}
         <div className="glass rounded-2xl p-5">
           <label htmlFor="bd-name" className="mb-1.5 block text-sm font-medium">
-            Название
+            {t("nameLabel")}
           </label>
           <input
             id="bd-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Например: Удачный сбор боровиков в Логойске"
+            placeholder={t("namePlaceholder")}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
 
         {/* Location — dropdown */}
         <div className="glass rounded-2xl p-5">
-          <label htmlFor="bd-location" className="mb-1.5 block text-sm font-medium">Локация</label>
+          <label htmlFor="bd-location" className="mb-1.5 block text-sm font-medium">{t("locationLabel")}</label>
           {loadingLocs ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Загрузка...
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("loading")}
             </div>
           ) : (
             <div className="flex gap-2">
@@ -383,14 +386,14 @@ export default function NewBestDayPage() {
                   }}
                   className="w-full appearance-none rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                  {locations.length === 0 && <option value="" disabled>Нет локаций</option>}
-                  {locations.length > 0 && <option value="" disabled>Выберите локацию</option>}
+                  {locations.length === 0 && <option value="" disabled>{t("noLocations")}</option>}
+                  {locations.length > 0 && <option value="" disabled>{t("selectLocation")}</option>}
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>
                       {loc.name} ({loc.lat.toFixed(4)}, {loc.lng.toFixed(4)})
                     </option>
                   ))}
-                  <option value="__new__">+ Создать новую локацию</option>
+                  <option value="__new__">{t("createNewLocation")}</option>
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,7 +408,7 @@ export default function NewBestDayPage() {
         {/* Forest Info */}
         {selectedLocation && (
           <div className="glass rounded-2xl p-5">
-            <label className="mb-1.5 block text-sm font-medium">Информация о лесе</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("forestInfoLabel")}</label>
             <ForestInfoPanel
               lat={selectedLocation.lat}
               lng={selectedLocation.lng}
@@ -435,7 +438,7 @@ export default function NewBestDayPage() {
         {/* Date */}
         <div className="glass rounded-2xl p-5">
           <label htmlFor="bd-date" className="mb-1.5 block text-sm font-medium">
-            Дата лучшего дня
+            {t("dateLabel")}
           </label>
           <input
             id="bd-date"
@@ -446,14 +449,14 @@ export default function NewBestDayPage() {
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            День, когда вы нашли много грибов (не может быть в будущем)
+            {t("dateHint")}
           </p>
         </div>
 
         {/* Mushroom */}
         <div className="glass rounded-2xl p-5">
           <label className="mb-2 block text-sm font-medium">
-            Основной гриб
+            {t("mushroomLabel")}
           </label>
           <MushroomSearch value={mushroom} onChange={setMushroom} />
         </div>
@@ -462,7 +465,7 @@ export default function NewBestDayPage() {
         <div className="glass rounded-2xl p-5">
           <label className="mb-2 block text-sm font-medium">
             <Camera className="mr-1 inline h-4 w-4" />
-            Фото
+            {t("photosLabel")}
           </label>
 
           {photos.length > 0 && (
@@ -507,7 +510,7 @@ export default function NewBestDayPage() {
             ) : (
               <ImagePlus className="h-4 w-4" />
             )}
-            {uploadingPhoto ? "Загрузка..." : "Добавить фото"}
+            {uploadingPhoto ? t("uploading") : t("addPhoto")}
           </button>
 
           {geoWarnings.length > 0 && (
@@ -534,16 +537,16 @@ export default function NewBestDayPage() {
             <Save className="h-4 w-4" />
           )}
           {loadingWeather
-            ? "Загрузка погоды..."
+            ? t("loadingWeather")
             : saving
-              ? "Сохранение..."
-              : `Сохранить погоду · ${TOKEN_COSTS.best_day_create} токена`}
+              ? t("saving")
+              : t("saveWeatherBtn", { n: TOKEN_COSTS.best_day_create })}
         </button>
 
         <TokenConfirmModal
           open={showConfirmGetData}
-          title="Сохранить грибной день"
-          description="Система загрузит данные о погоде за 14 дней для выбранной локации и даты, и сохранит грибной день."
+          title={t("confirmTitle")}
+          description={t("confirmDesc")}
           cost={TOKEN_COSTS.best_day_create}
           balance={balance}
           loading={loadingWeather || saving}
@@ -559,26 +562,26 @@ export default function NewBestDayPage() {
           <div className="overflow-hidden glass rounded-2xl">
             <div className="border-b border-white/10 bg-white/5 px-4 py-3">
               <p className="text-sm font-medium">
-                Эталонный погодный паттерн ({weatherDays.length} дней)
+                {t("patternTitleNew", { n: weatherDays.length })}
               </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/3 text-left">
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">День</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дата</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableDay")}</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableDate")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Thermometer className="mr-0.5 inline h-3 w-3" /> t° макс
+                      <Thermometer className="mr-0.5 inline h-3 w-3" /> {t("tableTMax")}
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° мин</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableTMin")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Droplets className="mr-0.5 inline h-3 w-3" /> Дождь
+                      <Droplets className="mr-0.5 inline h-3 w-3" /> {t("tableRain")}
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° ср.</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Влажн.</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableTMean")}</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableHumidity")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Wind className="mr-0.5 inline h-3 w-3" /> Ветер
+                      <Wind className="mr-0.5 inline h-3 w-3" /> {t("tableWind")}
                     </th>
                   </tr>
                 </thead>
@@ -587,7 +590,7 @@ export default function NewBestDayPage() {
                     <tr key={d.date} className={`border-b border-white/10 ${i === weatherDays.length - 1 ? "bg-amber-500/10 font-medium" : ""}`}>
                       <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
                       <td className="whitespace-nowrap px-3 py-2">
-                        {new Date(d.date).toLocaleDateString("ru-RU", {
+                        {new Date(d.date).toLocaleDateString(locale, {
                           day: "numeric",
                           month: "short",
                         })}
@@ -598,7 +601,7 @@ export default function NewBestDayPage() {
                       <td className="px-3 py-2 text-blue-400">
                         {d.temperature_min !== null ? `${d.temperature_min.toFixed(1)}°` : "—"}
                       </td>
-                      <td className="px-3 py-2">{d.rain_sum.toFixed(1)} мм</td>
+                      <td className="px-3 py-2">{d.rain_sum.toFixed(1)} {tc("unitMm")}</td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.temperature_mean !== null ? `${d.temperature_mean.toFixed(1)}°` : "—"}
                       </td>
@@ -606,7 +609,7 @@ export default function NewBestDayPage() {
                         {d.relative_humidity_mean != null ? `${Math.round(d.relative_humidity_mean)}%` : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {d.wind_speed_max != null ? `${d.wind_speed_max.toFixed(0)} км/ч` : "—"}
+                        {d.wind_speed_max != null ? `${d.wind_speed_max.toFixed(0)} ${tc("unitKmH")}` : "—"}
                       </td>
                     </tr>
                   ))}

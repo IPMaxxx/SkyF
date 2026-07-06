@@ -8,12 +8,13 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft, Trees, Search, Loader2, MapPin, Crosshair, Leaf, Satellite,
   Database, ChevronDown, ChevronUp, CloudSun, Save, Check,
-  Thermometer, Droplets, Wind, Info, Globe, History, RotateCcw, Trash2,
+  Thermometer, Droplets, Wind, Globe, History, RotateCcw, Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { HowItWorksPopover } from "@/components/app/HowItWorksPopover";
 import { toast } from "sonner";
 import type { WeatherDay } from "@/lib/supabase/types";
 import type { ForestMatch, ForestPattern, ScoreBreakdown } from "@/app/api/forest-search/route";
@@ -90,8 +91,6 @@ export default function ForestSearchPage() {
   const [weatherLoadedSet, setWeatherLoadedSet] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
   const [savedSet, setSavedSet] = useState<Set<number>>(new Set());
-  const [showDetails, setShowDetails] = useState(false);
-
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -294,31 +293,9 @@ export default function ForestSearchPage() {
             {step === "results" && t("stepResults", { count: matches.length })}
           </p>
         </div>
-        {history.length > 0 && (
-          <button
-            onClick={() => setShowHistory((v) => !v)}
-            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-sm font-medium transition-colors flex-shrink-0 ${showHistory ? "bg-blue-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20 hover:text-foreground"}`}
-          >
-            <History className="h-4 w-4" />
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">{history.length}</span>
-          </button>
-        )}
-      </div>
-
-      {/* How it works */}
-      <div className="mb-6 rounded-xl border border-border bg-white/[0.02] p-4 space-y-3 text-sm">
-        <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-          <div className="space-y-1.5 text-xs text-muted-foreground leading-relaxed">
-            <p><span className="text-foreground/80 font-medium">1.</span> {t("howStep1")}</p>
-            <p><span className="text-foreground/80 font-medium">2.</span> {t("howStep2")}</p>
-          </div>
-        </div>
-        <button onClick={() => setShowDetails((v) => !v)} className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
-          {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {showDetails ? t("detailsHide") : t("detailsShow")}
-        </button>
-        {showDetails && (
+        <HowItWorksPopover>
+          <p><span className="text-foreground/80 font-medium">1.</span> {t("howStep1")}</p>
+          <p><span className="text-foreground/80 font-medium">2.</span> {t("howStep2")}</p>
           <div className="space-y-4 pt-2 border-t border-border/30">
             <div>
               <h3 className="font-semibold text-foreground mb-1 text-xs">{t("sourcesTitle")}</h3>
@@ -358,6 +335,15 @@ export default function ForestSearchPage() {
               </div>
             </div>
           </div>
+        </HowItWorksPopover>
+        {history.length > 0 && (
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-sm font-medium transition-colors flex-shrink-0 ${showHistory ? "bg-blue-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20 hover:text-foreground"}`}
+          >
+            <History className="h-4 w-4" />
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">{history.length}</span>
+          </button>
         )}
       </div>
 
@@ -519,7 +505,7 @@ export default function ForestSearchPage() {
                   <button key={r} onClick={() => setRadiusKm(r)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${radiusKm === r ? "bg-emerald-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20"}`}
                   >
-                    {r} км <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{t("tokenShort", { n: cost })}</span>
+                    {r} {t("unitKm")} <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{t("tokenShort", { n: cost })}</span>
                   </button>
                 );
               })}

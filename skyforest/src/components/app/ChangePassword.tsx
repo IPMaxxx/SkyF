@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "next-intl";
 import { Lock, Loader2, Check } from "lucide-react";
 
 export function ChangePassword() {
+  const t = useTranslations("account.pw");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,11 +19,11 @@ export function ChangePassword() {
     setSuccess(false);
 
     if (newPassword.length < 6) {
-      setError("Минимум 6 символов");
+      setError(t("minChars"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Пароли не совпадают");
+      setError(t("mismatch"));
       return;
     }
 
@@ -46,7 +48,7 @@ export function ChangePassword() {
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label htmlFor="new-pass" className="mb-1.5 block text-sm font-medium">
-          Новый пароль
+          {t("newLabel")}
         </label>
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -55,7 +57,7 @@ export function ChangePassword() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Минимум 6 символов"
+            placeholder={t("newPlaceholder")}
             minLength={6}
             required
             className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -65,7 +67,7 @@ export function ChangePassword() {
 
       <div>
         <label htmlFor="confirm-pass" className="mb-1.5 block text-sm font-medium">
-          Подтвердите пароль
+          {t("confirmLabel")}
         </label>
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -74,7 +76,7 @@ export function ChangePassword() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Повторите пароль"
+            placeholder={t("confirmPlaceholder")}
             minLength={6}
             required
             className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -91,7 +93,7 @@ export function ChangePassword() {
       {success && (
         <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 p-3 text-sm text-green-400">
           <Check className="h-4 w-4" />
-          Пароль успешно изменён
+          {t("changed")}
         </div>
       )}
 
@@ -101,7 +103,7 @@ export function ChangePassword() {
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-        Изменить пароль
+        {t("submit")}
       </button>
     </form>
   );

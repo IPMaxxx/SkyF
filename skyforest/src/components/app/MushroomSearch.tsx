@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Search, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface MushroomResult {
   inaturalist_id: number;
@@ -54,6 +55,7 @@ function DropdownPortal({
 }
 
 export function MushroomSearch({ value, onChange }: Props) {
+  const t = useTranslations("dashboard.mushroomSearch");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MushroomResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,7 +160,7 @@ export function MushroomSearch({ value, onChange }: Props) {
           value={query}
           onChange={(e) => handleInput(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Начните вводить название гриба (рус., лат., англ.)..."
+          placeholder={t("placeholder")}
           className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
           autoComplete="off"
           autoCorrect="off"
@@ -205,7 +207,7 @@ export function MushroomSearch({ value, onChange }: Props) {
             </div>
           ) : (
             <div className="rounded-xl border border-white/15 bg-zinc-900 p-4 text-center text-sm text-zinc-400 shadow-2xl">
-              Ничего не найдено
+              {t("nothingFound")}
             </div>
           )}
         </DropdownPortal>

@@ -118,4 +118,20 @@ export default {
   rolePartnerSeller: "seller",
   rolePartnerBuyer: "buyer",
   chatSendError: "Failed to send",
+  sellModal: {
+    needPhoto: "Add at least one photo to put it up for sale",
+    minPrice: "The minimum price is 1 token",
+    listError: "Failed to create the listing",
+    priceLabel: "Price in tokens",
+    listingFee: "Listing fee:",
+    commission: "Commission (20%):",
+    youGet: "You’ll receive:",
+    tokensAbbr: "tok.",
+    buyerSees: "What the buyer will see",
+    buyerSeesBody: "Description, name, season ({season}), photos, mushroom species, forest type.",
+    hiddenUntilPurchase: "Hidden until purchase: coordinates, weather pattern.",
+    moderation:
+      "By listing a location you agree that an administrator may remove the listing. In that case the {fee} tok. listing fee will be refunded.",
+    submit: "List for {price} tok.",
+  },
 } as const;

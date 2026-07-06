@@ -11,21 +11,30 @@ import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import { DifficultySelect } from "@/components/app/DifficultySelect";
 import { useAppData } from "@/lib/AppDataContext";
 import type { LocationDifficulty } from "@/lib/supabase/types";
+import { useLocale, useTranslations } from "next-intl";
+
+function MapLoading() {
+  const t = useTranslations("common");
+  return (
+    <div className="flex h-[400px] items-center justify-center rounded-xl bg-white/5">
+      <p className="text-sm text-muted-foreground">{t("loadingMap")}</p>
+    </div>
+  );
+}
 
 const LocationPicker = dynamic(
   () => import("@/components/app/LocationPicker").then((m) => m.LocationPicker),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[400px] items-center justify-center rounded-xl bg-white/5">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
-      </div>
-    ),
+    loading: () => <MapLoading />,
   }
 );
 
 export default function EditLocationPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("dashboard.locationForm");
+  const tc = useTranslations("common");
   const params = useParams();
   const id = params.id as string;
   const { removeLocation, updateLocation: updateLocationCtx, refreshBestDays } = useAppData();
@@ -68,8 +77,8 @@ export default function EditLocationPage() {
   }, [id]);
 
   const handleSave = async () => {
-    if (!name.trim()) { setError("Введите название"); return; }
-    if (lat === null || lng === null) { setError("Выберите точку на карте"); return; }
+    if (!name.trim()) { setError(t("errNameShort")); return; }
+    if (lat === null || lng === null) { setError(t("errPointShort")); return; }
 
     setSaving(true);
     setError("");
@@ -112,9 +121,9 @@ export default function EditLocationPage() {
   if (!location) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8 text-center">
-        <p className="text-muted-foreground">Локация не найдена</p>
+        <p className="text-muted-foreground">{t("notFound")}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Назад
+          {tc("back")}
         </Link>
       </div>
     );
@@ -127,7 +136,7 @@ export default function EditLocationPage() {
         className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад
+        {tc("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
@@ -135,9 +144,9 @@ export default function EditLocationPage() {
           <MapPin className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">Редактировать локацию</h1>
+          <h1 className="text-lg sm:text-xl font-bold">{t("editTitle")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Создана {new Date(location.created_at).toLocaleDateString("ru-RU")}
+            {t("createdAt", { date: new Date(location.created_at).toLocaleDateString(locale) })}
           </p>
         </div>
       </div>
@@ -145,7 +154,7 @@ export default function EditLocationPage() {
       <div className="space-y-4">
         <div>
           <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-            Название локации
+            {t("nameLabel")}
           </label>
           <input
             id="name"
@@ -160,27 +169,27 @@ export default function EditLocationPage() {
 
         <div>
           <label htmlFor="loc-desc" className="mb-1.5 block text-sm font-medium">
-            Описание локации
+            {t("descLabel")}
           </label>
           <textarea
             id="loc-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Опишите особенности: подъезд, тропы, ориентиры..."
+            placeholder={t("descPlaceholder")}
             rows={3}
             className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary resize-none"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium">Точка на карте</label>
+          <label className="mb-1.5 block text-sm font-medium">{t("pointLabel")}</label>
           <p className="mb-2 text-xs text-muted-foreground">
-            Кликните на карту, чтобы переместить пин
+            {t("pointHintEdit")}
           </p>
           <LocationPicker lat={lat} lng={lng} onSelect={(la, ln) => { setLat(la); setLng(ln); }} />
           {lat !== null && lng !== null && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Координаты: {lat.toFixed(6)}, {lng.toFixed(6)}
+              {t("coords", { coords: `${lat.toFixed(6)}, ${lng.toFixed(6)}` })}
             </p>
           )}
         </div>
@@ -188,7 +197,7 @@ export default function EditLocationPage() {
         {/* Forest Info */}
         {lat !== null && lng !== null && (
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Информация о лесе</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("forestInfoLabel")}</label>
             <ForestInfoPanel
               lat={lat}
               lng={lng}
@@ -217,14 +226,14 @@ export default function EditLocationPage() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Сохранить изменения
+          {t("saveChanges")}
         </button>
 
         <div className="border-t border-white/10 pt-4">
           {showDeleteConfirm ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
               <p className="mb-3 text-sm text-red-400">
-                Удалить локацию «{location.name}»? Все связанные грибные дни тоже будут удалены.
+                {t("deleteConfirm", { name: location.name })}
               </p>
               <div className="flex gap-2">
                 <button
@@ -234,14 +243,14 @@ export default function EditLocationPage() {
                   className="flex items-center gap-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
                 >
                   {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Да, удалить
+                  {t("yesDelete")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-foreground hover:bg-red-500/10"
                 >
-                  Отмена
+                  {tc("cancel")}
                 </button>
               </div>
             </div>
@@ -252,7 +261,7 @@ export default function EditLocationPage() {
               className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300"
             >
               <Trash2 className="h-4 w-4" />
-              Удалить локацию
+              {t("deleteLocation")}
             </button>
           )}
         </div>

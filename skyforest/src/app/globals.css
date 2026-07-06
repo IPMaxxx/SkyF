@@ -206,6 +206,25 @@ table th {
   }
 }
 
+/* Track page: pulsing "you are here" dot on the leaflet map */
+@keyframes sf-track-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+.sf-track-pulse {
+  animation: sf-track-pulse 2s ease-out infinite;
+}
+
 /* Better touch targets on mobile */
 @media (max-width: 640px) {
   select,

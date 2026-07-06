@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
 import { TOKEN_WITHDRAW_RATE } from "@/lib/tokens";
 import {
@@ -28,6 +28,8 @@ const MIN_REMAINING = 50;
 
 export default function WithdrawPage() {
   const locale = useLocale();
+  const tw = useTranslations("payment.withdraw");
+  const tc = useTranslations("common");
   const { realBalance, bonusBalance, refresh } = useTokens();
   const [amount, setAmount] = useState<number>(MIN_WITHDRAW);
   const [method, setMethod] = useState<string>("card");
@@ -51,19 +53,19 @@ export default function WithdrawPage() {
 
   const handleSubmit = async () => {
     if (amount < MIN_WITHDRAW) {
-      setError(`Минимальная сумма вывода — ${MIN_WITHDRAW} токенов`);
+      setError(tw("errMin", { min: MIN_WITHDRAW }));
       return;
     }
     if (amount > maxAmount) {
-      setError(`Максимум для вывода — ${maxAmount} токенов (на балансе должно остаться ${MIN_REMAINING})`);
+      setError(tw("errMax", { max: maxAmount, remaining: MIN_REMAINING }));
       return;
     }
     if (!details.trim()) {
-      setError("Укажите реквизиты для вывода");
+      setError(tw("errDetails"));
       return;
     }
     if (!fullName.trim()) {
-      setError("Укажите ФИО получателя");
+      setError(tw("errFullName"));
       return;
     }
 
@@ -76,7 +78,7 @@ export default function WithdrawPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          method: `${currentMethodLabel}${fullName ? ` | ${locale === "en" ? "Name" : "ФИО"}: ${fullName}` : ""}`,
+          method: `${currentMethodLabel}${fullName ? ` | ${tw("fullNameShort")}: ${fullName}` : ""}`,
           details: details.trim(),
           comment: comment.trim() || undefined,
         }),
@@ -84,7 +86,7 @@ export default function WithdrawPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Ошибка при оформлении заявки");
+        setError(data.error || tw("errSubmit"));
         setLoading(false);
         return;
       }
@@ -93,7 +95,7 @@ export default function WithdrawPage() {
       setSuccess(true);
       refresh();
     } catch {
-      setError("Ошибка сети");
+      setError(tc("networkError"));
     } finally {
       setLoading(false);
     }
@@ -106,20 +108,20 @@ export default function WithdrawPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
             <CheckCircle className="h-8 w-8 text-emerald-400" />
           </div>
-          <h1 className="mb-2 text-xl font-bold">Заявка отправлена</h1>
+          <h1 className="mb-2 text-xl font-bold">{tw("successTitle")}</h1>
           <p className="mb-1 text-muted-foreground">
-            Вы запросили вывод <strong className="text-amber-400">{withdrawn} токенов</strong>{" "}
+            {tw("successRequested")} <strong className="text-amber-400">{tw("successTokens", { n: withdrawn })}</strong>{" "}
             (~{(withdrawn * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})
           </p>
           <p className="mb-6 text-sm text-muted-foreground">
-            Мы свяжемся с вами по email для уточнения деталей. Обычно обработка занимает 1–3 рабочих дня.
+            {tw("successBody")}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"
               className="rounded-xl bg-primary/20 px-6 py-2.5 text-sm font-medium text-primary-light transition-colors hover:bg-primary/30"
             >
-              На главную
+              {tw("goHome")}
             </Link>
             <button
               onClick={() => {
@@ -132,7 +134,7 @@ export default function WithdrawPage() {
               }}
               className="rounded-xl border border-border px-6 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
             >
-              Новая заявка
+              {tw("newRequest")}
             </button>
           </div>
         </div>
@@ -145,52 +147,51 @@ export default function WithdrawPage() {
       <div className="mb-6">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <ArrowDownToLine className="h-5 w-5 text-emerald-400" />
-          Вывод токенов
+          {tw("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Обменяйте заработанные токены на деньги
+          {tw("subtitle")}
         </p>
       </div>
 
       {/* Current balance */}
       <div className="glass mb-6 rounded-2xl p-5">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Ваш баланс</span>
+          <span className="text-sm text-muted-foreground">{tw("yourBalance")}</span>
           <div className="text-right">
             <span className="flex items-center gap-1.5 text-lg font-bold text-amber-400">
               <Coins className="h-5 w-5" />
-              {totalBalance} токенов
+              {totalBalance} {tw("tokensPlural")}
             </span>
             <p className="text-xs text-muted-foreground">~{(totalBalance * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</p>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Минимальный остаток: {MIN_REMAINING} токенов</span>
-          <span>Доступно к выводу: <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
+          <span>{tw("minRemaining", { n: MIN_REMAINING })}</span>
+          <span>{tw("availableFor")} <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
         </div>
         {(bonusBalance ?? 0) > 0 && (
           <div className="mt-2 text-xs text-muted-foreground">
-            + {bonusBalance} бонусных токенов (не подлежат выводу)
+            {tw("bonusNotWithdrawable", { n: bonusBalance ?? 0 })}
           </div>
         )}
         <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
-          Курс вывода: <strong className="text-foreground">1 токен = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
+          {tw("rateLabel")}: <strong className="text-foreground">1 {tw("rateToken")} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
         </div>
       </div>
 
       {maxAmount < MIN_WITHDRAW ? (
         <div className="glass rounded-2xl p-6 text-center">
           <AlertCircle className="mx-auto mb-3 h-8 w-8 text-amber-400" />
-          <p className="mb-2 font-medium">Недостаточно токенов для вывода</p>
+          <p className="mb-2 font-medium">{tw("notEnoughTitle")}</p>
           <p className="mb-4 text-sm text-muted-foreground">
-            На балансе должно быть больше {MIN_REMAINING + MIN_WITHDRAW} токенов (минимальный остаток — {MIN_REMAINING}, минимальный вывод — {MIN_WITHDRAW}).
-            Зарабатывайте токены, размещая грибные локации на маркетплейсе или приглашая друзей.
+            {tw("notEnoughBody", { total: MIN_REMAINING + MIN_WITHDRAW, remaining: MIN_REMAINING, min: MIN_WITHDRAW })}
           </p>
           <Link
             href="/dashboard/referral"
             className="inline-flex items-center gap-2 rounded-xl bg-primary/20 px-5 py-2.5 text-sm font-medium text-primary-light transition-colors hover:bg-primary/30"
           >
-            Пригласить друга
+            {tw("inviteFriend")}
           </Link>
         </div>
       ) : (
@@ -198,7 +199,7 @@ export default function WithdrawPage() {
           {/* Amount */}
           <div className="mb-5">
             <label className="mb-1.5 block text-sm font-medium">
-              Сумма вывода (токены)
+              {tw("amountLabel")}
             </label>
             <div className="relative">
               <Coins className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
@@ -216,18 +217,18 @@ export default function WithdrawPage() {
               />
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-              <span>Мин. {MIN_WITHDRAW}, макс. {maxAmount} токенов</span>
+              <span>{tw("minMax", { min: MIN_WITHDRAW, max: maxAmount })}</span>
               <button
                 type="button"
                 onClick={() => setAmount(maxAmount)}
                 className="text-primary-light hover:underline"
               >
-                Максимум ({maxAmount})
+                {tw("maxBtn", { n: maxAmount })}
               </button>
             </div>
             {amount >= MIN_WITHDRAW && (
               <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center text-sm">
-                <span className="text-muted-foreground">Сумма к выплате: </span>
+                <span className="text-muted-foreground">{tw("payoutAmount")}</span>
                 <strong className="text-emerald-400">{(amount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</strong>
               </div>
             )}
@@ -235,7 +236,7 @@ export default function WithdrawPage() {
 
           {/* Method */}
           <div className="mb-5">
-            <label className="mb-1.5 block text-sm font-medium">Способ вывода</label>
+            <label className="mb-1.5 block text-sm font-medium">{tw("methodLabel")}</label>
             <div className="grid gap-2 sm:grid-cols-2">
               {WITHDRAW_METHODS.map((m) => (
                 <button
@@ -257,19 +258,19 @@ export default function WithdrawPage() {
 
           {/* Full name */}
           <div className="mb-5">
-            <label className="mb-1.5 block text-sm font-medium">ФИО получателя</label>
+            <label className="mb-1.5 block text-sm font-medium">{tw("fullNameLabel")}</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Иванов Иван Иванович"
+              placeholder={tw("fullNamePlaceholder")}
               className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
           {/* Payment details */}
           <div className="mb-5">
-            <label className="mb-1.5 block text-sm font-medium">Реквизиты</label>
+            <label className="mb-1.5 block text-sm font-medium">{tw("detailsLabel")}</label>
             <input
               type="text"
               value={details}
@@ -282,12 +283,12 @@ export default function WithdrawPage() {
           {/* Comment */}
           <div className="mb-5">
             <label className="mb-1.5 block text-sm font-medium">
-              Комментарий <span className="text-muted-foreground">(необязательно)</span>
+              {tw("commentLabel")} <span className="text-muted-foreground">{tw("commentOptional")}</span>
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Дополнительная информация..."
+              placeholder={tw("commentPlaceholder")}
               rows={2}
               className="w-full resize-none rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
@@ -298,11 +299,7 @@ export default function WithdrawPage() {
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
               <div className="text-xs leading-relaxed text-amber-300">
-                <p>
-                  Заявка будет отправлена администратору. Мы свяжемся с вами по email
-                  для подтверждения и перевода средств. Обработка обычно занимает 1–3 рабочих дня.
-                  На балансе должно остаться минимум {MIN_REMAINING} токенов.
-                </p>
+                <p>{tw("infoNote", { remaining: MIN_REMAINING })}</p>
               </div>
             </div>
           </div>
@@ -324,7 +321,7 @@ export default function WithdrawPage() {
             ) : (
               <ArrowDownToLine className="h-4 w-4" />
             )}
-            Запросить вывод {amount} токенов (~{(amount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})
+            {tw("submitFull", { amount, money: `${(amount * TOKEN_WITHDRAW_RATE).toFixed(2)} ${BRAND.currency}` })}
           </button>
         </div>
       )}

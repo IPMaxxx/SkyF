@@ -66,14 +66,24 @@ export default function IdentifyPage() {
     setError(null);
   };
 
+  // null = пользователь отменил (молча), исключение = нет доступа к камере
+  // или сбой захвата — показываем видимую ошибку вместо «ничего не произошло».
   const handleTakePhoto = async () => {
-    const f = await capturePhoto();
-    setCaptured(f);
+    try {
+      const f = await capturePhoto();
+      setCaptured(f);
+    } catch {
+      toast.error(t("errCapture"));
+    }
   };
 
   const handleGallery = async () => {
-    const f = await pickPhotoFromGallery();
-    setCaptured(f);
+    try {
+      const f = await pickPhotoFromGallery();
+      setCaptured(f);
+    } catch {
+      toast.error(t("errCapture"));
+    }
   };
 
   const resetAll = () => {

@@ -18,6 +18,7 @@ import {
   Search,
   Sparkles,
   ScanSearch,
+  Footprints,
 } from "lucide-react";
 import { OnboardingSteps } from "@/components/app/OnboardingSteps";
 import { useAppData } from "@/lib/AppDataContext";
@@ -168,6 +169,14 @@ export default function DashboardPage() {
         href: "/dashboard/identify",
         color: "from-orange-500 to-amber-600",
         iconBg: "from-orange-500/20 to-amber-500/20",
+      },
+      {
+        title: t("cardTrackTitle"),
+        desc: t("cardTrackDesc"),
+        icon: Footprints,
+        href: "/dashboard/track",
+        color: "from-teal-500 to-cyan-600",
+        iconBg: "from-teal-500/20 to-cyan-500/20",
       },
       {
         title: t("cardMarketTitle"),

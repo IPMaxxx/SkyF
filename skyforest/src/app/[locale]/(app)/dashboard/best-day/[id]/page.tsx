@@ -8,7 +8,8 @@ import { MushroomSearch } from "@/components/app/MushroomSearch";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import type { Location, BestDay, WeatherDay, ForestInfo } from "@/lib/supabase/types";
-import { getSeason, getSeasonLabel } from "@/lib/supabase/types";
+import { getSeason } from "@/lib/supabase/types";
+import type { Season } from "@/lib/supabase/types";
 import { useAppData } from "@/lib/AppDataContext";
 import {
   Star,
@@ -29,6 +30,7 @@ import {
   CloudSun,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 import { SellBestDayModal } from "@/components/app/SellBestDayModal";
 import { ListingChat } from "@/components/app/ListingChat";
 import { checkPhotoLocation } from "@/lib/photo-geo";
@@ -40,8 +42,18 @@ interface MushroomResult {
   image_url: string | null;
 }
 
+const SEASON_KEYS: Record<Season, "seasonWinter" | "seasonSpring" | "seasonSummer" | "seasonAutumn"> = {
+  winter: "seasonWinter",
+  spring: "seasonSpring",
+  summer: "seasonSummer",
+  autumn: "seasonAutumn",
+};
+
 export default function EditBestDayPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("dashboard.bestDayForm");
+  const tc = useTranslations("common");
   const params = useParams();
   const id = params.id as string;
   const { locations, removeBestDay, updateLocation } = useAppData();
@@ -149,7 +161,7 @@ export default function EditBestDayPage() {
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("Необходимо авторизоваться"); setCreatingMonitor(false); return; }
+      if (!user) { toast.error(tc("authRequired")); setCreatingMonitor(false); return; }
 
       const loc = locations.find((l) => l.id === bestDay.location_id);
       const defaultWeights = {
@@ -165,7 +177,7 @@ export default function EditBestDayPage() {
         user_id: user.id,
         best_day_id: bestDay.id,
         location_id: bestDay.location_id,
-        name: `${bestDay.name || "Грибной день"} → ${loc?.name || "Локация"}`,
+        name: `${bestDay.name || t("defaultBdName")} → ${loc?.name || t("defaultLocName")}`,
         enabled: false,
         run_time: "08:00:00",
         weights: defaultWeights,
@@ -173,11 +185,11 @@ export default function EditBestDayPage() {
 
       if (dbErr) { toast.error(dbErr.message); setCreatingMonitor(false); return; }
       if (data) {
-        toast.success("Мониторинг создан");
+        toast.success(t("toastMonitorCreated"));
         router.push(`/dashboard/compare?open=${data.id}`);
       }
     } catch {
-      toast.error("Ошибка создания мониторинга");
+      toast.error(t("errMonitorCreate"));
     }
     setCreatingMonitor(false);
   };
@@ -193,7 +205,7 @@ export default function EditBestDayPage() {
     setGeoWarnings([]);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("Необходимо авторизоваться"); setUploadingPhoto(false); return; }
+    if (!user) { setError(tc("authRequired")); setUploadingPhoto(false); return; }
 
     const newUrls: string[] = [];
     const warnings: string[] = [];
@@ -203,7 +215,7 @@ export default function EditBestDayPage() {
         const geoCheck = await checkPhotoLocation(file, selectedLocation.lat, selectedLocation.lng);
         if (!geoCheck.ok) {
           warnings.push(
-            `${file.name}: фото из другой локации (${geoCheck.distance} км от указанной точки)`
+            t("photoOtherLocation", { file: file.name, km: geoCheck.distance ?? 0 })
           );
           continue;
         }
@@ -217,7 +229,7 @@ export default function EditBestDayPage() {
         .upload(path, file, { cacheControl: "3600", upsert: false });
 
       if (uploadErr) {
-        setError(`Ошибка загрузки: ${uploadErr.message}`);
+        setError(t("errUpload", { msg: uploadErr.message }));
         continue;
       }
 
@@ -246,8 +258,8 @@ export default function EditBestDayPage() {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { setError("Введите название"); return; }
-    if (!mushroom) { setError("Выберите гриб"); return; }
+    if (!name.trim()) { setError(t("errNameShort")); return; }
+    if (!mushroom) { setError(t("errMushroomShort")); return; }
 
     setSaving(true);
     setError("");
@@ -275,7 +287,7 @@ export default function EditBestDayPage() {
         .select("id")
         .single();
       if (mErr || !newM) {
-        setError("Ошибка сохранения гриба: " + (mErr?.message || ""));
+        setError(t("errSaveMushroomEdit") + (mErr?.message || ""));
         setSaving(false);
         return;
       }
@@ -332,9 +344,9 @@ export default function EditBestDayPage() {
   if (!bestDay) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8 text-center">
-        <p className="text-muted-foreground">Запись не найдена</p>
+        <p className="text-muted-foreground">{t("notFound")}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Назад
+          {tc("back")}
         </Link>
       </div>
     );
@@ -347,7 +359,7 @@ export default function EditBestDayPage() {
         className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад
+        {tc("back")}
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
@@ -355,9 +367,9 @@ export default function EditBestDayPage() {
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">Редактировать грибной день</h1>
+          <h1 className="text-lg sm:text-xl font-bold">{t("editTitle")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Создан {new Date(bestDay.created_at).toLocaleDateString("ru-RU")}
+            {t("createdAt", { date: new Date(bestDay.created_at).toLocaleDateString(locale) })}
           </p>
         </div>
       </div>
@@ -367,8 +379,8 @@ export default function EditBestDayPage() {
         <div className="mb-4 sm:mb-5 space-y-3">
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 sm:px-4 py-3">
             <ShoppingCart className="h-4 w-4 text-blue-400 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-blue-300">Куплено на маркетплейсе</span>
-            <span className="ml-auto text-[11px] sm:text-xs text-muted-foreground">Перепродажа недоступна</span>
+            <span className="text-xs sm:text-sm font-medium text-blue-300">{t("purchasedBadge")}</span>
+            <span className="ml-auto text-[11px] sm:text-xs text-muted-foreground">{t("noResale")}</span>
           </div>
           <button
             onClick={handleCreateMonitor}
@@ -376,7 +388,7 @@ export default function EditBestDayPage() {
             className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
           >
             {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
-            Мониторинг погоды
+            {t("monitoring")}
           </button>
         </div>
       )}
@@ -397,7 +409,7 @@ export default function EditBestDayPage() {
                 <div className="flex items-center gap-2">
                   <Store className="h-4 w-4 text-emerald-400 flex-shrink-0" />
                   <span className="text-xs sm:text-sm font-medium text-emerald-400">
-                    На маркетплейсе
+                    {t("onMarketplace")}
                   </span>
                 </div>
                 <button
@@ -410,7 +422,7 @@ export default function EditBestDayPage() {
                   ) : (
                     <XCircle className="h-3.5 w-3.5" />
                   )}
-                  Снять с продажи
+                  {t("delist")}
                 </button>
               </div>
               <button
@@ -419,7 +431,7 @@ export default function EditBestDayPage() {
                 className="glass flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
               >
                 {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
-                Мониторинг погоды
+                {t("monitoring")}
               </button>
             </div>
           ) : (
@@ -429,7 +441,7 @@ export default function EditBestDayPage() {
                 className="glass flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/10"
               >
                 <Store className="h-4 w-4" />
-                Продать на маркетплейсе
+                {t("sellOnMarketplace")}
               </button>
               <button
                 onClick={handleCreateMonitor}
@@ -437,7 +449,7 @@ export default function EditBestDayPage() {
                 className="glass flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/10 disabled:opacity-50"
               >
                 {creatingMonitor ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSun className="h-4 w-4" />}
-                Мониторинг погоды
+                {t("monitoring")}
               </button>
             </div>
           )}
@@ -460,7 +472,7 @@ export default function EditBestDayPage() {
         {/* Compact header: Name + Location + Date + Mushroom */}
         <div className="glass rounded-2xl p-5 space-y-4">
           <div>
-            <label htmlFor="bd-name" className="mb-1 block text-xs font-medium text-muted-foreground">Название</label>
+            <label htmlFor="bd-name" className="mb-1 block text-xs font-medium text-muted-foreground">{t("nameLabel")}</label>
             <input
               id="bd-name"
               type="text"
@@ -472,7 +484,7 @@ export default function EditBestDayPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Локация</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("locationLabel")}</label>
               <div className="flex items-center gap-2 rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm text-foreground/70">
                 <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
                 {selectedLocation?.name || "—"}
@@ -480,34 +492,34 @@ export default function EditBestDayPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                {bestDay?.purchased_from_listing_id ? "Сезон" : "Дата лучшего дня"}
+                {bestDay?.purchased_from_listing_id ? t("seasonLabel") : t("dateLabel")}
               </label>
               <div className="rounded-xl border border-border bg-white/5 px-4 py-2.5 text-sm text-foreground/70">
                 {bestDay?.purchased_from_listing_id
-                  ? getSeasonLabel(getSeason(bestDate))
+                  ? tc(SEASON_KEYS[getSeason(bestDate)])
                   : bestDate
-                    ? new Date(bestDate).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+                    ? new Date(bestDate).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })
                     : "—"}
               </div>
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Основной гриб</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("mushroomLabel")}</label>
             <MushroomSearch value={mushroom} onChange={setMushroom} />
           </div>
         </div>
 
         {/* Weather pattern */}
         <div className="glass rounded-2xl p-5">
-          <p className="mb-3 text-sm font-medium">Погодный паттерн</p>
+          <p className="mb-3 text-sm font-medium">{t("patternLabel")}</p>
           {weatherDays.length > 0 && <WeatherChart data={weatherDays} />}
         </div>
 
         {/* Forest Info */}
         {selectedLocation && (
           <div className="glass rounded-2xl p-5">
-            <label className="mb-1.5 block text-sm font-medium">Информация о лесе</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("forestInfoLabel")}</label>
             <ForestInfoPanel
               lat={selectedLocation.lat}
               lng={selectedLocation.lng}
@@ -529,7 +541,7 @@ export default function EditBestDayPage() {
         <div className="glass rounded-2xl p-5">
           <label className="mb-2 block text-sm font-medium">
             <Camera className="mr-1 inline h-4 w-4" />
-            Фото
+            {t("photosLabel")}
           </label>
 
           {photos.length > 0 && (
@@ -574,7 +586,7 @@ export default function EditBestDayPage() {
             ) : (
               <ImagePlus className="h-4 w-4" />
             )}
-            {uploadingPhoto ? "Загрузка..." : "Добавить фото"}
+            {uploadingPhoto ? t("uploading") : t("addPhoto")}
           </button>
 
           {geoWarnings.length > 0 && (
@@ -592,25 +604,25 @@ export default function EditBestDayPage() {
         {weatherDays.length > 0 && (
           <div className="overflow-hidden glass rounded-2xl">
             <div className="border-b border-white/10 bg-white/5 px-4 py-3">
-              <p className="text-sm font-medium">Погодный паттерн ({weatherDays.length} дней)</p>
+              <p className="text-sm font-medium">{t("patternTitleEdit", { n: weatherDays.length })}</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/3 text-left">
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">День</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Дата</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableDay")}</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableDate")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Thermometer className="mr-0.5 inline h-3 w-3" /> t° макс
+                      <Thermometer className="mr-0.5 inline h-3 w-3" /> {t("tableTMax")}
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° мин</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableTMin")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Droplets className="mr-0.5 inline h-3 w-3" /> Дождь
+                      <Droplets className="mr-0.5 inline h-3 w-3" /> {t("tableRain")}
                     </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">t° ср.</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">Влажн.</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableTMean")}</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">{t("tableHumidity")}</th>
                     <th className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                      <Wind className="mr-0.5 inline h-3 w-3" /> Ветер
+                      <Wind className="mr-0.5 inline h-3 w-3" /> {t("tableWind")}
                     </th>
                   </tr>
                 </thead>
@@ -619,7 +631,7 @@ export default function EditBestDayPage() {
                     <tr key={d.date} className={`border-b border-white/10 ${i === weatherDays.length - 1 ? "bg-amber-500/10 font-medium" : ""}`}>
                       <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
                       <td className="whitespace-nowrap px-3 py-2">
-                        {new Date(d.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                        {new Date(d.date).toLocaleDateString(locale, { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-3 py-2 text-red-400">
                         {d.temperature_max !== null ? `${d.temperature_max.toFixed(1)}°` : "—"}
@@ -627,7 +639,7 @@ export default function EditBestDayPage() {
                       <td className="px-3 py-2 text-blue-400">
                         {d.temperature_min !== null ? `${d.temperature_min.toFixed(1)}°` : "—"}
                       </td>
-                      <td className="px-3 py-2">{d.rain_sum.toFixed(1)} мм</td>
+                      <td className="px-3 py-2">{d.rain_sum.toFixed(1)} {tc("unitMm")}</td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.temperature_mean !== null ? `${d.temperature_mean.toFixed(1)}°` : "—"}
                       </td>
@@ -635,7 +647,7 @@ export default function EditBestDayPage() {
                         {d.relative_humidity_mean != null ? `${Math.round(d.relative_humidity_mean)}%` : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {d.wind_speed_max != null ? `${d.wind_speed_max.toFixed(0)} км/ч` : "—"}
+                        {d.wind_speed_max != null ? `${d.wind_speed_max.toFixed(0)} ${tc("unitKmH")}` : "—"}
                       </td>
                     </tr>
                   ))}
@@ -657,7 +669,7 @@ export default function EditBestDayPage() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Сохранить изменения
+          {t("saveChanges")}
         </button>
 
         {/* Delete */}
@@ -665,7 +677,7 @@ export default function EditBestDayPage() {
           {showDeleteConfirm ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
               <p className="mb-3 text-sm text-red-400">
-                Удалить запись «{bestDay.name}»? Это действие необратимо.
+                {t("deleteConfirm", { name: bestDay.name })}
               </p>
               <div className="flex gap-2">
                 <button
@@ -675,14 +687,14 @@ export default function EditBestDayPage() {
                   className="flex items-center gap-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
                 >
                   {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Да, удалить
+                  {t("yesDelete")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-foreground hover:bg-red-500/10"
                 >
-                  Отмена
+                  {tc("cancel")}
                 </button>
               </div>
             </div>
@@ -693,7 +705,7 @@ export default function EditBestDayPage() {
               className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300"
             >
               <Trash2 className="h-4 w-4" />
-              Удалить грибной день
+              {t("deleteBestDay")}
             </button>
           )}
         </div>

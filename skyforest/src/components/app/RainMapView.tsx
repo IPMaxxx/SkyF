@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   MapContainer,
   TileLayer,
@@ -121,24 +122,19 @@ function rainColor(rain: number, maxRain: number): string {
   return "#ef4444";
 }
 
-function daysAgoLabel(dateStr: string): string {
-  const diff = Math.round(
-    (Date.now() - new Date(dateStr).getTime()) / 86_400_000
-  );
-  if (diff === 0) return "сегодня";
-  if (diff === 1) return "1 день назад";
-  if (diff >= 2 && diff <= 4) return `${diff} дня назад`;
-  return `${diff} дней назад`;
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-  });
+function daysAgo(dateStr: string): number {
+  return Math.round((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
 }
 
 function PointPopup({ point }: { point: GridPoint }) {
+  const t = useTranslations("weather");
+  const locale = useLocale();
+  const daysAgoLabel = (dateStr: string) => {
+    const diff = daysAgo(dateStr);
+    return diff === 0 ? t("rainPopupToday") : t("rainPopupDaysAgo", { n: diff });
+  };
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString(locale, { day: "numeric", month: "short" });
   const hasDaily = point.dates && point.dates.length > 0;
 
   let maxTemp: { val: number; date: string } | null = null;
@@ -178,29 +174,29 @@ function PointPopup({ point }: { point: GridPoint }) {
   return (
     <div className="text-sm min-w-[200px]">
       <p className="font-bold text-blue-600 text-base">
-        🌧 {point.rain_total.toFixed(1)} мм
+        🌧 {point.rain_total.toFixed(1)} {t("unitMm")}
       </p>
       <p className="text-gray-600 mt-1">
-        t° средняя: {point.temp_mean.toFixed(1)}°C
+        {t("rainPopupTempMean", { v: point.temp_mean.toFixed(1) })}
       </p>
 
       {maxTemp && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-red-500">▲</span> Макс: {maxTemp.val.toFixed(1)}°C
+          <span className="text-red-500">▲</span> {t("rainPopupMax")}: {maxTemp.val.toFixed(1)}°C
           — {formatDate(maxTemp.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(maxTemp.date)})</span>
         </p>
       )}
       {minTemp && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-blue-500">▼</span> Мин: {minTemp.val.toFixed(1)}°C
+          <span className="text-blue-500">▼</span> {t("rainPopupMin")}: {minTemp.val.toFixed(1)}°C
           — {formatDate(minTemp.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(minTemp.date)})</span>
         </p>
       )}
       {maxRainDay && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-blue-500">💧</span> Макс дождь: {maxRainDay.val.toFixed(1)} мм
+          <span className="text-blue-500">💧</span> {t("rainPopupMaxRain")}: {maxRainDay.val.toFixed(1)} {t("unitMm")}
           — {formatDate(maxRainDay.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(maxRainDay.date)})</span>
         </p>
@@ -258,13 +254,15 @@ export function RainMapView({
   showUserLocations = false,
   userLocationLabels,
 }: Props) {
+  const t = useTranslations("weather");
+  const tc = useTranslations("common");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
     return (
       <div className="flex h-full min-h-[400px] items-center justify-center rounded-xl bg-muted">
-        <p className="text-sm text-muted-foreground">Загрузка карты...</p>
+        <p className="text-sm text-muted-foreground">{tc("loadingMap")}</p>
       </div>
     );
   }
@@ -299,9 +297,9 @@ export function RainMapView({
             <Marker position={[centerLat, centerLng]} icon={centerIcon}>
               <Popup>
                 <div className="text-sm">
-                  <p className="font-medium">Центр</p>
+                  <p className="font-medium">{t("rainPopupCenter")}</p>
                   <p>{centerLat.toFixed(4)}, {centerLng.toFixed(4)}</p>
-                  <p>Радиус: {radius} км, шаг: {step} км</p>
+                  <p>{t("rainPopupRadius", { radius, step })}</p>
                 </div>
               </Popup>
             </Marker>
@@ -333,7 +331,7 @@ export function RainMapView({
             const nearest = nearestGridPoint(loc.lat, loc.lng, gridData);
             const inArea = nearest !== null && nearest.distKm <= sampleThresholdKm;
             const rainVal = inArea ? nearest!.point.rain_total : null;
-            const unit = userLocationLabels?.unitMm ?? "мм";
+            const unit = userLocationLabels?.unitMm ?? t("unitMm");
             const badge =
               rainVal !== null ? `${rainVal.toFixed(1)} ${unit}` : null;
             return (

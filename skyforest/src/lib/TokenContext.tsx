@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 interface TokenContextType {
   /** Total balance (real + bonus) for general display */
@@ -24,6 +25,7 @@ const TokenContext = createContext<TokenContextType>({
 });
 
 export function TokenProvider({ children }: { children: ReactNode }) {
+  const tc = useTranslations("common");
   const [balance, setBalance] = useState<number | null>(null);
   const [realBalance, setRealBalance] = useState<number | null>(null);
   const [bonusBalance, setBonusBalance] = useState<number | null>(null);
@@ -64,7 +66,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
         return {
           success: false,
           balance: data.balance ?? balance ?? 0,
-          error: data.error || "Ошибка списания токенов",
+          error: data.error || tc("spendError"),
         };
       }
 
@@ -73,7 +75,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
       setBonusBalance(data.bonus_balance ?? 0);
       return { success: true, balance: data.balance };
     } catch {
-      return { success: false, balance: balance ?? 0, error: "Ошибка сети" };
+      return { success: false, balance: balance ?? 0, error: tc("networkError") };
     }
   };
 

@@ -73,5 +73,7 @@ export default {
   errTimeout: "Recognition took too long. Please try again.",
   errUnavailable: "Recognition is temporarily unavailable. Please try later.",
   errGeneric: "An error occurred while processing. Please try again a bit later.",
+  errCapture:
+    "Could not get the photo. Check camera and photo library permissions in Settings and try again.",
   topUp: "Top up",
 } as const;

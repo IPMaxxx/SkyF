@@ -98,29 +98,48 @@ export async function initIap(): Promise<boolean> {
   return true;
 }
 
+// Сообщения об ошибках IAP по локали (обычный модуль — хуки next-intl недоступны).
+const IAP_ERRORS = {
+  ru: {
+    nativeOnly: "IAP доступен только в приложении",
+    storeUnavailable: "Магазин недоступен",
+    productNotFound: "Товар не найден",
+    productUnavailable: "Товар недоступен в магазине",
+    cancelled: "Покупка отменена",
+  },
+  en: {
+    nativeOnly: "In-app purchases are only available in the app",
+    storeUnavailable: "Store is unavailable",
+    productNotFound: "Product not found",
+    productUnavailable: "Product is unavailable in the store",
+    cancelled: "Purchase cancelled",
+  },
+} as const;
+
 /**
  * Купить пакет токенов. Возвращает { ok } после верификации чека сервером
  * и начисления токенов.
  */
-export async function purchasePack(packId: string): Promise<{ ok: boolean; error?: string }> {
-  if (!isNativeApp()) return { ok: false, error: "IAP доступен только в приложении" };
+export async function purchasePack(packId: string, locale?: string): Promise<{ ok: boolean; error?: string }> {
+  const msg = locale === "en" ? IAP_ERRORS.en : IAP_ERRORS.ru;
+  if (!isNativeApp()) return { ok: false, error: msg.nativeOnly };
   const CdvPurchase = cdv();
-  if (!CdvPurchase) return { ok: false, error: "Магазин недоступен" };
+  if (!CdvPurchase) return { ok: false, error: msg.storeUnavailable };
 
   await initIap();
   const product = productForPack(packId);
-  if (!product) return { ok: false, error: "Товар не найден" };
+  if (!product) return { ok: false, error: msg.productNotFound };
 
   const store: AnyStore = CdvPurchase.store;
   const storeProduct = store.get(product.productId, platformConst());
   const offer = storeProduct?.getOffer?.();
-  if (!offer) return { ok: false, error: "Товар недоступен в магазине" };
+  if (!offer) return { ok: false, error: msg.productUnavailable };
 
   return new Promise((resolve) => {
     pending.set(product.productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
     offer.order().catch((e: any) => {
       pending.delete(product.productId);
-      resolve({ ok: false, error: e?.message || "Покупка отменена" });
+      resolve({ ok: false, error: e?.message || msg.cancelled });
     });
   });
 }

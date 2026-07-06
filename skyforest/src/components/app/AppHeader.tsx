@@ -24,6 +24,7 @@ import {
   MapPin,
   CalendarCheck,
   ChevronDown,
+  Footprints,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,11 @@ export function AppHeader() {
         href: "/dashboard/identify",
         label: t("identify"),
         icon: ScanSearch,
+      },
+      {
+        href: "/dashboard/track",
+        label: t("track"),
+        icon: Footprints,
       },
       {
         href: "/dashboard/marketplace",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import type { BestDay } from "@/lib/supabase/types";
 import { Bell, BellOff, Loader2, Clock, Star, Check } from "lucide-react";
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export function AutoCompareSettings({ bestDays }: Props) {
+  const t = useTranslations("compare.auto");
+  const locale = useLocale();
   const [autoCompare, setAutoCompare] = useState<AutoCompare | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,7 +93,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Загрузка настроек...
+        <Loader2 className="h-4 w-4 animate-spin" /> {t("loadingSettings")}
       </div>
     );
   }
@@ -107,17 +110,17 @@ export function AutoCompareSettings({ bestDays }: Props) {
         ) : (
           <BellOff className="h-5 w-5 text-muted-foreground" />
         )}
-        <h3 className="text-lg font-semibold">Автосравнение</h3>
+        <h3 className="text-lg font-semibold">{t("title")}</h3>
       </div>
 
       <p className="mb-5 text-sm text-muted-foreground">
-        Ежедневно сравниваем текущую погоду с вашим эталоном и отправляем результат на email. Стоимость: 6 токенов/день.
+        {t("desc")}
       </p>
 
       <div className="space-y-4">
         {/* Toggle */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Включить автосравнение</span>
+          <span className="text-sm font-medium">{t("enable")}</span>
           <button
             type="button"
             onClick={() => setEnabled(!enabled)}
@@ -135,7 +138,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
 
         {/* Best Day select */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium">Грибной день для сравнения</label>
+          <label className="mb-1.5 block text-sm font-medium">{t("bestDayLabel")}</label>
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {bestDays.map((bd) => (
               <button
@@ -159,7 +162,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
         <div>
           <label htmlFor="ac-time" className="mb-1.5 block text-sm font-medium">
             <Clock className="mr-1 inline h-3.5 w-3.5" />
-            Время (Минск, UTC+3)
+            {t("timeLabel")}
           </label>
           <input
             id="ac-time"
@@ -174,8 +177,8 @@ export function AutoCompareSettings({ bestDays }: Props) {
         {autoCompare?.last_run_at && (
           <div className="rounded-xl bg-white/5 px-4 py-3">
             <p className="text-xs text-muted-foreground">
-              Последний запуск:{" "}
-              {new Date(autoCompare.last_run_at).toLocaleDateString("ru-RU", {
+              {t("lastRun")}{" "}
+              {new Date(autoCompare.last_run_at).toLocaleDateString(locale, {
                 day: "numeric",
                 month: "short",
                 hour: "2-digit",
@@ -206,7 +209,7 @@ export function AutoCompareSettings({ bestDays }: Props) {
           ) : (
             <Bell className="h-4 w-4" />
           )}
-          {saved ? "Сохранено" : "Сохранить настройки"}
+          {saved ? t("saved") : t("saveSettings")}
         </button>
       </div>
     </div>

@@ -18,7 +18,7 @@ export function tourPhase(tour: Pick<MushroomTour, "auction_start_at" | "auction
 }
 
 /** Human-friendly countdown like "2д 03:14:09" / "03:14:09" for a positive ms span. */
-export function formatCountdown(ms: number): string {
+export function formatCountdown(ms: number, locale?: string): string {
   if (ms <= 0) return "00:00:00";
   const totalSec = Math.floor(ms / 1000);
   const days = Math.floor(totalSec / 86400);
@@ -27,7 +27,8 @@ export function formatCountdown(ms: number): string {
   const s = totalSec % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
   const hms = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  return days > 0 ? `${days}д ${hms}` : hms;
+  const dayUnit = locale === "en" ? "d" : "д";
+  return days > 0 ? `${days}${dayUnit} ${hms}` : hms;
 }
 
 /** Compact local date+time for a bid timestamp, e.g. "27.06 19:42". */

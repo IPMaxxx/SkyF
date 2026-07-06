@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { MushroomTour } from "@/lib/supabase/types";
@@ -27,6 +27,7 @@ import { TourAdminPanel } from "@/components/app/TourAdminPanel";
 
 export default function MushroomToursPage() {
   const t = useTranslations("mushroomTours");
+  const locale = useLocale();
   const [tours, setTours] = useState<MushroomTour[]>([]);
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [followBusy, setFollowBusy] = useState<string | null>(null);
@@ -232,7 +233,7 @@ export default function MushroomToursPage() {
                       <div className="rounded-xl border border-border bg-card/60 py-3 text-center text-sm">
                         <span className="text-muted-foreground">{t("opensIn")}: </span>
                         <span className="font-mono font-semibold text-foreground">
-                          {formatCountdown(startMs - now)}
+                          {formatCountdown(startMs - now, locale)}
                         </span>
                       </div>
                       <FollowButton
