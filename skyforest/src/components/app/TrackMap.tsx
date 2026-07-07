@@ -128,7 +128,7 @@ export function TrackMap({ anchor, points, current }: Props) {
           </LayersControl.BaseLayer>
         </LayersControl>
 
-        {/* Пройденный путь: белая подложка + серая линия поверх */}
+        {/* Пройденный путь: белая подложка + тёмно-зелёная линия поверх */}
         {walkedPath.length > 1 && (
           <>
             <Polyline
@@ -137,7 +137,7 @@ export function TrackMap({ anchor, points, current }: Props) {
             />
             <Polyline
               positions={walkedPath}
-              pathOptions={{ color: "#64748b", weight: 4, opacity: 0.9, lineJoin: "round", lineCap: "round" }}
+              pathOptions={{ color: "#166534", weight: 4, opacity: 0.9, lineJoin: "round", lineCap: "round" }}
             />
           </>
         )}

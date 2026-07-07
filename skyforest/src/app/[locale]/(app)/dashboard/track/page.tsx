@@ -3,33 +3,35 @@
 /**
  * «Вернуться к точке входа» — максимально простой трекер для леса.
  *
- * Якорь ставится одной геолокацией по кнопке «Я вошёл в лес». Пока страница
- * открыта, раз в ~1,5 минуты дописывается грубая точка пути (обычный
- * getCurrentPosition, без watchPosition и фоновых плагинов). Стрелка возврата
- * работает по компасу устройства, а без него — текстом со стороной света
- * и пунктиром на карте. Все данные живут в localStorage до кнопки «Я вышел».
+ * Якорь ставится одной геолокацией по кнопке «Я вошёл в лес». Точки пути
+ * пишет глобальный TrackRecorder в (app)-layout (раз в ~1,5 минуты на любой
+ * странице приложения + при возврате вкладки/приложения из фона); страница
+ * лишь подписана на его события и просит внеочередной замер при открытии.
+ * Стрелка возврата работает по компасу устройства, а без него — текстом со
+ * стороной света и пунктиром на карте. Все данные живут в localStorage до
+ * кнопки «Я вышел».
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Compass, Footprints, Loader2, MapPin, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
-import { isNativeApp } from "@/lib/native/capacitor";
+import {
+  captureTrackPoint,
+  TRACK_CAPTURE_EVENT,
+  type TrackCaptureDetail,
+} from "@/lib/trackRecorder";
 import {
   loadTrack,
   startTrack,
-  appendPoint,
   clearTrack,
   haversineM,
   bearingDeg,
   compassDir,
   type ActiveTrack,
 } from "@/lib/trackState";
-
-/** Интервал грубой записи точек пути, пока страница открыта. */
-const CAPTURE_INTERVAL_MS = 90_000;
 
 const TrackMap = dynamic(
   () => import("@/components/app/TrackMap").then((m) => m.TrackMap),
@@ -69,7 +71,6 @@ export default function TrackPage() {
   const [compassState, setCompassState] = useState<CompassState>("idle");
   const [, setTick] = useState(0);
 
-  const capturing = useRef(false);
   const orientationHandler = useRef<((e: Event) => void) | null>(null);
 
   useEffect(() => {
@@ -77,46 +78,32 @@ export default function TrackPage() {
     setMounted(true);
   }, []);
 
-  /** Одна грубая точка: обновляет «я здесь» и дописывает трек при сдвиге >30 м. */
-  const capture = useCallback(async () => {
-    if (capturing.current) return;
-    capturing.current = true;
-    try {
-      const pos = await getCurrentPosition();
-      setCurrent(pos);
-      setTrack((prev) => (prev ? appendPoint(prev, pos) : prev));
-    } catch {
-      /* нет GPS в этот момент — просто пропускаем тик */
-    } finally {
-      capturing.current = false;
-    }
+  /**
+   * Живое состояние похода: каждый удачный замер глобального TrackRecorder
+   * (тик таймера, возврат вкладки/приложения) приходит событием и сразу
+   * обновляет «я здесь» и линию пути на карте.
+   */
+  useEffect(() => {
+    const onCapture = (e: Event) => {
+      const { track: next, position } = (e as CustomEvent<TrackCaptureDetail>).detail;
+      setTrack(next);
+      setCurrent(position);
+    };
+    window.addEventListener(TRACK_CAPTURE_EVENT, onCapture);
+    return () => window.removeEventListener(TRACK_CAPTURE_EVENT, onCapture);
   }, []);
 
-  /** Пока поход активен: точка сразу, затем по таймеру + при возврате в приложение. */
+  /**
+   * Внеочередной замер при каждом открытии страницы трека (маунт при
+   * клиентской навигации), чтобы позиция и карта обновились мгновенно,
+   * не дожидаясь тика таймера. Гонок нет: guard capturing общий в recorder.
+   */
   useEffect(() => {
     if (!track) return;
-
-    void capture();
-    const interval = setInterval(() => void capture(), CAPTURE_INTERVAL_MS);
-
-    let removeListener: (() => void) | undefined;
-    if (isNativeApp()) {
-      void import("@capacitor/app").then(({ App }) =>
-        App.addListener("appStateChange", ({ isActive }) => {
-          if (isActive) void capture();
-        }).then((sub) => {
-          removeListener = () => void sub.remove();
-        }),
-      );
-    }
-
-    return () => {
-      clearInterval(interval);
-      removeListener?.();
-    };
-    // Перезапускаем только при старте/завершении похода, не на каждую точку.
+    void captureTrackPoint();
+    // Только при старте/завершении похода, не на каждую точку.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track === null, capture]);
+  }, [track === null]);
 
   /** Тикер для строки «в пути HH:MM». */
   useEffect(() => {
