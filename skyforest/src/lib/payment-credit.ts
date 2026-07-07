@@ -41,6 +41,9 @@ export async function creditTokenPurchase(
 
   const supabase = getSupabaseAdmin();
 
+  // Fast-path: платёж уже начислен. Настоящая защита от гонки — partial
+  // UNIQUE-индекс на token_transactions.payment_id (patch-v40): конкурентная
+  // вставка упадёт с 23505 и обработается ниже как идемпотентный успех.
   const { data: existingTx } = await supabase
     .from("token_transactions")
     .select("id")
@@ -74,6 +77,11 @@ export async function creditTokenPurchase(
   });
 
   if (error) {
+    // 23505 — нарушение UNIQUE-индекса payment_id: параллельный запрос уже
+    // начислил этот платёж. Считаем успехом (идемпотентность).
+    if (error.code === "23505") {
+      return { status: "already_processed" };
+    }
     console.error("Token add error:", error);
     throw new Error("Processing error");
   }

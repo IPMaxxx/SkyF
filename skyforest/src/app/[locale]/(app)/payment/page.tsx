@@ -28,7 +28,7 @@ import {
 } from "@/lib/payment-display";
 import { useLocale, useTranslations } from "next-intl";
 import { isNativeApp } from "@/lib/native/capacitor";
-import { purchasePack } from "@/lib/native/iap";
+import { purchasePack, initIap, getStorePrices, subscribeStorePrices } from "@/lib/native/iap";
 
 export default function PaymentPage() {
   return (
@@ -68,6 +68,25 @@ function PaymentContent() {
       setTab("buy");
     }
   }, []);
+
+  // Реальные цены App Store / Google Play: packId → форматированная цена
+  // (например "$2.99"). До загрузки продуктов — fallback на веб-цены.
+  const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!native) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    (async () => {
+      await initIap();
+      if (cancelled) return;
+      setStorePrices(getStorePrices());
+      unsub = subscribeStorePrices(setStorePrices);
+    })();
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
+  }, [native]);
 
   // Buy state
   const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
@@ -110,6 +129,10 @@ function PaymentContent() {
   const purchasePrice = isCustom
     ? parseFloat((customTokens * BULK_RATE).toFixed(2))
     : (selected?.price ?? 0);
+  // В нативе — цена из стора (когда загружена), иначе веб-цена.
+  const displayPrice =
+    (native && !isCustom && storePrices[selectedPack]) ||
+    `${purchasePrice.toFixed(2)} ${BRAND.currency}`;
 
   const handleApplyRef = async () => {
     const code = refCode.trim();
@@ -385,13 +408,21 @@ function PaymentContent() {
                     )}
                     <span className="text-sm text-muted-foreground">{t("tokensPlural")}</span>
                   </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-primary-light">{pack.price}</span>
-                    <span className="text-sm text-muted-foreground">{BRAND.currency}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {(pack.price / pack.tokens).toFixed(2)} {BRAND.currency} {t("perToken")}
-                  </p>
+                  {native && storePrices[pack.id] ? (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-bold text-primary-light">{storePrices[pack.id]}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold text-primary-light">{pack.price}</span>
+                        <span className="text-sm text-muted-foreground">{BRAND.currency}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {(pack.price / pack.tokens).toFixed(2)} {BRAND.currency} {t("perToken")}
+                      </p>
+                    </>
+                  )}
                   {selectedPack === pack.id && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
                       <Check className="h-5 w-5 text-amber-400" />
@@ -512,13 +543,13 @@ function PaymentContent() {
             <span className="sm:hidden">
               {t("buyBtnShort", {
                 tokens: `${purchaseTokens}${hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
-                price: `${purchasePrice.toFixed(2)} ${BRAND.currency}`,
+                price: displayPrice,
               })}
             </span>
             <span className="hidden sm:inline">
               {t("buyBtnFull", {
                 tokens: `${purchaseTokens}${hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
-                price: `${purchasePrice.toFixed(2)} ${BRAND.currency}`,
+                price: displayPrice,
               })}
             </span>
           </button>
