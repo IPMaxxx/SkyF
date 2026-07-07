@@ -76,7 +76,7 @@ export default {
   // Forager / Pro subscriptions (native app only)
   subscriptions: {
     title: "Premium subscription",
-    subtitle: "Unlimited weather and forest search, included mushroom identifications and bonus tokens every month",
+    subtitle: "Unlimited mushroom days and forest identification, included mushroom photo IDs and bonus tokens every month",
     monthly: "Monthly",
     yearly: "Yearly",
     trialBadge: "7-day trial",
@@ -85,11 +85,11 @@ export default {
     perYear: "/yr",
     foragerName: "Forager",
     proName: "Pro",
-    foragerF1: "Unlimited: weather, mushroom days, forest search",
+    foragerF1: "Unlimited mushroom days & forest identification",
     foragerF2: "1 auto-monitor with no charges",
     foragerF3: "30 mushroom identifications per month",
     foragerF4: "+30 bonus tokens every month",
-    proF1: "Unlimited: weather, mushroom days, forest search",
+    proF1: "Unlimited mushroom days & forest identification",
     proF2: "3 auto-monitors with no charges",
     proF3: "100 mushroom identifications per month",
     proF4: "Pattern match forecast — up to 8 per month",

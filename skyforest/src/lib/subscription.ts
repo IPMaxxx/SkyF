@@ -27,11 +27,13 @@ export interface TierBenefits {
   freeMarketplaceList: boolean;
 }
 
+// Безлимит подписки — только «лучшие дни» (mushroom days). Дорогие процедуры
+// weather_check и forest_search в подписку не входят и всегда оплачиваются
+// токенами (на них идут месячные бонус-токены). Определение типа леса
+// (GET /api/forest-info) бесплатно для всех и токен-действия не имеет.
 const UNLIMITED_BASE = [
-  "weather_check",
   "best_day_create",
   "best_day_reload",
-  "forest_search",
 ] as const;
 
 export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
