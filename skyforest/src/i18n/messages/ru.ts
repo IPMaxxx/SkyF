@@ -192,6 +192,7 @@ export default {
     siteSections: "Разделы сайта",
     more: "Ещё",
     accountTab: "Аккаунт",
+    trackTab: "Трек",
   },
   appMeta: {
     title: "Приложение",

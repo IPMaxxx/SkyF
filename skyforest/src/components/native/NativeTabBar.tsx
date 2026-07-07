@@ -7,13 +7,13 @@ import {
   CloudRain,
   ScanSearch,
   GitCompareArrows,
-  CircleUser,
+  Footprints,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = {
   href: string;
-  labelKey: "home" | "weather" | "identify" | "compare" | "accountTab";
+  labelKey: "home" | "weather" | "identify" | "compare" | "trackTab";
   icon: typeof LayoutDashboard;
   exact?: boolean;
   /** Центральная акцентная кнопка (флагманская фича — определение гриба). */
@@ -30,7 +30,7 @@ const TABS: Tab[] = [
     accent: true,
   },
   { href: "/dashboard/compare", labelKey: "compare", icon: GitCompareArrows },
-  { href: "/account", labelKey: "accountTab", icon: CircleUser },
+  { href: "/dashboard/track", labelKey: "trackTab", icon: Footprints },
 ];
 
 /**
