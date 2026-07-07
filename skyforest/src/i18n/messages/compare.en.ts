@@ -77,6 +77,7 @@ export default {
   tableRainCur: "Rain curr",
   tableRainWindow: "Rain window",
   promptCompare: "Tap “Compare now” to get a result",
+  resultDate: "Comparison for {date}",
   historyTitle: "Comparison history",
   loading: "Loading...",
   historyEmpty: "No entries yet",

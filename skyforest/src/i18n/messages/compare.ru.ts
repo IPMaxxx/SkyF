@@ -78,6 +78,7 @@ export default {
   tableRainCur: "Дождь тек.",
   tableRainWindow: "Дождь окно",
   promptCompare: "Нажмите «Сравнить сейчас» для получения результата",
+  resultDate: "Сравнение на {date}",
   historyTitle: "История сравнений",
   loading: "Загрузка...",
   historyEmpty: "Пока нет записей",
