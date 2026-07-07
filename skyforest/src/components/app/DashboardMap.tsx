@@ -168,11 +168,20 @@ function MapRefBinder({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null>
 
 /**
  * Native: FAB «Моя геопозиция» поверх карты. По тапу — getCurrentPosition()
- * и зум на пользователя (диаметр ~10 км). Zoom-контролы leaflet — слева
- * сверху, LayersControl — справа сверху, поэтому FAB внизу справа.
+ * и выбор найденной точки через `onLocated` (тот же путь, что тап по пустому
+ * месту карты: синий пин + панель действий + зум ~10 км). Zoom-контролы
+ * leaflet — слева сверху, LayersControl — справа сверху, поэтому FAB внизу
+ * справа.
  */
-function LocateButton({ label, deniedMessage }: { label: string; deniedMessage: string }) {
-  const map = useMap();
+function LocateButton({
+  label,
+  deniedMessage,
+  onLocated,
+}: {
+  label: string;
+  deniedMessage: string;
+  onLocated: (lat: number, lng: number) => void;
+}) {
   const [locating, setLocating] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -187,10 +196,8 @@ function LocateButton({ label, deniedMessage }: { label: string; deniedMessage: 
     setLocating(true);
     try {
       const pos = await getCurrentPosition();
-      map.flyToBounds(
-        L.latLng(pos.lat, pos.lng).toBounds(NATIVE_ZOOM_DIAMETER_M),
-        { duration: 0.8 },
-      );
+      // Зум делает handleNativeSelect (flyToBounds) — здесь не дублируем.
+      onLocated(pos.lat, pos.lng);
     } catch {
       toast.error(deniedMessage);
     } finally {
@@ -495,6 +502,9 @@ export function DashboardMap({
             <LocateButton
               label={tActions("locateMe")}
               deniedMessage={tActions("locateDenied")}
+              onLocated={(lat, lng) =>
+                handleNativeSelect({ kind: "empty", lat, lng })
+              }
             />
           </>
         )}
