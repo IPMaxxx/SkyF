@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app/AppShell";
+import { TrackRecorder } from "@/components/app/TrackRecorder";
 import { TokenProvider } from "@/lib/TokenContext";
 import { AppDataProvider } from "@/lib/AppDataContext";
 import { Toaster } from "sonner";
@@ -21,6 +22,7 @@ export default function AppLayout({
     <TokenProvider>
     <AppDataProvider>
       <AppShell>{children}</AppShell>
+      <TrackRecorder />
       <Toaster
         position="top-right"
         theme="dark"
