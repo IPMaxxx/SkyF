@@ -17,7 +17,8 @@ import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { HowItWorksPopover } from "@/components/app/HowItWorksPopover";
 import { toast } from "sonner";
 import type { WeatherDay } from "@/lib/supabase/types";
-import type { ForestMatch, ForestPattern, ScoreBreakdown } from "@/app/api/forest-search/route";
+import type { ForestMatch, ForestPattern } from "@/app/api/forest-search/route";
+import { formatReason, formatIgbpClass } from "@/lib/forestSearchReason";
 
 interface HistoryItem {
   id: string;
@@ -103,6 +104,9 @@ export default function ForestSearchPage() {
   const genusLine = (genera: string[]) =>
     genera.map((g) => t(`genus.${g}` as never)).join(", ");
   const forestTypeLabel = (ft: string) => t(`forestType.${ft}` as never);
+  const tReason = t as unknown as (key: string, values?: Record<string, string | number>) => string;
+  const tIgbp = t as unknown as ((key: string, values?: Record<string, string | number>) => string) & { has: (key: string) => boolean };
+  const igbpLabel = (cls: number | string | null | undefined) => formatIgbpClass(tIgbp, cls);
 
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -451,7 +455,7 @@ export default function ForestSearchPage() {
             {refPattern.modis_class && (
               <div className="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 p-2">
                 <Satellite className="h-3.5 w-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
-                <div><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{refPattern.modis_class}</span></div>
+                <div><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{igbpLabel(refPattern.modis_class)}</span></div>
               </div>
             )}
           </div>
@@ -594,10 +598,10 @@ export default function ForestSearchPage() {
                             <div className="px-3 py-2 border-b border-border/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                               {t("scoreTitle", { pct: m.similarity, points: p.points_sampled })}
                             </div>
-                            <ScoreRow label={t("scoreGeneraRow")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} color="green" />
-                            <ScoreRow label={t("scoreDominantRow")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} color="amber" />
-                            <ScoreRow label={t("scoreForestRow")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} color="blue" />
-                            <ScoreRow label={t("scoreModisRow")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} color="purple" />
+                            <ScoreRow label={t("scoreGeneraRow")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={formatReason(tReason, m.breakdown.genera_overlap)} color="green" />
+                            <ScoreRow label={t("scoreDominantRow")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={formatReason(tReason, m.breakdown.dominant_species)} color="amber" />
+                            <ScoreRow label={t("scoreForestRow")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={formatReason(tReason, m.breakdown.forest_type)} color="blue" />
+                            <ScoreRow label={t("scoreModisRow")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={formatReason(tReason, m.breakdown.modis)} color="purple" />
                           </div>
 
                           {/* Data from all sources */}
@@ -620,7 +624,7 @@ export default function ForestSearchPage() {
                           {p.modis_class && (
                             <div className="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 p-2">
                               <Satellite className="h-3.5 w-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
-                              <div className="text-xs"><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{p.modis_class}</span>{p.modis_is_forest && <span className="text-emerald-400 ml-1">{t("modisForest")}</span>}</div>
+                              <div className="text-xs"><span className="font-medium text-purple-400">{t("modisLabel")}</span> <span className="text-foreground/80">{igbpLabel(p.modis_class)}</span>{p.modis_is_forest && <span className="text-emerald-400 ml-1">{t("modisForest")}</span>}</div>
                             </div>
                           )}
                         </div>

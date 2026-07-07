@@ -25,15 +25,6 @@ const RU_SPECIES_TO_GENUS: Record<string, string> = {
   "можжевельник": "juniperus", "кедр": "pinus",
 };
 
-const GENUS_RU: Record<string, string> = {
-  pinus: "Сосна", picea: "Ель", betula: "Берёза", quercus: "Дуб",
-  alnus: "Ольха", populus: "Тополь", acer: "Клён", tilia: "Липа",
-  salix: "Ива", fraxinus: "Ясень", ulmus: "Вяз", carpinus: "Граб",
-  corylus: "Лещина", sorbus: "Рябина", fagus: "Бук", larix: "Лиственница",
-  abies: "Пихта", juniperus: "Можжевельник", prunus: "Черёмуха",
-  malus: "Яблоня", robinia: "Робиния", thuja: "Туя", taxus: "Тис",
-};
-
 const URBAN_TAGS = new Set(["park", "garden", "playground", "recreation_ground"]);
 
 // ─── Utilities ───
@@ -157,7 +148,9 @@ export interface ForestPattern {
   genera: string[];
   dominant_species: string | null;
   forest_type: "coniferous" | "broadleaved" | "mixed" | "unknown";
-  modis_class: string | null;
+  /** Stable IGBP land-cover class code (MODIS MCD12Q1 LC_Type1, 1..17). The
+   *  client localizes it via the `igbp` message namespace. */
+  modis_class: number | null;
   modis_is_forest: boolean | null;
   fgis_species_list: string[];
   points_sampled: number;
@@ -226,7 +219,7 @@ async function collectPattern(centerLat: number, centerLng: number): Promise<For
     genera: Array.from(allGenera),
     dominant_species: dominant,
     forest_type: forestType,
-    modis_class: modis?.igbp_name_ru || null,
+    modis_class: modis?.igbp_class ?? null,
     modis_is_forest: modis?.is_forest ?? null,
     fgis_species_list: fgisSpeciesList,
     points_sampled: grid.length,
@@ -330,8 +323,9 @@ function generateScanPoints(
 ): Array<{ lat: number; lng: number; name: string | null }> {
   const points: Array<{ lat: number; lng: number; name: string | null }> = [];
 
-  // Always include center
-  points.push({ lat: centerLat, lng: centerLng, name: "Центр зоны" });
+  // Always include center. Name is left null so the client falls back to a
+  // localized "block #n" label instead of a hardcoded string.
+  points.push({ lat: centerLat, lng: centerLng, name: null });
   if (points.length >= count) return points.slice(0, count);
 
   const rings = [
@@ -359,10 +353,17 @@ function generateScanPoints(
 
 // ─── Pattern comparison ───
 
+/** Values interpolated into a localized reason string on the client.
+ *  `string[]` carries genus keys; numbers carry IGBP class codes. */
+export type ReasonParams = Record<string, string | number | string[] | number[]>;
+
 export interface ScoreBreakdownItem {
   score: number;
   max: number;
-  reason: string;
+  /** Stable code resolved to a localized string on the client
+   *  (see src/lib/forestSearchReason.ts). */
+  reasonCode: string;
+  reasonParams?: ReasonParams;
 }
 
 export interface ScoreBreakdown {
@@ -384,87 +385,106 @@ export interface ForestMatch {
 function comparePatterns(ref: ForestPattern, cand: ForestPattern): { total: number; breakdown: ScoreBreakdown } {
   // 1. Genera overlap — Jaccard similarity (max 50)
   let generaScore = 0;
-  let generaReason = "";
+  let generaCode = "";
+  let generaParams: ReasonParams | undefined;
   if (ref.genera.length > 0 && cand.genera.length > 0) {
-    const refSet = new Set(ref.genera);
     const candSet = new Set(cand.genera);
     const intersection = ref.genera.filter((g) => candSet.has(g));
     const unionSize = new Set([...ref.genera, ...cand.genera]).size;
     const jaccard = unionSize > 0 ? intersection.length / unionSize : 0;
     generaScore = Math.round(jaccard * 50);
-    const names = intersection.map((g) => GENUS_RU[g] || g).join(", ");
-    generaReason = intersection.length > 0
-      ? `Jaccard ${(jaccard * 100).toFixed(0)}%: совпало ${intersection.length} из ${unionSize} родов (${names})`
-      : `Нет общих родов. Эталон: ${ref.genera.map((g) => GENUS_RU[g] || g).join(", ")}`;
+    if (intersection.length > 0) {
+      generaCode = "generaJaccard";
+      generaParams = {
+        pct: Math.round(jaccard * 100),
+        matched: intersection.length,
+        total: unionSize,
+        genera: intersection,
+      };
+    } else {
+      generaCode = "generaNoCommon";
+      generaParams = { genera: ref.genera };
+    }
   } else if (cand.genera.length > 0) {
-    generaReason = `У кандидата: ${cand.genera.map((g) => GENUS_RU[g] || g).join(", ")} (нет данных эталона)`;
+    generaCode = "generaCandidateOnly";
+    generaParams = { genera: cand.genera };
   } else if (ref.genera.length > 0) {
-    generaReason = `Нет видовых данных у кандидата`;
+    generaCode = "generaNoCandidate";
   } else {
-    generaReason = "Нет видовых данных";
+    generaCode = "generaNone";
   }
 
   // 2. Dominant species match (max 20)
   let domScore = 0;
-  let domReason = "";
+  let domCode = "";
+  let domParams: ReasonParams | undefined;
   if (ref.dominant_species && cand.dominant_species) {
     const refGenus = RU_SPECIES_TO_GENUS[ref.dominant_species.toLowerCase()];
     const candGenus = RU_SPECIES_TO_GENUS[cand.dominant_species.toLowerCase()];
     if (refGenus && candGenus) {
+      domParams = { ref: ref.dominant_species, cand: cand.dominant_species };
       if (refGenus === candGenus) {
         domScore = 20;
-        domReason = `Совпадение: ${ref.dominant_species} = ${cand.dominant_species}`;
+        domCode = "domMatch";
       } else if (classifyGenus(refGenus) === classifyGenus(candGenus)) {
         domScore = 12;
-        domReason = `Одна группа: ${ref.dominant_species} / ${cand.dominant_species}`;
+        domCode = "domSameGroup";
       } else {
         domScore = 2;
-        domReason = `Разные группы: ${ref.dominant_species} / ${cand.dominant_species}`;
+        domCode = "domDiffGroup";
       }
     }
   } else if (cand.dominant_species) {
-    domReason = `Кандидат: ${cand.dominant_species} (нет данных эталона)`;
+    domCode = "domCandidateOnly";
+    domParams = { cand: cand.dominant_species };
   } else {
-    domReason = "Нет данных о доминирующей породе";
+    domCode = "domNone";
   }
 
   // 3. Forest type match (max 20)
   let typeScore = 0;
-  let typeReason = "";
+  let typeCode = "";
+  let typeParams: ReasonParams | undefined;
   if (ref.forest_type !== "unknown" && cand.forest_type !== "unknown") {
     if (ref.forest_type === cand.forest_type) {
       typeScore = 20;
-      typeReason = `Совпадение: оба ${ref.forest_type === "coniferous" ? "хвойный" : ref.forest_type === "broadleaved" ? "лиственный" : "смешанный"}`;
+      typeCode = "typeMatch";
+      typeParams = { type: ref.forest_type };
     } else if (ref.forest_type === "mixed" || cand.forest_type === "mixed") {
       typeScore = 12;
-      typeReason = `Частичное: один смешанный`;
+      typeCode = "typePartialMixed";
     } else {
       typeScore = 0;
-      typeReason = `Не совпадает: ${ref.forest_type} / ${cand.forest_type}`;
+      typeCode = "typeMismatch";
+      typeParams = { ref: ref.forest_type, cand: cand.forest_type };
     }
   } else if (cand.forest_type === "unknown" && ref.forest_type === "unknown") {
     typeScore = 10;
-    typeReason = "Тип леса не определён у обоих — нейтрально";
+    typeCode = "typeBothUnknown";
   } else {
     typeScore = 5;
-    typeReason = "Тип леса не определён у одного из участков";
+    typeCode = "typeOneUnknown";
   }
 
   // 4. MODIS match (max 10)
   let modisScore = 0;
-  let modisReason = "";
+  let modisCode = "";
+  let modisParams: ReasonParams | undefined;
   if (ref.modis_class && cand.modis_class) {
     if (ref.modis_class === cand.modis_class) {
       modisScore = 10;
-      modisReason = `Совпадение IGBP: ${cand.modis_class}`;
+      modisCode = "modisMatch";
+      modisParams = { igbp: cand.modis_class };
     } else if (cand.modis_is_forest) {
       modisScore = 5;
-      modisReason = `Оба лес, разный класс: ${ref.modis_class} / ${cand.modis_class}`;
+      modisCode = "modisBothForest";
+      modisParams = { ref: ref.modis_class, cand: cand.modis_class };
     } else {
-      modisReason = `Кандидат не лес по MODIS: ${cand.modis_class}`;
+      modisCode = "modisCandidateNotForest";
+      modisParams = { cand: cand.modis_class };
     }
   } else {
-    modisReason = "MODIS недоступен";
+    modisCode = "modisUnavailable";
   }
 
   // Normalize by available data
@@ -480,10 +500,10 @@ function comparePatterns(ref: ForestPattern, cand: ForestPattern): { total: numb
   return {
     total,
     breakdown: {
-      genera_overlap: { score: generaScore, max: 50, reason: generaReason },
-      dominant_species: { score: domScore, max: 20, reason: domReason },
-      forest_type: { score: typeScore, max: 20, reason: typeReason },
-      modis: { score: modisScore, max: 10, reason: modisReason },
+      genera_overlap: { score: generaScore, max: 50, reasonCode: generaCode, reasonParams: generaParams },
+      dominant_species: { score: domScore, max: 20, reasonCode: domCode, reasonParams: domParams },
+      forest_type: { score: typeScore, max: 20, reasonCode: typeCode, reasonParams: typeParams },
+      modis: { score: modisScore, max: 10, reasonCode: modisCode, reasonParams: modisParams },
     },
   };
 }
