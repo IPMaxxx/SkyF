@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -90,21 +90,53 @@ function InitialFit({ points }: { points: [number, number][] }) {
 interface Props {
   anchor: TrackPoint;
   points: TrackPoint[];
-  current: { lat: number; lng: number } | null;
+  /** Текущая позиция; t — время замера (для честного пунктира после фона). */
+  current: { lat: number; lng: number; t?: number } | null;
 }
+
+/**
+ * Разрыв между соседними точками больше этого времени означает, что точки
+ * не собирались (приложение было в фоне) — такой сегмент рисуем пунктиром,
+ * чтобы прямая «дорисовка» не выглядела как реальный путь.
+ */
+const GAP_MS = 5 * 60_000;
 
 export function TrackMap({ anchor, points, current }: Props) {
   const tc = useTranslations("common");
   const t = useTranslations("track");
 
-  /** Пройденный путь: якорь → точки → текущая позиция (если есть). */
-  const walkedPath = useMemo<[number, number][]>(() => {
-    const path: [number, number][] = [
-      [anchor.lat, anchor.lng],
-      ...points.map((p) => [p.lat, p.lng] as [number, number]),
-    ];
-    if (current) path.push([current.lat, current.lng]);
-    return path;
+  /**
+   * Пройденный путь: якорь → точки → текущая позиция (если есть),
+   * разбитый на непрерывные сегменты и «разрывы» (долгие паузы без точек).
+   */
+  const { solidSegments, gapSegments, allPoints } = useMemo(() => {
+    const pts: TrackPoint[] = [anchor, ...points];
+    if (current) {
+      pts.push({ lat: current.lat, lng: current.lng, t: current.t ?? pts[pts.length - 1].t });
+    }
+
+    const solid: [number, number][][] = [];
+    const gaps: [number, number][][] = [];
+    let segment: [number, number][] = [[pts[0].lat, pts[0].lng]];
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i].t - pts[i - 1].t > GAP_MS) {
+        if (segment.length > 1) solid.push(segment);
+        gaps.push([
+          [pts[i - 1].lat, pts[i - 1].lng],
+          [pts[i].lat, pts[i].lng],
+        ]);
+        segment = [[pts[i].lat, pts[i].lng]];
+      } else {
+        segment.push([pts[i].lat, pts[i].lng]);
+      }
+    }
+    if (segment.length > 1) solid.push(segment);
+
+    return {
+      solidSegments: solid,
+      gapSegments: gaps,
+      allPoints: pts.map((p) => [p.lat, p.lng] as [number, number]),
+    };
   }, [anchor, points, current]);
 
   return (
@@ -129,18 +161,27 @@ export function TrackMap({ anchor, points, current }: Props) {
         </LayersControl>
 
         {/* Пройденный путь: белая подложка + тёмно-зелёная линия поверх */}
-        {walkedPath.length > 1 && (
-          <>
+        {solidSegments.map((seg, i) => (
+          <Fragment key={`solid-${i}`}>
             <Polyline
-              positions={walkedPath}
+              positions={seg}
               pathOptions={{ color: "#fff", weight: 7, opacity: 0.8, lineJoin: "round", lineCap: "round" }}
             />
             <Polyline
-              positions={walkedPath}
+              positions={seg}
               pathOptions={{ color: "#166534", weight: 4, opacity: 0.9, lineJoin: "round", lineCap: "round" }}
             />
-          </>
-        )}
+          </Fragment>
+        ))}
+
+        {/* Разрывы (точки не собирались — приложение было в фоне): полупрозрачный пунктир */}
+        {gapSegments.map((seg, i) => (
+          <Polyline
+            key={`gap-${i}`}
+            positions={seg}
+            pathOptions={{ color: "#166534", weight: 3, opacity: 0.45, dashArray: "4 8", lineCap: "round" }}
+          />
+        ))}
 
         {/* Прямая «назад к входу» — изумрудный пунктир */}
         {current && (
@@ -156,8 +197,8 @@ export function TrackMap({ anchor, points, current }: Props) {
         <Marker position={[anchor.lat, anchor.lng]} icon={anchorIcon} title={t("anchorTitle")} />
         {current && <Marker position={[current.lat, current.lng]} icon={currentIcon} />}
 
-        <InitialFit points={walkedPath} />
-        <FitAllButton points={walkedPath} label={t("fitAll")} />
+        <InitialFit points={allPoints} />
+        <FitAllButton points={allPoints} label={t("fitAll")} />
       </MapContainer>
     </div>
   );

@@ -11,7 +11,7 @@ export default {
 
   howTitle: "How it works",
   how1: "Tap the button at the forest edge — we'll remember your entry point.",
-  how2: "Keep this page open when you can: every couple of minutes we roughly mark your path on the map.",
+  how2: "While the app is open, we continuously record your path on the map. Points are not recorded in the background — those stretches are shown as a dashed line.",
   how3: "When it's time to head back, the arrow shows the direction and distance to the entry point.",
   offlineHint:
     "Works without internet: the map may not load, but the arrow and distance always work. Data is stored on this device only.",
@@ -41,11 +41,21 @@ export default {
 
   anchorTitle: "Entry point",
   fitAll: "Show whole path",
+  gapHint: "Dashed line — stretches with no recording (the app was in the background).",
 
   finishButton: "I'm out of the forest",
   finishConfirmTitle: "Finish the trip?",
-  finishConfirmBody:
-    "The entry point and the walked path will be deleted from this device.",
+  finishConfirmBody: "The trip will be saved to history and the active track will be cleared.",
   finishConfirmYes: "Yes, finish",
   finishCancel: "Cancel",
+
+  autoName: "Track {date}",
+  savedToast: "Trip saved to history",
+  savedLocalToast: "Trip saved on this device",
+
+  historyTitle: "History",
+  historyLocalBadge: "on this device",
+  historyDelete: "Delete track",
+  historyDeleted: "Track deleted",
+  historyDeleteError: "Could not delete the track. Please try again.",
 } as const;
