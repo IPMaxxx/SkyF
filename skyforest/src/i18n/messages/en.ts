@@ -192,6 +192,7 @@ export default {
     siteSections: "Site sections",
     more: "More",
     accountTab: "Account",
+    trackTab: "Track",
   },
   appMeta: {
     title: "App",
