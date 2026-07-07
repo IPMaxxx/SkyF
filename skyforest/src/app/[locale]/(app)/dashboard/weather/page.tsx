@@ -13,7 +13,7 @@ import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { HowItWorksPopover } from "@/components/app/HowItWorksPopover";
 import { toast } from "sonner";
-import type { Location, WeatherDay } from "@/lib/supabase/types";
+import type { WeatherDay } from "@/lib/supabase/types";
 import {
   CloudSun,
   CloudRain,
@@ -28,6 +28,15 @@ import {
   AlertTriangle,
   RotateCcw,
 } from "lucide-react";
+
+// Сегодняшняя дата в локальном часовом поясе (yyyy-MM-dd для input type=date).
+// toISOString() отдаёт UTC и в ранние часы показывал бы «вчера».
+function todayLocalISO(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
 function WeatherMapLoading() {
   const t = useTranslations("weather");
@@ -169,7 +178,7 @@ export default function WeatherPage() {
 
   // --- Weather state ---
   const [selectedId, setSelectedId] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => todayLocalISO());
   const [weatherDays, setWeatherDays] = useState<WeatherDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageDataLoaded, setPageDataLoaded] = useState(false);
@@ -223,9 +232,10 @@ export default function WeatherPage() {
       ]);
       if (savedRes.data) setSavedList(savedRes.data as never[]);
 
+      // Восстанавливаем последнюю проверку (локация + график), но дату НЕ
+      // перетираем: поле «Конечная дата» по умолчанию должно быть сегодня.
       if (lastRes.data) {
         setSelectedId(lastRes.data.location_id);
-        setDate(lastRes.data.check_date);
         setWeatherDays(lastRes.data.weather_data);
       }
 
@@ -470,6 +480,16 @@ export default function WeatherPage() {
           <p className="text-xs sm:text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <HowItWorksPopover title={t("guideToggle")}>
+          {/* Вводное описание страницы + цены: раньше висело постоянным блоком
+              под заголовком, теперь спрятано за иконку вопроса. */}
+          <section className="space-y-2">
+            <p>{t("intro")}</p>
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground/80">
+              <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceWeather")}</span>
+              <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceRainMap")}</span>
+            </div>
+          </section>
+
           <section className="space-y-1.5">
             <h3 className="font-semibold text-foreground">{t("guideRainTitle")}</h3>
             <p>{t("guideRainP1")}</p>
@@ -506,14 +526,6 @@ export default function WeatherPage() {
             <p className="text-foreground/80">{t("guideTokensTip")}</p>
           </section>
         </HowItWorksPopover>
-      </div>
-
-      <div className="mb-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
-        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground/80">
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceWeather")}</span>
-          <span className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1">{t("priceRainMap")}</span>
-        </div>
       </div>
 
       {/* Tabs */}

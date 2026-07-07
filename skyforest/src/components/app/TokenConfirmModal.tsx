@@ -1,7 +1,9 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { Coins, AlertTriangle, Loader2 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { formatTokenUsd } from "@/lib/tokens";
 
@@ -60,14 +62,18 @@ export function TokenConfirmModal({
   const native = useIsNative();
   const intlLocale = useLocale();
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   const L = (locale ?? intlLocale) === "en" ? MODAL_UI.en : MODAL_UI.ru;
   const currentBalance = balance ?? 0;
   const afterBalance = free ? currentBalance : currentBalance - cost;
   const notEnough = !free && afterBalance < 0;
 
-  return (
+  // Портал в body: родители модалки (например .glass с backdrop-filter) создают
+  // свой stacking context, из-за чего z-index не спасал от Leaflet-панелей
+  // (z-index до ~1000) — модалка пряталась за картой. Из body z-[9999]
+  // гарантированно перекрывает карту и все контролы.
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
@@ -124,9 +130,9 @@ export function TokenConfirmModal({
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             <span>
               {L.notEnough}{" "}
-              <a href="/payment" className="underline hover:text-red-300">
+              <Link href="/payment" className="underline hover:text-red-300">
                 {L.topUp}
-              </a>
+              </Link>
             </span>
           </div>
         )}
@@ -152,6 +158,7 @@ export function TokenConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
