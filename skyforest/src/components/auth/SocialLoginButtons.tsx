@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { isNativeApp } from "@/lib/native/capacitor";
 import {
@@ -92,9 +93,9 @@ export function SocialLoginButtons({
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(
-            redirect,
-          )}`,
+          redirectTo: authRedirectUrl(
+            `/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+          ),
         },
       });
       if (oauthError) throw oauthError;

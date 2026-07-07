@@ -42,10 +42,21 @@ NEXT_PUBLIC_BRAND=samplify NEXT_PUBLIC_APP_URL=http://localhost:3000 npm run dev
 1. Создайте проект на [supabase.com](https://supabase.com)
 2. Выполните SQL из `supabase/schema.sql` в SQL Editor
 3. Скопируйте URL и ключи в `.env.local`
-4. В **Authentication → URL Configuration** добавьте redirect URLs:
+4. В **Authentication → URL Configuration** добавьте redirect URLs (общий Supabase для обоих доменов):
    - `https://skyforest.by/**`
    - `https://www.skyforest.by/**`
    - `https://skyforest.ai/**`
+   - `https://www.skyforest.ai/**`
+   - Явные callback-URL (если wildcard недоступен):
+     - `https://www.skyforest.by/auth/callback`
+     - `https://skyforest.by/auth/callback`
+     - `https://skyforest.ai/auth/callback`
+     - `https://www.skyforest.ai/auth/callback`
+   - **Site URL** для `.by`-деплоя: `https://www.skyforest.by` (или основной домен того проекта Vercel, где включён Google provider).
+5. В **Authentication → Providers → Google** убедитесь, что Client ID/Secret из Google Cloud Console подключены.
+6. В [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → OAuth 2.0 Client (тот же, что в Supabase):
+   - **Authorized redirect URIs**: `https://<project-ref>.supabase.co/auth/v1/callback`
+   - **Authorized JavaScript origins** (для web OAuth): `https://www.skyforest.by`, `https://skyforest.by`, `https://skyforest.ai`, `https://www.skyforest.ai`
 
 ## Настройка bePaid (skyforest.by)
 

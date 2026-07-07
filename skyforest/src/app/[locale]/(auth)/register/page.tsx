@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
+import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
@@ -58,7 +59,9 @@ function RegisterForm() {
         data: { full_name: fullName, brand: BRAND.id },
         // token_hash flow (см. /auth/confirm). Шаблон письма в Supabase должен иметь:
         //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{NEXT}}
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(redirect)}`,
+        emailRedirectTo: authRedirectUrl(
+          `/auth/confirm?next=${encodeURIComponent(redirect)}`,
+        ),
       },
     });
 
