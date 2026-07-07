@@ -11,6 +11,7 @@ import { enrichMany, type SpeciesInfo } from "@/lib/mushroom/enrichment";
 import { dangerousLookalikes } from "@/lib/mushroom/lookalikes";
 import { habitatFor, type Habitat } from "@/lib/mushroom/habitat";
 import { stripJpegExif } from "@/lib/mushroom/exif";
+import { getActiveSubscription, consumeSubscriptionQuota } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -176,21 +177,35 @@ export async function POST(request: NextRequest) {
   const infoByName = await enrichMany(names, locale);
   const bestInfo = infoByName[best.scientific_name];
 
+  // Подписка: включённые определения (30/мес Forager, 100/мес Pro)
+  // расходуют месячный счётчик и не списывают токены.
+  const sub = await getActiveSubscription(user.id);
+  const coveredBySub = sub ? await consumeSubscriptionQuota(sub, "identify") : false;
+
   // Списание токенов ТОЛЬКО при успехе (после получения результата).
-  const tokenCost = TOKEN_COSTS.mushroom_identify;
-  const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
-    p_user_id: user.id,
-    p_amount: tokenCost,
-    p_description: getTokenCostLabel("mushroom_identify"),
-    p_use_bonus: true,
-  });
-  if (spendErr || !spent?.success) {
-    return NextResponse.json(
-      { error: "insufficient_tokens", balance: spent?.balance ?? 0 },
-      { status: 402 },
-    );
+  let tokenCost: number = TOKEN_COSTS.mushroom_identify;
+  let balance: number;
+  if (coveredBySub) {
+    tokenCost = 0;
+    const { data: bal } = await supabase.rpc("get_token_balance", {
+      p_user_id: user.id,
+    });
+    balance = bal ?? 0;
+  } else {
+    const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
+      p_user_id: user.id,
+      p_amount: tokenCost,
+      p_description: getTokenCostLabel("mushroom_identify"),
+      p_use_bonus: true,
+    });
+    if (spendErr || !spent?.success) {
+      return NextResponse.json(
+        { error: "insufficient_tokens", balance: spent?.balance ?? 0 },
+        { status: 402 },
+      );
+    }
+    balance = spent.balance;
   }
-  const balance: number = spent.balance;
 
   const suggestions: IdentifySuggestion[] = visible.map((s, i) => {
     const info = infoByName[s.scientific_name];
@@ -266,12 +281,14 @@ export async function POST(request: NextRequest) {
   if (insErr) {
     // Вероятно, конкурентный дубль по request_id: возвращаем токены и отдаём
     // ранее сохранённый результат, чтобы не списать дважды.
-    await supabase.rpc("add_tokens", {
-      p_user_id: user.id,
-      p_amount: tokenCost,
-      p_type: "refund",
-      p_description: "Возврат: повторное определение гриба",
-    });
+    if (tokenCost > 0) {
+      await supabase.rpc("add_tokens", {
+        p_user_id: user.id,
+        p_amount: tokenCost,
+        p_type: "refund",
+        p_description: "Возврат: повторное определение гриба",
+      });
+    }
     if (requestId) {
       const { data: existing } = await supabase
         .from("mushroom_identifications")

@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email";
 import { buildCompareEmail, buildInsufficientTokensEmail } from "@/lib/email-templates";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import type { WeatherDay } from "@/lib/supabase/types";
+import { getActiveSubscription } from "@/lib/subscription";
 
 export const maxDuration = 60;
 
@@ -65,6 +66,28 @@ export async function GET(request: NextRequest) {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
+  // Подписка (Forager/Pro): первые N автомониторов по created_at — без
+  // списаний (N = 1 для Forager, 3 для Pro). Кэш на время прогона.
+  const freeMonitorCache = new Map<string, Set<string>>();
+  const isFreeMonitor = async (userId: string, acId: string): Promise<boolean> => {
+    if (!freeMonitorCache.has(userId)) {
+      const ids = new Set<string>();
+      const sub = await getActiveSubscription(userId).catch(() => null);
+      if (sub && sub.benefits.freeMonitors > 0) {
+        const { data: firstMonitors } = await supabase
+          .from("auto_compares")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("enabled", true)
+          .order("created_at", { ascending: true })
+          .limit(sub.benefits.freeMonitors);
+        for (const m of firstMonitors ?? []) ids.add(m.id);
+      }
+      freeMonitorCache.set(userId, ids);
+    }
+    return freeMonitorCache.get(userId)!.has(acId);
+  };
+
   for (const ac of autoCompares) {
     try {
       if (ac.last_run_at && ac.last_run_at.startsWith(todayStr)) continue;
@@ -76,23 +99,29 @@ export async function GET(request: NextRequest) {
 
       const userEmail = profile.email;
 
-      const { data: balanceData } = await supabase.rpc("get_token_balance", {
-        p_user_id: ac.user_id,
-      });
-      const balance = balanceData ?? 0;
+      // Включённый в подписку автомонитор — работает без списаний.
+      const freeMonitor = await isFreeMonitor(ac.user_id, ac.id);
+
       const cost = TOKEN_COSTS.compare;
 
-      if (balance < cost) {
-        try {
-          await sendEmail(
-            userEmail,
-            `Skyforest: not enough tokens for automatic comparison`,
-            buildInsufficientTokensEmail(bestDay.name, balance)
-          );
-        } catch (emailErr) {
-          console.error("Failed to send insufficient tokens email:", emailErr);
+      if (!freeMonitor) {
+        const { data: balanceData } = await supabase.rpc("get_token_balance", {
+          p_user_id: ac.user_id,
+        });
+        const balance = balanceData ?? 0;
+
+        if (balance < cost) {
+          try {
+            await sendEmail(
+              userEmail,
+              `Skyforest: not enough tokens for automatic comparison`,
+              buildInsufficientTokensEmail(bestDay.name, balance)
+            );
+          } catch (emailErr) {
+            console.error("Failed to send insufficient tokens email:", emailErr);
+          }
+          continue;
         }
-        continue;
       }
 
       const today = todayStr;
@@ -106,12 +135,14 @@ export async function GET(request: NextRequest) {
 
       if (!weatherRaw.daily?.time) continue;
 
-      const { data: spendResult } = await supabase.rpc("spend_tokens", {
-        p_user_id: ac.user_id,
-        p_amount: cost,
-        p_description: `Автосравнение: ${ac.name || bestDay.name} → ${loc.name}`,
-      });
-      if (!spendResult?.success) continue;
+      if (!freeMonitor) {
+        const { data: spendResult } = await supabase.rpc("spend_tokens", {
+          p_user_id: ac.user_id,
+          p_amount: cost,
+          p_description: `Автосравнение: ${ac.name || bestDay.name} → ${loc.name}`,
+        });
+        if (!spendResult?.success) continue;
+      }
 
       const currentWeather: WeatherDay[] = weatherRaw.daily.time.map((date: string, i: number) => ({
         date,

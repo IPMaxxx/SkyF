@@ -10,6 +10,8 @@ interface TokenContextType {
   realBalance: number | null;
   /** Bonus tokens — usable for platform services, not marketplace or withdrawals */
   bonusBalance: number | null;
+  /** Withdrawable tokens — marketplace earnings minus already withdrawn */
+  withdrawable: number | null;
   loading: boolean;
   spend: (action: string, description?: string, multiplier?: number) => Promise<{ success: boolean; balance: number; error?: string }>;
   refresh: () => Promise<void>;
@@ -19,6 +21,7 @@ const TokenContext = createContext<TokenContextType>({
   balance: null,
   realBalance: null,
   bonusBalance: null,
+  withdrawable: null,
   loading: true,
   spend: async () => ({ success: false, balance: 0, error: "No provider" }),
   refresh: async () => {},
@@ -29,6 +32,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [realBalance, setRealBalance] = useState<number | null>(null);
   const [bonusBalance, setBonusBalance] = useState<number | null>(null);
+  const [withdrawable, setWithdrawable] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -40,10 +44,12 @@ export function TokenProvider({ children }: { children: ReactNode }) {
       setRealBalance(real);
       setBonusBalance(bonus);
       setBalance(real + bonus);
+      setWithdrawable(data.withdrawable ?? 0);
     } catch {
       setBalance(0);
       setRealBalance(0);
       setBonusBalance(0);
+      setWithdrawable(0);
     } finally {
       setLoading(false);
     }
@@ -80,7 +86,9 @@ export function TokenProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TokenContext.Provider value={{ balance, realBalance, bonusBalance, loading, spend, refresh }}>
+    <TokenContext.Provider
+      value={{ balance, realBalance, bonusBalance, withdrawable, loading, spend, refresh }}
+    >
       {children}
     </TokenContext.Provider>
   );
