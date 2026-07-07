@@ -9,63 +9,58 @@
  * Двойники заданы реальными биномиальными названиями (`scientific_name`), чтобы
  * по ним можно было подтянуть фото из биологических баз. Поиск идёт сначала по
  * точному виду, затем по роду.
+ *
+ * Локализация: сам биномиал — стабильный код. Человекочитаемая подпись двойника
+ * переводится на клиенте через namespace `identify` (`lookalikeLabels`) по
+ * `scientific_name`. Старые сохранённые результаты могли нести готовую русскую
+ * подпись в `label` — клиент выводит её как есть (обратная совместимость).
  */
 
 export interface Lookalike {
-  /** Реальный биномиал — для фото и ссылок. */
+  /** Реальный биномиал — стабильный код, для фото/ссылок и перевода подписи. */
   scientific_name: string;
-  /** Человекочитаемое описание с пометкой опасности. */
-  label: string;
 }
 
 const BY_SPECIES: Record<string, Lookalike[]> = {
   "Boletus edulis": [
-    { scientific_name: "Tylopilus felleus", label: "жёлчный гриб — очень горький, несъедобен" },
-    { scientific_name: "Rubroboletus satanas", label: "сатанинский гриб — ядовит" },
+    { scientific_name: "Tylopilus felleus" },
+    { scientific_name: "Rubroboletus satanas" },
   ],
   "Cantharellus cibarius": [
-    { scientific_name: "Hygrophoropsis aurantiaca", label: "ложная лисичка" },
-    { scientific_name: "Omphalotus olearius", label: "омфалот маслиновый — ядовит" },
+    { scientific_name: "Hygrophoropsis aurantiaca" },
+    { scientific_name: "Omphalotus olearius" },
   ],
   "Macrolepiota procera": [
-    { scientific_name: "Chlorophyllum molybdites", label: "хлорофиллум — вызывает отравления" },
-    { scientific_name: "Amanita phalloides", label: "бледная поганка (молодые похожи) — смертельно ядовита" },
+    { scientific_name: "Chlorophyllum molybdites" },
+    { scientific_name: "Amanita phalloides" },
   ],
 };
 
 const BY_GENUS: Record<string, Lookalike[]> = {
   Boletus: [
-    { scientific_name: "Tylopilus felleus", label: "жёлчный гриб — горький, несъедобен" },
-    { scientific_name: "Rubroboletus satanas", label: "сатанинский гриб — ядовит" },
+    { scientific_name: "Tylopilus felleus" },
+    { scientific_name: "Rubroboletus satanas" },
   ],
   Agaricus: [
-    { scientific_name: "Amanita phalloides", label: "бледная поганка — смертельно ядовита" },
-    { scientific_name: "Amanita virosa", label: "белый мухомор — смертельно ядовит" },
+    { scientific_name: "Amanita phalloides" },
+    { scientific_name: "Amanita virosa" },
   ],
   Armillaria: [
-    { scientific_name: "Galerina marginata", label: "галерина окаймлённая — смертельно ядовита" },
-    { scientific_name: "Hypholoma fasciculare", label: "ложноопёнок серно-жёлтый — ядовит" },
+    { scientific_name: "Galerina marginata" },
+    { scientific_name: "Hypholoma fasciculare" },
   ],
-  Pleurotus: [
-    { scientific_name: "Omphalotus olearius", label: "омфалот маслиновый — ядовит" },
-  ],
+  Pleurotus: [{ scientific_name: "Omphalotus olearius" }],
   Cantharellus: [
-    { scientific_name: "Hygrophoropsis aurantiaca", label: "ложная лисичка" },
-    { scientific_name: "Omphalotus olearius", label: "омфалот маслиновый — ядовит" },
+    { scientific_name: "Hygrophoropsis aurantiaca" },
+    { scientific_name: "Omphalotus olearius" },
   ],
-  Leccinum: [
-    { scientific_name: "Tylopilus felleus", label: "жёлчный гриб — горький, несъедобен" },
-  ],
+  Leccinum: [{ scientific_name: "Tylopilus felleus" }],
   Amanita: [
-    { scientific_name: "Amanita phalloides", label: "бледная поганка — смертельно ядовита" },
-    { scientific_name: "Amanita muscaria", label: "мухомор красный — ядовит" },
+    { scientific_name: "Amanita phalloides" },
+    { scientific_name: "Amanita muscaria" },
   ],
-  Lactarius: [
-    { scientific_name: "Lactarius torminosus", label: "волнушка розовая — едкий млечный сок" },
-  ],
-  Russula: [
-    { scientific_name: "Russula emetica", label: "сыроежка жгучая — едкая" },
-  ],
+  Lactarius: [{ scientific_name: "Lactarius torminosus" }],
+  Russula: [{ scientific_name: "Russula emetica" }],
 };
 
 function genusOf(scientificName: string): string {

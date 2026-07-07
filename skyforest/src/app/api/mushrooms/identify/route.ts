@@ -54,7 +54,9 @@ export interface IdentifyDetails {
 
 export interface IdentifyLookalike {
   scientific_name: string;
-  label: string;
+  /** Legacy: готовая русская подпись из старых результатов. Новые результаты
+   *  переводятся на клиенте по `scientific_name` — поле не заполняется. */
+  label?: string | null;
   photo_url: string | null;
 }
 
@@ -119,6 +121,9 @@ export async function POST(request: NextRequest) {
     request.headers.get("idempotency-key") ||
     null;
 
+  // Локаль UI — определяет язык внешних справочных данных (Kindwise / GBIF / iNat).
+  const locale = (form.get("locale") as string | null) === "en" ? "en" : "ru";
+
   // Идемпотентность: если по этому request_id уже есть результат — вернём его
   // без повторного списания токенов.
   if (requestId) {
@@ -146,6 +151,7 @@ export async function POST(request: NextRequest) {
     result = await identifyMushroom(cleanBytes, {
       apiKey,
       baseUrl: process.env.KINDWISE_BASE_URL,
+      language: locale,
     });
   } catch (err) {
     console.error("Kindwise identify failed:", err);
@@ -167,7 +173,7 @@ export async function POST(request: NextRequest) {
     ...visible.map((s) => s.scientific_name),
     ...rawLookalikes.map((l) => l.scientific_name),
   ];
-  const infoByName = await enrichMany(names);
+  const infoByName = await enrichMany(names, locale);
   const bestInfo = infoByName[best.scientific_name];
 
   // Списание токенов ТОЛЬКО при успехе (после получения результата).
@@ -213,7 +219,6 @@ export async function POST(request: NextRequest) {
 
   const lookalikes: IdentifyLookalike[] = rawLookalikes.map((l) => ({
     scientific_name: l.scientific_name,
-    label: l.label,
     photo_url: infoByName[l.scientific_name]?.photo_url ?? null,
   }));
 

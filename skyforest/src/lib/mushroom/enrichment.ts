@@ -86,6 +86,11 @@ async function gbifMatch(scientificName: string): Promise<GbifMatch | null> {
   return data;
 }
 
+/** Локаль UI → трёхбуквенный код языка для GBIF vernacularNames. */
+function gbifLang(locale: string): string {
+  return locale === "en" ? "eng" : "rus";
+}
+
 async function gbifVernacular(usageKey: number, lang = "rus"): Promise<string[]> {
   const data = await gbifGet<{ results?: Array<{ language?: string; vernacularName?: string }> }>(
     `/species/${usageKey}/vernacularNames`,
@@ -153,23 +158,26 @@ async function inatLookup(scientificName: string, locale = "ru"): Promise<InatLo
 }
 
 /** Обогащение одного вида (GBIF + iNaturalist параллельно). */
-export async function enrichSpecies(scientificName: string): Promise<SpeciesInfo> {
+export async function enrichSpecies(
+  scientificName: string,
+  locale = "ru",
+): Promise<SpeciesInfo> {
   const info = emptyInfo(scientificName);
 
   const [gbif, inat] = await Promise.all([
     gbifMatch(scientificName),
-    inatLookup(scientificName),
+    inatLookup(scientificName, locale),
   ]);
 
   if (gbif && gbif.usageKey != null) {
     info.gbif_url = `https://www.gbif.org/species/${gbif.usageKey}`;
     info.family = gbif.family ?? null;
     info.genus = gbif.genus ?? null;
-    const [ruNames, toxic] = await Promise.all([
-      gbifVernacular(gbif.usageKey),
+    const [vernacular, toxic] = await Promise.all([
+      gbifVernacular(gbif.usageKey, gbifLang(locale)),
       gbifToxic(gbif.usageKey),
     ]);
-    info.common_names.push(...ruNames);
+    info.common_names.push(...vernacular);
     if (toxic != null) {
       info.toxic = toxic;
       info.toxic_source = "GBIF";
@@ -200,9 +208,10 @@ export async function enrichSpecies(scientificName: string): Promise<SpeciesInfo
 /** Обогащение списка видов параллельно; ошибки по отдельным видам не валят всё. */
 export async function enrichMany(
   scientificNames: string[],
+  locale = "ru",
 ): Promise<Record<string, SpeciesInfo>> {
   const unique = [...new Set(scientificNames.filter(Boolean))];
-  const results = await Promise.allSettled(unique.map((n) => enrichSpecies(n)));
+  const results = await Promise.allSettled(unique.map((n) => enrichSpecies(n, locale)));
   const out: Record<string, SpeciesInfo> = {};
   unique.forEach((name, i) => {
     const r = results[i];
