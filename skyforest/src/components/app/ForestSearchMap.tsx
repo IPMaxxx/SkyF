@@ -15,6 +15,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
 import type { ForestMatch } from "@/app/api/forest-search/route";
+import { formatReason, formatIgbpClass } from "@/lib/forestSearchReason";
 
 const BELARUS_CENTER: [number, number] = [53.9, 27.56];
 
@@ -156,6 +157,8 @@ function ResultPopup({ match: m, index }: { match: ForestMatch; index: number })
 
   const genusLabel = (g: string) => t(`genus.${g}` as "genus.pinus");
   const forestTypeLabel = (ft: string) => t(`forestType.${ft}` as "forestType.coniferous");
+  const tReason = t as unknown as (key: string, values?: Record<string, string | number>) => string;
+  const tIgbp = t as unknown as ((key: string, values?: Record<string, string | number>) => string) & { has: (key: string) => boolean };
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: 1.5 }}>
@@ -197,15 +200,15 @@ function ResultPopup({ match: m, index }: { match: ForestMatch; index: number })
           {p.modis_class && (
             <>
               <SectionHeader label={t("sectionModis")} color="#a855f7" />
-              <PopupRow label={t("rowClass")} value={p.modis_class} />
+              <PopupRow label={t("rowClass")} value={formatIgbpClass(tIgbp, p.modis_class)} />
               <PopupRow label={t("rowForest")} value={p.modis_is_forest ? t("yes") : t("no")} />
             </>
           )}
           <SectionHeader label={t("sectionScore")} color={simColor} />
-          <ScorePopupRow label={t("breakdownGenera")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={m.breakdown.genera_overlap.reason} />
-          <ScorePopupRow label={t("breakdownSpecies")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={m.breakdown.dominant_species.reason} />
-          <ScorePopupRow label={t("breakdownType")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={m.breakdown.forest_type.reason} />
-          <ScorePopupRow label={t("breakdownModis")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={m.breakdown.modis.reason} />
+          <ScorePopupRow label={t("breakdownGenera")} score={m.breakdown.genera_overlap.score} max={m.breakdown.genera_overlap.max} reason={formatReason(tReason, m.breakdown.genera_overlap)} />
+          <ScorePopupRow label={t("breakdownSpecies")} score={m.breakdown.dominant_species.score} max={m.breakdown.dominant_species.max} reason={formatReason(tReason, m.breakdown.dominant_species)} />
+          <ScorePopupRow label={t("breakdownType")} score={m.breakdown.forest_type.score} max={m.breakdown.forest_type.max} reason={formatReason(tReason, m.breakdown.forest_type)} />
+          <ScorePopupRow label={t("breakdownModis")} score={m.breakdown.modis.score} max={m.breakdown.modis.max} reason={formatReason(tReason, m.breakdown.modis)} />
         </tbody>
       </table>
     </div>
