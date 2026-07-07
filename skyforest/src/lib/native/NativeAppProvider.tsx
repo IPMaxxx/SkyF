@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "@/i18n/navigation";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { isNativeApp, getPlatform } from "./capacitor";
 
@@ -14,11 +16,15 @@ import { isNativeApp, getPlatform } from "./capacitor";
  *  - настраиваем статусбар под тёмную тему бренда;
  *  - регистрируем push-уведомления и отправляем токен на бэкенд;
  *  - обрабатываем deep links (OAuth-редиректы Supabase, реферальные ссылки);
- *  - на Android обрабатываем аппаратную кнопку «Назад».
+ *  - на Android обрабатываем аппаратную кнопку «Назад»;
+ *  - лениво инициализируем IAP-store, чтобы прерванные покупки допроводились.
  */
 export function NativeAppProvider() {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("payment");
+  const tRef = useRef(t);
+  tRef.current = t;
 
   // Стартовый маршрут native: при холодном запуске с корня «/».
   //  - есть сессия → сразу в кабинет /dashboard;
@@ -101,6 +107,22 @@ export function NativeAppProvider() {
       } catch {
         /* игнорируем */
       }
+
+      // --- In-App Purchases: инициализация store (лениво, не блокируя старт).
+      // Допроводит прерванные покупки: approved-транзакции без активного
+      // вызова purchasePack верифицируются сервером, начисляются и
+      // показывают пользователю toast об успешном начислении. ---
+      import("@/lib/native/iap")
+        .then(({ initIap }) =>
+          initIap({
+            onBackgroundCredit: (tokens) => {
+              if (!disposed) toast.success(tRef.current("iapCredited", { tokens }));
+            },
+          }),
+        )
+        .catch(() => {
+          /* плагин недоступен — игнорируем */
+        });
 
       // --- Push notifications ---
       try {

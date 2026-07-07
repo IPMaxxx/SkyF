@@ -50,6 +50,7 @@ export default {
   buyBtnShort: "{tokens} за {price}",
   buyBtnFull: "Купить {tokens} токенов за {price}",
   nativeSecureNote: "Покупки обрабатываются безопасно через App Store / Google Play.",
+  iapCredited: "Покупка завершена: +{tokens} токенов на балансе",
   securePayment: "Безопасная оплата",
   paymentsVia: "Оплата через",
   pciNote: "сертифицированный провайдер PCI DSS Level 1.",

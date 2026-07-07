@@ -41,18 +41,40 @@ function appleToken(): string | null {
   return `${signingInput}.${b64url(signature)}`;
 }
 
-/** Проверяет транзакцию через App Store Server API. Возвращает productId или null. */
-async function verifyApple(transactionId: string): Promise<{ productId: string } | null> {
+/**
+ * Разрешён ли sandbox-фолбэк Apple для данного пользователя.
+ * Вне продакшена — всегда; в продакшене — только для email из
+ * IAP_SANDBOX_ALLOWLIST (тестировщики), иначе 404 от production-хоста = отказ.
+ */
+function sandboxAllowed(userEmail: string | undefined): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  const allowlist = (process.env.IAP_SANDBOX_ALLOWLIST ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
+}
+
+/**
+ * Проверяет транзакцию через App Store Server API.
+ * Возвращает productId и appAccountToken (привязка к пользователю) или null.
+ */
+async function verifyApple(
+  transactionId: string,
+  allowSandbox: boolean,
+): Promise<{ productId: string; appAccountToken: string | null } | null> {
   const token = appleToken();
   if (!token) throw new Error("apple_not_configured");
 
   const hosts =
     process.env.APPLE_IAP_ENV === "sandbox"
       ? ["https://api.storekit-sandbox.itunes.apple.com"]
-      : [
-          "https://api.storekit.itunes.apple.com",
-          "https://api.storekit-sandbox.itunes.apple.com",
-        ];
+      : allowSandbox
+        ? [
+            "https://api.storekit.itunes.apple.com",
+            "https://api.storekit-sandbox.itunes.apple.com",
+          ]
+        : ["https://api.storekit.itunes.apple.com"];
 
   for (const host of hosts) {
     const res = await fetch(`${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`, {
@@ -68,7 +90,12 @@ async function verifyApple(transactionId: string): Promise<{ productId: string }
     if (parts.length < 2) continue;
     const info = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
     if (info.bundleId && info.bundleId !== BUNDLE_ID) return null;
-    if (info.productId) return { productId: info.productId };
+    if (info.productId) {
+      return {
+        productId: info.productId,
+        appAccountToken: typeof info.appAccountToken === "string" ? info.appAccountToken : null,
+      };
+    }
   }
   return null;
 }
@@ -108,8 +135,14 @@ async function googleAccessToken(): Promise<string | null> {
   return data.access_token ?? null;
 }
 
-/** Проверяет покупку через Play Developer API. Возвращает true, если куплено. */
-async function verifyGoogle(productId: string, purchaseToken: string): Promise<boolean> {
+/**
+ * Проверяет покупку через Play Developer API.
+ * Возвращает статус и obfuscatedExternalAccountId (привязка к пользователю).
+ */
+async function verifyGoogle(
+  productId: string,
+  purchaseToken: string,
+): Promise<{ purchased: boolean; obfuscatedExternalAccountId: string | null }> {
   const accessToken = await googleAccessToken();
   if (!accessToken) throw new Error("google_not_configured");
 
@@ -117,10 +150,14 @@ async function verifyGoogle(productId: string, purchaseToken: string): Promise<b
     productId,
   )}/tokens/${encodeURIComponent(purchaseToken)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!res.ok) return false;
+  if (!res.ok) return { purchased: false, obfuscatedExternalAccountId: null };
   const data = await res.json();
   // purchaseState: 0 = Purchased, 1 = Cancelled, 2 = Pending
-  return data.purchaseState === 0;
+  return {
+    purchased: data.purchaseState === 0,
+    obfuscatedExternalAccountId:
+      typeof data.obfuscatedExternalAccountId === "string" ? data.obfuscatedExternalAccountId : null,
+  };
 }
 
 // ---------------- Route ----------------
@@ -163,13 +200,30 @@ export async function POST(req: NextRequest) {
     let verifiedProductId: string | null = null;
     let paymentRef: string | null = null;
 
+    // Сверка привязки чека к пользователю: клиент при order() передаёт
+    // user.id (appAccountToken на iOS / obfuscatedAccountId на Android).
+    // Если значение в чеке есть и НЕ совпадает — 403 (чек чужого аккаунта).
+    // Если отсутствует — переходный режим (старые/прерванные покупки без
+    // привязки): начисляем, но логируем warning.
     if (platform === "ios") {
       if (!transactionId) {
         return NextResponse.json({ ok: false, error: "transactionId required" }, { status: 400 });
       }
-      const result = await verifyApple(transactionId);
+      const result = await verifyApple(transactionId, sandboxAllowed(user.email));
       if (!result || result.productId !== productId) {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
+      }
+      if (result.appAccountToken) {
+        if (result.appAccountToken.toLowerCase() !== user.id.toLowerCase()) {
+          console.error(
+            `IAP verify: appAccountToken mismatch (tx ${transactionId}, user ${user.id})`,
+          );
+          return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+        }
+      } else {
+        console.warn(
+          `IAP verify: no appAccountToken in Apple transaction ${transactionId} (user ${user.id}) — crediting in transitional mode`,
+        );
       }
       verifiedProductId = result.productId;
       paymentRef = `ios:${transactionId}`;
@@ -177,9 +231,21 @@ export async function POST(req: NextRequest) {
       if (!purchaseToken) {
         return NextResponse.json({ ok: false, error: "purchaseToken required" }, { status: 400 });
       }
-      const ok = await verifyGoogle(productId, purchaseToken);
-      if (!ok) {
+      const result = await verifyGoogle(productId, purchaseToken);
+      if (!result.purchased) {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
+      }
+      if (result.obfuscatedExternalAccountId) {
+        if (result.obfuscatedExternalAccountId.toLowerCase() !== user.id.toLowerCase()) {
+          console.error(
+            `IAP verify: obfuscatedExternalAccountId mismatch (user ${user.id})`,
+          );
+          return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+        }
+      } else {
+        console.warn(
+          `IAP verify: no obfuscatedExternalAccountId in Google purchase (user ${user.id}) — crediting in transitional mode`,
+        );
       }
       verifiedProductId = productId;
       paymentRef = `android:${purchaseToken}`;

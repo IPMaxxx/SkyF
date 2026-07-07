@@ -609,22 +609,21 @@ export function AppHeader() {
                 );
               })}
 
-              {/* Токены скрыты в нативной оболочке (только индикатор; списание работает) */}
-              {!isNative && (
-                <Link
-                  href="/payment"
-                  onClick={closeAll}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                    pathname === "/payment" || pathname.startsWith("/payment/")
-                      ? "bg-amber-500/20 text-amber-300"
-                      : "text-amber-400 hover:bg-white/5"
-                  )}
-                >
-                  <Coins className="h-5 w-5" aria-hidden="true" />
-                  {t("tokens")}
-                </Link>
-              )}
+              {/* Токены: в нативе — точка входа к покупке через IAP,
+                  на вебе — как раньше */}
+              <Link
+                href="/payment"
+                onClick={closeAll}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                  pathname === "/payment" || pathname.startsWith("/payment/")
+                    ? "bg-amber-500/20 text-amber-300"
+                    : "text-amber-400 hover:bg-white/5"
+                )}
+              >
+                <Coins className="h-5 w-5" aria-hidden="true" />
+                {t("tokens")}
+              </Link>
 
               <div className="my-2 border-t border-white/10" />
 
