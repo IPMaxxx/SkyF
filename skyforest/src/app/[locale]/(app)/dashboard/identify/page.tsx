@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Camera,
@@ -34,6 +34,7 @@ function formatPct(prob: number): string {
 
 export default function IdentifyPage() {
   const t = useTranslations("identify");
+  const locale = useLocale();
   const { balance, refresh: refreshTokens } = useTokens();
 
   const [file, setFile] = useState<File | null>(null);
@@ -54,6 +55,11 @@ export default function IdentifyPage() {
 
   const tips = t.raw("tips") as string[];
   const checklist = t.raw("checklist") as string[];
+  const habitatData = t.raw("habitatData") as Record<
+    string,
+    { zone: string; weather: string }
+  >;
+  const lookalikeLabels = t.raw("lookalikeLabels") as Record<string, string>;
   const cost = TOKEN_COSTS.mushroom_identify;
 
   const setCaptured = (f: File | null) => {
@@ -120,6 +126,7 @@ export default function IdentifyPage() {
       const form = new FormData();
       form.append("image", file);
       form.append("request_id", requestId);
+      form.append("locale", locale);
 
       const res = await fetch("/api/mushrooms/identify", {
         method: "POST",
@@ -307,25 +314,38 @@ export default function IdentifyPage() {
                 </p>
               )}
 
-              {result.habitat && (
-                <div className="space-y-1.5 rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3">
-                  <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {t("habitatTitle")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground/80">{t("habitatZone")}:</span>{" "}
-                    {result.habitat.zone}
-                  </p>
-                  <p className="flex items-start gap-1 text-xs text-muted-foreground">
-                    <CloudSun className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                    <span>
-                      <span className="font-medium text-foreground/80">{t("habitatWeather")}:</span>{" "}
-                      {result.habitat.weather}
-                    </span>
-                  </p>
-                </div>
-              )}
+              {result.habitat &&
+                (() => {
+                  // Новые результаты несут только code → перевод на клиенте.
+                  // Старые сохранённые результаты несли готовый текст в zone/weather.
+                  const localized = habitatData[result.habitat.code];
+                  const zone = result.habitat.zone ?? localized?.zone;
+                  const weather = result.habitat.weather ?? localized?.weather;
+                  if (!zone && !weather) return null;
+                  return (
+                    <div className="space-y-1.5 rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {t("habitatTitle")}
+                      </p>
+                      {zone && (
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground/80">{t("habitatZone")}:</span>{" "}
+                          {zone}
+                        </p>
+                      )}
+                      {weather && (
+                        <p className="flex items-start gap-1 text-xs text-muted-foreground">
+                          <CloudSun className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                          <span>
+                            <span className="font-medium text-foreground/80">{t("habitatWeather")}:</span>{" "}
+                            {weather}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
             </div>
           )}
 
@@ -357,7 +377,9 @@ export default function IdentifyPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium italic">{la.scientific_name}</p>
-                      <p className="text-xs text-muted-foreground">{la.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {la.label ?? lookalikeLabels[la.scientific_name] ?? ""}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -384,7 +406,7 @@ export default function IdentifyPage() {
           {/* Дисклеймер */}
           <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-relaxed text-muted-foreground">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
-            <span>{result.disclaimer || t("disclaimer")}</span>
+            <span>{t("disclaimer")}</span>
           </div>
 
           <button

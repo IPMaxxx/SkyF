@@ -101,6 +101,8 @@ export interface KindwiseOptions {
   apiKey: string;
   baseUrl?: string;
   timeoutMs?: number;
+  /** ISO-код языка для language-зависимых полей (common_names, url). По умолчанию английский. */
+  language?: string;
 }
 
 const DEFAULT_BASE_URL = "https://mushroom.kindwise.com/api/v1";
@@ -119,7 +121,9 @@ export async function identifyMushroom(
   const baseUrl = (options.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
   const encoded = Buffer.from(imageBytes).toString("base64");
 
-  const url = `${baseUrl}/identification?details=common_names,url`;
+  const query = new URLSearchParams({ details: "common_names,url" });
+  if (options.language) query.set("language", options.language);
+  const url = `${baseUrl}/identification?${query.toString()}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
