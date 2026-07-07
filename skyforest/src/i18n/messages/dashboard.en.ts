@@ -97,7 +97,7 @@ export default {
     confirmRainTitle: "Build the rain map?",
     confirmRainDesc: "Rain over 14 days across 20 points within a 20 km radius.",
     confirmForestTitle: "Identify the forest type?",
-    confirmForestDesc: "Forest data from OSM, FGIS LK, iNaturalist and MODIS. Free.",
+    confirmForestDesc: "Forest data from OSM, FGIS LK, iNaturalist and MODIS. Free for Forager/Pro subscribers.",
   },
   mushroomBot: {
     title: "Mushroom ID bot",

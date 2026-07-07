@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
+import { useTokens } from "@/lib/TokenContext";
 import type { ForestInfo, TreeSpecies } from "@/lib/supabase/types";
 import {
   Trees, Leaf, Loader2, RefreshCw, ChevronDown, ChevronUp,
@@ -62,7 +63,7 @@ const FOREST_TYPE_COLORS: Record<string, string> = {
 // (OSM, ФГИС ЛК, iNaturalist) преимущественно на русском — переводится только UI.
 const UI = {
   ru: {
-    refresh: "Обновить данные",
+    refresh: "Обновить данные (1 токен, с подпиской — бесплатно)",
     modisTitle: "MODIS / спутник",
     igbpClass: "Класс IGBP",
     igbpEng: "Англ.",
@@ -85,7 +86,7 @@ const UI = {
     moreSpecies: (n: number) => `Ещё ${n} видов`,
     noForestData: "Данные о лесе не найдены для этой локации",
     learnForestType: "Узнать тип леса",
-    learnForestDesc: "OSM, ФГИС ЛК, iNaturalist, MODIS — все источники",
+    learnForestDesc: "OSM, ФГИС ЛК, iNaturalist, MODIS — 1 токен, с подпиской — бесплатно",
     analyzing: "Анализ местности...",
     analyzingDesc: "OSM + ФГИС ЛК + iNaturalist + MODIS",
     loadError: "Ошибка загрузки",
@@ -95,7 +96,7 @@ const UI = {
     dateLocale: "ru-RU",
   },
   en: {
-    refresh: "Refresh data",
+    refresh: "Refresh data (1 token, free with subscription)",
     modisTitle: "MODIS / satellite",
     igbpClass: "IGBP class",
     igbpEng: "Eng.",
@@ -118,7 +119,7 @@ const UI = {
     moreSpecies: (n: number) => `${n} more species`,
     noForestData: "No forest data found for this location",
     learnForestType: "Identify forest type",
-    learnForestDesc: "OSM, FGIS LK, iNaturalist, MODIS — all sources",
+    learnForestDesc: "OSM, FGIS LK, iNaturalist, MODIS — 1 token, free with subscription",
     analyzing: "Analyzing the area...",
     analyzingDesc: "OSM + FGIS LK + iNaturalist + MODIS",
     loadError: "Loading error",
@@ -139,6 +140,7 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded, autoL
   const [speciesExpanded, setSpeciesExpanded] = useState(false);
   const [osmTagsExpanded, setOsmTagsExpanded] = useState(false);
   const autoLoadedRef = useRef(false);
+  const { refresh: refreshTokens } = useTokens();
 
   const fetchInfo = async (force = false) => {
     if (lat === null || lng === null) return;
@@ -154,6 +156,9 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded, autoL
         setError(data.error || T.loadError);
         return;
       }
+
+      // Сервер списал 1 токен (forest_info) — обновляем баланс в шапке.
+      if (data.charged) refreshTokens();
 
       setInfo(data.forest_info);
       onLoaded?.(data.forest_info);

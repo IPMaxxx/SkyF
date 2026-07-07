@@ -3,6 +3,8 @@ import https from "node:https";
 import { createClient } from "@/lib/supabase/server";
 import type { ForestInfo, TreeSpecies } from "@/lib/supabase/types";
 import { getModisLandCover, type ModisLandCover } from "@/lib/gee";
+import { TOKEN_COSTS } from "@/lib/tokens";
+import { getActiveSubscription, isUnlimitedAction } from "@/lib/subscription";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const INAT_URL = "https://api.inaturalist.org/v1/observations/species_counts";
@@ -532,6 +534,35 @@ export async function GET(request: NextRequest) {
   // веб-поведение без изменений. ФГИС ЛК/OSM теги приходят на языке источника.
   const locale = request.nextUrl.searchParams.get("locale") === "en" ? "en" : "ru";
 
+  // Определение типа леса — платное действие (forest_info = 1 токен).
+  // Подписчики Forager/Pro — безлимит (действие в UNLIMITED_BASE), остальным
+  // списывается 1 токен (бонусные первыми). Списание — до кэша: с точки
+  // зрения пользователя каждое определение стоит одинаково, кэш — деталь
+  // реализации (экономия внешних запросов).
+  let charged = false;
+  const sub = await getActiveSubscription(user.id);
+  if (!sub || !isUnlimitedAction(sub, "forest_info")) {
+    const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
+      p_user_id: user.id,
+      p_amount: TOKEN_COSTS.forest_info,
+      p_description:
+        locale === "en" ? "Forest type identification" : "Определение типа леса",
+      p_use_bonus: true,
+    });
+    if (spendErr || !(spent as { success?: boolean } | null)?.success) {
+      return NextResponse.json(
+        {
+          error:
+            locale === "en"
+              ? `Not enough tokens (need ${TOKEN_COSTS.forest_info})`
+              : `Недостаточно токенов (нужно ${TOKEN_COSTS.forest_info})`,
+        },
+        { status: 402 }
+      );
+    }
+    charged = true;
+  }
+
   // Check cache first (rounded to 4 decimal places ~ 11m precision)
   if (!force) {
     const { data: cached } = await supabase
@@ -549,7 +580,7 @@ export async function GET(request: NextRequest) {
       // отдавать чужой язык. Старые записи без поля — русские (было раньше).
       const cachedLocale = (cached.data as { locale?: string } | null)?.locale ?? "ru";
       if (age < THIRTY_DAYS && cachedLocale === locale) {
-        return NextResponse.json({ forest_info: cached.data, from_cache: true });
+        return NextResponse.json({ forest_info: cached.data, from_cache: true, charged });
       }
     }
   }
@@ -634,5 +665,5 @@ export async function GET(request: NextRequest) {
     { onConflict: "lat,lng" }
   );
 
-  return NextResponse.json({ forest_info: forestInfo, from_cache: false });
+  return NextResponse.json({ forest_info: forestInfo, from_cache: false, charged });
 }

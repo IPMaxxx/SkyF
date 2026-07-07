@@ -310,12 +310,13 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
     { key: "forest", label: t("forest"), icon: Trees },
   ];
 
-  // Конфиг подтверждения по действию: стоимость и тексты. Forest — бесплатно
-  // (GET /api/forest-info не списывает токены).
+  // Конфиг подтверждения по действию: стоимость и тексты. Forest списывается
+  // на сервере внутри GET /api/forest-info (1 токен; подписчики Forager/Pro —
+  // без списаний), модалка показывает стоимость единообразно для всех.
   const confirmConfig = {
     weather: { cost: TOKEN_COSTS.weather_check, free: false, title: t("confirmWeatherTitle"), description: t("confirmWeatherDesc") },
     precip: { cost: PRECIP_COST, free: false, title: t("confirmRainTitle"), description: t("confirmRainDesc") },
-    forest: { cost: 0, free: true, title: t("confirmForestTitle"), description: t("confirmForestDesc") },
+    forest: { cost: TOKEN_COSTS.forest_info, free: false, title: t("confirmForestTitle"), description: t("confirmForestDesc") },
   } as const;
 
   const handleConfirm = () => {
@@ -397,7 +398,13 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
             <button
               key={a.key}
               type="button"
-              onClick={() => setPending(a.key)}
+              // Лес с уже сохранёнными данными показывается из locations.forest_info
+              // без запроса и списания — модалка со стоимостью была бы обманом.
+              onClick={() =>
+                a.key === "forest" && savedLocation?.forest_info
+                  ? setActive("forest")
+                  : setPending(a.key)
+              }
               disabled={disabled}
               aria-pressed={active === a.key}
               className={`flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light ${
