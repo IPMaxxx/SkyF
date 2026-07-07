@@ -3,6 +3,14 @@ import Image from "next/image";
 
 const ALL_ARTICLES = [
   {
+    href: "/blog/kak-ne-zabluditsya-v-lesu",
+    title: "How not to get lost in the forest: the Track feature in SkyForest",
+    description:
+      "Track remembers your forest entry point, draws your path on the map and points the way back — even offline.",
+    image: "/images/blog/blog-kak-ne-zabluditsya-v-lesu.jpg",
+    readTime: "7 min",
+  },
+  {
     href: "/blog/kak-opredelit-grib",
     title: "How to identify a mushroom from a photo: apps, neural networks and key features",
     description:

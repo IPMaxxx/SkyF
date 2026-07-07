@@ -491,6 +491,24 @@ export default {
     openBot: "Open the bot in Telegram",
     manageTokens: "Manage tokens",
   },
+  trackLanding: {
+    eyebrow: "New · The way back",
+    title: "Track — don't get lost: we'll lead you back to where you entered",
+    intro:
+      "Got carried away picking and lost your bearings? Tap one button before entering the forest — SkyForest remembers your entry point, marks your path on the map and points an arrow back the way you came.",
+    s1t: "Mark your entry",
+    s1d: "At the forest edge, tap “I've entered the forest” — the app drops an anchor at your entry point.",
+    s2t: "Pick with peace of mind",
+    s2d: "Every couple of minutes Track roughly marks your path as a line on the map. No constant GPS tracking — your battery lasts.",
+    s3t: "Follow the arrow back",
+    s3d: "The compass shows the direction and distance to your entry point. No compass? We'll tell you in words: “northwest, 850 m”.",
+    s4t: "Private and offline",
+    s4d: "The track lives only on your device and is never sent anywhere. The arrow and distance work even without internet.",
+    openTrack: "Open Track",
+    readMore: "How not to get lost in the forest",
+    disclaimer:
+      "Track is a rough guide, not a precise route recording: it needs GPS and marks points about every 2 minutes. It doesn't replace a compass, a charged phone and common sense.",
+  },
   cta: {
     mockMatch: "Match with reference",
     mockGreat: "Great time to pick",

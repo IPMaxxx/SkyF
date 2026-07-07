@@ -33,7 +33,8 @@ export const SITEMAP_MARKETING_PATHS: SitemapPathEntry[] = [
 ];
 
 export const SITEMAP_BLOG_PATHS: SitemapPathEntry[] = [
-  { path: "/blog", lastModified: new Date("2026-06-15"), changeFrequency: "weekly", priority: 0.9 },
+  { path: "/blog", lastModified: new Date("2026-07-07"), changeFrequency: "weekly", priority: 0.9 },
+  { path: "/blog/kak-ne-zabluditsya-v-lesu", lastModified: new Date("2026-07-07"), changeFrequency: "monthly", priority: 0.8 },
   { path: "/blog/kak-opredelit-grib", lastModified: new Date("2026-06-15"), changeFrequency: "monthly", priority: 0.8 },
   { path: "/blog/pervye-majskie-boroviki", lastModified: new Date("2026-06-15"), changeFrequency: "monthly", priority: 0.8 },
   { path: "/blog/pogoda-dlya-gribov", lastModified: new Date("2026-04-15"), changeFrequency: "monthly", priority: 0.8 },
