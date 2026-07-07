@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -272,10 +272,15 @@ export default function ComparePage() {
     void loadSavedForecast(forecastBdId, forecastLocId);
   }, [showForecast, forecastBdId, forecastLocId]);
 
+  // Открываем сравнение из ?open= только один раз при загрузке страницы,
+  // иначе любой апдейт списка (например, после «Сравнить сейчас») снова
+  // переключал бы модалку на сравнение из URL вместо только что запущенного.
+  const openParamHandled = useRef(false);
   useEffect(() => {
-    if (!loading && comparisons.length > 0) {
+    if (!loading && comparisons.length > 0 && !openParamHandled.current) {
       const openParam = new URLSearchParams(window.location.search).get("open");
       if (openParam && comparisons.some((c) => c.id === openParam) && openId !== openParam) {
+        openParamHandled.current = true;
         openComparison(openParam);
       }
     }
@@ -1121,6 +1126,18 @@ export default function ComparePage() {
                 {result ? (
                   <>
                     <div className={`rounded-2xl bg-gradient-to-br ${getMatchBgGradient(result.overall)} p-4 sm:p-6 text-center text-white`}>
+                      {cmp.last_run_at && (
+                        <p className="mb-1.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium opacity-90">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {t("resultDate", {
+                            date: new Date(cmp.last_run_at).toLocaleDateString(locale, {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }),
+                          })}
+                        </p>
+                      )}
                       <p className="text-4xl sm:text-5xl font-bold">{Math.round(result.overall)}%</p>
                       <p className="mt-1 text-sm font-medium opacity-90">{matchLabel(result.overall)}</p>
                     </div>
