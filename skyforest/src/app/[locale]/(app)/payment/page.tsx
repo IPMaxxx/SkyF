@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   CheckCircle,
   AlertCircle,
+  Crown,
 } from "lucide-react";
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_PACKAGES, TOKEN_COSTS, BULK_RATE, TOKEN_WITHDRAW_RATE } from "@/lib/tokens";
@@ -28,7 +29,21 @@ import {
 } from "@/lib/payment-display";
 import { useLocale, useTranslations } from "next-intl";
 import { isNativeApp } from "@/lib/native/capacitor";
-import { purchasePack, initIap, getStorePrices, subscribeStorePrices } from "@/lib/native/iap";
+import {
+  purchasePack,
+  purchaseSubscription,
+  manageSubscriptions,
+  initIap,
+  getStorePrices,
+  subscribeStorePrices,
+  getSubscriptionPrices,
+  subscribeSubscriptionPrices,
+} from "@/lib/native/iap";
+import {
+  SUBSCRIPTION_PRODUCTS,
+  type SubscriptionPeriod,
+  type SubscriptionTier,
+} from "@/lib/native/iapProducts";
 
 export default function PaymentPage() {
   return (
@@ -45,7 +60,6 @@ export default function PaymentPage() {
 }
 
 const MIN_WITHDRAW = 100;
-const MIN_REMAINING = 50;
 
 type Tab = "buy" | "withdraw";
 
@@ -55,7 +69,7 @@ function PaymentContent() {
   const tw = useTranslations("payment.withdraw");
   const tc = useTranslations("common");
   const searchParams = useSearchParams();
-  const { balance, loading: balanceLoading, refresh } = useTokens();
+  const { balance, withdrawable, loading: balanceLoading, refresh } = useTokens();
   const [tab, setTab] = useState<Tab>(
     searchParams.get("tab") === "withdraw" ? "withdraw" : "buy"
   );
@@ -72,24 +86,63 @@ function PaymentContent() {
   // Реальные цены App Store / Google Play: packId → форматированная цена
   // (например "$2.99"). До загрузки продуктов — fallback на веб-цены.
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  const [subPrices, setSubPrices] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!native) return;
     let unsub: (() => void) | undefined;
+    let unsubSub: (() => void) | undefined;
     let cancelled = false;
     (async () => {
       await initIap();
       if (cancelled) return;
       setStorePrices(getStorePrices());
+      setSubPrices(getSubscriptionPrices());
       unsub = subscribeStorePrices(setStorePrices);
+      unsubSub = subscribeSubscriptionPrices(setSubPrices);
     })();
     return () => {
       cancelled = true;
       unsub?.();
+      unsubSub?.();
     };
   }, [native]);
 
+  // Активная подписка пользователя (для секции подписок в нативе).
+  interface ActiveSubInfo {
+    tier: SubscriptionTier;
+    period: SubscriptionPeriod;
+    status: string;
+    current_period_end: string;
+  }
+  const [activeSub, setActiveSub] = useState<ActiveSubInfo | null>(null);
+  const loadActiveSub = () =>
+    fetch("/api/subscription")
+      .then((r) => r.json())
+      .then((d) => setActiveSub(d.subscription ?? null))
+      .catch(() => {});
+  useEffect(() => {
+    if (!native) return;
+    loadActiveSub();
+  }, [native]);
+
+  const [subPeriod, setSubPeriod] = useState<SubscriptionPeriod>("monthly");
+  const [subPurchasing, setSubPurchasing] = useState<string | null>(null);
+  const [subError, setSubError] = useState("");
+
+  // Переход по /payment#subscriptions (пейволл): секция рендерится после
+  // гидрации, поэтому нативный якорный скролл не срабатывает — скроллим сами.
+  useEffect(() => {
+    if (!native || window.location.hash !== "#subscriptions") return;
+    const id = window.setTimeout(() => {
+      document.getElementById("subscriptions")?.scrollIntoView({ behavior: "smooth" });
+    }, 300);
+    return () => window.clearTimeout(id);
+  }, [native]);
+
   // Buy state
-  const [selectedPack, setSelectedPack] = useState<string>(TOKEN_PACKAGES[1].id);
+  const [selectedPack, setSelectedPack] = useState<string>(
+    (TOKEN_PACKAGES.find((p) => p.popular) ?? TOKEN_PACKAGES[0]).id
+  );
   const [customTokens, setCustomTokens] = useState<number>(500);
   const [purchasing, setPurchasing] = useState(false);
   const [buyError, setBuyError] = useState("");
@@ -211,12 +264,44 @@ function PaymentContent() {
     }
   };
 
+  // --- Subscriptions (native only) ---
+  const ts = useTranslations("payment.subscriptions");
+  const handleSubscribe = async (tier: SubscriptionTier) => {
+    const product = SUBSCRIPTION_PRODUCTS.find(
+      (p) => p.tier === tier && p.period === subPeriod
+    );
+    if (!product || subPurchasing) return;
+    setSubPurchasing(product.productId);
+    setSubError("");
+    try {
+      const r = await purchaseSubscription(product.productId, locale);
+      if (r.ok) {
+        refresh();
+        await loadActiveSub();
+      } else {
+        setSubError(r.error || ts("purchaseError"));
+      }
+    } finally {
+      setSubPurchasing(null);
+    }
+  };
+
+  const tierName = (tier: SubscriptionTier) =>
+    tier === "pro" ? ts("proName") : ts("foragerName");
+  const formatSubDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "ru-RU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
   // --- Withdraw logic ---
   const currentMethod = WITHDRAW_METHODS.find((m) => m.id === wMethod) ?? WITHDRAW_METHODS[0];
   const currentMethodLabel = withdrawMethodLabel(currentMethod, locale);
   const currentMethodPlaceholder = withdrawMethodPlaceholder(currentMethod, locale);
-  const totalBalance = balance ?? 0;
-  const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
+  // К выводу — только доход с маркетплейса минус уже выведенное
+  // (купленные и бонусные токены не выводятся — политика сторов).
+  const maxAmount = Math.max(0, withdrawable ?? 0);
 
   useEffect(() => {
     if (wAmount > maxAmount && maxAmount > 0) setWAmount(maxAmount);
@@ -228,7 +313,7 @@ function PaymentContent() {
       return;
     }
     if (wAmount > maxAmount) {
-      setWError(tw("errMax", { max: maxAmount, remaining: MIN_REMAINING }));
+      setWError(tw("errMaxEarned", { max: maxAmount }));
       return;
     }
     if (!wDetails.trim()) {
@@ -490,6 +575,148 @@ function PaymentContent() {
             )}
           </div>
 
+          {/* Subscriptions (только натив; веб — Stripe в следующей итерации) */}
+          {native && (
+            <div id="subscriptions" className="mb-8 scroll-mt-20">
+              <div className="mb-4 text-center">
+                <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">
+                  <Crown className="h-5 w-5 text-amber-400" />
+                  {ts("title")}
+                </h2>
+                <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+                  {ts("subtitle")}
+                </p>
+              </div>
+
+              {activeSub ? (
+                <div className="glass rounded-2xl border-emerald-400/30 p-5 text-center">
+                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+                    <CheckCircle className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-emerald-300">{ts("activeTitle")}</p>
+                  <p className="mt-1 text-lg font-bold">
+                    {ts("activeUntil", {
+                      tier: tierName(activeSub.tier),
+                      date: formatSubDate(activeSub.current_period_end),
+                    })}
+                  </p>
+                  {activeSub.status === "canceled" && (
+                    <p className="mt-1 text-xs text-amber-300">
+                      {ts("activeCanceled", { date: formatSubDate(activeSub.current_period_end) })}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => manageSubscriptions()}
+                    className="mt-4 rounded-xl border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+                  >
+                    {ts("manageBtn")}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Переключатель месяц/год */}
+                  <div className="mb-4 flex justify-center">
+                    <div className="flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+                      {(["monthly", "yearly"] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setSubPeriod(p)}
+                          className={`relative rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                            subPeriod === p
+                              ? "bg-amber-500/20 text-amber-300 shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {p === "monthly" ? ts("monthly") : ts("yearly")}
+                          {p === "yearly" && (
+                            <span className="ml-1.5 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                              {ts("yearlyBadge")}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(["forager", "pro"] as const).map((tier) => {
+                      const product = SUBSCRIPTION_PRODUCTS.find(
+                        (p) => p.tier === tier && p.period === subPeriod
+                      )!;
+                      const price = subPrices[product.productId] || product.fallbackPrice;
+                      const features =
+                        tier === "pro"
+                          ? (["proF1", "proF2", "proF3", "proF4", "proF5", "proF6"] as const)
+                          : (["foragerF1", "foragerF2", "foragerF3", "foragerF4"] as const);
+                      const isPro = tier === "pro";
+                      return (
+                        <div
+                          key={tier}
+                          className={`glass relative flex flex-col rounded-2xl p-5 ${
+                            isPro ? "border-amber-400/40 ring-1 ring-amber-400/20" : ""
+                          }`}
+                        >
+                          <span className="absolute -top-2.5 right-4 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-white">
+                            {ts("trialBadge")}
+                          </span>
+                          <div className="mb-1 flex items-center gap-2">
+                            <Crown className={`h-5 w-5 ${isPro ? "text-amber-400" : "text-emerald-400"}`} />
+                            <span className="text-xl font-bold">{tierName(tier)}</span>
+                          </div>
+                          <div className="mb-3 flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-primary-light">{price}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {subPeriod === "monthly" ? ts("perMonth") : ts("perYear")}
+                            </span>
+                          </div>
+                          <ul className="mb-4 flex-1 space-y-1.5">
+                            {features.map((key) => (
+                              <li key={key} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
+                                {ts(key)}
+                              </li>
+                            ))}
+                          </ul>
+                          <button
+                            type="button"
+                            onClick={() => handleSubscribe(tier)}
+                            disabled={subPurchasing !== null}
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${
+                              isPro
+                                ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-600"
+                            }`}
+                          >
+                            {subPurchasing === product.productId ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {ts("purchasing")}
+                              </>
+                            ) : (
+                              ts("subscribeBtn", { tier: tierName(tier) })
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {subError && (
+                    <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                      {subError}
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-center text-xs text-muted-foreground/70">
+                    {ts("storeNote")}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Cost table */}
           <div className="glass mb-6 rounded-2xl p-6">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
@@ -659,8 +886,9 @@ function PaymentContent() {
                 </div>
                 <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
                   {tw("rateLabel")}: <strong className="text-foreground">1 {tw("rateToken")} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
-                  <span className="mx-2 text-white/20">·</span>
-                  {tw("minRemaining", { n: MIN_REMAINING })}
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {tw("earnedOnly")}
                 </div>
               </div>
 
@@ -669,11 +897,7 @@ function PaymentContent() {
                   <AlertCircle className="mx-auto mb-3 h-8 w-8 text-amber-400" />
                   <p className="mb-2 font-medium">{tw("notEnoughTitle")}</p>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    {tw("notEnoughBody", {
-                      total: MIN_REMAINING + MIN_WITHDRAW,
-                      remaining: MIN_REMAINING,
-                      min: MIN_WITHDRAW,
-                    })}
+                    {tw("notEnoughEarnedBody", { min: MIN_WITHDRAW })}
                   </p>
                   <Link
                     href="/dashboard/referral"
@@ -787,7 +1011,7 @@ function PaymentContent() {
                     <div className="flex items-start gap-2">
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
                       <div className="text-xs leading-relaxed text-amber-300">
-                        <p>{tw("infoNote", { remaining: MIN_REMAINING })}</p>
+                        <p>{tw("infoNoteEarned")}</p>
                       </div>
                     </div>
                   </div>

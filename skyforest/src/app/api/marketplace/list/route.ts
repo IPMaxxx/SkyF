@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSeason } from "@/lib/supabase/types";
+import { getActiveSubscription } from "@/lib/subscription";
 
 const LISTING_FEE = 10;
 
@@ -24,16 +25,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check balance for listing fee
-  const { data: balanceData } = await supabase.rpc("get_token_balance", {
-    p_user_id: user.id,
-  });
+  // Подписка Pro: размещение на маркетплейсе бесплатно.
+  const sub = await getActiveSubscription(user.id);
+  const freeListing = sub?.benefits.freeMarketplaceList === true;
 
-  if (!balanceData || balanceData < LISTING_FEE) {
-    return NextResponse.json(
-      { error: `Недостаточно токенов. Для размещения нужно ${LISTING_FEE} токенов` },
-      { status: 400 }
-    );
+  // Check balance for listing fee
+  if (!freeListing) {
+    const { data: balanceData } = await supabase.rpc("get_token_balance", {
+      p_user_id: user.id,
+    });
+
+    if (!balanceData || balanceData < LISTING_FEE) {
+      return NextResponse.json(
+        { error: `Недостаточно токенов. Для размещения нужно ${LISTING_FEE} токенов` },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: bd, error: bdErr } = await supabase
@@ -96,15 +103,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ошибка создания листинга" }, { status: 500 });
   }
 
-  // Charge listing fee
-  const { error: feeErr } = await supabase.rpc("spend_tokens", {
-    p_user_id: user.id,
-    p_amount: LISTING_FEE,
-    p_description: "Размещение на маркетплейсе",
-  });
+  // Charge listing fee (для Pro-подписки размещение бесплатно)
+  if (!freeListing) {
+    const { error: feeErr } = await supabase.rpc("spend_tokens", {
+      p_user_id: user.id,
+      p_amount: LISTING_FEE,
+      p_description: "Размещение на маркетплейсе",
+    });
 
-  if (feeErr) {
-    console.error("Listing fee error:", feeErr);
+    if (feeErr) {
+      console.error("Listing fee error:", feeErr);
+    }
   }
 
   return NextResponse.json({ listing });

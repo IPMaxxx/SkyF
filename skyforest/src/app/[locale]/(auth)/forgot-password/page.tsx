@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
+import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -26,7 +27,7 @@ export default function ForgotPasswordPage() {
         // Используется token_hash flow (см. /auth/confirm). Шаблон письма в Supabase
         // должен иметь ссылку:
         //   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password
-        redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
+        redirectTo: authRedirectUrl("/auth/confirm?next=/reset-password"),
       }
     );
 

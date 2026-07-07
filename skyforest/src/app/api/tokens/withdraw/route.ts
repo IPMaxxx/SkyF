@@ -39,37 +39,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: balanceData } = await supabase.rpc("get_token_balance", {
+  // Выводу подлежит только доход с маркетплейса минус уже выведенное
+  // (купленные и бонусные токены не выводятся — политика сторов).
+  // Лимит атомарно проверяет RPC withdraw_tokens (patch-v41).
+  const { data: availData } = await supabase.rpc("get_withdrawable", {
     p_user_id: user.id,
   });
-  const currentBalance = balanceData ?? 0;
+  const currentBalance = availData?.available ?? 0;
 
-  const MIN_REMAINING = 50;
-
-  if (currentBalance < MIN_REMAINING) {
-    return NextResponse.json(
-      { error: `Для вывода на балансе должно быть минимум ${MIN_REMAINING} токенов` },
-      { status: 400 }
-    );
-  }
-
-  if (currentBalance - numAmount < MIN_REMAINING) {
-    return NextResponse.json(
-      { error: `После вывода на балансе должно остаться минимум ${MIN_REMAINING} токенов. Максимум для вывода: ${currentBalance - MIN_REMAINING}` },
-      { status: 400 }
-    );
-  }
-
-  const { data: spendResult, error: spendErr } = await supabase.rpc("spend_tokens", {
+  const { data: spendResult, error: spendErr } = await supabase.rpc("withdraw_tokens", {
     p_user_id: user.id,
     p_amount: numAmount,
     p_description: `Вывод ${numAmount} токенов`,
-    p_use_bonus: false,
   });
 
   if (spendErr || !spendResult?.success) {
     const msg = spendResult?.error === "insufficient"
-      ? "Недостаточно токенов"
+      ? `Недостаточно токенов, доступных к выводу (доступно: ${spendResult?.available ?? 0}). Выводить можно только доход с маркетплейса.`
       : "Ошибка списания токенов";
     return NextResponse.json({ error: msg }, { status: 402 });
   }
@@ -86,7 +72,7 @@ export async function POST(request: NextRequest) {
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">User</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${escapeHtml(user.email ?? "")}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">User ID</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:12px;">${user.id}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Withdrawal amount</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#f59e0b;">${numAmount} tokens (~${(numAmount * 0.3).toFixed(2)} BYN)</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Balance before</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} tokens</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Withdrawable before</td><td style="padding:8px;border-bottom:1px solid #eee;">${currentBalance} tokens</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Balance after</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${spendResult.balance} tokens</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Withdrawal method</td><td style="padding:8px;border-bottom:1px solid #eee;">${safeMethod}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Payment details</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${safeDetails}</td></tr>

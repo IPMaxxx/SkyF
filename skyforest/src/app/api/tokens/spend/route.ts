@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import {
+  getActiveSubscription,
+  isUnlimitedAction,
+  consumeSubscriptionQuota,
+} from "@/lib/subscription";
 
 const VALID_ACTIONS = new Map<string, number>(
   Object.entries(TOKEN_COSTS).map(([key, cost]) => [key, cost])
@@ -18,6 +23,38 @@ export async function POST(request: NextRequest) {
 
   if (!action || !VALID_ACTIONS.has(action)) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  }
+
+  // Подписка (Forager/Pro): включённые действия не списывают токены;
+  // лимитируемые (identify, compare_forecast) считаются по счётчику,
+  // после исчерпания лимита — оплата токенами как обычно.
+  const sub = await getActiveSubscription(user.id);
+  if (sub) {
+    let covered = false;
+    if (isUnlimitedAction(sub, action)) {
+      covered = true;
+    } else if (action === "compare_forecast") {
+      covered = await consumeSubscriptionQuota(sub, "forecast");
+    } else if (action === "mushroom_identify") {
+      covered = await consumeSubscriptionQuota(sub, "identify");
+    } else if (action === "marketplace_list" && sub.benefits.freeMarketplaceList) {
+      covered = true;
+    }
+    if (covered) {
+      const { data: bal } = await supabase
+        .from("token_balances")
+        .select("balance, bonus_balance")
+        .eq("user_id", user.id)
+        .single();
+      const real = bal?.balance ?? 0;
+      const bonus = bal?.bonus_balance ?? 0;
+      return NextResponse.json({
+        balance: real + bonus,
+        real_balance: real,
+        bonus_balance: bonus,
+        covered_by_subscription: true,
+      });
+    }
   }
 
   const baseAmount = VALID_ACTIONS.get(action)!;

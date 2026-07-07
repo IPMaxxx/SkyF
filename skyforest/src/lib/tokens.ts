@@ -23,10 +23,9 @@ const TOKEN_PACKAGES_BY = [
 ] as const;
 
 const TOKEN_PACKAGES_USD = [
-  { id: "pack_10", tokens: 10, price: 2, label: "10 tokens", popular: false },
-  { id: "pack_30", tokens: 30, price: 5, label: "30 tokens", popular: true },
-  { id: "pack_100", tokens: 100, price: 12, label: "100 tokens", popular: false },
-  { id: "pack_300", tokens: 300, price: 30, label: "300 tokens", popular: false },
+  { id: "pack_30", tokens: 30, price: 5.99, label: "30 tokens", popular: true },
+  { id: "pack_100", tokens: 100, price: 14.99, label: "100 tokens", popular: false },
+  { id: "pack_300", tokens: 300, price: 35.99, label: "300 tokens", popular: false },
 ] as const;
 
 export const TOKEN_PACKAGES = isSamplify ? TOKEN_PACKAGES_USD : TOKEN_PACKAGES_BY;
@@ -35,9 +34,9 @@ export const TOKEN_PACKAGES = isSamplify ? TOKEN_PACKAGES_USD : TOKEN_PACKAGES_B
  * Цена одного токена в долларах для показа сумм в приложении (native).
  *
  * Берём популярный USD-пакет — тот, что подсвечен по умолчанию на странице
- * оплаты skyforest.ai (см. `TOKEN_PACKAGES_USD`): $5 за 30 токенов ≈ $0.167 за
- * токен. Так суммы в нативных попапах совпадают с тарифами боевого сайта, а не
- * с отдельным придуманным курсом.
+ * оплаты skyforest.ai (см. `TOKEN_PACKAGES_USD`): $5.99 за 30 токенов ≈ $0.20
+ * за токен. Так суммы в нативных попапах совпадают с тарифами боевого сайта,
+ * а не с отдельным придуманным курсом.
  */
 const USD_POPULAR_PACK =
   TOKEN_PACKAGES_USD.find((p) => p.popular) ?? TOKEN_PACKAGES_USD[0];
@@ -49,7 +48,7 @@ export function formatTokenUsd(tokens: number): string {
 }
 
 /** Per-token rate for custom purchases (301+ tokens) */
-export const BULK_RATE = isSamplify ? 0.1 : 0.3;
+export const BULK_RATE = isSamplify ? 0.12 : 0.3;
 
 /** Fiat value of one token when withdrawing to bank/card */
 export const TOKEN_WITHDRAW_RATE = BULK_RATE;

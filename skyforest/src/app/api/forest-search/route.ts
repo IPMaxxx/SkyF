@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import https from "node:https";
 import { createClient } from "@/lib/supabase/server";
 import { getModisLandCover } from "@/lib/gee";
+import { getActiveSubscription, isUnlimitedAction } from "@/lib/subscription";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const FGIS_LK_WMS = "https://pub.fgislk.gov.ru/map/geo/geoserver/wms";
@@ -529,18 +530,24 @@ export async function POST(request: NextRequest) {
   }
 
   const clampedRadius = Math.min(radius_km, 20);
-  const tokenCost = Math.max(2, 2 * Math.ceil(clampedRadius / 2));
+  let tokenCost = Math.max(2, 2 * Math.ceil(clampedRadius / 2));
 
-  const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
-    p_user_id: user.id,
-    p_amount: tokenCost,
-    p_description: `Поиск леса (${clampedRadius} км)`,
-  });
-  if (spendErr || !spent?.success) {
-    return NextResponse.json(
-      { error: `Недостаточно токенов (нужно ${tokenCost})` },
-      { status: 402 }
-    );
+  // Подписка Forager/Pro: поиск леса включён без списаний.
+  const sub = await getActiveSubscription(user.id);
+  if (sub && isUnlimitedAction(sub, "forest_search")) {
+    tokenCost = 0;
+  } else {
+    const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
+      p_user_id: user.id,
+      p_amount: tokenCost,
+      p_description: `Поиск леса (${clampedRadius} км)`,
+    });
+    if (spendErr || !spent?.success) {
+      return NextResponse.json(
+        { error: `Недостаточно токенов (нужно ${tokenCost})` },
+        { status: 402 }
+      );
+    }
   }
 
   // Step 1: Collect reference pattern (10 points in 1km circle)

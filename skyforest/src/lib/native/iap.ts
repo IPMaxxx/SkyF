@@ -1,9 +1,12 @@
 /**
  * Клиент внутренних покупок (In-App Purchase) на базе cordova-plugin-purchase.
- * Активен только в нативной оболочке. Токены — consumable-товары.
+ * Активен только в нативной оболочке. Токены — consumable-товары,
+ * подписки Forager/Pro — auto-renewable (PAID_SUBSCRIPTION).
  *
- * Поток: order() → approved → верификация чека на нашем сервере
+ * Поток (consumable): order() → approved → верификация чека на нашем сервере
  * (/api/native/iap/verify, начисляет токены) → finish().
+ * Поток (подписка): order() → approved → /api/native/iap/verify-subscription
+ * (сверка статуса у стора, upsert user_subscriptions, бонус-пул) → finish().
  *
  * Чек привязывается к пользователю: store.applicationUsername = user.id
  * (UUID из Supabase). Обфускация отключена — сырой UUID уходит в
@@ -14,7 +17,13 @@
  */
 import { isNativeApp, getPlatform } from "./capacitor";
 import { createClient } from "@/lib/supabase/client";
-import { IAP_PRODUCTS, productForPack, tokensForProduct } from "./iapProducts";
+import {
+  IAP_PRODUCTS,
+  SUBSCRIPTION_PRODUCTS,
+  productForPack,
+  tokensForProduct,
+  isSubscriptionProduct,
+} from "./iapProducts";
 
 // Тип плагина не импортируем как модуль — он подключается нативно и доступен
 // как глобальный объект window.CdvPurchase.
@@ -36,6 +45,7 @@ let onBackgroundCredit: ((tokens: number) => void) | null = null;
 /** Подписчики на обновление цен товаров из стора. */
 type PricesListener = (prices: Record<string, string>) => void;
 const priceListeners = new Set<PricesListener>();
+const subPriceListeners = new Set<PricesListener>();
 
 function cdv(): any | null {
   if (typeof window === "undefined") return null;
@@ -64,8 +74,13 @@ async function refreshUserId(): Promise<string | undefined> {
 }
 
 async function verifyOnServer(productId: string, transaction: any): Promise<boolean> {
+  // Подписки верифицируются отдельным роутом (App Store Server API /
+  // purchases.subscriptionsv2.get), consumable-токены — прежним verify.
+  const endpoint = isSubscriptionProduct(productId)
+    ? "/api/native/iap/verify-subscription"
+    : "/api/native/iap/verify";
   try {
-    const res = await fetch("/api/native/iap/verify", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -97,10 +112,31 @@ export function getStorePrices(): Record<string, string> {
   return prices;
 }
 
+/** Цены подписок из стора: productId → форматированная цена (например "$5.99"). */
+export function getSubscriptionPrices(): Record<string, string> {
+  const CdvPurchase = cdv();
+  if (!CdvPurchase || !initialized) return {};
+  const store: AnyStore = CdvPurchase.store;
+  const platform = platformConst();
+  const prices: Record<string, string> = {};
+  for (const p of SUBSCRIPTION_PRODUCTS) {
+    const price = store.get(p.productId, platform)?.getOffer?.()?.pricingPhases?.[0]?.price
+      ?? store.get(p.productId, platform)?.pricing?.price;
+    if (typeof price === "string" && price) prices[p.productId] = price;
+  }
+  return prices;
+}
+
 /** Подписка на обновление цен из стора. Возвращает функцию отписки. */
 export function subscribeStorePrices(cb: PricesListener): () => void {
   priceListeners.add(cb);
   return () => priceListeners.delete(cb);
+}
+
+/** Подписка на обновление цен подписок из стора. Возвращает функцию отписки. */
+export function subscribeSubscriptionPrices(cb: PricesListener): () => void {
+  subPriceListeners.add(cb);
+  return () => subPriceListeners.delete(cb);
 }
 
 /**
@@ -127,19 +163,26 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
   store.applicationUsername = () => currentUserId;
   store.obfuscator = "disabled";
 
-  store.register(
-    IAP_PRODUCTS.map((p) => ({
+  store.register([
+    ...IAP_PRODUCTS.map((p) => ({
       id: p.productId,
       type: CdvPurchase.ProductType.CONSUMABLE,
       platform,
     })),
-  );
+    ...SUBSCRIPTION_PRODUCTS.map((p) => ({
+      id: p.productId,
+      type: CdvPurchase.ProductType.PAID_SUBSCRIPTION,
+      platform,
+    })),
+  ]);
 
   store
     .when()
     .productUpdated(() => {
       const prices = getStorePrices();
       priceListeners.forEach((cb) => cb(prices));
+      const subPrices = getSubscriptionPrices();
+      subPriceListeners.forEach((cb) => cb(subPrices));
     })
     .approved(async (transaction: any) => {
       const productId = transaction?.products?.[0]?.id ?? transaction?.productId;
@@ -220,4 +263,48 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
       resolve({ ok: false, error: e?.message || msg.cancelled });
     });
   });
+}
+
+/**
+ * Купить подписку (Forager/Pro). Возвращает { ok } после серверной
+ * верификации (/api/native/iap/verify-subscription) и finish().
+ */
+export async function purchaseSubscription(
+  productId: string,
+  locale?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const msg = locale === "en" ? IAP_ERRORS.en : IAP_ERRORS.ru;
+  if (!isNativeApp()) return { ok: false, error: msg.nativeOnly };
+  const CdvPurchase = cdv();
+  if (!CdvPurchase) return { ok: false, error: msg.storeUnavailable };
+
+  await initIap();
+  await refreshUserId();
+  if (!isSubscriptionProduct(productId)) return { ok: false, error: msg.productNotFound };
+
+  const store: AnyStore = CdvPurchase.store;
+  const storeProduct = store.get(productId, platformConst());
+  const offer = storeProduct?.getOffer?.();
+  if (!offer) return { ok: false, error: msg.productUnavailable };
+
+  return new Promise((resolve) => {
+    pending.set(productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
+    offer.order().catch((e: any) => {
+      pending.delete(productId);
+      resolve({ ok: false, error: e?.message || msg.cancelled });
+    });
+  });
+}
+
+/** Открыть управление подписками стора (App Store / Google Play). */
+export async function manageSubscriptions(): Promise<void> {
+  if (!isNativeApp()) return;
+  const CdvPurchase = cdv();
+  if (!CdvPurchase) return;
+  await initIap();
+  try {
+    await CdvPurchase.store.manageSubscriptions(platformConst());
+  } catch {
+    /* стор недоступен — молча игнорируем */
+  }
 }

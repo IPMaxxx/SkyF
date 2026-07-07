@@ -24,13 +24,12 @@ import {
 } from "@/lib/payment-display";
 
 const MIN_WITHDRAW = 100;
-const MIN_REMAINING = 50;
 
 export default function WithdrawPage() {
   const locale = useLocale();
   const tw = useTranslations("payment.withdraw");
   const tc = useTranslations("common");
-  const { realBalance, bonusBalance, refresh } = useTokens();
+  const { realBalance, bonusBalance, withdrawable, refresh } = useTokens();
   const [amount, setAmount] = useState<number>(MIN_WITHDRAW);
   const [method, setMethod] = useState<string>("card");
   const [details, setDetails] = useState("");
@@ -45,7 +44,9 @@ export default function WithdrawPage() {
   const currentMethodLabel = withdrawMethodLabel(currentMethod, locale);
   const currentMethodPlaceholder = withdrawMethodPlaceholder(currentMethod, locale);
   const totalBalance = realBalance ?? 0;
-  const maxAmount = Math.max(0, totalBalance - MIN_REMAINING);
+  // К выводу — только доход с маркетплейса минус уже выведенное
+  // (купленные и бонусные токены не выводятся — политика сторов).
+  const maxAmount = Math.max(0, withdrawable ?? 0);
 
   useEffect(() => {
     if (amount > maxAmount && maxAmount > 0) setAmount(maxAmount);
@@ -57,7 +58,7 @@ export default function WithdrawPage() {
       return;
     }
     if (amount > maxAmount) {
-      setError(tw("errMax", { max: maxAmount, remaining: MIN_REMAINING }));
+      setError(tw("errMaxEarned", { max: maxAmount }));
       return;
     }
     if (!details.trim()) {
@@ -166,8 +167,7 @@ export default function WithdrawPage() {
             <p className="text-xs text-muted-foreground">~{(totalBalance * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency}</p>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>{tw("minRemaining", { n: MIN_REMAINING })}</span>
+        <div className="mt-2 flex items-center justify-end text-xs text-muted-foreground">
           <span>{tw("availableFor")} <strong className="text-emerald-400">{maxAmount}</strong> (~{(maxAmount * TOKEN_WITHDRAW_RATE).toFixed(2)} {BRAND.currency})</span>
         </div>
         {(bonusBalance ?? 0) > 0 && (
@@ -175,6 +175,9 @@ export default function WithdrawPage() {
             {tw("bonusNotWithdrawable", { n: bonusBalance ?? 0 })}
           </div>
         )}
+        <div className="mt-2 text-xs text-muted-foreground">
+          {tw("earnedOnly")}
+        </div>
         <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
           {tw("rateLabel")}: <strong className="text-foreground">1 {tw("rateToken")} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
         </div>
@@ -185,7 +188,7 @@ export default function WithdrawPage() {
           <AlertCircle className="mx-auto mb-3 h-8 w-8 text-amber-400" />
           <p className="mb-2 font-medium">{tw("notEnoughTitle")}</p>
           <p className="mb-4 text-sm text-muted-foreground">
-            {tw("notEnoughBody", { total: MIN_REMAINING + MIN_WITHDRAW, remaining: MIN_REMAINING, min: MIN_WITHDRAW })}
+            {tw("notEnoughEarnedBody", { min: MIN_WITHDRAW })}
           </p>
           <Link
             href="/dashboard/referral"
@@ -299,7 +302,7 @@ export default function WithdrawPage() {
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
               <div className="text-xs leading-relaxed text-amber-300">
-                <p>{tw("infoNote", { remaining: MIN_REMAINING })}</p>
+                <p>{tw("infoNoteEarned")}</p>
               </div>
             </div>
           </div>

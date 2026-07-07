@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { Coins, AlertTriangle, Loader2 } from "lucide-react";
+import { Coins, AlertTriangle, Loader2, Crown } from "lucide-react";
 import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsNative } from "@/lib/native/useIsNative";
@@ -32,6 +32,7 @@ const MODAL_UI = {
     topUp: "Пополнить",
     cancel: "Отмена",
     confirm: "Подтвердить",
+    subscribe: "Подписка от $5.99/мес",
   },
   en: {
     cost: "Cost",
@@ -42,6 +43,7 @@ const MODAL_UI = {
     topUp: "Top up",
     cancel: "Cancel",
     confirm: "Confirm",
+    subscribe: "Subscription from $5.99/mo",
   },
 } as const;
 
@@ -126,14 +128,27 @@ export function TokenConfirmModal({
         </div>
 
         {notEnough && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-            <span>
-              {L.notEnough}{" "}
-              <Link href="/payment" className="underline hover:text-red-300">
-                {L.topUp}
+          <div className="mb-4 space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              <span>
+                {L.notEnough}{" "}
+                <Link href="/payment" className="underline hover:text-red-300">
+                  {L.topUp}
+                </Link>
+              </span>
+            </div>
+            {/* Пейволл подписки — только в нативном приложении (на вебе
+                подписок ещё нет, Stripe — следующая итерация). */}
+            {native && (
+              <Link
+                href="/payment#subscriptions"
+                className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20"
+              >
+                <Crown className="h-4 w-4" />
+                {L.subscribe}
               </Link>
-            </span>
+            )}
           </div>
         )}
 
