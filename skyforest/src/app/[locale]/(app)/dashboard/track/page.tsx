@@ -4,12 +4,12 @@
  * «Вернуться к точке входа» — максимально простой трекер для леса.
  *
  * Якорь ставится одной геолокацией по кнопке «Я вошёл в лес». Точки пути
- * пишет глобальный TrackRecorder в (app)-layout (раз в ~1,5 минуты на любой
- * странице приложения + при возврате вкладки/приложения из фона); страница
- * лишь подписана на его события и просит внеочередной замер при открытии.
- * Стрелка возврата работает по компасу устройства, а без него — текстом со
- * стороной света и пунктиром на карте. Все данные живут в localStorage до
- * кнопки «Я вышел».
+ * пишет глобальный TrackRecorder в (app)-layout: непрерывный watchPosition,
+ * пока приложение активно, + мгновенный замер при возврате из фона;
+ * страница лишь подписана на его события. Стрелка возврата работает по
+ * компасу устройства, а без него — текстом со стороной света и пунктиром
+ * на карте. Активный поход живёт в localStorage; по кнопке «Я вышел»
+ * сохраняется в историю (Supabase, fallback — localStorage).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -32,6 +32,8 @@ import {
   compassDir,
   type ActiveTrack,
 } from "@/lib/trackState";
+import { saveFinishedTrack } from "@/lib/trackHistory";
+import { TrackHistory } from "@/components/app/TrackHistory";
 
 const TrackMap = dynamic(
   () => import("@/components/app/TrackMap").then((m) => m.TrackMap),
@@ -64,8 +66,9 @@ export default function TrackPage() {
 
   const [mounted, setMounted] = useState(false);
   const [track, setTrack] = useState<ActiveTrack | null>(null);
-  const [current, setCurrent] = useState<Coords | null>(null);
+  const [current, setCurrent] = useState<(Coords & { t: number }) | null>(null);
   const [starting, setStarting] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [heading, setHeading] = useState<number | null>(null);
   const [compassState, setCompassState] = useState<CompassState>("idle");
@@ -87,7 +90,7 @@ export default function TrackPage() {
     const onCapture = (e: Event) => {
       const { track: next, position } = (e as CustomEvent<TrackCaptureDetail>).detail;
       setTrack(next);
-      setCurrent(position);
+      setCurrent({ ...position, t: Date.now() });
     };
     window.addEventListener(TRACK_CAPTURE_EVENT, onCapture);
     return () => window.removeEventListener(TRACK_CAPTURE_EVENT, onCapture);
@@ -172,7 +175,7 @@ export default function TrackPage() {
     try {
       const pos = await getCurrentPosition();
       setTrack(startTrack(pos));
-      setCurrent(pos);
+      setCurrent({ ...pos, t: Date.now() });
     } catch {
       toast.error(t("geoError"));
     } finally {
@@ -180,11 +183,27 @@ export default function TrackPage() {
     }
   };
 
-  const handleFinish = () => {
-    clearTrack();
-    setTrack(null);
-    setCurrent(null);
-    setConfirmFinish(false);
+  const handleFinish = async () => {
+    if (!track || finishing) return;
+    setFinishing(true);
+    try {
+      const name = t("autoName", {
+        date: new Date(track.startedAt).toLocaleString(locale, {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+      const saved = await saveFinishedTrack(track, name);
+      toast.success(saved.local ? t("savedLocalToast") : t("savedToast"));
+    } finally {
+      clearTrack();
+      setTrack(null);
+      setCurrent(null);
+      setConfirmFinish(false);
+      setFinishing(false);
+    }
   };
 
   const formatDistance = (m: number) =>
@@ -252,6 +271,8 @@ export default function TrackPage() {
             </ol>
             <p className="mt-3 text-xs text-muted-foreground/80">{t("offlineHint")}</p>
           </div>
+
+          <TrackHistory />
         </div>
       ) : (
         /* ---------- Активный поход ---------- */
@@ -327,7 +348,10 @@ export default function TrackPage() {
             )}
           </div>
 
-          <TrackMap anchor={track.anchor} points={track.points} current={current} />
+          <div>
+            <TrackMap anchor={track.anchor} points={track.points} current={current} />
+            <p className="mt-2 text-[11px] text-muted-foreground/70">{t("gapHint")}</p>
+          </div>
 
           {/* Завершение похода */}
           {confirmFinish ? (
@@ -337,9 +361,11 @@ export default function TrackPage() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={handleFinish}
-                  className="flex-1 rounded-xl bg-red-500/85 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                  onClick={() => void handleFinish()}
+                  disabled={finishing}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/85 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                 >
+                  {finishing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
                   {t("finishConfirmYes")}
                 </button>
                 <button

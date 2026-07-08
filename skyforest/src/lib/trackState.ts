@@ -1,10 +1,10 @@
 /**
  * «Вернуться к точке входа»: состояние активного похода.
  *
- * Данные живут только в localStorage устройства — без БД и синхронизации.
- * Якорь ставится одним getCurrentPosition() при старте; точки пути дописываются
- * грубо (раз в 1–2 минуты, пока страница открыта), поэтому трек — ломаная
- * «для ориентировки», а не точная запись маршрута.
+ * Активный трек живёт в localStorage устройства. Якорь ставится одним
+ * getCurrentPosition() при старте; точки пути пишет watchPosition, пока
+ * приложение активно (см. trackRecorder). Завершённые походы сохраняются
+ * в историю (см. trackHistory).
  */
 
 export interface TrackPoint {
@@ -25,7 +25,21 @@ export interface ActiveTrack {
 const STORAGE_KEY = "sf_active_track";
 
 /** Минимальный сдвиг от последней точки, чтобы записать новую (шум GPS). */
-export const MIN_POINT_DISTANCE_M = 30;
+export const MIN_POINT_DISTANCE_M = 20;
+
+/**
+ * Событие window при старте/завершении похода — глобальный recorder по нему
+ * включает и выключает watchPosition, не опрашивая localStorage.
+ */
+export const TRACK_STATE_EVENT = "sf:track-state-change";
+
+function notifyStateChange() {
+  try {
+    window.dispatchEvent(new Event(TRACK_STATE_EVENT));
+  } catch {
+    /* SSR/тесты */
+  }
+}
 
 export function loadTrack(): ActiveTrack | null {
   if (typeof window === "undefined") return null;
@@ -62,6 +76,7 @@ export function startTrack(coords: { lat: number; lng: number }): ActiveTrack {
     points: [],
   };
   saveTrack(track);
+  notifyStateChange();
   return track;
 }
 
@@ -91,6 +106,18 @@ export function clearTrack() {
   } catch {
     /* noop */
   }
+  notifyStateChange();
+}
+
+/** Суммарная длина пути по точкам (якорь → точки), в метрах. */
+export function trackDistanceM(track: ActiveTrack): number {
+  let total = 0;
+  let prev: { lat: number; lng: number } = track.anchor;
+  for (const p of track.points) {
+    total += haversineM(prev, p);
+    prev = p;
+  }
+  return total;
 }
 
 /* ------------------------------------------------------------------ */

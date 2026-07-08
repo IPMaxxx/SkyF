@@ -125,7 +125,8 @@ function PaymentContent() {
     loadActiveSub();
   }, [native]);
 
-  const [subPeriod, setSubPeriod] = useState<SubscriptionPeriod>("monthly");
+  // Годовой период по умолчанию: он выгоднее (−50% + триал 7 дней).
+  const [subPeriod, setSubPeriod] = useState<SubscriptionPeriod>("yearly");
   const [subPurchasing, setSubPurchasing] = useState<string | null>(null);
   const [subError, setSubError] = useState("");
 
@@ -416,6 +417,148 @@ function PaymentContent() {
       {/* ========== BUY TAB ========== */}
       {tab === "buy" && (
         <>
+          {/* Subscriptions — первыми (только натив; веб — Stripe в следующей итерации) */}
+          {native && (
+            <div id="subscriptions" className="mb-8 scroll-mt-20">
+              <div className="mb-4 text-center">
+                <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">
+                  <Crown className="h-5 w-5 text-amber-400" />
+                  {ts("title")}
+                </h2>
+                <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+                  {ts("subtitle")}
+                </p>
+              </div>
+
+              {activeSub ? (
+                <div className="glass rounded-2xl border-emerald-400/30 p-5 text-center">
+                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+                    <CheckCircle className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-emerald-300">{ts("activeTitle")}</p>
+                  <p className="mt-1 text-lg font-bold">
+                    {ts("activeUntil", {
+                      tier: tierName(activeSub.tier),
+                      date: formatSubDate(activeSub.current_period_end),
+                    })}
+                  </p>
+                  {activeSub.status === "canceled" && (
+                    <p className="mt-1 text-xs text-amber-300">
+                      {ts("activeCanceled", { date: formatSubDate(activeSub.current_period_end) })}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => manageSubscriptions()}
+                    className="mt-4 rounded-xl border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+                  >
+                    {ts("manageBtn")}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Переключатель месяц/год */}
+                  <div className="mb-4 flex justify-center">
+                    <div className="flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+                      {(["monthly", "yearly"] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setSubPeriod(p)}
+                          className={`relative rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                            subPeriod === p
+                              ? "bg-amber-500/20 text-amber-300 shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {p === "monthly" ? ts("monthly") : ts("yearly")}
+                          {p === "yearly" && (
+                            <span className="ml-1.5 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                              {ts("yearlyBadge")}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(["forager", "pro"] as const).map((tier) => {
+                      const product = SUBSCRIPTION_PRODUCTS.find(
+                        (p) => p.tier === tier && p.period === subPeriod
+                      )!;
+                      const price = subPrices[product.productId] || product.fallbackPrice;
+                      const features =
+                        tier === "pro"
+                          ? (["proF1", "proF2", "proF3", "proF4", "proF5", "proF6"] as const)
+                          : (["foragerF1", "foragerF2", "foragerF3", "foragerF4"] as const);
+                      const isPro = tier === "pro";
+                      return (
+                        <div
+                          key={tier}
+                          className={`glass relative flex flex-col rounded-2xl p-5 ${
+                            isPro ? "border-amber-400/40 ring-1 ring-amber-400/20" : ""
+                          }`}
+                        >
+                          <span className="absolute -top-2.5 right-4 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-white">
+                            {ts("trialBadge")}
+                          </span>
+                          <div className="mb-1 flex items-center gap-2">
+                            <Crown className={`h-5 w-5 ${isPro ? "text-amber-400" : "text-emerald-400"}`} />
+                            <span className="text-xl font-bold">{tierName(tier)}</span>
+                          </div>
+                          <div className="mb-3 flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-primary-light">{price}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {subPeriod === "monthly" ? ts("perMonth") : ts("perYear")}
+                            </span>
+                          </div>
+                          <ul className="mb-4 flex-1 space-y-1.5">
+                            {features.map((key) => (
+                              <li key={key} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
+                                {ts(key)}
+                              </li>
+                            ))}
+                          </ul>
+                          <button
+                            type="button"
+                            onClick={() => handleSubscribe(tier)}
+                            disabled={subPurchasing !== null}
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${
+                              isPro
+                                ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-600"
+                            }`}
+                          >
+                            {subPurchasing === product.productId ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {ts("purchasing")}
+                              </>
+                            ) : (
+                              ts("subscribeBtn", { tier: tierName(tier) })
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {subError && (
+                    <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                      {subError}
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-center text-xs text-muted-foreground/70">
+                    {ts("storeNote")}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Referral promo */}
           {hasReferrer ? (
             <div className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3">
@@ -574,148 +717,6 @@ function PaymentContent() {
             </>
             )}
           </div>
-
-          {/* Subscriptions (только натив; веб — Stripe в следующей итерации) */}
-          {native && (
-            <div id="subscriptions" className="mb-8 scroll-mt-20">
-              <div className="mb-4 text-center">
-                <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">
-                  <Crown className="h-5 w-5 text-amber-400" />
-                  {ts("title")}
-                </h2>
-                <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
-                  {ts("subtitle")}
-                </p>
-              </div>
-
-              {activeSub ? (
-                <div className="glass rounded-2xl border-emerald-400/30 p-5 text-center">
-                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
-                    <CheckCircle className="h-5 w-5 text-emerald-400" />
-                  </div>
-                  <p className="text-sm font-semibold text-emerald-300">{ts("activeTitle")}</p>
-                  <p className="mt-1 text-lg font-bold">
-                    {ts("activeUntil", {
-                      tier: tierName(activeSub.tier),
-                      date: formatSubDate(activeSub.current_period_end),
-                    })}
-                  </p>
-                  {activeSub.status === "canceled" && (
-                    <p className="mt-1 text-xs text-amber-300">
-                      {ts("activeCanceled", { date: formatSubDate(activeSub.current_period_end) })}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => manageSubscriptions()}
-                    className="mt-4 rounded-xl border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-                  >
-                    {ts("manageBtn")}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {/* Переключатель месяц/год */}
-                  <div className="mb-4 flex justify-center">
-                    <div className="flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
-                      {(["monthly", "yearly"] as const).map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setSubPeriod(p)}
-                          className={`relative rounded-lg px-5 py-2 text-sm font-medium transition-all ${
-                            subPeriod === p
-                              ? "bg-amber-500/20 text-amber-300 shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {p === "monthly" ? ts("monthly") : ts("yearly")}
-                          {p === "yearly" && (
-                            <span className="ml-1.5 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                              {ts("yearlyBadge")}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {(["forager", "pro"] as const).map((tier) => {
-                      const product = SUBSCRIPTION_PRODUCTS.find(
-                        (p) => p.tier === tier && p.period === subPeriod
-                      )!;
-                      const price = subPrices[product.productId] || product.fallbackPrice;
-                      const features =
-                        tier === "pro"
-                          ? (["proF1", "proF2", "proF3", "proF4", "proF5", "proF6"] as const)
-                          : (["foragerF1", "foragerF2", "foragerF3", "foragerF4"] as const);
-                      const isPro = tier === "pro";
-                      return (
-                        <div
-                          key={tier}
-                          className={`glass relative flex flex-col rounded-2xl p-5 ${
-                            isPro ? "border-amber-400/40 ring-1 ring-amber-400/20" : ""
-                          }`}
-                        >
-                          <span className="absolute -top-2.5 right-4 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-white">
-                            {ts("trialBadge")}
-                          </span>
-                          <div className="mb-1 flex items-center gap-2">
-                            <Crown className={`h-5 w-5 ${isPro ? "text-amber-400" : "text-emerald-400"}`} />
-                            <span className="text-xl font-bold">{tierName(tier)}</span>
-                          </div>
-                          <div className="mb-3 flex items-baseline gap-1">
-                            <span className="text-2xl font-bold text-primary-light">{price}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {subPeriod === "monthly" ? ts("perMonth") : ts("perYear")}
-                            </span>
-                          </div>
-                          <ul className="mb-4 flex-1 space-y-1.5">
-                            {features.map((key) => (
-                              <li key={key} className="flex items-start gap-2 text-xs text-muted-foreground">
-                                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
-                                {ts(key)}
-                              </li>
-                            ))}
-                          </ul>
-                          <button
-                            type="button"
-                            onClick={() => handleSubscribe(tier)}
-                            disabled={subPurchasing !== null}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${
-                              isPro
-                                ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                                : "bg-gradient-to-r from-emerald-500 to-teal-600"
-                            }`}
-                          >
-                            {subPurchasing === product.productId ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                {ts("purchasing")}
-                              </>
-                            ) : (
-                              ts("subscribeBtn", { tier: tierName(tier) })
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {subError && (
-                    <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-                      {subError}
-                    </div>
-                  )}
-
-                  <p className="mt-3 text-center text-xs text-muted-foreground/70">
-                    {ts("storeNote")}
-                  </p>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Cost table */}
           <div className="glass mb-6 rounded-2xl p-6">

@@ -11,6 +11,7 @@ import {
   Brain,
   ScanSearch,
   Sprout,
+  Footprints,
   ArrowRight,
 } from "lucide-react";
 import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
@@ -28,6 +29,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const ARTICLES = [
+  {
+    href: "/blog/kak-ne-zabluditsya-v-lesu",
+    title: "How not to get lost in the forest: the Track feature in SkyForest",
+    description:
+      "One tap at the forest edge — SkyForest remembers your entry point, draws your path on the map and points the way back. Works offline, data stays on your device.",
+    icon: Footprints,
+    image: "/images/blog/blog-kak-ne-zabluditsya-v-lesu.jpg",
+    readTime: "7 min",
+    gradient: "from-emerald-500/30 to-teal-600/20",
+  },
   {
     href: "/blog/kak-opredelit-grib",
     title: "How to identify a mushroom from a photo: apps, neural networks and key features",

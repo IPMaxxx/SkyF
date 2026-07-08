@@ -13,6 +13,7 @@ export const TOKEN_COSTS = {
   marketplace_list: 10,
   tour_bid: 1, // one token per bid action in a mushroom-tour auction
   mushroom_identify: 1, // one token per photo identification (Kindwise)
+  forest_info: 1, // определение типа леса (безлимит у подписчиков Forager/Pro)
 } as const;
 
 const TOKEN_PACKAGES_BY = [
@@ -66,5 +67,6 @@ export function getTokenCostLabel(action: keyof typeof TOKEN_COSTS): string {
     case "marketplace_list": return "Размещение на маркетплейсе";
     case "tour_bid": return "Ставка на грибном аукционе";
     case "mushroom_identify": return "Определение гриба по фото";
+    case "forest_info": return "Определение типа леса";
   }
 }

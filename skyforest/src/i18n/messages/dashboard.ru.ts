@@ -98,7 +98,7 @@ export default {
     confirmRainTitle: "Построить карту дождя?",
     confirmRainDesc: "Осадки за 14 дней по 20 точкам в радиусе 20 км.",
     confirmForestTitle: "Узнать тип леса?",
-    confirmForestDesc: "Данные о лесе из OSM, ФГИС ЛК, iNaturalist и MODIS. Бесплатно.",
+    confirmForestDesc: "Данные о лесе из OSM, ФГИС ЛК, iNaturalist и MODIS. Для подписчиков Forager/Pro — бесплатно.",
   },
   mushroomBot: {
     title: "Бот-определитель грибов",
