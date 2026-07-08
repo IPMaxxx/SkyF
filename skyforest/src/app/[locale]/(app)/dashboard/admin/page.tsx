@@ -2399,6 +2399,12 @@ function AdminUserLookup() {
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState<UserLookupResult | null>(null);
 
+  // Grant tokens form
+  const [grantAmount, setGrantAmount] = useState("");
+  const [grantKind, setGrantKind] = useState<"balance" | "bonus">("balance");
+  const [grantComment, setGrantComment] = useState("");
+  const [granting, setGranting] = useState(false);
+
   // Two-stage delete confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmStage, setConfirmStage] = useState<1 | 2>(1);
@@ -2438,6 +2444,48 @@ function AdminUserLookup() {
       setSearching(false);
     }
   }, [emailInput]);
+
+  const handleGrant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!result?.target_user_id) return;
+    const amount = Number(grantAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      toast.error("Введите целое число токенов больше 0");
+      return;
+    }
+    setGranting(true);
+    try {
+      const res = await fetch("/api/admin/users/grant-tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: result.target_user_id,
+          amount,
+          kind: grantKind,
+          comment: grantComment,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || `HTTP ${res.status}`);
+        return;
+      }
+      toast.success(
+        `Начислено ${amount} ток. (${grantKind === "bonus" ? "бонусный" : "основной"} баланс)`,
+      );
+      setGrantAmount("");
+      setGrantComment("");
+      if (data.token_balance) {
+        setResult((prev) =>
+          prev ? { ...prev, token_balance: data.token_balance } : prev,
+        );
+      }
+    } catch {
+      toast.error("Сеть упала");
+    } finally {
+      setGranting(false);
+    }
+  };
 
   const closeConfirm = () => {
     if (purging) return;
@@ -2670,6 +2718,65 @@ function AdminUserLookup() {
                     v={String(result.token_balance.total_earned ?? 0)}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* grant tokens */}
+            {result.target_user_id && result.profile && (
+              <div className="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                  <Coins className="h-3.5 w-3.5" />
+                  Начислить токены
+                </p>
+                <form
+                  onSubmit={handleGrant}
+                  className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={grantAmount}
+                    onChange={(e) => setGrantAmount(e.target.value)}
+                    placeholder="Кол-во"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20 sm:w-28"
+                  />
+                  <select
+                    value={grantKind}
+                    onChange={(e) =>
+                      setGrantKind(e.target.value as "balance" | "bonus")
+                    }
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-emerald-500/30 [&>option]:bg-neutral-900"
+                  >
+                    <option value="balance">Основной баланс</option>
+                    <option value="bonus">Бонусный баланс</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={grantComment}
+                    onChange={(e) => setGrantComment(e.target.value)}
+                    placeholder="Комментарий (попадёт в историю транзакций)"
+                    maxLength={200}
+                    className="w-full flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20"
+                  />
+                  <button
+                    type="submit"
+                    disabled={granting || !grantAmount}
+                    className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-50"
+                  >
+                    {granting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Gift className="h-4 w-4" />
+                    )}
+                    Начислить
+                  </button>
+                </form>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Зачисление идёт через RPC с записью в token_transactions.
+                  Бонусные токены нельзя вывести в деньги; основной баланс
+                  работает как купленные токены.
+                </p>
               </div>
             )}
 
