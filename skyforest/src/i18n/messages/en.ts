@@ -434,6 +434,9 @@ export default {
     f4Title: "Identify mushrooms by photo",
     f4Desc:
       "A Telegram bot recognizes the mushroom from a photo — 3 free checks, then 1 token each from your balance.",
+    f7Title: "Don't get lost in the forest",
+    f7Desc:
+      "Way Back remembers where you entered the forest and points the way back with an arrow — works even offline.",
   },
   faq: {
     title: "FAQ",

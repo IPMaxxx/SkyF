@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   CloudSun,
+  Compass,
   Droplets,
   Footprints,
   ScanSearch,
@@ -16,7 +17,8 @@ export type HeroToolTitleKey =
   | "f3Title"
   | "f4Title"
   | "f5Title"
-  | "f6Title";
+  | "f6Title"
+  | "f7Title";
 
 export type HeroToolDescKey =
   | "f0Desc"
@@ -25,7 +27,8 @@ export type HeroToolDescKey =
   | "f3Desc"
   | "f4Desc"
   | "f5Desc"
-  | "f6Desc";
+  | "f6Desc"
+  | "f7Desc";
 
 export type HeroTool = {
   id: string;
@@ -109,13 +112,23 @@ export const HERO_TOOLS: HeroTool[] = [
     glow: "group-hover:shadow-lime-500/30",
     iconBg: "from-lime-500/25 to-green-500/25",
   },
+  {
+    id: "track",
+    icon: Compass,
+    titleKey: "f7Title",
+    descKey: "f7Desc",
+    href: "/dashboard/track",
+    accent: "from-red-400 to-orange-400",
+    glow: "group-hover:shadow-red-500/30",
+    iconBg: "from-red-500/25 to-orange-500/25",
+  },
 ];
 
-/** 3 + 2 + 2 — от анализа погоды к поиску мест и доп. сервисам */
+/** 3 + 2 + 3 — от анализа погоды к поиску мест и доп. сервисам */
 export const HERO_TOOL_ROWS: string[][] = [
   ["weather", "monitor", "rain"],
   ["forest", "market"],
-  ["bot", "tours"],
+  ["bot", "track", "tours"],
 ];
 
 export const HERO_TOOL_BY_ID = Object.fromEntries(
