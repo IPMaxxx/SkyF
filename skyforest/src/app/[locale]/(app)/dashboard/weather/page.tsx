@@ -14,6 +14,7 @@ import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { HowItWorksPopover } from "@/components/app/HowItWorksPopover";
 import { toast } from "sonner";
 import type { WeatherDay } from "@/lib/supabase/types";
+import { useUnits } from "@/lib/units";
 import {
   CloudSun,
   CloudRain,
@@ -166,7 +167,9 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
 
 export default function WeatherPage() {
   const t = useTranslations("weather");
+  const tu = useTranslations("units");
   const locale = useLocale();
+  const units = useUnits();
   const searchParams = useSearchParams();
   // Координаты из внешнего перехода (например, попап на карте дашборда).
   const initLat = searchParams.get("lat");
@@ -702,25 +705,44 @@ export default function WeatherPage() {
                       <th className="whitespace-nowrap px-4 py-3 font-medium">{t("tableDay")}</th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">{t("tableDate")}</th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text={t("tooltipTempMean")}>
+                        <Tooltip
+                          text={t("tooltipTempMean", {
+                            u: units.tempUnit,
+                            opt: `${units.fmtTemp(10, 0)}–${units.fmtTemp(20, 0)}${units.tempUnit}`,
+                          })}
+                        >
                           <Thermometer className="h-3.5 w-3.5" />
-                          {t("tempMeanShort")}
+                          {t("tempMeanShort", { u: units.tempUnit })}
                         </Tooltip>
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text={t("tooltipTempMin")}>{t("tempMin")}</Tooltip>
+                        <Tooltip text={t("tooltipTempMin", { u: units.tempUnit })}>
+                          {t("tempMin", { u: units.tempUnit })}
+                        </Tooltip>
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text={t("tooltipTempMax")}>{t("tempMax")}</Tooltip>
+                        <Tooltip
+                          text={t("tooltipTempMax", {
+                            u: units.tempUnit,
+                            hot: `${units.fmtTemp(30, 0)}${units.tempUnit}`,
+                          })}
+                        >
+                          {t("tempMax", { u: units.tempUnit })}
+                        </Tooltip>
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text={t("tooltipRain")}>
+                        <Tooltip text={t("tooltipRain", { u: units.precipUnit })}>
                           <Droplets className="h-3.5 w-3.5" />
                           {t("rain")}
                         </Tooltip>
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 font-medium">
-                        <Tooltip text={t("tooltipWind")}>
+                        <Tooltip
+                          text={t("tooltipWind", {
+                            u: units.windUnit,
+                            strong: `${units.fmtWind(40, 0)} ${units.windUnit}`,
+                          })}
+                        >
                           <Wind className="h-3.5 w-3.5" />
                           {t("wind")}
                         </Tooltip>
@@ -744,25 +766,25 @@ export default function WeatherPage() {
                         </td>
                         <td className="px-4 py-2.5">
                           {day.temperature_mean !== null
-                            ? `${day.temperature_mean.toFixed(1)}°`
+                            ? `${units.fmtTemp(day.temperature_mean)}°`
                             : "—"}
                         </td>
                         <td className="px-4 py-2.5 text-blue-400">
                           {day.temperature_min !== null
-                            ? `${day.temperature_min.toFixed(1)}°`
+                            ? `${units.fmtTemp(day.temperature_min)}°`
                             : "—"}
                         </td>
                         <td className="px-4 py-2.5 text-red-400">
                           {day.temperature_max !== null
-                            ? `${day.temperature_max.toFixed(1)}°`
+                            ? `${units.fmtTemp(day.temperature_max)}°`
                             : "—"}
                         </td>
                         <td className="px-4 py-2.5">
-                          {day.rain_sum.toFixed(1)} {t("unitMm")}
+                          {units.fmtPrecip(day.rain_sum)} {units.precipUnit}
                         </td>
                         <td className="px-4 py-2.5">
                           {day.wind_speed_max !== null && day.wind_speed_max !== undefined
-                            ? `${day.wind_speed_max.toFixed(0)} ${t("unitKmH")}`
+                            ? `${units.fmtWind(day.wind_speed_max, 0)} ${units.windUnit}`
                             : "—"}
                         </td>
                       </tr>
@@ -844,6 +866,10 @@ export default function WeatherPage() {
                       onChange={(e) => setRadius(parseInt(e.target.value) || 30)}
                       className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary"
                     />
+                    <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                      {tu("km")}
+                      {units.isImperial ? ` ≈${units.fmtDist(radius, 0)} ${units.distUnit}` : ""}
+                    </span>
                   </div>
                 </div>
                 <div>
@@ -864,6 +890,9 @@ export default function WeatherPage() {
                       onChange={(e) => setStep(parseInt(e.target.value) || 5)}
                       className="w-full sm:w-16 rounded-lg border border-border bg-white px-2 py-1.5 text-xs outline-none focus:border-primary disabled:opacity-40"
                     />
+                    <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                      {tu("km")}
+                    </span>
                   </div>
                 </div>
                 <div>
@@ -1026,6 +1055,10 @@ export default function WeatherPage() {
               const minRain = Math.min(...gridData.map((p) => p.rain_total));
               const avgRain = gridData.reduce((a, b) => a + b.rain_total, 0) / gridData.length;
               const step8 = maxRain / 8;
+              const axis = (mm: number) =>
+                units.isImperial
+                  ? units.precip(mm).toFixed(1)
+                  : String(Math.round(mm));
               return (
                 <div className="mt-3 border-t border-white/5 pt-3">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -1033,9 +1066,10 @@ export default function WeatherPage() {
                     <span className="text-[11px] text-muted-foreground">
                       {t("legendStats", {
                         pts: gridData.length,
-                        min: minRain.toFixed(1),
-                        max: maxRain.toFixed(1),
-                        avg: avgRain.toFixed(1),
+                        min: units.fmtPrecip(minRain),
+                        max: units.fmtPrecip(maxRain),
+                        avg: units.fmtPrecip(avgRain),
+                        unit: units.precipUnit,
                       })}
                     </span>
                   </div>
@@ -1051,14 +1085,14 @@ export default function WeatherPage() {
                   </div>
                   <div className="mt-1 flex text-[10px] text-muted-foreground">
                     <span className="flex-1 text-left">0</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 2)}</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 3)}</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 4)}</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 5)}</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 6)}</span>
-                    <span className="flex-1 text-center">{Math.round(step8 * 7)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 2)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 3)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 4)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 5)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 6)}</span>
+                    <span className="flex-1 text-center">{axis(step8 * 7)}</span>
                     <span className="flex-1 text-right">
-                      {Math.round(maxRain)} {t("unitMm")}
+                      {axis(maxRain)} {units.precipUnit}
                     </span>
                   </div>
                 </div>
@@ -1077,10 +1111,9 @@ export default function WeatherPage() {
               userLocations={locations}
               showUserLocations={showMyLocations}
               userLocationLabels={{
-                unitMm: t("unitMm"),
                 rainForDays: t("rainSumForDays", { days }),
                 outOfArea: t("myLocationOutOfArea"),
-                nearestPoint: t("myLocationNearest"),
+                nearestPoint: t("myLocationNearest", { unit: units.distUnit }),
               }}
               onCenterSelect={(lat, lng) => {
                 if (gridData.length > 0) return;

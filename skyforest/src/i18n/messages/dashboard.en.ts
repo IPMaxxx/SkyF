@@ -234,7 +234,7 @@ export default {
     spendReason: "Loading weather for a mushroom day",
     toastSaved: "Mushroom day saved",
     toastCharged: "{n} token charged",
-    photoOtherLocation: "{file}: photo from another location ({km} km from the selected point)",
+    photoOtherLocation: "{file}: photo from another location ({km} {unit} from the selected point)",
     errUpload: "Upload error: {msg}",
     editTitle: "Edit mushroom day",
     createdAt: "Created {date}",

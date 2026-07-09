@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import type { WeatherDay } from "@/lib/supabase/types";
 import { useLocale, useTranslations } from "next-intl";
+import { useUnits } from "@/lib/units";
 
 interface Props {
   data: WeatherDay[];
@@ -23,6 +24,10 @@ export function WeatherChart({ data }: Props) {
   const t = useTranslations("weather");
   const locale = useLocale();
   const dateLocale = locale === "en" ? "en-GB" : "ru-RU";
+  const units = useUnits();
+
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+  const round2 = (v: number) => Math.round(v * 100) / 100;
 
   const chartData = data.map((d, i) => ({
     day: i + 1,
@@ -30,12 +35,19 @@ export function WeatherChart({ data }: Props) {
       day: "numeric",
       month: "short",
     }),
-    tMean: d.temperature_mean,
-    tMin: d.temperature_min,
-    tMax: d.temperature_max,
-    rain: d.rain_sum,
-    precip: d.precipitation_sum,
-    wind: d.wind_speed_max,
+    tMean: round1(units.temp(d.temperature_mean)),
+    tMin: round1(units.temp(d.temperature_min)),
+    tMax: round1(units.temp(d.temperature_max)),
+    rain: units.isImperial
+      ? round2(units.precip(d.rain_sum))
+      : round1(d.rain_sum),
+    precip: units.isImperial
+      ? round2(units.precip(d.precipitation_sum))
+      : round1(d.precipitation_sum),
+    wind:
+      d.wind_speed_max !== undefined
+        ? round1(units.wind(d.wind_speed_max))
+        : undefined,
   }));
 
   return (
@@ -58,7 +70,7 @@ export function WeatherChart({ data }: Props) {
                 tick={{ fill: "#94a3b8", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                unit="°"
+                unit={units.tempUnit}
               />
               <Tooltip
                 contentStyle={{
@@ -137,7 +149,7 @@ export function WeatherChart({ data }: Props) {
                 tick={{ fill: "#94a3b8", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                unit={t("chartRainUnit")}
+                unit={` ${units.precipUnit}`}
               />
               <Tooltip
                 contentStyle={{
@@ -151,7 +163,7 @@ export function WeatherChart({ data }: Props) {
               />
               <Bar
                 dataKey="rain"
-                name={t("chartRainLabel")}
+                name={t("chartRainLabel", { u: units.precipUnit })}
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
                 opacity={0.8}

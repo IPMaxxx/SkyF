@@ -12,6 +12,7 @@ import { useIsNative } from "@/lib/native/useIsNative";
 import type { BestDay, Location, WeatherDay } from "@/lib/supabase/types";
 import { useTokens } from "@/lib/TokenContext";
 import { useAppData } from "@/lib/AppDataContext";
+import { useUnits } from "@/lib/units";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
 import { toast } from "sonner";
@@ -164,6 +165,7 @@ function parseSavedForecastScores(raw: unknown): {
 export default function ComparePage() {
   const t = useTranslations("compare");
   const locale = useLocale();
+  const units = useUnits();
 
   const anchorLabel = (offset: number) => {
     if (offset === 0) return t("anchorToday");
@@ -182,11 +184,11 @@ export default function ComparePage() {
 
   const wLab = (key: keyof WeightConfig) =>
     ({
-      rain_sum: t("weightRainSum"),
-      temperature_mean: t("weightTempMean"),
-      temperature_min: t("weightTempMin"),
-      temperature_max: t("weightTempMax"),
-      wind_speed_max: t("weightWindMax"),
+      rain_sum: t("weightRainSum", { u: units.precipUnit }),
+      temperature_mean: t("weightTempMean", { u: units.tempUnit }),
+      temperature_min: t("weightTempMin", { u: units.tempUnit }),
+      temperature_max: t("weightTempMax", { u: units.tempUnit }),
+      wind_speed_max: t("weightWindMax", { u: units.windUnit }),
       relative_humidity_mean: t("weightHumidity"),
     })[key];
 
@@ -1193,13 +1195,13 @@ export default function ComparePage() {
                                   <tr key={i} className="border-b border-white/10">
                                     <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
                                     <td className="px-3 py-2"><span className={`font-bold ${getMatchColor(dayScore)}`}>{Math.round(dayScore)}%</span></td>
-                                    <td className="px-3 py-2">{ref.temperature_mean !== null ? `${ref.temperature_mean.toFixed(1)}°` : "—"}</td>
-                                    <td className="px-3 py-2">{cur.temperature_mean !== null ? `${cur.temperature_mean.toFixed(1)}°` : "—"}</td>
+                                    <td className="px-3 py-2">{ref.temperature_mean !== null ? `${units.fmtTemp(ref.temperature_mean)}°` : "—"}</td>
+                                    <td className="px-3 py-2">{cur.temperature_mean !== null ? `${units.fmtTemp(cur.temperature_mean)}°` : "—"}</td>
                                     <td className="px-3 py-2">
-                                      {ref.rain_sum.toFixed(1)} {t("unitMm")}
+                                      {units.fmtPrecip(ref.rain_sum)} {units.precipUnit}
                                     </td>
                                     <td className="px-3 py-2">
-                                      {cur.rain_sum.toFixed(1)} {t("unitMm")}
+                                      {units.fmtPrecip(cur.rain_sum)} {units.precipUnit}
                                     </td>
                                   </tr>
                                 );
@@ -1377,16 +1379,16 @@ export default function ComparePage() {
                                     <span className={`font-bold ${getMatchColor(dayScore)}`}>{Math.round(dayScore)}%</span>
                                   </td>
                                   <td className="px-3 py-2">
-                                    {ref.temperature_mean !== null ? `${ref.temperature_mean.toFixed(1)}°` : "—"}
+                                    {ref.temperature_mean !== null ? `${units.fmtTemp(ref.temperature_mean)}°` : "—"}
                                   </td>
                                   <td className="px-3 py-2">
-                                    {cur.temperature_mean !== null ? `${cur.temperature_mean.toFixed(1)}°` : "—"}
+                                    {cur.temperature_mean !== null ? `${units.fmtTemp(cur.temperature_mean)}°` : "—"}
                                   </td>
                                   <td className="px-3 py-2">
-                                    {ref.rain_sum.toFixed(1)} {t("unitMm")}
+                                    {units.fmtPrecip(ref.rain_sum)} {units.precipUnit}
                                   </td>
                                   <td className="px-3 py-2">
-                                    {cur.rain_sum.toFixed(1)} {t("unitMm")}
+                                    {units.fmtPrecip(cur.rain_sum)} {units.precipUnit}
                                   </td>
                                 </tr>
                               );

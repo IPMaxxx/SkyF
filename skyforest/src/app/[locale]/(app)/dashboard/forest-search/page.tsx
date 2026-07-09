@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import type { WeatherDay } from "@/lib/supabase/types";
 import type { ForestMatch, ForestPattern } from "@/app/api/forest-search/route";
 import { formatReason, formatIgbpClass } from "@/lib/forestSearchReason";
+import { useUnits } from "@/lib/units";
 
 interface HistoryItem {
   id: string;
@@ -64,6 +65,7 @@ const RADIUS_OPTIONS = [1, 2, 5, 10, 20];
 export default function ForestSearchPage() {
   const t = useTranslations("forestSearch");
   const locale = useLocale();
+  const units = useUnits();
   const searchParams = useSearchParams();
   const initLat = searchParams.get("lat");
   const initLng = searchParams.get("lng");
@@ -378,7 +380,7 @@ export default function ForestSearchPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                         <span className="font-medium">{rp.dominant_species || forestTypeLabel(rp.forest_type)}</span>
-                        <span className="text-[11px] sm:text-xs text-muted-foreground">{t("historyMeta", { radius: item.radius_km, count: item.matches.length })}</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground">{t("historyMeta", { radius: units.isImperial ? units.fmtDist(item.radius_km) : item.radius_km, unit: units.distUnit, count: item.matches.length })}</span>
                         {bestMatch > 0 && (
                           <span className={`text-[11px] sm:text-xs font-bold ${bestMatch >= 70 ? "text-emerald-400" : bestMatch >= 40 ? "text-amber-400" : "text-gray-400"}`}>
                             {bestMatch}%
@@ -499,7 +501,7 @@ export default function ForestSearchPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-white/5 p-4">
             <label className="mb-2 block text-sm font-medium">
-              {t("radiusLabel", { km: radiusKm })}
+              {t("radiusLabel", { km: units.isImperial ? units.fmtDist(radiusKm) : radiusKm, unit: units.distUnit })}
               <span className="ml-2 text-xs text-muted-foreground font-normal">{t("tokensInParens", { cost: tokenCost, tokens: tokPlural(tokenCost, t, locale) })}</span>
             </label>
             <div className="flex flex-wrap gap-2">
@@ -509,7 +511,7 @@ export default function ForestSearchPage() {
                   <button key={r} onClick={() => setRadiusKm(r)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${radiusKm === r ? "bg-emerald-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20"}`}
                   >
-                    {r} {t("unitKm")} <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{t("tokenShort", { n: cost })}</span>
+                    {units.isImperial ? units.fmtDist(r) : r} {units.distUnit} <span className={`ml-1 text-[10px] ${radiusKm === r ? "text-white/70" : "text-muted-foreground/60"}`}>{t("tokenShort", { n: cost })}</span>
                   </button>
                 );
               })}
@@ -646,11 +648,11 @@ export default function ForestSearchPage() {
                           <div className="rounded-lg border border-border/50 overflow-x-auto">
                             <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-0 text-[10px] sm:text-[11px] min-w-[360px]">
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5">{t("colDate")}</div>
-                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />{t("colTemp")}</div>
+                              <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Thermometer className="inline h-3 w-3 mr-0.5" />{t("colTemp", { u: units.tempUnit })}</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Droplets className="inline h-3 w-3 mr-0.5" />{t("colRain")}</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center">{t("colHumidity")}</div>
                               <div className="px-2 py-1.5 font-medium text-muted-foreground bg-white/5 text-center"><Wind className="inline h-3 w-3 mr-0.5" />{t("colWind")}</div>
-                              {weather.map((d) => <WeatherRow key={d.date} day={d} locale={locale} t={t} />)}
+                              {weather.map((d) => <WeatherRow key={d.date} day={d} locale={locale} />)}
                             </div>
                           </div>
                         </div>
@@ -668,7 +670,7 @@ export default function ForestSearchPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">{t("noMassifs", { km: radiusKm })}</p>
+              <p className="text-sm text-muted-foreground">{t("noMassifs", { km: units.isImperial ? units.fmtDist(radiusKm) : radiusKm, unit: units.distUnit })}</p>
               <p className="mt-1 text-xs text-muted-foreground/60">{t("noMassifsHint")}</p>
               <button onClick={() => setStep("search")} className="mt-3 text-sm text-blue-400 hover:text-blue-300">{t("newSearch")}</button>
             </div>
@@ -681,7 +683,7 @@ export default function ForestSearchPage() {
       <TokenConfirmModal
         open={showSearchConfirm}
         title={t("confirmSearchTitle")}
-        description={t("confirmSearchDesc", { km: radiusKm })}
+        description={t("confirmSearchDesc", { km: units.isImperial ? units.fmtDist(radiusKm) : radiusKm, unit: units.distUnit })}
         cost={tokenCost}
         balance={balance}
         loading={searching}
@@ -730,16 +732,16 @@ function ScoreRow({ label, score, max, reason, color }: {
 function WeatherRow({
   day,
   locale,
-  t,
 }: {
   day: WeatherDay;
   locale: string;
-  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
+  const units = useUnits();
   const date = new Date(day.date);
   const locTag = locale === "en" ? "en-US" : "ru-RU";
   const dayStr = date.toLocaleDateString(locTag, { day: "numeric", month: "short" });
   const weekday = date.toLocaleDateString(locTag, { weekday: "short" });
+  // Пороги цветов — по метрическим значениям, независимо от отображаемых единиц
   const tempColor = day.temperature_mean > 20 ? "text-red-400" : day.temperature_mean > 10 ? "text-amber-400" : day.temperature_mean > 0 ? "text-blue-300" : "text-blue-500";
   const rainBg = day.rain_sum > 5 ? "bg-blue-500/20" : day.rain_sum > 0 ? "bg-blue-500/10" : "";
   return (
@@ -749,12 +751,12 @@ function WeatherRow({
         <span className="ml-1 text-[10px]">{weekday}</span>
       </div>
       <div className={`px-2 py-1 border-t border-border/30 text-center font-medium ${tempColor}`}>
-        {day.temperature_mean?.toFixed(1)}°
-        <span className="text-[10px] text-muted-foreground ml-0.5">({day.temperature_min?.toFixed(0)}…{day.temperature_max?.toFixed(0)})</span>
+        {day.temperature_mean != null ? units.fmtTemp(day.temperature_mean) : "—"}°
+        <span className="text-[10px] text-muted-foreground ml-0.5">({day.temperature_min != null ? units.fmtTemp(day.temperature_min, 0) : "—"}…{day.temperature_max != null ? units.fmtTemp(day.temperature_max, 0) : "—"})</span>
       </div>
-      <div className={`px-2 py-1 border-t border-border/30 text-center ${rainBg}`}>{day.rain_sum > 0 ? `${day.rain_sum.toFixed(1)} ${t("unitMm")}` : "—"}</div>
+      <div className={`px-2 py-1 border-t border-border/30 text-center ${rainBg}`}>{day.rain_sum > 0 ? `${units.fmtPrecip(day.rain_sum)} ${units.precipUnit}` : "—"}</div>
       <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.relative_humidity_mean != null ? `${Math.round(day.relative_humidity_mean)}%` : "—"}</div>
-      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${day.wind_speed_max.toFixed(0)} ${t("unitKmH")}` : "—"}</div>
+      <div className="px-2 py-1 border-t border-border/30 text-center text-muted-foreground">{day.wind_speed_max != null ? `${units.fmtWind(day.wind_speed_max, 0)} ${units.windUnit}` : "—"}</div>
     </>
   );
 }

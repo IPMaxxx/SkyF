@@ -8,6 +8,7 @@ import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { UnitSwitcher } from "@/components/UnitSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HEADER_NAV } from "@/lib/siteNav";
 
@@ -118,6 +119,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <LocaleSwitcher />
+          <UnitSwitcher className="hidden sm:inline-flex" />
           {loggedIn ? (
             <Link
               href="/dashboard"
@@ -208,6 +210,9 @@ export function Header() {
                   {t("login")}
                 </Link>
               )}
+              <div className="px-4 pt-2 sm:hidden">
+                <UnitSwitcher />
+              </div>
             </nav>
           </div>
         </>

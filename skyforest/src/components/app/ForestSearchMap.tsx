@@ -14,6 +14,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
+import { useUnits } from "@/lib/units";
 import type { ForestMatch } from "@/app/api/forest-search/route";
 import { formatReason, formatIgbpClass } from "@/lib/forestSearchReason";
 
@@ -74,6 +75,7 @@ export function ForestSearchMap({
   step, refLat, refLng, searchLat, searchLng, radiusKm, matches, onClick,
 }: Props) {
   const t = useTranslations("forestSearch");
+  const units = useUnits();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -125,7 +127,10 @@ export function ForestSearchMap({
               <Popup>
                 <strong>{t("popupSearchCenter")}</strong>
                 <br />
-                {t("popupRadius", { km: radiusKm })}
+                {t("popupRadius", {
+                  km: units.isImperial ? units.fmtDist(radiusKm) : radiusKm,
+                  unit: units.distUnit,
+                })}
               </Popup>
             </Marker>
             <Circle

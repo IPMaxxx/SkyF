@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { UnitSwitcher } from "@/components/UnitSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HEADER_NAV } from "@/lib/siteNav";
 
@@ -232,6 +233,7 @@ export function AppHeader() {
             />
           </Link>
           <LocaleSwitcher className="hidden sm:inline-flex" />
+          <UnitSwitcher className="hidden sm:inline-flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
         </div>
 
@@ -473,6 +475,7 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2 lg:hidden">
           <LocaleSwitcher />
+          <UnitSwitcher />
           {/* Баланс токенов скрыт в нативной оболочке (только индикатор; списание работает) */}
           {!isNative && (
             <Link

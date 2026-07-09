@@ -235,7 +235,7 @@ export default {
     spendReason: "Загрузка погоды для грибного дня",
     toastSaved: "Грибной день сохранён",
     toastCharged: "Списан {n} токен",
-    photoOtherLocation: "{file}: фото из другой локации ({km} км от указанной точки)",
+    photoOtherLocation: "{file}: фото из другой локации ({km} {unit} от указанной точки)",
     errUpload: "Ошибка загрузки: {msg}",
     editTitle: "Редактировать грибной день",
     createdAt: "Создан {date}",

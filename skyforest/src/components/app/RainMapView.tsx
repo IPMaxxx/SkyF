@@ -13,6 +13,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useUnits } from "@/lib/units";
 
 const centerIcon = new L.DivIcon({
   className: "",
@@ -44,7 +45,6 @@ interface UserLocation {
 }
 
 interface UserLocationLabels {
-  unitMm: string;
   rainForDays: string;
   outOfArea: string;
   nearestPoint: string;
@@ -129,6 +129,7 @@ function daysAgo(dateStr: string): number {
 function PointPopup({ point }: { point: GridPoint }) {
   const t = useTranslations("weather");
   const locale = useLocale();
+  const units = useUnits();
   const daysAgoLabel = (dateStr: string) => {
     const diff = daysAgo(dateStr);
     return diff === 0 ? t("rainPopupToday") : t("rainPopupDaysAgo", { n: diff });
@@ -174,29 +175,32 @@ function PointPopup({ point }: { point: GridPoint }) {
   return (
     <div className="text-sm min-w-[200px]">
       <p className="font-bold text-blue-600 text-base">
-        🌧 {point.rain_total.toFixed(1)} {t("unitMm")}
+        🌧 {units.fmtPrecip(point.rain_total)} {units.precipUnit}
       </p>
       <p className="text-gray-600 mt-1">
-        {t("rainPopupTempMean", { v: point.temp_mean.toFixed(1) })}
+        {t("rainPopupTempMean", {
+          v: units.fmtTemp(point.temp_mean),
+          u: units.tempUnit,
+        })}
       </p>
 
       {maxTemp && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-red-500">▲</span> {t("rainPopupMax")}: {maxTemp.val.toFixed(1)}°C
+          <span className="text-red-500">▲</span> {t("rainPopupMax")}: {units.fmtTemp(maxTemp.val)}{units.tempUnit}
           — {formatDate(maxTemp.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(maxTemp.date)})</span>
         </p>
       )}
       {minTemp && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-blue-500">▼</span> {t("rainPopupMin")}: {minTemp.val.toFixed(1)}°C
+          <span className="text-blue-500">▼</span> {t("rainPopupMin")}: {units.fmtTemp(minTemp.val)}{units.tempUnit}
           — {formatDate(minTemp.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(minTemp.date)})</span>
         </p>
       )}
       {maxRainDay && (
         <p className="text-gray-600 mt-0.5">
-          <span className="text-blue-500">💧</span> {t("rainPopupMaxRain")}: {maxRainDay.val.toFixed(1)} {t("unitMm")}
+          <span className="text-blue-500">💧</span> {t("rainPopupMaxRain")}: {units.fmtPrecip(maxRainDay.val)} {units.precipUnit}
           — {formatDate(maxRainDay.date)}{" "}
           <span className="text-gray-400">({daysAgoLabel(maxRainDay.date)})</span>
         </p>
@@ -256,6 +260,7 @@ export function RainMapView({
 }: Props) {
   const t = useTranslations("weather");
   const tc = useTranslations("common");
+  const units = useUnits();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -299,7 +304,15 @@ export function RainMapView({
                 <div className="text-sm">
                   <p className="font-medium">{t("rainPopupCenter")}</p>
                   <p>{centerLat.toFixed(4)}, {centerLng.toFixed(4)}</p>
-                  <p>{t("rainPopupRadius", { radius, step })}</p>
+                  <p>
+                    {t("rainPopupRadius", {
+                      radius: units.isImperial
+                        ? units.fmtDist(radius)
+                        : radius,
+                      step: units.isImperial ? units.fmtDist(step) : step,
+                      unit: units.distUnit,
+                    })}
+                  </p>
                 </div>
               </Popup>
             </Marker>
@@ -331,9 +344,11 @@ export function RainMapView({
             const nearest = nearestGridPoint(loc.lat, loc.lng, gridData);
             const inArea = nearest !== null && nearest.distKm <= sampleThresholdKm;
             const rainVal = inArea ? nearest!.point.rain_total : null;
-            const unit = userLocationLabels?.unitMm ?? t("unitMm");
+            const unit = units.precipUnit;
             const badge =
-              rainVal !== null ? `${rainVal.toFixed(1)} ${unit}` : null;
+              rainVal !== null
+                ? `${units.fmtPrecip(rainVal)} ${unit}`
+                : null;
             return (
               <Marker
                 key={`loc-${loc.id}`}
@@ -348,7 +363,7 @@ export function RainMapView({
                     </p>
                     {rainVal !== null ? (
                       <p className="text-gray-700 mt-1">
-                        🌧 {rainVal.toFixed(1)} {unit}
+                        🌧 {units.fmtPrecip(rainVal)} {unit}
                         <span className="text-gray-400 text-xs">
                           {" "}
                           · {userLocationLabels?.rainForDays ?? ""}
@@ -361,7 +376,7 @@ export function RainMapView({
                     )}
                     {nearest && (
                       <p className="text-xs text-gray-400 mt-1.5 border-t border-gray-200 pt-1">
-                        ≈{nearest.distKm.toFixed(1)}{" "}
+                        ≈{units.fmtDist(nearest.distKm)}{" "}
                         {userLocationLabels?.nearestPoint ?? ""}
                       </p>
                     )}
