@@ -13,6 +13,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useUnits } from "@/lib/units";
 
 const BELARUS_CENTER: [number, number] = [53.9, 27.56];
 
@@ -91,6 +92,7 @@ export function MarketplaceSearchMap({
   onSpotClick,
 }: Props) {
   const t = useTranslations("marketplace");
+  const units = useUnits();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -121,7 +123,12 @@ export function MarketplaceSearchMap({
             <Popup>
               <div className="text-sm">
                 <p className="font-medium">{t("mapSearchCenter")}</p>
-                <p className="text-gray-500">{t("mapRadius", { km: radiusKm })}</p>
+                <p className="text-gray-500">
+                  {t("mapRadius", {
+                    km: units.fmtDist(radiusKm, 0),
+                    unit: units.distUnit,
+                  })}
+                </p>
               </div>
             </Popup>
           </Marker>

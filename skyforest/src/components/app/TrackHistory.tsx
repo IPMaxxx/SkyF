@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { History, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
+import { useUnits } from "@/lib/units";
 import {
   loadTrackHistory,
   deleteSavedTrack,
@@ -27,6 +28,7 @@ const TrackMap = dynamic(
 export function TrackHistory() {
   const t = useTranslations("track");
   const locale = useLocale();
+  const units = useUnits();
 
   const [items, setItems] = useState<SavedTrack[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -66,8 +68,7 @@ export function TrackHistory() {
     }
   };
 
-  const formatDistance = (m: number) =>
-    m < 1000 ? t("distM", { value: Math.round(m) }) : t("distKm", { value: (m / 1000).toFixed(1) });
+  const formatDistance = units.fmtDistanceM;
 
   const formatDuration = (item: SavedTrack) => {
     const totalMin = Math.max(0, Math.round((item.finishedAt - item.startedAt) / 60_000));

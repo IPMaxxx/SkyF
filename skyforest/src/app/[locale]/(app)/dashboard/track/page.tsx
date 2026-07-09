@@ -33,6 +33,7 @@ import {
   type ActiveTrack,
 } from "@/lib/trackState";
 import { saveFinishedTrack } from "@/lib/trackHistory";
+import { useUnits } from "@/lib/units";
 import { TrackHistory } from "@/components/app/TrackHistory";
 
 const TrackMap = dynamic(
@@ -63,6 +64,7 @@ type OrientationEvent = DeviceOrientationEvent & {
 export default function TrackPage() {
   const t = useTranslations("track");
   const locale = useLocale();
+  const units = useUnits();
 
   const [mounted, setMounted] = useState(false);
   const [track, setTrack] = useState<ActiveTrack | null>(null);
@@ -206,8 +208,7 @@ export default function TrackPage() {
     }
   };
 
-  const formatDistance = (m: number) =>
-    m < 1000 ? t("distM", { value: Math.round(m) }) : t("distKm", { value: (m / 1000).toFixed(1) });
+  const formatDistance = units.fmtDistanceM;
 
   const distanceM = track && current ? haversineM(current, track.anchor) : null;
   const bearing = track && current ? bearingDeg(current, track.anchor) : null;

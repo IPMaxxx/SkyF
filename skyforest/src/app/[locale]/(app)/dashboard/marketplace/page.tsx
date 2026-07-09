@@ -26,6 +26,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { ListingChat } from "@/components/app/ListingChat";
+import { useUnits } from "@/lib/units";
 
 const MarketplaceSearchMap = dynamic(
   () =>
@@ -85,6 +86,7 @@ interface OwnedBestDay {
 export default function MarketplacePage() {
   const t = useTranslations("marketplace");
   const locale = useLocale();
+  const units = useUnits();
 
   const seasonLabel = (season: Season) => {
     switch (season) {
@@ -418,7 +420,7 @@ export default function MarketplacePage() {
 
           <div className="flex-1 min-w-[180px]">
             <label className="mb-1.5 block text-xs text-muted-foreground">
-              {t("radiusLabel")} <strong className="text-foreground">{t("radiusKm", { n: radiusKm })}</strong>
+              {t("radiusLabel")} <strong className="text-foreground">{t("radiusKm", { n: units.isImperial ? units.fmtDist(radiusKm, 0) : radiusKm, unit: units.distUnit })}</strong>
             </label>
             <input
               type="range"
@@ -430,8 +432,8 @@ export default function MarketplacePage() {
               className="w-full accent-primary h-2"
             />
             <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-0.5">
-              <span>{t("radiusMin")}</span>
-              <span>{t("radiusMax")}</span>
+              <span>{t("radiusMin", { v: units.isImperial ? units.fmtDist(30, 0) : 30, unit: units.distUnit })}</span>
+              <span>{t("radiusMax", { v: units.isImperial ? units.fmtDist(1000, 0) : 1000, unit: units.distUnit })}</span>
             </div>
           </div>
 
@@ -454,7 +456,8 @@ export default function MarketplacePage() {
             {t("centerHint", {
               lat: centerLat.toFixed(4),
               lng: centerLng.toFixed(4),
-              r: radiusKm,
+              r: units.isImperial ? units.fmtDist(radiusKm, 0) : radiusKm,
+              unit: units.distUnit,
             })}
           </p>
         )}
@@ -613,7 +616,7 @@ export default function MarketplacePage() {
             <div className="flex flex-col items-center justify-center rounded-2xl glass py-12">
               <Store className="mb-3 h-12 w-12 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">
-                {t("noResults", { r: radiusKm })}
+                {t("noResults", { r: units.isImperial ? units.fmtDist(radiusKm, 0) : radiusKm, unit: units.distUnit })}
               </p>
               <p className="mt-1 text-xs text-muted-foreground/60">
                 {t("noResultsHint")}
@@ -931,8 +934,8 @@ export default function MarketplacePage() {
                       ))}
                     </div>
                     <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-                      <span>t° 12-18°C</span>
-                      <span>{t("demoRain")}</span>
+                      <span>t° {units.fmtTemp(12, 0)}-{units.fmtTemp(18, 0)}{units.tempUnit}</span>
+                      <span>{t("demoRain", { v: `${units.fmtPrecip(23, 0)}${units.precipUnit}` })}</span>
                       <span>{t("demoHumidity")}</span>
                     </div>
                   </div>

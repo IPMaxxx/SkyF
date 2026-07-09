@@ -10,13 +10,19 @@ import {
 import { useIsLoggedIn } from "@/lib/useIsLoggedIn";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { useUnits } from "@/lib/units";
 
 export function CTASection() {
   const loggedIn = useIsLoggedIn();
   const t = useTranslations("cta");
+  const units = useUnits();
 
   const stats = [
-    { icon: CloudSun, label: t("mockWeather"), value: "+17°C" },
+    {
+      icon: CloudSun,
+      label: t("mockWeather"),
+      value: `${units.isImperial ? "" : "+"}${units.fmtTemp(17, 0)}${units.tempUnit}`,
+    },
     { icon: BarChart3, label: t("mockHumidity"), value: "85%" },
   ];
 

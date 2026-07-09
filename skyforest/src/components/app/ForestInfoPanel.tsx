@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 import { useTokens } from "@/lib/TokenContext";
+import { useUnits } from "@/lib/units";
 import type { ForestInfo, TreeSpecies } from "@/lib/supabase/types";
 import {
   Trees, Leaf, Loader2, RefreshCw, ChevronDown, ChevronUp,
@@ -80,8 +81,9 @@ const UI = {
     speciesFromTags: "Виды из тегов: ",
     inatTitle: "iNaturalist",
     openMap: "Открыть карту",
-    inatCount: (n: number) => `${n} видов деревьев в радиусе 5 км (research grade)`,
-    inatNone: "Данные о видах в радиусе 5 км не найдены",
+    inatCount: (n: number, dist: string) =>
+      `${n} видов деревьев в радиусе ${dist} (research grade)`,
+    inatNone: (dist: string) => `Данные о видах в радиусе ${dist} не найдены`,
     treeSpecies: "Виды деревьев",
     moreSpecies: (n: number) => `Ещё ${n} видов`,
     noForestData: "Данные о лесе не найдены для этой локации",
@@ -113,8 +115,9 @@ const UI = {
     speciesFromTags: "Species from tags: ",
     inatTitle: "iNaturalist",
     openMap: "Open map",
-    inatCount: (n: number) => `${n} tree species within 5 km (research grade)`,
-    inatNone: "No species data found within 5 km",
+    inatCount: (n: number, dist: string) =>
+      `${n} tree species within ${dist} (research grade)`,
+    inatNone: (dist: string) => `No species data found within ${dist}`,
     treeSpecies: "Tree species",
     moreSpecies: (n: number) => `${n} more species`,
     noForestData: "No forest data found for this location",
@@ -134,6 +137,9 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded, autoL
   const intlLocale = useLocale();
   const lang: Lang = (locale ?? intlLocale) === "en" ? "en" : "ru";
   const T = UI[lang];
+  const units = useUnits();
+  // iNaturalist ищет виды в радиусе 5 км (метрика фиксирована в API)
+  const inatDist = `${units.fmtDist(5, 0)} ${units.distUnit}`;
   const [info, setInfo] = useState<ForestInfo | null>(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -365,11 +371,11 @@ export function ForestInfoPanel({ lat, lng, forestInfo: initial, onLoaded, autoL
       >
         {inatSpecies.length > 0 ? (
           <p className="text-xs text-muted-foreground mb-2">
-            {T.inatCount(inatSpecies.length)}
+            {T.inatCount(inatSpecies.length, inatDist)}
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">
-            {T.inatNone}
+            {T.inatNone(inatDist)}
           </p>
         )}
       </SourceSection>

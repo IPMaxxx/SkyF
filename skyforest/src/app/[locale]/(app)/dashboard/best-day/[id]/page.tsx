@@ -34,6 +34,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SellBestDayModal } from "@/components/app/SellBestDayModal";
 import { ListingChat } from "@/components/app/ListingChat";
 import { checkPhotoLocation } from "@/lib/photo-geo";
+import { useUnits } from "@/lib/units";
 
 interface MushroomResult {
   inaturalist_id: number;
@@ -54,6 +55,7 @@ export default function EditBestDayPage() {
   const locale = useLocale();
   const t = useTranslations("dashboard.bestDayForm");
   const tc = useTranslations("common");
+  const units = useUnits();
   const params = useParams();
   const id = params.id as string;
   const { locations, removeBestDay, updateLocation } = useAppData();
@@ -215,7 +217,11 @@ export default function EditBestDayPage() {
         const geoCheck = await checkPhotoLocation(file, selectedLocation.lat, selectedLocation.lng);
         if (!geoCheck.ok) {
           warnings.push(
-            t("photoOtherLocation", { file: file.name, km: geoCheck.distance ?? 0 })
+            t("photoOtherLocation", {
+              file: file.name,
+              km: units.fmtDist(geoCheck.distance ?? 0, 0),
+              unit: units.distUnit,
+            })
           );
           continue;
         }
@@ -634,20 +640,20 @@ export default function EditBestDayPage() {
                         {new Date(d.date).toLocaleDateString(locale, { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-3 py-2 text-red-400">
-                        {d.temperature_max !== null ? `${d.temperature_max.toFixed(1)}°` : "—"}
+                        {d.temperature_max !== null ? `${units.fmtTemp(d.temperature_max)}°` : "—"}
                       </td>
                       <td className="px-3 py-2 text-blue-400">
-                        {d.temperature_min !== null ? `${d.temperature_min.toFixed(1)}°` : "—"}
+                        {d.temperature_min !== null ? `${units.fmtTemp(d.temperature_min)}°` : "—"}
                       </td>
-                      <td className="px-3 py-2">{d.rain_sum.toFixed(1)} {tc("unitMm")}</td>
+                      <td className="px-3 py-2">{units.fmtPrecip(d.rain_sum)} {units.precipUnit}</td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {d.temperature_mean !== null ? `${d.temperature_mean.toFixed(1)}°` : "—"}
+                        {d.temperature_mean !== null ? `${units.fmtTemp(d.temperature_mean)}°` : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {d.relative_humidity_mean != null ? `${Math.round(d.relative_humidity_mean)}%` : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {d.wind_speed_max != null ? `${d.wind_speed_max.toFixed(0)} ${tc("unitKmH")}` : "—"}
+                        {d.wind_speed_max != null ? `${units.fmtWind(d.wind_speed_max, 0)} ${units.windUnit}` : "—"}
                       </td>
                     </tr>
                   ))}

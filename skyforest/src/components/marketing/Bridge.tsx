@@ -8,6 +8,7 @@ import {
   Wind,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { MockUnitValue } from "@/components/marketing/MockUnitValue";
 
 export async function Bridge() {
   const t = await getTranslations("bridge");
@@ -103,7 +104,7 @@ export async function Bridge() {
                           {t("mockTemp")}
                         </p>
                         <p className="text-sm font-semibold text-white">
-                          +18°C
+                          <MockUnitValue kind="temp" value={18} />
                         </p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
@@ -117,7 +118,7 @@ export async function Bridge() {
                           {t("mockRain")}
                         </p>
                         <p className="text-sm font-semibold text-white">
-                          {t("mockRainValue")}
+                          <MockUnitValue kind="rain" value={12} />
                         </p>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
@@ -125,7 +126,7 @@ export async function Bridge() {
                           {t("mockWind")}
                         </p>
                         <p className="text-sm font-semibold text-white">
-                          {t("mockWindValue")}
+                          <MockUnitValue kind="wind" value={11} />
                         </p>
                       </div>
                     </div>

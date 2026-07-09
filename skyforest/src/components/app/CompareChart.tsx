@@ -13,6 +13,7 @@ import {
   Legend,
 } from "recharts";
 import type { WeatherDay } from "@/lib/supabase/types";
+import { useUnits } from "@/lib/units";
 
 interface Props {
   reference: WeatherDay[];
@@ -22,9 +23,14 @@ interface Props {
 
 export function CompareChart({ reference, current, dayScores }: Props) {
   const t = useTranslations("compare");
-  const tc = useTranslations("common");
   const locale = useLocale();
+  const units = useUnits();
   const len = Math.min(reference.length, current.length);
+
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+  const round2 = (v: number) => Math.round(v * 100) / 100;
+  const rain = (mm: number) =>
+    units.isImperial ? round2(units.precip(mm)) : round1(mm);
 
   const tempData = Array.from({ length: len }, (_, i) => ({
     day: i + 1,
@@ -32,8 +38,8 @@ export function CompareChart({ reference, current, dayScores }: Props) {
       day: "numeric",
       month: "short",
     }),
-    refTemp: reference[i].temperature_mean,
-    curTemp: current[i].temperature_mean,
+    refTemp: round1(units.temp(reference[i].temperature_mean)),
+    curTemp: round1(units.temp(current[i].temperature_mean)),
   }));
 
   const rainData = Array.from({ length: len }, (_, i) => ({
@@ -42,8 +48,8 @@ export function CompareChart({ reference, current, dayScores }: Props) {
       day: "numeric",
       month: "short",
     }),
-    refRain: reference[i].rain_sum,
-    curRain: current[i].rain_sum,
+    refRain: rain(reference[i].rain_sum),
+    curRain: rain(current[i].rain_sum),
   }));
 
   const scoreData = Array.from({ length: len }, (_, i) => ({
@@ -78,7 +84,7 @@ export function CompareChart({ reference, current, dayScores }: Props) {
             <ComposedChart data={tempData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} tickLine={false} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit="°" />
+              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit={units.tempUnit} />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
               <Line type="monotone" dataKey="refTemp" name={t("chartLegendRefTemp")} stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: "#f59e0b" }} strokeDasharray="6 3" />
@@ -98,11 +104,11 @@ export function CompareChart({ reference, current, dayScores }: Props) {
             <ComposedChart data={rainData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} tickLine={false} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit={` ${tc("unitMm")}`} />
+              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} unit={` ${units.precipUnit}`} />
               <Tooltip {...tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
-              <Bar dataKey="refRain" name={t("chartLegendRefRain")} fill="#f59e0b" opacity={0.6} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="curRain" name={t("chartLegendCurRain")} fill="#22d3ee" opacity={0.8} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="refRain" name={t("chartLegendRefRain", { u: units.precipUnit })} fill="#f59e0b" opacity={0.6} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="curRain" name={t("chartLegendCurRain", { u: units.precipUnit })} fill="#22d3ee" opacity={0.8} radius={[3, 3, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
