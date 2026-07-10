@@ -93,7 +93,7 @@ export function getSiteJsonLd(locale: Locale) {
     ? [
         {
           name: "Start",
-          description: "Free tier: free welcome tokens, add mushroom locations, weather checks, save best days.",
+          description: "Free tier: add mushroom locations, weather checks, save best days.",
           price: "0",
         },
         {
@@ -110,7 +110,7 @@ export function getSiteJsonLd(locale: Locale) {
     : [
         {
           name: "Старт",
-          description: "Бесплатно: приветственные токены, добавление локаций, проверка погоды, сохранение грибных дней.",
+          description: "Бесплатно: добавление локаций, проверка погоды, сохранение грибных дней.",
           price: "0",
         },
         {
