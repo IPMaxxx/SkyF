@@ -478,7 +478,7 @@ export default {
     q6: "Is SkyForest 2.0 an app?",
     a6: "SkyForest 2.0 runs as a web app — in the browser on phone, tablet, or desktop. Nothing to download or install.",
     q7: "How do tokens work?",
-    a7: "Tokens are the service’s internal currency. Each action (weather check, comparison, precipitation map) costs tokens. You get free tokens at signup. Before each charge you see the cost and your balance — no hidden fees.",
+    a7: "Tokens are the service’s internal currency. Each action (weather check, comparison, precipitation map) costs tokens. Before each charge you see the cost and your balance — no hidden fees.",
     q8: "How accurate is the analysis?",
     a8: "SkyForest shows how closely current weather matches your best mushroom days. It’s not a guarantee — it’s a decision aid. The more successful days you log, the better the analysis. Users often see good harvests when match scores are above 80%.",
     q9: "What is the precipitation map?",
@@ -539,7 +539,7 @@ export default {
     devices: "Available on mobile, tablet, and desktop",
     bannerTitle:
       "Find the perfect moment to go to the forest with SkyForest AI 2.0",
-    bannerSubtitle: "Free registration. First tokens on us.",
+    bannerSubtitle: "Free registration, no card required.",
     toCabinet: "Go to dashboard",
     tryFree: "Try for free",
   },
@@ -578,7 +578,7 @@ export default {
     proPrice: "90 BYN",
     proNote: "300 tokens",
     proCta: "Choose",
-    fStart0: "Free tokens to start",
+    fStart0: "Free registration",
     fStart1: "Add mushroom locations",
     fStart2: "Weather check per location",
     fStart3: "Save your best day",
@@ -738,7 +738,7 @@ export default {
     promotions: {
       title: "Promotions",
       metaDescription:
-        "SkyForest promotions: referral bonus +10% tokens, welcome tokens, and token package deals.",
+        "SkyForest promotions: referral bonus +10% tokens and token package deals.",
       lead: "Earn extra tokens when you invite friends or buy packages.",
       referralTitle: "Referral program",
       referralDesc: "Invite a friend — you both get +10% bonus tokens on every purchase.",
