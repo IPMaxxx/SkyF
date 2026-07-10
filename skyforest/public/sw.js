@@ -1,7 +1,7 @@
 // Minimal service worker for PWA installability.
 // Acts as a network passthrough with a tiny offline fallback for navigation.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const OFFLINE_URL = "/";
 
 self.addEventListener("install", (event) => {
