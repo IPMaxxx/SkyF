@@ -149,14 +149,14 @@ export default {
   },
   pwa: {
     badges: {
-      hint: "Откройте SkyForest как приложение — без установки из магазина.",
+      hint: "Скачайте SkyForest из Google Play или установите как веб-приложение.",
       appStoreTop: "Загрузите в",
       appStoreBottom: "App Store",
       appStoreAria:
         "Установить веб-приложение SkyForest на iPhone или iPad",
       googlePlayTop: "Доступно в",
       googlePlayBottom: "Google Play",
-      googlePlayAria: "Установить веб-приложение SkyForest на Android",
+      googlePlayAria: "Открыть SkyForest в Google Play",
     },
     banner: {
       title: "Установите SkyForest на телефон",
