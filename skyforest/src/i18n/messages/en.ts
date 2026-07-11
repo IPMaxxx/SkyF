@@ -149,14 +149,14 @@ export default {
   },
   pwa: {
     badges: {
-      hint: "Open SkyForest as a native-like app — no store install needed.",
+      hint: "Get SkyForest on Google Play or install it as a web app.",
       appStoreTop: "Download on the",
       appStoreBottom: "App Store",
       appStoreAria:
         "Install the SkyForest web app on iPhone or iPad",
       googlePlayTop: "Get it on",
       googlePlayBottom: "Google Play",
-      googlePlayAria: "Install the SkyForest web app on Android",
+      googlePlayAria: "Open SkyForest on Google Play",
     },
     banner: {
       title: "Install SkyForest on your phone",
