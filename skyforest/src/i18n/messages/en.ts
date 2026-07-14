@@ -69,6 +69,7 @@ export default {
   common: {
     loading: "Loading...",
     loadingMap: "Loading map...",
+    splashTagline: "Let's find some mushrooms",
     back: "Back",
     cancel: "Cancel",
     save: "Save",

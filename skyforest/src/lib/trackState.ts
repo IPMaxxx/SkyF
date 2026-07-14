@@ -28,6 +28,15 @@ const STORAGE_KEY = "sf_active_track";
 export const MIN_POINT_DISTANCE_M = 20;
 
 /**
+ * Минимальное смещение между базовой и текущей точкой, чтобы курс движения
+ * (course over ground) считался надёжным. Меньше — тонет в шуме GPS.
+ */
+export const MIN_COURSE_DISTANCE_M = 12;
+
+/** Насколько старой может быть точка в буфере курса движения (мс). */
+export const MAX_COURSE_AGE_MS = 45_000;
+
+/**
  * Событие window при старте/завершении похода — глобальный recorder по нему
  * включает и выключает watchPosition, не опрашивая localStorage.
  */
@@ -156,6 +165,64 @@ export function bearingDeg(
     Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   const θ = Math.atan2(y, x);
   return ((θ * 180) / Math.PI + 360) % 360;
+}
+
+/**
+ * Курс движения (0–360°, 0 = север) по буферу последних позиций.
+ *
+ * Идём от самой свежей точки к старым и берём первую, отстоящую от текущей
+ * не меньше MIN_COURSE_DISTANCE_M: азимут от неё к текущей и есть направление
+ * движения. Так курс строится по реальному смещению по земле (course over
+ * ground) в той же системе отсчёта (истинный север), что и азимут на якорь, —
+ * без магнитометра и без рассинхронизации «магнитный ↔ истинный север».
+ * Возвращает null, если человек фактически стоит на месте.
+ */
+export function courseOverGround(
+  samples: { lat: number; lng: number }[],
+): number | null {
+  if (samples.length < 2) return null;
+  const cur = samples[samples.length - 1];
+  for (let i = samples.length - 2; i >= 0; i--) {
+    if (haversineM(samples[i], cur) >= MIN_COURSE_DISTANCE_M) {
+      return bearingDeg(samples[i], cur);
+    }
+  }
+  return null;
+}
+
+/**
+ * Плавное смешивание углов (градусы): сдвигает prev к next на долю factor,
+ * корректно проходя через 0/360. Гасит дёрганье курса на шуме GPS.
+ */
+export function smoothAngle(prev: number | null, next: number, factor = 0.35): number {
+  if (prev == null || Number.isNaN(prev)) return next;
+  const diff = ((next - prev + 540) % 360) - 180;
+  return (((prev + diff * factor) % 360) + 360) % 360;
+}
+
+/** Точка на расстоянии distanceM (м) по азимуту bearing (град) от исходной. */
+export function destinationPoint(
+  from: { lat: number; lng: number },
+  bearing: number,
+  distanceM: number,
+): { lat: number; lng: number } {
+  const δ = distanceM / EARTH_RADIUS_M;
+  const θ = toRad(bearing);
+  const φ1 = toRad(from.lat);
+  const λ1 = toRad(from.lng);
+  const φ2 = Math.asin(
+    Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ),
+  );
+  const λ2 =
+    λ1 +
+    Math.atan2(
+      Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+      Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2),
+    );
+  return {
+    lat: (φ2 * 180) / Math.PI,
+    lng: (((λ2 * 180) / Math.PI + 540) % 360) - 180,
+  };
 }
 
 export type CompassDir = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
