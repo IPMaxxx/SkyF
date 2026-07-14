@@ -49,7 +49,7 @@ export default {
   buyErrorConnect: "Failed to connect to the payment provider",
   buyBtnShort: "{tokens} for {price}",
   buyBtnFull: "Buy {tokens} tokens for {price}",
-  nativeSecureNote: "Purchases are processed securely by the App Store / Google Play.",
+  nativeSecureNote: "Purchases are processed securely by the {store}.",
   iapCredited: "Purchase complete: +{tokens} tokens added to your balance",
   securePayment: "Secure payment",
   paymentsVia: "Payments via",
@@ -102,7 +102,9 @@ export default {
     activeUntil: "{tier} until {date}",
     activeCanceled: "Auto-renewal is off — active until {date}",
     manageBtn: "Manage subscription",
-    storeNote: "Subscriptions are billed and renewed via the App Store / Google Play. You can cancel anytime in your store settings.",
+    storeNote: "Subscriptions are billed and renewed via the {store}. You can cancel anytime in your store settings.",
+    termsLink: "Terms of Use (EULA)",
+    privacyLink: "Privacy Policy",
   },
   // Token withdrawal (tab on /payment and /dashboard/withdraw page)
   withdraw: {
@@ -115,7 +117,7 @@ export default {
     available: "Available for withdrawal",
     bonusNotWithdrawable: "+ {n} bonus tokens (not withdrawable)",
     earnedOnly:
-      "Only marketplace sales income can be withdrawn. Purchased and bonus tokens are not withdrawable (App Store / Google Play policy).",
+      "Only marketplace sales income can be withdrawn. Purchased and bonus tokens are not withdrawable ({store} policy).",
     notEnoughEarnedBody:
       "Your withdrawable marketplace income must be at least {min} tokens. Earn tokens by listing mushroom locations on the marketplace.",
     infoNoteEarned:

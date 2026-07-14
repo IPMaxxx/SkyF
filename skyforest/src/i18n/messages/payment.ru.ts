@@ -49,7 +49,7 @@ export default {
   buyErrorConnect: "Ошибка подключения к платёжной системе",
   buyBtnShort: "{tokens} за {price}",
   buyBtnFull: "Купить {tokens} токенов за {price}",
-  nativeSecureNote: "Покупки обрабатываются безопасно через App Store / Google Play.",
+  nativeSecureNote: "Покупки обрабатываются безопасно через {store}.",
   iapCredited: "Покупка завершена: +{tokens} токенов на балансе",
   securePayment: "Безопасная оплата",
   paymentsVia: "Оплата через",
@@ -102,7 +102,9 @@ export default {
     activeUntil: "{tier} до {date}",
     activeCanceled: "Автопродление выключено — действует до {date}",
     manageBtn: "Управлять подпиской",
-    storeNote: "Подписка оформляется и продлевается через App Store / Google Play. Отменить можно в любой момент в настройках стора.",
+    storeNote: "Подписка оформляется и продлевается через {store}. Отменить можно в любой момент в настройках стора.",
+    termsLink: "Условия использования (EULA)",
+    privacyLink: "Политика конфиденциальности",
   },
   // Вывод токенов (вкладка на /payment и страница /dashboard/withdraw)
   withdraw: {
@@ -115,7 +117,7 @@ export default {
     available: "Доступно к выводу",
     bonusNotWithdrawable: "+ {n} бонусных токенов (не подлежат выводу)",
     earnedOnly:
-      "Выводу подлежит только доход с продаж на маркетплейсе. Купленные и бонусные токены не выводятся (требование App Store / Google Play).",
+      "Выводу подлежит только доход с продаж на маркетплейсе. Купленные и бонусные токены не выводятся (требование {store}).",
     notEnoughEarnedBody:
       "Доход с маркетплейса, доступный к выводу, должен быть не меньше {min} токенов. Зарабатывайте токены, размещая грибные локации на маркетплейсе.",
     infoNoteEarned:

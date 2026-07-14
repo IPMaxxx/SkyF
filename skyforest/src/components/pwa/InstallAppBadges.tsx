@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { usePwaInstall } from "@/lib/pwa/PwaInstallProvider";
+import { useIsNative } from "@/lib/native/useIsNative";
 import { AppStoreBadge } from "./AppStoreBadge";
 import { GooglePlayBadge } from "./GooglePlayBadge";
 
@@ -15,8 +16,11 @@ const APP_STORE_URL: string | null = null;
 export function InstallAppBadges() {
   const t = useTranslations("pwa.badges");
   const { promptInstall, openIosHelp, isStandalone, platform } = usePwaInstall();
+  const native = useIsNative();
 
-  if (isStandalone) return null;
+  // Внутри нативного приложения бейджи сторов не показываем: приложение уже
+  // установлено, а упоминание Google Play в iOS-бинарнике запрещено (2.3.10).
+  if (isStandalone || native) return null;
 
   const handleAppStore = () => {
     if (APP_STORE_URL) {
