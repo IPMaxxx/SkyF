@@ -28,7 +28,7 @@ import {
   withdrawMethodPlaceholder,
 } from "@/lib/payment-display";
 import { useLocale, useTranslations } from "next-intl";
-import { isNativeApp } from "@/lib/native/capacitor";
+import { isNativeApp, storeName } from "@/lib/native/capacitor";
 import {
   purchasePack,
   purchaseSubscription,
@@ -82,6 +82,9 @@ function PaymentContent() {
       setTab("buy");
     }
   }, []);
+  // Название стора по платформе (на iOS нельзя упоминать Google Play).
+  // До гидрации native=false → нейтральное «App Store / Google Play».
+  const store = native ? storeName() : "App Store / Google Play";
 
   // Реальные цены App Store / Google Play: packId → форматированная цена
   // (например "$2.99"). До загрузки продуктов — fallback на веб-цены.
@@ -552,10 +555,22 @@ function PaymentContent() {
                   )}
 
                   <p className="mt-3 text-center text-xs text-muted-foreground/70">
-                    {ts("storeNote")}
+                    {ts("storeNote", { store })}
                   </p>
                 </>
               )}
+
+              {/* Обязательные ссылки для подписок (App Review 3.1.2):
+                  Terms of Use (EULA) и Privacy Policy прямо в purchase flow. */}
+              <p className="mt-2 text-center text-xs">
+                <Link href="/offer" className="text-primary hover:underline">
+                  {ts("termsLink")}
+                </Link>
+                <span className="mx-2 text-muted-foreground/30">·</span>
+                <Link href="/privacy" className="text-primary hover:underline">
+                  {ts("privacyLink")}
+                </Link>
+              </p>
             </div>
           )}
 
@@ -785,7 +800,7 @@ function PaymentContent() {
           {native ? (
             <div className="mt-6 text-center">
               <p className="text-xs text-muted-foreground">
-                {t("nativeSecureNote")}
+                {t("nativeSecureNote", { store })}
               </p>
             </div>
           ) : (
@@ -889,7 +904,7 @@ function PaymentContent() {
                   {tw("rateLabel")}: <strong className="text-foreground">1 {tw("rateToken")} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
-                  {tw("earnedOnly")}
+                  {tw("earnedOnly", { store })}
                 </div>
               </div>
 

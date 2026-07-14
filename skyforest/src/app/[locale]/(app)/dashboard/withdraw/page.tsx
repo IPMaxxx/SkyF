@@ -22,6 +22,8 @@ import {
   withdrawMethodLabel,
   withdrawMethodPlaceholder,
 } from "@/lib/payment-display";
+import { storeName } from "@/lib/native/capacitor";
+import { useIsNative } from "@/lib/native/useIsNative";
 
 const MIN_WITHDRAW = 100;
 
@@ -39,6 +41,9 @@ export default function WithdrawPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [withdrawn, setWithdrawn] = useState(0);
+  // Название стора по платформе (на iOS нельзя упоминать Google Play).
+  const native = useIsNative();
+  const store = native ? storeName() : "App Store / Google Play";
 
   const currentMethod = WITHDRAW_METHODS.find((m) => m.id === method) ?? WITHDRAW_METHODS[0];
   const currentMethodLabel = withdrawMethodLabel(currentMethod, locale);
@@ -176,7 +181,7 @@ export default function WithdrawPage() {
           </div>
         )}
         <div className="mt-2 text-xs text-muted-foreground">
-          {tw("earnedOnly")}
+          {tw("earnedOnly", { store })}
         </div>
         <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-muted-foreground">
           {tw("rateLabel")}: <strong className="text-foreground">1 {tw("rateToken")} = {TOKEN_WITHDRAW_RATE} {BRAND.currency}</strong>

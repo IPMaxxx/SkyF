@@ -31,3 +31,14 @@ export function getPlatform(): NativePlatform {
 
 export const isIos = () => getPlatform() === "ios";
 export const isAndroid = () => getPlatform() === "android";
+
+/**
+ * Название магазина приложений для текстов UI. На iOS нельзя упоминать
+ * Google Play (guideline 2.3.10), поэтому название подставляется по платформе.
+ */
+export function storeName(): string {
+  const platform = getPlatform();
+  if (platform === "ios") return "App Store";
+  if (platform === "android") return "Google Play";
+  return "App Store / Google Play";
+}
