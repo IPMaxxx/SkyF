@@ -4,6 +4,7 @@ import { MobileInstallBanner } from "@/components/pwa/MobileInstallBanner";
 import { IosInstallHelpModal } from "@/components/pwa/IosInstallHelpModal";
 import { NativeAppProvider } from "@/lib/native/NativeAppProvider";
 import { WebOnly } from "@/components/native/NativeOnly";
+import { NativeSplash } from "@/components/native/NativeSplash";
 import { BiometricLockGate } from "@/components/native/BiometricLockGate";
 import { routing } from "@/i18n/routing";
 import { getSiteJsonLd } from "@/lib/siteJsonLd";
@@ -95,6 +96,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         />
         <SkipLink />
         <NativeAppProvider />
+        <NativeSplash />
         <BiometricLockGate />
         {children}
         {/* PWA-подсказки только в вебе/браузере — в нативном приложении не нужны */}

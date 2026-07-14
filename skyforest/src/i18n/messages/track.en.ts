@@ -24,6 +24,12 @@ export default {
   compassEnable: "Enable compass",
   compassUnavailable:
     "Compass is unavailable on this device — use the direction text and the dashed line on the map.",
+  courseHint:
+    "Direction from GPS: arrow up means go straight, sideways means turn that way.",
+  compassHint: "Direction from the phone compass — hold the phone flat.",
+  moveToDetect: "Walk a few steps — we'll detect your direction of travel from GPS.",
+  movementLegend:
+    "Blue line — where you're heading, emerald dashes — to the entry point. Steer blue onto the dashes.",
   directionText: "Entry point: {dir}, {dist}",
   dir: {
     n: "north",

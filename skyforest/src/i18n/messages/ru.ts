@@ -69,6 +69,7 @@ export default {
   common: {
     loading: "Загрузка...",
     loadingMap: "Загрузка карты...",
+    splashTagline: "Идём за грибами!",
     back: "Назад",
     cancel: "Отмена",
     save: "Сохранить",

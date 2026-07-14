@@ -13,7 +13,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { TrackPoint } from "@/lib/trackState";
+import { destinationPoint, haversineM, type TrackPoint } from "@/lib/trackState";
 
 /** Зелёный флажок — точка входа в лес (якорь возврата). */
 const anchorIcon = new L.DivIcon({
@@ -92,6 +92,8 @@ interface Props {
   points: TrackPoint[];
   /** Текущая позиция; t — время замера (для честного пунктира после фона). */
   current: { lat: number; lng: number; t?: number } | null;
+  /** Курс движения по GPS (0–360°, 0 = север) или null, если стоим на месте. */
+  course?: number | null;
 }
 
 /**
@@ -101,9 +103,25 @@ interface Props {
  */
 const GAP_MS = 5 * 60_000;
 
-export function TrackMap({ anchor, points, current }: Props) {
+export function TrackMap({ anchor, points, current, course }: Props) {
   const tc = useTranslations("common");
   const t = useTranslations("track");
+
+  /**
+   * Линия направления движения: короткий синий отрезок из текущей точки по
+   * курсу GPS. Длину привязываем к расстоянию до входа (но в разумных рамках),
+   * чтобы визуально сравнивать её с изумрудной линией «на вход».
+   */
+  const movementLine = useMemo(() => {
+    if (!current || course == null) return null;
+    const distToAnchor = haversineM(current, anchor);
+    const len = Math.min(Math.max(distToAnchor * 0.5, 40), 150);
+    const tip = destinationPoint(current, course, len);
+    return [
+      [current.lat, current.lng],
+      [tip.lat, tip.lng],
+    ] as [number, number][];
+  }, [current, course, anchor]);
 
   /**
    * Пройденный путь: якорь → точки → текущая позиция (если есть),
@@ -191,6 +209,14 @@ export function TrackMap({ anchor, points, current }: Props) {
               [anchor.lat, anchor.lng],
             ]}
             pathOptions={{ color: "#10b981", weight: 4, opacity: 0.9, dashArray: "8 10", lineCap: "round" }}
+          />
+        )}
+
+        {/* Направление движения по GPS — сплошная синяя линия из текущей точки */}
+        {movementLine && (
+          <Polyline
+            positions={movementLine}
+            pathOptions={{ color: "#3b82f6", weight: 5, opacity: 0.95, lineCap: "round" }}
           />
         )}
 

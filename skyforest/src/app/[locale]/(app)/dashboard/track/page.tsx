@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Compass, Footprints, Loader2, MapPin, Navigation } from "lucide-react";
+import { Compass, Footprints, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
@@ -30,6 +30,9 @@ import {
   haversineM,
   bearingDeg,
   compassDir,
+  courseOverGround,
+  smoothAngle,
+  MAX_COURSE_AGE_MS,
   type ActiveTrack,
 } from "@/lib/trackState";
 import { saveFinishedTrack } from "@/lib/trackHistory";
@@ -49,6 +52,22 @@ function MapFallback() {
     </div>
   );
 }
+
+/**
+ * Стрелка возврата: наконечник строго вверх (0° = север/«прямо»), в отличие
+ * от иконки Navigation у Lucide, которая смотрит в верхний правый угол и даёт
+ * визуальный сдвиг. Крутится через CSS-rotate родителя.
+ */
+function ReturnArrow() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-16 w-16 text-emerald-400" aria-hidden="true">
+      <path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Курс движения считаем «протухшим», если давно не было пригодного замера. */
+const COURSE_STALE_MS = 20_000;
 
 type CompassState = "idle" | "pending" | "on" | "unavailable";
 
@@ -74,9 +93,15 @@ export default function TrackPage() {
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [heading, setHeading] = useState<number | null>(null);
   const [compassState, setCompassState] = useState<CompassState>("idle");
+  /** Курс движения по GPS (course over ground). Основной источник направления. */
+  const [course, setCourse] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
   const orientationHandler = useRef<((e: Event) => void) | null>(null);
+  /** Буфер последних позиций для расчёта курса движения. */
+  const samplesRef = useRef<{ lat: number; lng: number; t: number }[]>([]);
+  /** Время последнего пригодного курса — чтобы «протухший» сбросить в null. */
+  const lastCourseAtRef = useRef(0);
 
   useEffect(() => {
     setTrack(loadTrack());
@@ -91,8 +116,26 @@ export default function TrackPage() {
   useEffect(() => {
     const onCapture = (e: Event) => {
       const { track: next, position } = (e as CustomEvent<TrackCaptureDetail>).detail;
+      const now = Date.now();
       setTrack(next);
-      setCurrent({ ...position, t: Date.now() });
+      setCurrent({ ...position, t: now });
+
+      // Курс движения по GPS: копим последние позиции и считаем азимут по
+      // реальному смещению (см. courseOverGround). Это направление в той же
+      // системе отсчёта, что и азимут на якорь, — надёжнее магнитометра.
+      const buf = samplesRef.current;
+      buf.push({ lat: position.lat, lng: position.lng, t: now });
+      const cutoff = now - MAX_COURSE_AGE_MS;
+      while (buf.length > 40 || (buf.length > 2 && buf[0].t < cutoff)) buf.shift();
+
+      const cog = courseOverGround(buf);
+      if (cog != null) {
+        lastCourseAtRef.current = now;
+        setCourse((prev) => smoothAngle(prev, cog));
+      } else if (now - lastCourseAtRef.current > COURSE_STALE_MS) {
+        // Долго стоим на месте — курс не определён, уступаем компасу/тексту.
+        setCourse(null);
+      }
     };
     window.addEventListener(TRACK_CAPTURE_EVENT, onCapture);
     return () => window.removeEventListener(TRACK_CAPTURE_EVENT, onCapture);
@@ -176,6 +219,9 @@ export default function TrackPage() {
     setStarting(true);
     try {
       const pos = await getCurrentPosition();
+      samplesRef.current = [];
+      lastCourseAtRef.current = 0;
+      setCourse(null);
       setTrack(startTrack(pos));
       setCurrent({ ...pos, t: Date.now() });
     } catch {
@@ -203,6 +249,9 @@ export default function TrackPage() {
       clearTrack();
       setTrack(null);
       setCurrent(null);
+      samplesRef.current = [];
+      lastCourseAtRef.current = 0;
+      setCourse(null);
       setConfirmFinish(false);
       setFinishing(false);
     }
@@ -213,7 +262,11 @@ export default function TrackPage() {
   const distanceM = track && current ? haversineM(current, track.anchor) : null;
   const bearing = track && current ? bearingDeg(current, track.anchor) : null;
   const dirLabel = bearing != null ? t(`dir.${compassDir(bearing)}`) : null;
-  const arrowDeg = bearing != null && heading != null ? bearing - heading : null;
+  // Направление отсчёта стрелки: курс движения по GPS в приоритете (обе
+  // величины в одной системе отсчёта), магнитометр — запасной для стоящего.
+  const refHeading = course != null ? course : heading;
+  const usingCourse = course != null;
+  const arrowDeg = bearing != null && refHeading != null ? bearing - refHeading : null;
 
   const durationLabel = (() => {
     if (!track) return null;
@@ -307,15 +360,17 @@ export default function TrackPage() {
                   <div
                     className="transition-transform duration-300 ease-out"
                     style={{ transform: `rotate(${arrowDeg}deg)` }}
-                    aria-hidden="true"
                   >
-                    <Navigation className="h-16 w-16 fill-emerald-400 text-emerald-400" />
+                    <ReturnArrow />
                   </div>
                 </div>
                 <p className="text-sm font-medium">
                   {distanceM != null && dirLabel
                     ? t("directionText", { dir: dirLabel, dist: formatDistance(distanceM) })
                     : "—"}
+                </p>
+                <p className="text-center text-xs text-muted-foreground">
+                  {usingCourse ? t("courseHint") : t("compassHint")}
                 </p>
               </>
             ) : (
@@ -326,6 +381,9 @@ export default function TrackPage() {
                     ? t("directionText", { dir: dirLabel, dist: formatDistance(distanceM) })
                     : t("waitingGps")}
                 </p>
+                {distanceM != null && (
+                  <p className="text-center text-xs text-muted-foreground">{t("moveToDetect")}</p>
+                )}
                 {compassState === "unavailable" ? (
                   <p className="text-center text-xs text-muted-foreground">
                     {t("compassUnavailable")}
@@ -350,8 +408,11 @@ export default function TrackPage() {
           </div>
 
           <div>
-            <TrackMap anchor={track.anchor} points={track.points} current={current} />
-            <p className="mt-2 text-[11px] text-muted-foreground/70">{t("gapHint")}</p>
+            <TrackMap anchor={track.anchor} points={track.points} current={current} course={course} />
+            {usingCourse && (
+              <p className="mt-2 text-[11px] text-muted-foreground/70">{t("movementLegend")}</p>
+            )}
+            <p className="mt-1 text-[11px] text-muted-foreground/70">{t("gapHint")}</p>
           </div>
 
           {/* Завершение похода */}
