@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
   const infoByName = await enrichMany(names, locale);
   const bestInfo = infoByName[best.scientific_name];
 
-  // Подписка: включённые определения (30/мес Forager, 100/мес Pro)
+  // Подписка: включённые определения (60/мес Forager, 200/мес Pro)
   // расходуют месячный счётчик и не списывают токены.
   const sub = await getActiveSubscription(user.id);
   const coveredBySub = sub ? await consumeSubscriptionQuota(sub, "identify") : false;

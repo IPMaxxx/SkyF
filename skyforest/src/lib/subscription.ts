@@ -41,7 +41,7 @@ export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
   forager: {
     unlimitedActions: UNLIMITED_BASE,
     freeMonitors: 1,
-    identifyPerMonth: 30,
+    identifyPerMonth: 60,
     forecastPerMonth: 0,
     monthlyBonusTokens: 30,
     freeMarketplaceList: false,
@@ -49,7 +49,7 @@ export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
   pro: {
     unlimitedActions: UNLIMITED_BASE,
     freeMonitors: 3,
-    identifyPerMonth: 100,
+    identifyPerMonth: 200,
     forecastPerMonth: 8,
     monthlyBonusTokens: 100,
     freeMarketplaceList: true,
