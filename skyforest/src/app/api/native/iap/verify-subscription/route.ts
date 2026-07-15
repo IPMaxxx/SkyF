@@ -24,13 +24,22 @@ export const runtime = "nodejs";
  * бонус-пул (payment_id = sub:<platform>:<txid>:<periodStart>).
  */
 
-/** Sandbox-фолбэк Apple: вне продакшена всегда; в проде — по allowlist. */
+/**
+ * Sandbox-фолбэк Apple: вне продакшена всегда; в проде — по allowlist.
+ * Демо-аккаунт App Review разрешён всегда: ревьюеры Apple тестируют IAP
+ * исключительно в песочнице (guideline 2.1(b)).
+ */
+const REVIEW_SANDBOX_EMAILS = ["appreview@skyforest.ai"];
+
 function sandboxAllowed(userEmail: string | undefined): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-  const allowlist = (process.env.IAP_SANDBOX_ALLOWLIST ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+  const allowlist = [
+    ...REVIEW_SANDBOX_EMAILS,
+    ...(process.env.IAP_SANDBOX_ALLOWLIST ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  ];
   return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
 }
 

@@ -45,13 +45,20 @@ function appleToken(): string | null {
  * Разрешён ли sandbox-фолбэк Apple для данного пользователя.
  * Вне продакшена — всегда; в продакшене — только для email из
  * IAP_SANDBOX_ALLOWLIST (тестировщики), иначе 404 от production-хоста = отказ.
+ * Демо-аккаунт App Review разрешён всегда: ревьюеры Apple тестируют IAP
+ * исключительно в песочнице (guideline 2.1(b)).
  */
+const REVIEW_SANDBOX_EMAILS = ["appreview@skyforest.ai"];
+
 function sandboxAllowed(userEmail: string | undefined): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-  const allowlist = (process.env.IAP_SANDBOX_ALLOWLIST ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+  const allowlist = [
+    ...REVIEW_SANDBOX_EMAILS,
+    ...(process.env.IAP_SANDBOX_ALLOWLIST ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  ];
   return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
 }
 

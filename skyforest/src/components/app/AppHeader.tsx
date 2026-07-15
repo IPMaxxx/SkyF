@@ -448,15 +448,19 @@ export function AppHeader() {
                     <Coins className="h-4 w-4" aria-hidden="true" />
                     {t("tokens")}
                   </Link>
-                  <Link
-                    href="/dashboard/referral"
-                    role="menuitem"
-                    onClick={closeAll}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
-                  >
-                    <Gift className="h-4 w-4" aria-hidden="true" />
-                    {t("referral")}
-                  </Link>
+                  {/* Реферальная программа скрыта в нативе: токены за
+                      промокоды — механизм вне IAP (Apple 3.1.1). */}
+                  {!isNative && (
+                    <Link
+                      href="/dashboard/referral"
+                      role="menuitem"
+                      onClick={closeAll}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                    >
+                      <Gift className="h-4 w-4" aria-hidden="true" />
+                      {t("referral")}
+                    </Link>
+                  )}
                   <div className="my-1 border-t border-white/10" />
                   <button
                     type="button"
@@ -670,14 +674,17 @@ export function AppHeader() {
                 <CalendarCheck className="h-5 w-5" aria-hidden="true" />
                 {t("myBestDays")}
               </Link>
-              <Link
-                href="/dashboard/referral"
-                onClick={closeAll}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
-              >
-                <Gift className="h-5 w-5" aria-hidden="true" />
-                {t("referral")}
-              </Link>
+              {/* Реферальная программа скрыта в нативе (Apple 3.1.1). */}
+              {!isNative && (
+                <Link
+                  href="/dashboard/referral"
+                  onClick={closeAll}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+                >
+                  <Gift className="h-5 w-5" aria-hidden="true" />
+                  {t("referral")}
+                </Link>
+              )}
 
               <div className="my-2 border-t border-white/10" />
 

@@ -574,8 +574,10 @@ function PaymentContent() {
             </div>
           )}
 
-          {/* Referral promo */}
-          {hasReferrer ? (
+          {/* Referral promo. В нативных приложениях скрыто полностью:
+              Apple 3.1.1 запрещает разблокировать токены промокодами
+              (механизмами вне IAP). */}
+          {!native && (hasReferrer ? (
             <div className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3">
               <Gift className="h-5 w-5 flex-shrink-0 text-emerald-400" />
               <p className="text-sm text-emerald-300">
@@ -621,7 +623,7 @@ function PaymentContent() {
                 {t("refHint")}
               </p>
             </div>
-          )}
+          ))}
 
           {/* Packages */}
           <div className="mb-8">
@@ -646,7 +648,7 @@ function PaymentContent() {
                   <div className="mb-2 flex items-center gap-2">
                     <Coins className="h-5 w-5 text-amber-400" />
                     <span className="text-2xl font-bold">{pack.tokens}</span>
-                    {hasReferrer && (
+                    {!native && hasReferrer && (
                       <span className="text-sm font-semibold text-emerald-400">+{Math.max(1, Math.round(pack.tokens * 0.1))}</span>
                     )}
                     <span className="text-sm text-muted-foreground">{t("tokensPlural")}</span>
@@ -785,13 +787,13 @@ function PaymentContent() {
             )}
             <span className="sm:hidden">
               {t("buyBtnShort", {
-                tokens: `${purchaseTokens}${hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
+                tokens: `${purchaseTokens}${!native && hasReferrer ? `+${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
                 price: displayPrice,
               })}
             </span>
             <span className="hidden sm:inline">
               {t("buyBtnFull", {
-                tokens: `${purchaseTokens}${hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
+                tokens: `${purchaseTokens}${!native && hasReferrer ? ` + ${Math.max(1, Math.round(purchaseTokens * 0.1))}` : ""}`,
                 price: displayPrice,
               })}
             </span>
