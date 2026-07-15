@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
       let periodStart = new Date(sub.current_period_start);
       let periodEnd = new Date(sub.current_period_end);
       let status = sub.status;
+      let storeState: StoreSubscriptionState | null = null;
 
       // 1. Период истёк — перепроверяем у стора.
       if (periodEnd <= now) {
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
           console.error(`Sub cron: store recheck failed for ${sub.id}:`, e);
           return null;
         });
+        storeState = state;
 
         if (state && state.expiresMs && state.expiresMs > now.getTime() && state.status !== "expired") {
           // Продление: новый период.
@@ -129,28 +131,41 @@ export async function GET(request: NextRequest) {
             ? sub.original_transaction_id
             : sub.purchase_token;
         if (!txId) continue;
+        // Перед зачислением уточняем у стора, не триал ли текущий период
+        // (на триале — урезанный пул, полный только с первой оплаты).
+        if (!storeState) {
+          storeState = await recheckWithStore(sub).catch(() => null);
+        }
+        const isTrial = storeState?.isTrial ?? false;
         const result = await grantMonthlyBonus({
           userId: sub.user_id,
           platform: sub.platform,
           txId,
           tier: sub.tier,
           sliceStart,
+          isTrial,
         });
         if (result === "error") {
           errors++;
           continue;
         }
         // Слайс покрыт (нами или конкурентным запросом) — фиксируем
-        // и сбрасываем месячные счётчики лимитов.
-        await supabase
-          .from("user_subscriptions")
-          .update({
-            last_bonus_grant_at: now.toISOString(),
-            identify_used: 0,
-            forecast_used: 0,
-            updated_at: now.toISOString(),
-          })
-          .eq("id", sub.id);
+        // и сбрасываем месячные счётчики лимитов. На триале ничего не
+        // фиксируем: lastGrant остаётся пустым, чтобы после конверсии
+        // в оплаченный период начислился полный пул (особенно Android,
+        // где startTime — якорь слайсов — при конверсии не меняется),
+        // а ежедневный прогон крона не сбрасывал счётчики квот.
+        if (!isTrial) {
+          await supabase
+            .from("user_subscriptions")
+            .update({
+              last_bonus_grant_at: now.toISOString(),
+              identify_used: 0,
+              forecast_used: 0,
+              updated_at: now.toISOString(),
+            })
+            .eq("id", sub.id);
+        }
         if (result === "granted") granted++;
       }
     } catch (err) {
