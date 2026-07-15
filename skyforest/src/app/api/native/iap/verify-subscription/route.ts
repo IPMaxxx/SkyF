@@ -191,6 +191,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Месячный бонус-пул за текущий слайс (идемпотентно по payment_id).
+    // На триале — урезанный пул (TRIAL_BONUS_TOKENS), полный с первой оплаты.
     const sliceStart = currentMonthlySliceStart(periodStart);
     const granted = await grantMonthlyBonus({
       userId: user.id,
@@ -198,13 +199,17 @@ export async function POST(req: NextRequest) {
       txId: keyValue,
       tier: product.tier,
       sliceStart,
+      isTrial: state.isTrial,
     });
 
     if (granted === "granted") {
+      // На триале last_bonus_grant_at не фиксируем: cron ежедневно
+      // перепроверяет подписку и после конверсии в оплаченный период
+      // дозачисляет полный пул (у него свой payment_id без ":trial").
       await admin
         .from("user_subscriptions")
         .update({
-          last_bonus_grant_at: new Date().toISOString(),
+          ...(state.isTrial ? {} : { last_bonus_grant_at: new Date().toISOString() }),
           identify_used: 0,
           forecast_used: 0,
         })

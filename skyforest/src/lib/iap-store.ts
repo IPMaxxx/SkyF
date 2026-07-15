@@ -42,6 +42,8 @@ export interface StoreSubscriptionState {
   /** Конец текущего оплаченного периода, ms */
   expiresMs: number | null;
   status: "active" | "grace" | "canceled" | "expired";
+  /** Текущий период — бесплатный триал (урезанный бонус-пул). */
+  isTrial: boolean;
 }
 
 // ---------------- Apple ----------------
@@ -119,6 +121,12 @@ export async function getAppleSubscription(
         else if (appleStatus === 4) status = "grace";
         else status = "expired";
 
+        // Триал: offerDiscountType FREE_TRIAL; фолбэк — offerType 1
+        // (introductory offer; у нас единственный intro-оффер — бесплатный триал).
+        const isTrial =
+          info.offerDiscountType === "FREE_TRIAL" ||
+          (info.offerDiscountType == null && Number(info.offerType) === 1);
+
         return {
           productId: String(info.productId ?? ""),
           accountRef:
@@ -131,6 +139,7 @@ export async function getAppleSubscription(
           expiresMs:
             typeof info.expiresDate === "number" ? info.expiresDate : null,
           status,
+          isTrial,
         };
       }
     }
@@ -190,7 +199,11 @@ export async function getGoogleSubscription(
   const data = await res.json();
 
   const line = (data.lineItems ?? [])[0] as
-    | { productId?: string; expiryTime?: string }
+    | {
+        productId?: string;
+        expiryTime?: string;
+        offerDetails?: { basePlanId?: string; offerId?: string };
+      }
     | undefined;
   if (!line?.productId) return null;
 
@@ -204,6 +217,17 @@ export async function getGoogleSubscription(
   const expiresMs = line.expiryTime ? Date.parse(line.expiryTime) : null;
   const startMs = data.startTime ? Date.parse(data.startTime) : null;
 
+  // Триал: покупка через offer (offerId у нас только на бесплатном триале)
+  // и текущий период короткий (7 дней триала; после конверсии в платный
+  // период expiryTime уходит от startTime на месяц/год).
+  const isTrial = Boolean(
+    line.offerDetails?.offerId &&
+      startMs != null &&
+      expiresMs != null &&
+      Number.isFinite(expiresMs) &&
+      expiresMs - startMs <= 8 * 24 * 3600 * 1000,
+  );
+
   return {
     productId: line.productId,
     accountRef:
@@ -215,5 +239,6 @@ export async function getGoogleSubscription(
     periodStartMs: startMs,
     expiresMs: Number.isFinite(expiresMs) ? expiresMs : null,
     status,
+    isTrial,
   };
 }

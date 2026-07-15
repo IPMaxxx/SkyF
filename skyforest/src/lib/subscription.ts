@@ -37,6 +37,13 @@ const UNLIMITED_BASE = [
   "forest_info",
 ] as const;
 
+/**
+ * Бонус-пул на время бесплатного триала (обе подписки): полный месячный
+ * пул выдаётся только с первого оплаченного периода, чтобы триал
+ * нельзя было фармить на токены.
+ */
+export const TRIAL_BONUS_TOKENS = 10;
+
 export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
   forager: {
     unlimitedActions: UNLIMITED_BASE,
@@ -192,6 +199,9 @@ export function currentMonthlySliceStart(
 /**
  * Идемпотентно зачисляет месячный бонус-пул подписки как бонусные токены.
  * payment_id: sub:<platform>:<txid>:<periodStart YYYY-MM-DD>.
+ * На бесплатном триале (isTrial) вместо полного пула зачисляется
+ * TRIAL_BONUS_TOKENS; полный пул — с первого оплаченного периода
+ * (у него свой sliceKey, идемпотентность не мешает).
  * Возвращает 'granted' | 'already_granted' | 'error'.
  */
 export async function grantMonthlyBonus(params: {
@@ -200,17 +210,23 @@ export async function grantMonthlyBonus(params: {
   txId: string;
   tier: SubscriptionTier;
   sliceStart: Date;
+  isTrial?: boolean;
 }): Promise<"granted" | "already_granted" | "error"> {
-  const { userId, platform, txId, tier, sliceStart } = params;
-  const amount = TIER_BENEFITS[tier].monthlyBonusTokens;
+  const { userId, platform, txId, tier, sliceStart, isTrial } = params;
+  const amount = isTrial
+    ? TRIAL_BONUS_TOKENS
+    : TIER_BENEFITS[tier].monthlyBonusTokens;
   const sliceKey = sliceStart.toISOString().slice(0, 10);
-  const paymentId = `sub:${platform}:${txId}:${sliceKey}`;
+  // Суффикс ":trial" отделяет триальный пул от полного: у Google startTime
+  // (якорь слайсов) не меняется при конверсии триала в оплаченный период,
+  // и без суффикса полный пул первого месяца съедался бы идемпотентностью.
+  const paymentId = `sub:${platform}:${txId}:${sliceKey}${isTrial ? ":trial" : ""}`;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("add_bonus_tokens", {
     p_user_id: userId,
     p_amount: amount,
-    p_description: `Бонус подписки ${tier === "pro" ? "Pro" : "Forager"} (${sliceKey})`,
+    p_description: `Бонус подписки ${tier === "pro" ? "Pro" : "Forager"}${isTrial ? " (триал)" : ""} (${sliceKey})`,
     p_payment_id: paymentId,
   });
 
