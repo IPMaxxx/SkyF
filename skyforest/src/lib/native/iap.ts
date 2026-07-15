@@ -120,7 +120,13 @@ export function getSubscriptionPrices(): Record<string, string> {
   const platform = platformConst();
   const prices: Record<string, string> = {};
   for (const p of SUBSCRIPTION_PRODUCTS) {
-    const price = store.get(p.productId, platform)?.getOffer?.()?.pricingPhases?.[0]?.price
+    // Первая pricing phase при бесплатном триале — «Free», поэтому берём
+    // последнюю фазу (базовая регулярная цена подписки).
+    const phases = store.get(p.productId, platform)?.getOffer?.()?.pricingPhases;
+    const basePhase = Array.isArray(phases) && phases.length > 0
+      ? phases[phases.length - 1]
+      : undefined;
+    const price = basePhase?.price
       ?? store.get(p.productId, platform)?.pricing?.price;
     if (typeof price === "string" && price) prices[p.productId] = price;
   }
