@@ -73,7 +73,13 @@ async function refreshUserId(): Promise<string | undefined> {
   return currentUserId;
 }
 
-async function verifyOnServer(productId: string, transaction: any): Promise<boolean> {
+interface VerifyResult {
+  ok: boolean;
+  /** Стор окончательно отверг чек (402/403) — повторная верификация не поможет. */
+  permanent: boolean;
+}
+
+async function verifyOnServer(productId: string, transaction: any): Promise<VerifyResult> {
   // Подписки верифицируются отдельным роутом (App Store Server API /
   // purchases.subscriptionsv2.get), consumable-токены — прежним verify.
   const endpoint = isSubscriptionProduct(productId)
@@ -92,9 +98,10 @@ async function verifyOnServer(productId: string, transaction: any): Promise<bool
       }),
     });
     const data = await res.json().catch(() => ({}));
-    return res.ok && data?.ok === true;
+    const ok = res.ok && data?.ok === true;
+    return { ok, permanent: !ok && (res.status === 402 || res.status === 403) };
   } catch {
-    return false;
+    return { ok: false, permanent: false };
   }
 }
 
@@ -193,8 +200,10 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
     .approved(async (transaction: any) => {
       const productId = transaction?.products?.[0]?.id ?? transaction?.productId;
       const wasPending = Boolean(productId && pending.has(productId));
-      const ok = productId ? await verifyOnServer(productId, transaction) : false;
-      if (ok) {
+      const result: VerifyResult = productId
+        ? await verifyOnServer(productId, transaction)
+        : { ok: false, permanent: false };
+      if (result.ok) {
         transaction.finish();
         if (!wasPending) {
           // Фоновое допроведение (прерванная ранее покупка) — сообщаем UI.
@@ -202,10 +211,26 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
           if (tokens && onBackgroundCredit) onBackgroundCredit(tokens);
         }
       } else {
+        // Сначала резолвим pending ошибкой (finish() ниже породил бы событие
+        // finished, которое резолвит pending успехом).
         const p = productId && pending.get(productId);
-        if (p) {
+        if (p && wasPending) {
           pending.delete(productId);
           p.resolve(false);
+        }
+        // Окончательно отклонённые ПОДПИСОЧНЫЕ транзакции (например,
+        // истёкшая sandbox-подписка из прошлой сессии) закрываем: иначе
+        // они висят в очереди StoreKit, повторно доставляются как approved
+        // при каждом запуске и «съедают» pending новой покупки, показывая
+        // ложную ошибку. Право на подписку от finish() не теряется —
+        // текущий статус всегда перепроверяется у стора по transactionId.
+        // Consumable-токены без верификации НЕ закрываем никогда.
+        if (result.permanent && productId && isSubscriptionProduct(productId)) {
+          try {
+            transaction.finish();
+          } catch {
+            /* очередь очистится при следующем запуске */
+          }
         }
       }
     })

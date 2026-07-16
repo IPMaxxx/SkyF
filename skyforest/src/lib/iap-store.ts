@@ -74,10 +74,17 @@ function appleToken(): string | null {
  * Статус авто-возобновляемой подписки через App Store Server API
  * (Get All Subscription Statuses). transactionId — любой transactionId
  * подписки (в т.ч. originalTransactionId).
+ *
+ * Ответ содержит lastTransactions по ВСЕМ подпискам группы (все наши
+ * 4 продукта — в одной группе), поэтому при указанном expectedProductId
+ * выбирается транзакция нужного продукта, а среди кандидатов — не истёкшая.
+ * Без фильтра (старый код брал первую попавшуюся) истёкшая подписка на
+ * другой продукт из прошлых покупок роняла верификацию новой.
  */
 export async function getAppleSubscription(
   transactionId: string,
   allowSandbox: boolean,
+  expectedProductId?: string,
 ): Promise<StoreSubscriptionState | null> {
   const token = appleToken();
   if (!token) throw new Error("apple_not_configured");
@@ -98,11 +105,17 @@ export async function getAppleSubscription(
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (res.status === 404) continue; // возможно, sandbox — следующий хост
-    if (!res.ok) continue;
+    if (!res.ok) {
+      console.error(
+        `Apple subscriptions API ${res.status} for tx ${transactionId} (${host})`,
+      );
+      continue;
+    }
     const data = await res.json();
 
     const groups: Array<{ lastTransactions?: Array<Record<string, unknown>> }> =
       data?.data ?? [];
+    const candidates: StoreSubscriptionState[] = [];
     for (const group of groups) {
       for (const last of group.lastTransactions ?? []) {
         const jws = last.signedTransactionInfo as string | undefined;
@@ -127,7 +140,7 @@ export async function getAppleSubscription(
           info.offerDiscountType === "FREE_TRIAL" ||
           (info.offerDiscountType == null && Number(info.offerType) === 1);
 
-        return {
+        candidates.push({
           productId: String(info.productId ?? ""),
           accountRef:
             typeof info.appAccountToken === "string" ? info.appAccountToken : null,
@@ -140,9 +153,23 @@ export async function getAppleSubscription(
             typeof info.expiresDate === "number" ? info.expiresDate : null,
           status,
           isTrial,
-        };
+        });
       }
     }
+    if (candidates.length === 0) continue;
+
+    const byProduct = expectedProductId
+      ? candidates.filter((c) => c.productId === expectedProductId)
+      : [];
+    const pool = byProduct.length > 0 ? byProduct : candidates;
+    const rank: Record<StoreSubscriptionState["status"], number> = {
+      active: 0,
+      grace: 1,
+      canceled: 2,
+      expired: 3,
+    };
+    pool.sort((a, b) => rank[a.status] - rank[b.status]);
+    return pool[0];
   }
   return null;
 }
