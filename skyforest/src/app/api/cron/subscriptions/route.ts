@@ -41,7 +41,7 @@ async function recheckWithStore(sub: SubRow): Promise<StoreSubscriptionState | n
   if (sub.platform === "ios" && sub.original_transaction_id) {
     // Sandbox-фолбэк разрешён: продовые originalTransactionId в песочнице
     // не существуют, а sandbox-подписки тестировщиков продолжают работать.
-    return getAppleSubscription(sub.original_transaction_id, true);
+    return getAppleSubscription(sub.original_transaction_id, true, sub.product_id);
   }
   if (sub.platform === "android" && sub.purchase_token) {
     return getGoogleSubscription(sub.purchase_token);

@@ -102,8 +102,15 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      state = await getAppleSubscription(transactionId, sandboxAllowed(user.email));
+      state = await getAppleSubscription(
+        transactionId,
+        sandboxAllowed(user.email),
+        productId,
+      );
       if (!state || state.productId !== productId) {
+        console.error(
+          `Sub verify: Apple state not found or product mismatch (tx ${transactionId}, want ${productId}, got ${state?.productId ?? "none"}, user ${user.id})`,
+        );
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
       }
       keyColumn = "original_transaction_id";
@@ -141,6 +148,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (state.status === "expired" || !state.expiresMs || state.expiresMs <= Date.now()) {
+      console.error(
+        `Sub verify: subscription not active (${platform}, ${productId}, status ${state.status}, expires ${state.expiresMs}, user ${user.id})`,
+      );
       return NextResponse.json(
         { ok: false, error: "Subscription is not active" },
         { status: 402 },
