@@ -79,6 +79,33 @@ interface VerifyResult {
   permanent: boolean;
 }
 
+/**
+ * Телеметрия ошибок IAP: шлёт событие на сервер (/api/native/iap/log),
+ * где оно попадает в pm2-лог. Клиентские StoreKit-ошибки (товар не
+ * загрузился, order() отклонён) иначе не видны при диагностике App Review.
+ * Fire-and-forget: сбои телеметрии не влияют на поток покупки.
+ */
+function logIapError(
+  stage: string,
+  details: { productId?: string; code?: string | number; message?: string },
+): void {
+  try {
+    void fetch("/api/native/iap/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage,
+        platform: getPlatform(),
+        productId: details.productId,
+        code: details.code,
+        message: details.message,
+      }),
+    }).catch(() => {});
+  } catch {
+    /* телеметрия не должна ломать покупку */
+  }
+}
+
 async function verifyOnServer(productId: string, transaction: any): Promise<VerifyResult> {
   // Подписки верифицируются отдельным роутом (App Store Server API /
   // purchases.subscriptionsv2.get), consumable-токены — прежним verify.
@@ -189,6 +216,14 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
     })),
   ]);
 
+  // Глобальные ошибки плагина (инициализация, StoreKit/Billing и пр.).
+  store.error((err: any) => {
+    logIapError("store.error", {
+      code: err?.code,
+      message: err?.message ?? String(err),
+    });
+  });
+
   store
     .when()
     .productUpdated(() => {
@@ -211,6 +246,11 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
           if (tokens && onBackgroundCredit) onBackgroundCredit(tokens);
         }
       } else {
+        logIapError("verify_failed", {
+          productId,
+          code: result.permanent ? "permanent" : "transient",
+          message: wasPending ? "active purchase" : "background transaction",
+        });
         // Сначала резолвим pending ошибкой (finish() ниже породил бы событие
         // finished, которое резолвит pending успехом).
         const p = productId && pending.get(productId);
@@ -243,7 +283,12 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
       }
     });
 
-  await store.initialize([platform]);
+  try {
+    await store.initialize([platform]);
+  } catch (e: any) {
+    logIapError("initialize", { code: e?.code, message: e?.message ?? String(e) });
+    throw e;
+  }
   initialized = true;
   return true;
 }
@@ -285,12 +330,23 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
   const store: AnyStore = CdvPurchase.store;
   const storeProduct = store.get(product.productId, platformConst());
   const offer = storeProduct?.getOffer?.();
-  if (!offer) return { ok: false, error: msg.productUnavailable };
+  if (!offer) {
+    logIapError("offer_unavailable", {
+      productId: product.productId,
+      message: storeProduct ? "product loaded without offer" : "product not loaded from store",
+    });
+    return { ok: false, error: msg.productUnavailable };
+  }
 
   return new Promise((resolve) => {
     pending.set(product.productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
     offer.order().catch((e: any) => {
       pending.delete(product.productId);
+      logIapError("order_rejected", {
+        productId: product.productId,
+        code: e?.code,
+        message: e?.message ?? String(e),
+      });
       resolve({ ok: false, error: e?.message || msg.cancelled });
     });
   });
@@ -316,12 +372,23 @@ export async function purchaseSubscription(
   const store: AnyStore = CdvPurchase.store;
   const storeProduct = store.get(productId, platformConst());
   const offer = storeProduct?.getOffer?.();
-  if (!offer) return { ok: false, error: msg.productUnavailable };
+  if (!offer) {
+    logIapError("sub_offer_unavailable", {
+      productId,
+      message: storeProduct ? "product loaded without offer" : "product not loaded from store",
+    });
+    return { ok: false, error: msg.productUnavailable };
+  }
 
   return new Promise((resolve) => {
     pending.set(productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
     offer.order().catch((e: any) => {
       pending.delete(productId);
+      logIapError("sub_order_rejected", {
+        productId,
+        code: e?.code,
+        message: e?.message ?? String(e),
+      });
       resolve({ ok: false, error: e?.message || msg.cancelled });
     });
   });
