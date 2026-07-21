@@ -33,6 +33,9 @@ type AnyStore = any;
 let initialized = false;
 const pending = new Map<string, { resolve: (ok: boolean) => void; reject: (e: unknown) => void }>();
 
+/** Watchdog покупки: не даём спиннеру крутиться вечно, если события плагина не пришли. */
+const PURCHASE_TIMEOUT_MS = 90_000;
+
 /** Кэш id пользователя для store.applicationUsername (getter вызывается синхронно). */
 let currentUserId: string | undefined;
 
@@ -239,7 +242,20 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
         ? await verifyOnServer(productId, transaction)
         : { ok: false, permanent: false };
       if (result.ok) {
-        transaction.finish();
+        // Резолвим pending сразу после серверной верификации: покупка
+        // зачислена, ждать события finished незачем. На iOS finished после
+        // finish() иногда не приходит (cordova-plugin-purchase 13.x), и
+        // спиннер покупки крутился бесконечно при успешной оплате.
+        const p = productId && pending.get(productId);
+        if (p) {
+          pending.delete(productId);
+          p.resolve(true);
+        }
+        try {
+          transaction.finish();
+        } catch {
+          /* транзакция допроведётся при следующем запуске */
+        }
         if (!wasPending) {
           // Фоновое допроведение (прерванная ранее покупка) — сообщаем UI.
           const tokens = tokensForProduct(productId);
@@ -301,6 +317,8 @@ const IAP_ERRORS = {
     productNotFound: "Товар не найден",
     productUnavailable: "Товар недоступен в магазине",
     cancelled: "Покупка отменена",
+    storeTimeout:
+      "Магазин не ответил. Если оплата прошла, токены или подписка будут зачислены автоматически — перезапустите приложение.",
   },
   en: {
     nativeOnly: "In-app purchases are only available in the app",
@@ -308,6 +326,8 @@ const IAP_ERRORS = {
     productNotFound: "Product not found",
     productUnavailable: "Product is unavailable in the store",
     cancelled: "Purchase cancelled",
+    storeTimeout:
+      "Store did not respond. If you were charged, tokens/subscription will be credited automatically — restart the app.",
   },
 } as const;
 
@@ -339,8 +359,31 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
   }
 
   return new Promise((resolve) => {
-    pending.set(product.productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
+    // Watchdog: если события approved/finished так и не пришли (зависшая
+    // транзакция StoreKit/Billing), не крутим спиннер вечно. Реальная
+    // оплата не теряется: approved допроведётся при следующем запуске.
+    const timer = window.setTimeout(() => {
+      if (pending.get(product.productId)) {
+        pending.delete(product.productId);
+        logIapError("timeout", {
+          productId: product.productId,
+          message: `no purchase event within ${PURCHASE_TIMEOUT_MS / 1000}s`,
+        });
+        resolve({ ok: false, error: msg.storeTimeout });
+      }
+    }, PURCHASE_TIMEOUT_MS);
+    pending.set(product.productId, {
+      resolve: (ok) => {
+        window.clearTimeout(timer);
+        resolve({ ok });
+      },
+      reject: () => {
+        window.clearTimeout(timer);
+        resolve({ ok: false });
+      },
+    });
     offer.order().catch((e: any) => {
+      window.clearTimeout(timer);
       pending.delete(product.productId);
       logIapError("order_rejected", {
         productId: product.productId,
@@ -381,8 +424,29 @@ export async function purchaseSubscription(
   }
 
   return new Promise((resolve) => {
-    pending.set(productId, { resolve: (ok) => resolve({ ok }), reject: () => resolve({ ok: false }) });
+    // Watchdog — см. purchasePack: спиннер не должен крутиться вечно.
+    const timer = window.setTimeout(() => {
+      if (pending.get(productId)) {
+        pending.delete(productId);
+        logIapError("sub_timeout", {
+          productId,
+          message: `no purchase event within ${PURCHASE_TIMEOUT_MS / 1000}s`,
+        });
+        resolve({ ok: false, error: msg.storeTimeout });
+      }
+    }, PURCHASE_TIMEOUT_MS);
+    pending.set(productId, {
+      resolve: (ok) => {
+        window.clearTimeout(timer);
+        resolve({ ok });
+      },
+      reject: () => {
+        window.clearTimeout(timer);
+        resolve({ ok: false });
+      },
+    });
     offer.order().catch((e: any) => {
+      window.clearTimeout(timer);
       pending.delete(productId);
       logIapError("sub_order_rejected", {
         productId,
