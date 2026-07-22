@@ -480,6 +480,8 @@ export default {
     a6: "SkyForest 2.0 runs as a web app — in the browser on phone, tablet, or desktop. Nothing to download or install.",
     q7: "How do tokens work?",
     a7: "Tokens are the service’s internal currency. Each action (weather check, comparison, precipitation map) costs tokens. Before each charge you see the cost and your balance — no hidden fees.",
+    q12: "How does purchasing tokens work?",
+    a12: "After signing in, choose a pack on the payment page and continue to the payment provider’s secure checkout. Card details are entered only there and are not stored on SkyForest servers. Tokens are credited automatically after confirmation. See “How purchasing works” on the home page and the Payment methods page for details.",
     q8: "How accurate is the analysis?",
     a8: "SkyForest shows how closely current weather matches your best mushroom days. It’s not a guarantee — it’s a decision aid. The more successful days you log, the better the analysis. Users often see good harvests when match scores are above 80%.",
     q9: "What is the precipitation map?",
@@ -544,6 +546,36 @@ export default {
     toCabinet: "Go to dashboard",
     tryFree: "Try for free",
   },
+  howPurchase: {
+    eyebrow: "Payments",
+    title: "How purchasing works",
+    subtitle:
+      "Tokens are bought as a one-time purchase — no subscription. Checkout runs through {provider}: card details are never entered or stored on SkyForest.",
+    s1t: "Sign in",
+    s1d: "Register or sign in to your account — purchases are available to authenticated users.",
+    s2t: "Choose a token pack",
+    s2d: "On the payment page, pick a ready-made pack or enter a custom token amount.",
+    s3t: "Pay securely",
+    s3d: "You will be redirected to the secure {provider} page. Enter your card details and complete 3-D Secure verification if asked by your bank.",
+    s4t: "Receive tokens",
+    s4d: "After payment confirmation, tokens are credited to your balance automatically. A confirmation email is also sent.",
+    methodsTitle: "Payment methods",
+    methodCardTitle: "Bank card",
+    methodCardDesc:
+      "Visa, Visa Electron, MasterCard, Maestro, Belkart — via {provider}.",
+    methodCardDescSamplify: "Visa, Mastercard, American Express — via {provider}.",
+    methodEripTitle: "ERIP (“Raschyot” system)",
+    methodEripDesc:
+      "Internet banking, mobile banking, info kiosks, ATMs, and bank tellers.",
+    securityTitle: "Payment security",
+    securityBody:
+      "All data is transmitted over SSL/TLS. Card details are processed by {provider} and are not shared with the merchant or stored on SkyForest servers. Payments comply with PCI DSS Level 1.",
+    security3ds:
+      "For extra protection, 3-D Secure may apply: your bank can ask you to confirm the payment on its own page.",
+    linkMethods: "More about payment methods",
+    linkReturns: "Refund policy",
+    linkOffer: "Public offer",
+  },
   tariffs: {
     title: "Pricing",
     subtitle:
@@ -551,6 +583,7 @@ export default {
     popular: "Popular",
     footnote:
       "Everything runs in the browser — nothing to install. Payments via bePaid (Visa, MasterCard, Belkart).",
+    footnoteLink: "How purchasing works",
     calculatorTitle: "How far do tokens go?",
     calculatorIntro: "Approximate action costs in tokens:",
     calcRow1: "14-day weather check",
