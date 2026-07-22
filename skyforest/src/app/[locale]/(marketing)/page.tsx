@@ -4,6 +4,7 @@ import { Oracle } from "@/components/marketing/Oracle";
 import { MushroomBot } from "@/components/marketing/MushroomBot";
 import { TrackFeature } from "@/components/marketing/TrackFeature";
 import { Tariffs } from "@/components/marketing/Tariffs";
+import { HowPurchase } from "@/components/marketing/HowPurchase";
 import { CTASection } from "@/components/marketing/CTASection";
 import { FAQ } from "@/components/marketing/FAQ";
 
@@ -16,6 +17,7 @@ export default async function HomePage() {
       <MushroomBot />
       <TrackFeature />
       <Tariffs />
+      <HowPurchase />
       <CTASection />
       <FAQ />
     </>

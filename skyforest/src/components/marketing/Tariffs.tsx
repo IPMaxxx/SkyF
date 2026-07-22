@@ -150,7 +150,15 @@ export function Tariffs() {
           </p>
         </div>
 
-        <p className="mt-8 text-center text-sm text-white/40">{t("footnote")}</p>
+        <p className="mt-8 text-center text-sm text-white/40">
+          {t("footnote")}{" "}
+          <Link
+            href="/#how-purchase"
+            className="text-primary-light underline-offset-4 hover:underline"
+          >
+            {t("footnoteLink")}
+          </Link>
+        </p>
       </div>
     </section>
   );

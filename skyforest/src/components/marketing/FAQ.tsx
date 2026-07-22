@@ -17,6 +17,7 @@ const FAQ_ITEMS: { key: string; cat: Exclude<Category, "all"> }[] = [
   { key: "5", cat: "usage" }, // Настройка параметров
   { key: "6", cat: "product" }, // Приложение?
   { key: "7", cat: "billing" }, // Токены
+  { key: "12", cat: "billing" }, // Как осуществляется покупка
   { key: "8", cat: "product" }, // Точность
   { key: "9", cat: "usage" }, // Карта осадков
   { key: "10", cat: "billing" }, // Маркетплейс
