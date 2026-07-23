@@ -49,6 +49,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SkyForest uses your location to show weather, forest areas and nearby foraging spots on the map.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SkyForest uses your location to show weather, forest areas and nearby foraging spots, and to record your track so you can find your way back — including when the app is in the background.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>SkyForest uses the camera to take photos of your foraging spots and best days.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
