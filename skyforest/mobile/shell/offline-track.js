@@ -27,6 +27,9 @@
     }
   }
 
+  // Страховка: любая необработанная ошибка не должна оставить вечный splash.
+  window.addEventListener("error", hideNativeSplash);
+
   var ACTIVE_TRACK_KEY = "sf_active_track";
   var TILE_DIR = "sf-tiles";
   var SOURCE_ID = "outdoor";
@@ -61,6 +64,11 @@
         starting: "Определяем местоположение…",
         finish: "Я вышел из леса",
         geoError: "Не удалось определить местоположение. Проверьте разрешение на геолокацию.",
+        geoErrorPick: "Не удалось определить местоположение. Поставьте точку входа на карте вручную.",
+        pickPoint: "Указать точку входа на карте",
+        pickHint: "Коснитесь карты, чтобы поставить точку входа.",
+        pickStart: "Я вошёл здесь",
+        cancel: "Отмена",
         openApp: "Открыть приложение",
         waiting: "Определяем местоположение…",
         move: "Пройдите несколько шагов — направление определится по GPS.",
@@ -79,6 +87,11 @@
         starting: "Getting your location…",
         finish: "I'm out of the forest",
         geoError: "Could not determine your location. Check GPS permission.",
+        geoErrorPick: "Could not determine your location. Place your entry point on the map manually.",
+        pickPoint: "Set entry point on the map",
+        pickHint: "Tap the map to place your entry point.",
+        pickStart: "I entered here",
+        cancel: "Cancel",
         openApp: "Open the app",
         waiting: "Determining your location…",
         move: "Walk a few steps — we'll detect your direction from GPS.",
@@ -97,6 +110,8 @@
     $("t-duration").textContent = T.duration;
     $("t-startPrompt").textContent = T.startPrompt;
     $("startBtn").textContent = T.start;
+    $("pickBtn").textContent = T.pickPoint;
+    $("pickStartBtn").textContent = T.pickStart;
     $("finishBtn").textContent = T.finish;
     $("openApp").textContent = T.openApp;
     $("enableCompass").textContent = T.enableCompass;
@@ -221,10 +236,25 @@
 
   /* ------------------------- Геолокация ------------------------- */
 
+  function geoPlugin() {
+    return Cap && Cap.Plugins && Cap.Plugins.Geolocation ? Cap.Plugins.Geolocation : null;
+  }
+
+  // Явно просим нативное разрешение до первого замера: без этого на iOS
+  // getCurrentPosition может сразу упасть, если системный диалог ещё не был показан.
+  function requestGeoPermission() {
+    var geo = geoPlugin();
+    if (geo && typeof geo.requestPermissions === "function") {
+      return geo.requestPermissions().catch(function () {});
+    }
+    return Promise.resolve();
+  }
+
   function startWatch(onPos) {
-    if (Cap && Cap.Plugins && Cap.Plugins.Geolocation) {
+    var geo = geoPlugin();
+    if (geo) {
       try {
-        return Cap.Plugins.Geolocation.watchPosition({ enableHighAccuracy: true }, function (pos) {
+        return geo.watchPosition({ enableHighAccuracy: true }, function (pos) {
           if (pos && pos.coords) onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         });
       } catch (e) {}
@@ -298,6 +328,9 @@
   var samples = [];
   var lastCourseAt = 0;
   var centeredOnUser = false;
+  var pickMode = false;
+  var picked = null;
+  var pickMarker = null;
 
   function pathLatLngs() {
     var pts = [[track.anchor.lat, track.anchor.lng]];
@@ -375,9 +408,12 @@
   }
 
   function showActiveMode() {
+    if (pickMode) exitPickMode();
     $("active").classList.remove("hidden");
     $("startPane").classList.add("hidden");
     $("startBtn").classList.add("hidden");
+    $("pickBtn").classList.add("hidden");
+    $("pickStartBtn").classList.add("hidden");
     $("finishBtn").classList.remove("hidden");
     refreshMapSize();
   }
@@ -386,6 +422,7 @@
     $("active").classList.add("hidden");
     $("startPane").classList.remove("hidden");
     $("startBtn").classList.remove("hidden");
+    $("pickBtn").classList.remove("hidden");
     $("finishBtn").classList.add("hidden");
     refreshMapSize();
   }
@@ -396,25 +433,70 @@
     anchorMarker = L.marker([track.anchor.lat, track.anchor.lng], { icon: anchorIcon }).addTo(map);
   }
 
+  /**
+   * Старт похода от заданной точки. alsoCurrent=true, когда точка получена по
+   * GPS (она же — текущая позиция); при ручной точке текущую позицию не
+   * подменяем — её принесёт watchPosition, когда GPS появится.
+   */
+  function beginTrack(pos, alsoCurrent) {
+    track = { anchor: { lat: pos.lat, lng: pos.lng, t: Date.now() }, points: [], startedAt: Date.now() };
+    saveTrack(track);
+    samples = []; course = null; lastCourseAt = 0;
+    if (alsoCurrent) current = { lat: pos.lat, lng: pos.lng, t: Date.now() };
+    showActiveMode();
+    drawAnchor();
+    map.setView([pos.lat, pos.lng], 16);
+    render();
+    tickDuration();
+  }
+
   function startWayback() {
-    var begin = function (pos) {
-      track = { anchor: { lat: pos.lat, lng: pos.lng, t: Date.now() }, points: [], startedAt: Date.now() };
-      saveTrack(track);
-      samples = []; course = null; lastCourseAt = 0;
-      current = { lat: pos.lat, lng: pos.lng, t: Date.now() };
-      showActiveMode();
-      drawAnchor();
-      map.setView([pos.lat, pos.lng], 16);
-      render();
-      tickDuration();
-    };
     $("startBtn").textContent = T.starting;
     $("startBtn").disabled = true;
     var reset = function () { $("startBtn").textContent = T.start; $("startBtn").disabled = false; };
-    if (current) { begin(current); reset(); return; }
+    if (current) { beginTrack(current, true); reset(); return; }
     getCurrentPositionOnce()
-      .then(function (pos) { begin(pos); reset(); })
-      .catch(function () { alert(T.geoError); reset(); });
+      .then(function (pos) { beginTrack(pos, true); reset(); })
+      .catch(function () {
+        // GPS не дался — предлагаем поставить точку входа вручную.
+        reset();
+        alert(T.geoErrorPick);
+        if (!pickMode) enterPickMode();
+      });
+  }
+
+  /* --------------------- Ручная точка входа --------------------- */
+
+  function onMapPick(e) {
+    picked = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if (!pickMarker) pickMarker = L.marker([picked.lat, picked.lng], { icon: anchorIcon }).addTo(map);
+    else pickMarker.setLatLng([picked.lat, picked.lng]);
+    $("pickStartBtn").classList.remove("hidden");
+  }
+
+  function enterPickMode() {
+    pickMode = true;
+    $("startBtn").classList.add("hidden");
+    $("pickBtn").textContent = T.cancel;
+    $("t-startPrompt").textContent = T.pickHint;
+    map.on("click", onMapPick);
+  }
+
+  function exitPickMode() {
+    pickMode = false;
+    picked = null;
+    if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+    map.off("click", onMapPick);
+    $("pickStartBtn").classList.add("hidden");
+    $("pickBtn").textContent = T.pickPoint;
+    $("t-startPrompt").textContent = T.startPrompt;
+    $("startBtn").classList.remove("hidden");
+  }
+
+  function confirmPickedStart() {
+    if (!picked) return;
+    var pos = picked;
+    beginTrack(pos, false);
   }
 
   function finishWayback() {
@@ -434,24 +516,30 @@
     $("duration").textContent = "0:00";
   }
 
-  function getCurrentPositionOnce() {
+  function browserPositionOnce() {
     return new Promise(function (resolve, reject) {
-      if (Cap && Cap.Plugins && Cap.Plugins.Geolocation) {
-        Cap.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true })
-          .then(function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); })
-          .catch(reject);
-        return;
-      }
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); },
-          reject,
-          { enableHighAccuracy: true, timeout: 15000 },
-        );
-        return;
-      }
-      reject(new Error("no geolocation"));
+      if (!navigator.geolocation) { reject(new Error("no geolocation")); return; }
+      navigator.geolocation.getCurrentPosition(
+        function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+        reject,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
+      );
     });
+  }
+
+  // Плагин (с явным запросом разрешения и щедрым таймаутом на холодный GPS) →
+  // при неудаче браузерный API → иначе ошибка.
+  function getCurrentPositionOnce() {
+    var geo = geoPlugin();
+    if (geo) {
+      return requestGeoPermission()
+        .then(function () {
+          return geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 });
+        })
+        .then(function (p) { return { lat: p.coords.latitude, lng: p.coords.longitude }; })
+        .catch(function () { return browserPositionOnce(); });
+    }
+    return browserPositionOnce();
   }
 
   /* ------------------------- Компас ------------------------- */
@@ -490,11 +578,16 @@
   }
 
   function start() {
+    // Прячем нативный splash сразу: страница уже брендовая тёмная, и никакая
+    // ошибка ниже не должна оставить пользователя на «вечной» заставке.
+    hideNativeSplash();
     applyStrings();
     $("openApp").addEventListener("click", function () { window.location.href = APP_URL; });
     $("enableCompass").addEventListener("click", enableCompass);
     $("enableCompass").classList.remove("hidden");
     $("startBtn").addEventListener("click", startWayback);
+    $("pickBtn").addEventListener("click", function () { pickMode ? exitPickMode() : enterPickMode(); });
+    $("pickStartBtn").addEventListener("click", confirmPickedStart);
     $("finishBtn").addEventListener("click", finishWayback);
 
     loadTrack().then(function (loaded) {
@@ -513,7 +606,6 @@
         initMap(null);
         showStartMode();
       }
-      hideNativeSplash();
       setInterval(tickDuration, 30000);
       startWatch(onPosition);
     });

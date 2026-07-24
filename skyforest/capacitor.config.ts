@@ -18,6 +18,9 @@ const config: CapacitorConfig = {
   appId: "ai.skyforest.app",
   appName: "SkyForest",
   webDir: "mobile/shell",
+  // Фон самого WebView: пока страница не отрисована (или грузится медленно),
+  // виден тёмный брендовый цвет, а не белая вспышка.
+  backgroundColor: "#0e1710",
   server: {
     url: serverUrl,
     cleartext: false,

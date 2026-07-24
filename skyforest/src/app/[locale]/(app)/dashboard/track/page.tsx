@@ -46,6 +46,11 @@ const TrackMap = dynamic(
   { ssr: false, loading: () => <MapFallback /> },
 );
 
+const StartPointPicker = dynamic(
+  () => import("@/components/app/StartPointPicker").then((m) => m.StartPointPicker),
+  { ssr: false, loading: () => <MapFallback /> },
+);
+
 function MapFallback() {
   const tc = useTranslations("common");
   return (
@@ -91,6 +96,8 @@ export default function TrackPage() {
   const [track, setTrack] = useState<ActiveTrack | null>(null);
   const [current, setCurrent] = useState<(Coords & { t: number }) | null>(null);
   const [starting, setStarting] = useState(false);
+  /** Ручной выбор точки входа на карте (фолбэк, когда GPS недоступен). */
+  const [picking, setPicking] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [heading, setHeading] = useState<number | null>(null);
@@ -235,10 +242,21 @@ export default function TrackPage() {
       setTrack(startTrack(pos));
       setCurrent({ ...pos, t: Date.now() });
     } catch {
-      toast.error(t("geoError"));
+      // GPS не дался — предлагаем поставить точку входа вручную.
+      toast.error(t("geoErrorPick"));
+      setPicking(true);
     } finally {
       setStarting(false);
     }
+  };
+
+  /** Старт от точки, выбранной вручную. Текущую позицию не подменяем — её принесёт GPS. */
+  const handleStartFromPicked = (pos: Coords) => {
+    samplesRef.current = [];
+    lastCourseAtRef.current = 0;
+    setCourse(null);
+    setTrack(startTrack(pos));
+    setPicking(false);
   };
 
   const handleFinish = async () => {
@@ -322,6 +340,24 @@ export default function TrackPage() {
               </>
             )}
           </button>
+
+          {/* Ручная точка входа: фолбэк для случаев без GPS-фикса */}
+          {picking ? (
+            <StartPointPicker
+              center={current}
+              onConfirm={handleStartFromPicked}
+              onCancel={() => setPicking(false)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-[16px] border border-border bg-transparent px-6 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+            >
+              <MapPin className="h-4 w-4" aria-hidden="true" />
+              {t("pickOnMap")}
+            </button>
+          )}
 
           <div className="glass rounded-2xl p-5">
             <h2 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold">
