@@ -44,8 +44,12 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1200,
-      backgroundColor: "#0f1a12",
+      // Не прячем автоматически: нативный splash висит, пока веб-приложение не
+      // отрисует свой брендовый splash (NativeSplash) с тем же логотипом —
+      // тогда переход бесшовный, без «белой» вспышки пустого WebView. Прячется
+      // из веба (NativeSplash) и с офлайн-страниц (offline-track/index).
+      launchAutoHide: false,
+      backgroundColor: "#0e1710",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashImmersive: true,
