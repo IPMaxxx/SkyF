@@ -8,10 +8,8 @@ import { GooglePlayBadge } from "./GooglePlayBadge";
 
 const GOOGLE_PLAY_URL =
   "https://play.google.com/store/apps/details?id=ai.skyforest.app";
-// Заполнить, когда iOS-приложение выйдет из TestFlight в публичный App Store,
-// например "https://apps.apple.com/app/id<APPLE_ID>". Пока null — бейдж
-// открывает инструкцию по установке веб-приложения на iPhone.
-const APP_STORE_URL: string | null = null;
+const APP_STORE_URL: string | null =
+  "https://apps.apple.com/us/app/skyforest-ai-mushroom-app/id6786255697";
 
 export function InstallAppBadges() {
   const t = useTranslations("pwa.badges");

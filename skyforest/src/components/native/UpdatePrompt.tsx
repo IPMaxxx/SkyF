@@ -4,11 +4,17 @@
  * Окно «доступна новая версия» для нативной оболочки.
  *
  * Оболочка Capacitor открывает боевой сайт skyforest.ai, поэтому веб всегда
- * свежий, а устаревать может только нативный бинарник из стора. Живой сайт
- * знает последнюю выпущенную версию (`NEXT_PUBLIC_APP_VERSION` = version из
- * package.json, который бампится вместе с нативным релизом). Сравниваем её с
- * установленной версией оболочки (`App.getInfo().version`) и, если установлена
- * более старая, показываем окно со ссылкой в стор.
+ * свежий, а устаревать может только нативный бинарник из стора. Показываем
+ * окно, только если установленная версия оболочки (`App.getInfo().version`)
+ * СТАРШЕ реально доступной в сторе. «Последнюю в сторе» берём максимально
+ * достоверно, чтобы не звать на версию, которой в сторе ещё нет:
+ *
+ *  - iOS  — тянем живьём из iTunes Lookup API (то, что реально в App Store);
+ *  - Android — официального публичного API нет, поэтому держим константу
+ *    LATEST_ANDROID_VERSION и бампим её при публикации билда в Google Play.
+ *
+ * Версия сайта (NEXT_PUBLIC_APP_VERSION) специально НЕ используется как
+ * «последняя» — веб деплоится чаще сторов и обгонял бы их.
  *
  * В обычном браузере/PWA компонент ничего не рендерит.
  */
@@ -16,13 +22,18 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
-import { getPlatform } from "@/lib/native/capacitor";
+import { getPlatform, type NativePlatform } from "@/lib/native/capacitor";
 
+const APP_STORE_ID = "6786255697";
 const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=ai.skyforest.app";
-// Заполнить, когда iOS выйдет из TestFlight в публичный App Store
-// (например "https://apps.apple.com/app/id<APPLE_ID>"). Пока null — на iOS
-// окно не показываем, т.к. вести в стор некуда (обновление идёт через TestFlight).
-const APP_STORE_URL: string | null = null;
+const APP_STORE_URL = `https://apps.apple.com/us/app/skyforest-ai-mushroom-app/id${APP_STORE_ID}`;
+
+/**
+ * Последняя версия, опубликованная в Google Play. Для Android нет публичного
+ * API «какая версия в сторе», поэтому обновляем это значение при каждой
+ * публикации нового билда в Play (сейчас — internal testing).
+ */
+const LATEST_ANDROID_VERSION = "1.33.0";
 
 const DISMISS_KEY = "sf_update_dismissed_version";
 /** Показываем окно после того, как отыграет брендовый splash. */
@@ -41,10 +52,27 @@ function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-function storeUrl(): string | null {
-  const platform = getPlatform();
+function storeUrl(platform: NativePlatform): string | null {
   if (platform === "android") return GOOGLE_PLAY_URL;
   if (platform === "ios") return APP_STORE_URL;
+  return null;
+}
+
+/** Реальная последняя версия в сторе для текущей платформы. */
+async function getLatestStoreVersion(platform: NativePlatform): Promise<string | null> {
+  if (platform === "android") return LATEST_ANDROID_VERSION || null;
+  if (platform === "ios") {
+    try {
+      const res = await fetch(`https://itunes.apple.com/lookup?id=${APP_STORE_ID}`, {
+        cache: "no-store",
+      });
+      const data = (await res.json()) as { results?: Array<{ version?: string }> };
+      const v = data?.results?.[0]?.version;
+      return typeof v === "string" && v ? v : null;
+    } catch {
+      return null;
+    }
+  }
   return null;
 }
 
@@ -71,32 +99,40 @@ export function UpdatePrompt() {
   const isNative = useIsNative();
   const t = useTranslations("common");
   const [installed, setInstalled] = useState<string | null>(null);
+  const [latest, setLatest] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
-  const latest = process.env.NEXT_PUBLIC_APP_VERSION ?? "";
-
   useEffect(() => {
-    if (!isNative || !latest || !storeUrl()) return;
+    if (!isNative) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     (async () => {
       try {
-        const { App } = await import("@capacitor/app");
+        const platform = getPlatform();
+        if (!storeUrl(platform)) return;
+
+        const [{ App }, latestVer] = await Promise.all([
+          import("@capacitor/app"),
+          getLatestStoreVersion(platform),
+        ]);
+        if (cancelled || !latestVer) return;
+
         const info = await App.getInfo();
         const current = info.version;
-        if (!current || compareVersions(current, latest) >= 0) return;
+        if (!current || compareVersions(current, latestVer) >= 0) return;
 
         const dismissed = await getDismissed();
-        if (dismissed === latest) return; // уже отложили именно эту версию
+        if (dismissed === latestVer) return; // уже отложили именно эту версию
 
         if (cancelled) return;
         setInstalled(current);
+        setLatest(latestVer);
         timer = setTimeout(() => {
           if (!cancelled) setOpen(true);
         }, SHOW_DELAY_MS);
       } catch {
-        /* плагин недоступен — не показываем */
+        /* плагин недоступен / нет сети — не показываем */
       }
     })();
 
@@ -104,10 +140,10 @@ export function UpdatePrompt() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [isNative, latest]);
+  }, [isNative]);
 
   const handleUpdate = () => {
-    const url = storeUrl();
+    const url = storeUrl(getPlatform());
     setOpen(false);
     if (!url) return;
     void (async () => {
@@ -122,10 +158,10 @@ export function UpdatePrompt() {
 
   const handleLater = () => {
     setOpen(false);
-    void setDismissed(latest);
+    if (latest) void setDismissed(latest);
   };
 
-  if (!isNative || !open || !installed) return null;
+  if (!isNative || !open || !installed || !latest) return null;
 
   return (
     <div
