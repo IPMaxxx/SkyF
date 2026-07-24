@@ -1,0 +1,177 @@
+[
+  {
+    "id": "01-login",
+    "path": "/login",
+    "title": "Вход",
+    "flow": "Auth",
+    "file": "docs/mobile-ui-screenshots/01-login.png"
+  },
+  {
+    "id": "02-register",
+    "path": "/register",
+    "title": "Регистрация",
+    "flow": "Auth",
+    "file": "docs/mobile-ui-screenshots/02-register.png"
+  },
+  {
+    "id": "03-forgot-password",
+    "path": "/forgot-password",
+    "title": "Восстановление пароля",
+    "flow": "Auth",
+    "file": "docs/mobile-ui-screenshots/03-forgot-password.png"
+  },
+  {
+    "id": "04-reset-password",
+    "path": "/reset-password",
+    "title": "Новый пароль (недействительная ссылка)",
+    "flow": "Auth",
+    "file": "docs/mobile-ui-screenshots/04-reset-password.png"
+  },
+  {
+    "id": "10-dashboard",
+    "path": "/dashboard",
+    "title": "Главная (native)",
+    "flow": "Home",
+    "file": "docs/mobile-ui-screenshots/10-dashboard.png"
+  },
+  {
+    "id": "11-dashboard-menu",
+    "path": "/dashboard",
+    "title": "Боковое меню",
+    "flow": "Home",
+    "file": "docs/mobile-ui-screenshots/11-dashboard-menu.png"
+  },
+  {
+    "id": "12-weather",
+    "path": "/dashboard/weather",
+    "title": "Погода",
+    "flow": "Weather",
+    "file": "docs/mobile-ui-screenshots/12-weather.png"
+  },
+  {
+    "id": "13-rain-map",
+    "path": "/dashboard/weather?tab=rain-map",
+    "title": "Карта осадков",
+    "flow": "Weather",
+    "file": "docs/mobile-ui-screenshots/13-rain-map.png"
+  },
+  {
+    "id": "14-identify",
+    "path": "/dashboard/identify",
+    "title": "Определить гриб",
+    "flow": "Identify",
+    "file": "docs/mobile-ui-screenshots/14-identify.png"
+  },
+  {
+    "id": "15-compare",
+    "path": "/dashboard/compare",
+    "title": "Мониторинг",
+    "flow": "Compare",
+    "file": "docs/mobile-ui-screenshots/15-compare.png"
+  },
+  {
+    "id": "16-track",
+    "path": "/dashboard/track",
+    "title": "Трек / путь назад",
+    "flow": "Track",
+    "file": "docs/mobile-ui-screenshots/16-track.png"
+  },
+  {
+    "id": "20-forest-search",
+    "path": "/dashboard/forest-search",
+    "title": "Поиск леса",
+    "flow": "Forest search",
+    "file": "docs/mobile-ui-screenshots/20-forest-search.png"
+  },
+  {
+    "id": "21-marketplace",
+    "path": "/dashboard/marketplace",
+    "title": "Маркетплейс",
+    "flow": "Marketplace",
+    "file": "docs/mobile-ui-screenshots/21-marketplace.png"
+  },
+  {
+    "id": "22-chats",
+    "path": "/dashboard/marketplace/chats",
+    "title": "Чаты",
+    "flow": "Marketplace",
+    "file": "docs/mobile-ui-screenshots/22-chats.png"
+  },
+  {
+    "id": "23-locations-new",
+    "path": "/dashboard/locations/new",
+    "title": "Новая локация",
+    "flow": "Locations",
+    "file": "docs/mobile-ui-screenshots/23-locations-new.png"
+  },
+  {
+    "id": "24-best-day-new",
+    "path": "/dashboard/best-day/new",
+    "title": "Новый грибной день",
+    "flow": "Best days",
+    "file": "docs/mobile-ui-screenshots/24-best-day-new.png"
+  },
+  {
+    "id": "25-account",
+    "path": "/account",
+    "title": "Аккаунт",
+    "flow": "Account",
+    "file": "docs/mobile-ui-screenshots/25-account.png"
+  },
+  {
+    "id": "26-payment",
+    "path": "/payment",
+    "title": "Токены / IAP",
+    "flow": "Payment",
+    "file": "docs/mobile-ui-screenshots/26-payment.png"
+  },
+  {
+    "id": "27-payment-subscriptions",
+    "path": "/payment#subscriptions",
+    "title": "Подписки",
+    "flow": "Payment",
+    "file": "docs/mobile-ui-screenshots/27-payment-subscriptions.png"
+  },
+  {
+    "id": "30-services",
+    "path": "/services",
+    "title": "Услуги",
+    "flow": "Site sections",
+    "file": "docs/mobile-ui-screenshots/30-services.png"
+  },
+  {
+    "id": "31-promotions",
+    "path": "/promotions",
+    "title": "Акции",
+    "flow": "Site sections",
+    "file": "docs/mobile-ui-screenshots/31-promotions.png"
+  },
+  {
+    "id": "32-blog",
+    "path": "/blog",
+    "title": "Блог",
+    "flow": "Site sections",
+    "file": "docs/mobile-ui-screenshots/32-blog.png"
+  },
+  {
+    "id": "33-contacts",
+    "path": "/contacts",
+    "title": "Контакты",
+    "flow": "Site sections",
+    "file": "docs/mobile-ui-screenshots/33-contacts.png"
+  },
+  {
+    "id": "34-offer",
+    "path": "/offer",
+    "title": "Оферта / EULA",
+    "flow": "Legal",
+    "file": "docs/mobile-ui-screenshots/34-offer.png"
+  },
+  {
+    "id": "35-privacy",
+    "path": "/privacy",
+    "title": "Политика конфиденциальности",
+    "flow": "Legal",
+    "file": "docs/mobile-ui-screenshots/35-privacy.png"
+  }
+]
