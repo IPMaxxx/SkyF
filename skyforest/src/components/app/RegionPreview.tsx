@@ -57,7 +57,7 @@ export function RegionPreview({ region, onClose, closeLabel }: Props) {
           attributionControl={false}
         >
           <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={6} maxZoom={19} />
-          <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={16} maxZoom={19} />
+          <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={18} maxZoom={19} />
           <Rectangle
             bounds={bounds}
             pathOptions={{ color: "#10b981", weight: 2, fillColor: "#10b981", fillOpacity: 0.1 }}

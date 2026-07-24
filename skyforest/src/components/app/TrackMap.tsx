@@ -1,10 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
-  LayersControl,
   Marker,
   Polyline,
   useMap,
@@ -89,6 +88,52 @@ function InitialFit({ points }: { points: [number, number][] }) {
   return null;
 }
 
+type BaseLayerId = "outdoor" | "map" | "satellite";
+
+/** Переключатель базового слоя кнопками (вместо выпадающего LayersControl). */
+function LayerSwitch({
+  value,
+  onChange,
+  labels,
+}: {
+  value: BaseLayerId;
+  onChange: (id: BaseLayerId) => void;
+  labels: Record<BaseLayerId, string>;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    L.DomEvent.disableClickPropagation(ref.current);
+    L.DomEvent.disableScrollPropagation(ref.current);
+  }, []);
+
+  const order: BaseLayerId[] = ["outdoor", "map", "satellite"];
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-3 top-3 z-[1000] flex overflow-hidden rounded-full bg-white/95 p-0.5 shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
+    >
+      {order.map((id) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onChange(id)}
+          aria-pressed={value === id}
+          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            value === id
+              ? "bg-primary text-primary-foreground"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {labels[id]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   anchor: TrackPoint;
   points: TrackPoint[];
@@ -108,6 +153,7 @@ const GAP_MS = 5 * 60_000;
 export function TrackMap({ anchor, points, current, course }: Props) {
   const tc = useTranslations("common");
   const t = useTranslations("track");
+  const [baseLayer, setBaseLayer] = useState<BaseLayerId>("outdoor");
 
   /**
    * Линия направления движения: короткий синий отрезок из текущей точки по
@@ -168,29 +214,38 @@ export function TrackMap({ anchor, points, current, course }: Props) {
         zoomControl={true}
         attributionControl={false}
       >
-        {/*
-          Нижний «базовый» слой обзорной карты: тайлы низких зумов (≤6), которые
-          Leaflet растягивает на все зумы. Всегда что-то показывает — даже без
-          скачанного региона и без сети (после первой загрузки онлайн он
-          автоматически кешируется). Поверх — детальный слой с тропами.
-        */}
-        <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={6} maxZoom={19} />
+        {baseLayer === "outdoor" && (
+          <Fragment>
+            {/*
+              Нижний «базовый» слой обзорной карты: тайлы низких зумов (≤6),
+              которые Leaflet растягивает на все зумы. Всегда что-то показывает —
+              даже без скачанного региона и без сети. Поверх — детальный слой с
+              тропами: при онлайне и приближении подгружает нативные тайлы до
+              z18 (все дорожки) и автоматически их кеширует.
+            */}
+            <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={6} maxZoom={19} />
+            <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={18} maxZoom={19} />
+          </Fragment>
+        )}
+        {baseLayer === "map" && (
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+        )}
+        {baseLayer === "satellite" && (
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
+        )}
 
-        <LayersControl position="topright">
-          {/* Уличный слой с тропами — работает офлайн по скачанному региону. */}
-          <LayersControl.BaseLayer checked name={t("mapLayerOutdoor")}>
-            <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={16} maxZoom={19} />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name={tc("mapLayerMap")}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name={tc("mapLayerSatellite")}>
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={19}
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
+        <LayerSwitch
+          value={baseLayer}
+          onChange={setBaseLayer}
+          labels={{
+            outdoor: t("mapLayerOutdoor"),
+            map: tc("mapLayerMap"),
+            satellite: tc("mapLayerSatellite"),
+          }}
+        />
 
         {/* Пройденный путь: белая подложка + тёмно-зелёная линия поверх */}
         {solidSegments.map((seg, i) => (
