@@ -94,27 +94,38 @@
         padding: 8px 12px;
         cursor: pointer;
       }
-      #map { flex: 1 1 auto; width: 100%; background: #0b130d; }
-      .empty {
-        flex: 1 1 auto;
+      #map { flex: 1 1 auto; width: 100%; background: #0b130d; min-height: 0; }
+      .start-pane { padding: 0 16px 12px; }
+      .start-pane p { color: var(--muted); font-size: 13px; margin: 0; }
+      .actions {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
-        text-align: center;
-        padding: 24px;
+        gap: 8px;
+        padding: 12px 16px;
       }
-      .empty p { color: var(--muted); font-size: 14px; margin: 0; max-width: 320px; }
       .btn {
         background: var(--primary);
         color: #0b130d;
         border: none;
         border-radius: 14px;
-        padding: 12px 20px;
+        padding: 13px 20px;
         font-size: 15px;
         font-weight: 700;
         cursor: pointer;
+      }
+      .btn:disabled { opacity: 0.7; }
+      .btn.danger {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 13px;
+        padding: 10px 20px;
       }
       .hidden { display: none !important; }
       .leaflet-container { background: #0b130d; }
@@ -127,7 +138,8 @@
         <span class="badge" id="t-offline">Офлайн</span>
       </header>
 
-      <div id="active" class="hidden" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;">
+      <!-- Активный поход: статистика + компас -->
+      <div id="active" class="hidden">
         <div class="stats">
           <div class="card">
             <div class="label" id="t-distance">До входа</div>
@@ -153,13 +165,20 @@
             <button id="enableCompass" class="hidden">Включить компас</button>
           </div>
         </div>
-
-        <div id="map"></div>
       </div>
 
-      <div id="empty" class="empty">
-        <p id="t-empty">Активный поход не найден. Откройте приложение при интернете и начните поход, чтобы пользоваться офлайн-возвратом.</p>
-        <button class="btn" id="openApp">Открыть приложение</button>
+      <!-- Похода нет: подсказка -->
+      <div id="startPane" class="start-pane hidden">
+        <p id="t-startPrompt">Отметьте точку входа в лес — покажем направление и расстояние обратно. Работает без интернета.</p>
+      </div>
+
+      <!-- Карта видна всегда -->
+      <div id="map"></div>
+
+      <div class="actions">
+        <button class="btn hidden" id="startBtn">Я вошёл в лес</button>
+        <button class="btn danger hidden" id="finishBtn">Я вышел из леса</button>
+        <button class="btn ghost" id="openApp">Открыть приложение</button>
       </div>
     </div>
 

@@ -168,14 +168,18 @@ export function TrackMap({ anchor, points, current, course }: Props) {
         zoomControl={true}
         attributionControl={false}
       >
+        {/*
+          Нижний «базовый» слой обзорной карты: тайлы низких зумов (≤6), которые
+          Leaflet растягивает на все зумы. Всегда что-то показывает — даже без
+          скачанного региона и без сети (после первой загрузки онлайн он
+          автоматически кешируется). Поверх — детальный слой с тропами.
+        */}
+        <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={6} maxZoom={19} />
+
         <LayersControl position="topright">
           {/* Уличный слой с тропами — работает офлайн по скачанному региону. */}
           <LayersControl.BaseLayer checked name={t("mapLayerOutdoor")}>
-            <OfflineTileLayer
-              source={OUTDOOR_SOURCE}
-              maxNativeZoom={OUTDOOR_SOURCE.maxZoom}
-              maxZoom={19}
-            />
+            <OfflineTileLayer source={OUTDOOR_SOURCE} maxNativeZoom={16} maxZoom={19} />
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name={tc("mapLayerMap")}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

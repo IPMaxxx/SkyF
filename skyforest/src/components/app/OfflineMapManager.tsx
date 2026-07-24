@@ -4,8 +4,12 @@
  * «Скачать регион для офлайна»: качает тайлы уличной карты (тропы) вокруг точки
  * и хранит их на устройстве, чтобы карта Track работала без интернета. Показывает
  * оценку размера, прогресс и список уже скачанных участков с удалением.
+ *
+ * Качество фиксировано «минимальным» (обзорные зумы), а недостающая детализация
+ * докешируется автоматически на месте, когда есть сеть (см. OfflineTileLayer).
  */
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2, MapPinned, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -22,17 +26,22 @@ import {
   type DownloadedRegion,
 } from "@/lib/offline/tileStore";
 
-/** Нижний уровень зума в скачиваемом регионе — даёт обзорный контекст. */
-const DOWNLOAD_MIN_ZOOM = 12;
+/**
+ * «Супер-минимальное» качество: только обзорные зумы. Детали в точке, где вы
+ * реально находитесь, докешируются сами при наличии сети. Это держит объём
+ * скачивания небольшим даже для радиуса 50 км.
+ */
+const DOWNLOAD_MIN_ZOOM = 9;
+const DOWNLOAD_MAX_ZOOM = 13;
 /** Средний вес PNG-тайла (для оценки размера до загрузки). */
-const AVG_TILE_BYTES = 18 * 1024;
+const AVG_TILE_BYTES = 14 * 1024;
 
-const RADIUS_OPTIONS = [2, 5, 10] as const;
-const DETAIL_OPTIONS = [
-  { key: "low", maxZoom: 14 },
-  { key: "medium", maxZoom: 15 },
-  { key: "high", maxZoom: 16 },
-] as const;
+const RADIUS_OPTIONS = [10, 25, 50] as const;
+
+const RegionPreview = dynamic(
+  () => import("@/components/app/RegionPreview").then((m) => m.RegionPreview),
+  { ssr: false },
+);
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -50,11 +59,11 @@ export function OfflineMapManager({ center }: Props) {
 
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(center ?? null);
   const [locating, setLocating] = useState(false);
-  const [radiusKm, setRadiusKm] = useState<number>(5);
-  const [maxZoom, setMaxZoom] = useState<number>(15);
+  const [radiusKm, setRadiusKm] = useState<number>(10);
   const [regions, setRegions] = useState<DownloadedRegion[]>([]);
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<DownloadedRegion | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -70,7 +79,11 @@ export function OfflineMapManager({ center }: Props) {
   }, [refreshRegions]);
 
   const estimateTiles = origin
-    ? countTilesForBbox(bboxAround(origin.lat, origin.lng, radiusKm), DOWNLOAD_MIN_ZOOM, maxZoom)
+    ? countTilesForBbox(
+        bboxAround(origin.lat, origin.lng, radiusKm),
+        DOWNLOAD_MIN_ZOOM,
+        DOWNLOAD_MAX_ZOOM,
+      )
     : 0;
   const estimateSize = formatBytes(estimateTiles * AVG_TILE_BYTES);
 
@@ -95,11 +108,13 @@ export function OfflineMapManager({ center }: Props) {
     try {
       await downloadRegion(
         {
-          name: new Date().toLocaleDateString(),
+          name: `${radiusKm} ${t("offlineMapKm")} · ${new Date().toLocaleDateString()}`,
           source: OUTDOOR_SOURCE,
           bbox: bboxAround(origin.lat, origin.lng, radiusKm),
           minZoom: DOWNLOAD_MIN_ZOOM,
-          maxZoom,
+          maxZoom: DOWNLOAD_MAX_ZOOM,
+          center: origin,
+          radiusKm,
         },
         (p) => {
           failed = p.failed;
@@ -178,31 +193,7 @@ export function OfflineMapManager({ center }: Props) {
                       : "bg-white/10 text-foreground hover:bg-white/15"
                   }`}
                 >
-                  {r} км
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Детализация */}
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-              {t("offlineMapDetail")}
-            </p>
-            <div className="flex gap-2">
-              {DETAIL_OPTIONS.map((d) => (
-                <button
-                  key={d.key}
-                  type="button"
-                  onClick={() => setMaxZoom(d.maxZoom)}
-                  disabled={!!progress}
-                  className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
-                    maxZoom === d.maxZoom
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-white/10 text-foreground hover:bg-white/15"
-                  }`}
-                >
-                  {t(`offlineMapDetail${d.key[0].toUpperCase()}${d.key.slice(1)}` as never)}
+                  {r} {t("offlineMapKm")}
                 </button>
               ))}
             </div>
@@ -210,6 +201,8 @@ export function OfflineMapManager({ center }: Props) {
 
           <p className="text-xs text-muted-foreground">
             {t("offlineMapEstimate", { tiles: estimateTiles, size: estimateSize })}
+            {" · "}
+            {t("offlineMapMinimalQuality")}
           </p>
 
           {progress ? (
@@ -263,15 +256,22 @@ export function OfflineMapManager({ center }: Props) {
                 key={r.id}
                 className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2"
               >
-                <div className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setPreview(r)}
+                  className="min-w-0 flex-1 text-left transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light rounded-lg"
+                  title={t("offlineMapOpenOnMap")}
+                >
                   <p className="truncate text-sm font-medium">{r.name}</p>
                   <p className="text-[11px] text-muted-foreground">
                     {t("offlineMapRegionMeta", {
                       tiles: r.tileCount,
                       size: formatBytes(r.sizeBytes),
                     })}
+                    {" · "}
+                    {t("offlineMapOpenOnMap")}
                   </p>
-                </div>
+                </button>
                 <button
                   type="button"
                   onClick={() => void handleDelete(r.id)}
@@ -291,6 +291,14 @@ export function OfflineMapManager({ center }: Props) {
           </ul>
         )}
       </div>
+
+      {preview && (
+        <RegionPreview
+          region={preview}
+          onClose={() => setPreview(null)}
+          closeLabel={t("offlineMapClosePreview")}
+        />
+      )}
     </div>
   );
 }

@@ -41,7 +41,7 @@ class OfflineTileLayerClass extends L.TileLayer {
     const source = this.options.sfSource;
     const online = typeof navigator === "undefined" ? true : navigator.onLine;
 
-    void resolveTileUrl(source, { z: coords.z, x: coords.x, y: coords.y }, online)
+    void resolveTileUrl(source, { z: coords.z, x: coords.x, y: coords.y }, { online, autoCache: true })
       .then((url) => {
         const finalUrl = url ?? BLANK_TILE;
         const isBlob = finalUrl.startsWith("blob:");
