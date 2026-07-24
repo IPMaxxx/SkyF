@@ -17,6 +17,16 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!--
+          Android 12+ системный splash: раньше показывал иконку приложения
+          (гриб) на старте. Заставляем показывать логотип SkyForest на тёмном
+          фоне бренда — тогда с первого кадра и до dashboard единый брендовый
+          экран без морганий.
+        -->
+        <item name="windowSplashScreenBackground">#FF0E1710</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <!-- Fallback для Android < 12 -->
         <item name="android:background">@drawable/splash</item>
     </style>
 </resources>

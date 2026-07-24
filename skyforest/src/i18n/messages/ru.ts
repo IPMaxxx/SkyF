@@ -70,6 +70,11 @@ export default {
     loading: "Загрузка...",
     loadingMap: "Загрузка карты...",
     splashTagline: "Идём за грибами!",
+    updateTitle: "Доступна новая версия",
+    updateBody:
+      "У вас версия {current}. Доступна версия {latest} — обновите приложение, чтобы получить последние улучшения.",
+    updateNow: "Обновить",
+    updateLater: "Позже",
     back: "Назад",
     cancel: "Отмена",
     save: "Сохранить",

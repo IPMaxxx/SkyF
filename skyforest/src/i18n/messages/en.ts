@@ -70,6 +70,11 @@ export default {
     loading: "Loading...",
     loadingMap: "Loading map...",
     splashTagline: "Let's find some mushrooms",
+    updateTitle: "Update available",
+    updateBody:
+      "You have version {current}. Version {latest} is available — update the app to get the latest improvements.",
+    updateNow: "Update",
+    updateLater: "Later",
     back: "Back",
     cancel: "Cancel",
     save: "Save",
