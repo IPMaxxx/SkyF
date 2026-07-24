@@ -47,8 +47,11 @@
         offline: "Офлайн",
         distance: "До входа",
         duration: "В лесу",
-        empty:
-          "Активный поход не найден. Откройте приложение при интернете и начните поход, чтобы пользоваться офлайн-возвратом.",
+        startPrompt: "Отметьте точку входа в лес — покажем направление и расстояние обратно. Работает без интернета.",
+        start: "Я вошёл в лес",
+        starting: "Определяем местоположение…",
+        finish: "Я вышел из леса",
+        geoError: "Не удалось определить местоположение. Проверьте разрешение на геолокацию.",
         openApp: "Открыть приложение",
         waiting: "Определяем местоположение…",
         move: "Пройдите несколько шагов — направление определится по GPS.",
@@ -62,8 +65,11 @@
         offline: "Offline",
         distance: "To entry point",
         duration: "In forest",
-        empty:
-          "No active trip found. Open the app while online and start a trip to use the offline return.",
+        startPrompt: "Mark where you entered the forest — we'll show the direction and distance back. Works without internet.",
+        start: "I'm entering the forest",
+        starting: "Getting your location…",
+        finish: "I'm out of the forest",
+        geoError: "Could not determine your location. Check GPS permission.",
         openApp: "Open the app",
         waiting: "Determining your location…",
         move: "Walk a few steps — we'll detect your direction from GPS.",
@@ -80,7 +86,9 @@
     $("t-offline").textContent = T.offline;
     $("t-distance").textContent = T.distance;
     $("t-duration").textContent = T.duration;
-    $("t-empty").textContent = T.empty;
+    $("t-startPrompt").textContent = T.startPrompt;
+    $("startBtn").textContent = T.start;
+    $("finishBtn").textContent = T.finish;
     $("openApp").textContent = T.openApp;
     $("enableCompass").textContent = T.enableCompass;
     $("dir").textContent = T.waiting;
@@ -154,19 +162,50 @@
     }
     try { localStorage.setItem(ACTIVE_TRACK_KEY, json); } catch (e) {}
   }
+  function clearTrackStore() {
+    if (Cap && Cap.Plugins && Cap.Plugins.Preferences) {
+      Cap.Plugins.Preferences.remove({ key: ACTIVE_TRACK_KEY }).catch(function () {});
+    }
+    try { localStorage.removeItem(ACTIVE_TRACK_KEY); } catch (e) {}
+  }
 
+  function remoteUrl(coords) {
+    var s = SUBS[(coords.x + coords.y) % SUBS.length];
+    return OUTDOOR_URL.replace("{s}", s).replace("{z}", coords.z).replace("{x}", coords.x).replace("{y}", coords.y);
+  }
+
+  function base64FromBlob(blob) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onloadend = function () { var s = String(r.result); res(s.slice(s.indexOf(",") + 1)); };
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // Автокеш: скачивает тайл, сохраняет в Filesystem и отдаёт локальный URL.
+  function cacheAndResolve(path, remote) {
+    return fetch(remote)
+      .then(function (resp) { if (!resp.ok) throw 0; return resp.blob(); })
+      .then(function (blob) {
+        return base64FromBlob(blob).then(function (b64) {
+          return Cap.Plugins.Filesystem.writeFile({ path: path, directory: "DATA", data: b64, recursive: true })
+            .then(function () { return Cap.Plugins.Filesystem.getUri({ path: path, directory: "DATA" }); })
+            .then(function (r) { return Cap.convertFileSrc ? Cap.convertFileSrc(r.uri) : r.uri; });
+        });
+      })
+      .catch(function () { return remote; });
+  }
+
+  // Детальный слой: локальный тайл → (онлайн) докешируем из сети → иначе пусто.
   function resolveTile(coords) {
     var path = TILE_DIR + "/" + SOURCE_ID + "/" + coords.z + "/" + coords.x + "/" + coords.y + ".png";
-    var remote = null;
-    if (navigator.onLine) {
-      var s = SUBS[(coords.x + coords.y) % SUBS.length];
-      remote = OUTDOOR_URL.replace("{s}", s).replace("{z}", coords.z).replace("{x}", coords.x).replace("{y}", coords.y);
-    }
+    var remote = navigator.onLine ? remoteUrl(coords) : null;
     if (Cap && Cap.Plugins && Cap.Plugins.Filesystem) {
       return Cap.Plugins.Filesystem.stat({ path: path, directory: "DATA" })
         .then(function () { return Cap.Plugins.Filesystem.getUri({ path: path, directory: "DATA" }); })
         .then(function (r) { return Cap.convertFileSrc ? Cap.convertFileSrc(r.uri) : r.uri; })
-        .catch(function () { return remote; });
+        .catch(function () { return remote ? cacheAndResolve(path, remote) : null; });
     }
     return Promise.resolve(remote);
   }
@@ -193,6 +232,7 @@
 
   /* ------------------------- Карта ------------------------- */
 
+  // Детальный слой: скачанные/докешированные тайлы, прозрачно где нет.
   var OfflineLayer = L.TileLayer.extend({
     createTile: function (coords, done) {
       var tile = document.createElement("img");
@@ -206,6 +246,20 @@
           tile.src = finalUrl;
         })
         .catch(function () { tile.src = BLANK_TILE; done(null, tile); });
+      return tile;
+    },
+  });
+
+  // Базовый слой: обзорные тайлы, зашитые в приложение (./basemap, z0–5).
+  // Leaflet растягивает их на все зумы — карта никогда не пустая.
+  var BaseLayer = L.TileLayer.extend({
+    createTile: function (coords, done) {
+      var tile = document.createElement("img");
+      tile.setAttribute("role", "presentation");
+      tile.alt = "";
+      tile.onload = function () { done(null, tile); };
+      tile.onerror = function () { tile.src = BLANK_TILE; done(null, tile); };
+      tile.src = "./basemap/" + coords.z + "/" + coords.x + "/" + coords.y + ".png";
       return tile;
     },
   });
@@ -228,11 +282,13 @@
   var pathLine = null;
   var returnLine = null;
   var currentMarker = null;
+  var anchorMarker = null;
   var current = null;
   var course = null;
   var heading = null;
   var samples = [];
   var lastCourseAt = 0;
+  var centeredOnUser = false;
 
   function pathLatLngs() {
     var pts = [[track.anchor.lat, track.anchor.lng]];
@@ -244,6 +300,12 @@
   function onPosition(pos) {
     var now = Date.now();
     current = { lat: pos.lat, lng: pos.lng, t: now };
+
+    // Пока похода нет — один раз центрируем карту на пользователе.
+    if (!track) {
+      if (map && !centeredOnUser) { centeredOnUser = true; map.setView([pos.lat, pos.lng], 15); }
+      return;
+    }
 
     // Запись точки пути с фильтром шума.
     var last = track.points.length ? track.points[track.points.length - 1] : track.anchor;
@@ -264,7 +326,7 @@
   }
 
   function render() {
-    if (!map || !current) return;
+    if (!map || !track || !current) return;
 
     if (!currentMarker) currentMarker = L.marker([current.lat, current.lng], { icon: currentIcon }).addTo(map);
     else currentMarker.setLatLng([current.lat, current.lng]);
@@ -297,6 +359,92 @@
     $("duration").textContent = Math.floor(min / 60) + ":" + String(min % 60).padStart(2, "0");
   }
 
+  /* ------------------------- Режимы (старт/поход) ------------------------- */
+
+  function refreshMapSize() {
+    if (map) setTimeout(function () { map.invalidateSize(); }, 60);
+  }
+
+  function showActiveMode() {
+    $("active").classList.remove("hidden");
+    $("startPane").classList.add("hidden");
+    $("startBtn").classList.add("hidden");
+    $("finishBtn").classList.remove("hidden");
+    refreshMapSize();
+  }
+
+  function showStartMode() {
+    $("active").classList.add("hidden");
+    $("startPane").classList.remove("hidden");
+    $("startBtn").classList.remove("hidden");
+    $("finishBtn").classList.add("hidden");
+    refreshMapSize();
+  }
+
+  function drawAnchor() {
+    if (!track) return;
+    if (anchorMarker) map.removeLayer(anchorMarker);
+    anchorMarker = L.marker([track.anchor.lat, track.anchor.lng], { icon: anchorIcon }).addTo(map);
+  }
+
+  function startWayback() {
+    var begin = function (pos) {
+      track = { anchor: { lat: pos.lat, lng: pos.lng, t: Date.now() }, points: [], startedAt: Date.now() };
+      saveTrack(track);
+      samples = []; course = null; lastCourseAt = 0;
+      current = { lat: pos.lat, lng: pos.lng, t: Date.now() };
+      showActiveMode();
+      drawAnchor();
+      map.setView([pos.lat, pos.lng], 16);
+      render();
+      tickDuration();
+    };
+    $("startBtn").textContent = T.starting;
+    $("startBtn").disabled = true;
+    var reset = function () { $("startBtn").textContent = T.start; $("startBtn").disabled = false; };
+    if (current) { begin(current); reset(); return; }
+    getCurrentPositionOnce()
+      .then(function (pos) { begin(pos); reset(); })
+      .catch(function () { alert(T.geoError); reset(); });
+  }
+
+  function finishWayback() {
+    clearTrackStore();
+    track = null;
+    current = null;
+    course = null;
+    heading = null;
+    samples = [];
+    centeredOnUser = false;
+    if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
+    if (returnLine) { map.removeLayer(returnLine); returnLine = null; }
+    if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+    if (anchorMarker) { map.removeLayer(anchorMarker); anchorMarker = null; }
+    showStartMode();
+    $("distance").textContent = "—";
+    $("duration").textContent = "0:00";
+  }
+
+  function getCurrentPositionOnce() {
+    return new Promise(function (resolve, reject) {
+      if (Cap && Cap.Plugins && Cap.Plugins.Geolocation) {
+        Cap.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true })
+          .then(function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); })
+          .catch(reject);
+        return;
+      }
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+          reject,
+          { enableHighAccuracy: true, timeout: 15000 },
+        );
+        return;
+      }
+      reject(new Error("no geolocation"));
+    });
+  }
+
   /* ------------------------- Компас ------------------------- */
 
   function enableCompass() {
@@ -321,16 +469,14 @@
 
   /* ------------------------- Инициализация ------------------------- */
 
-  function initMap() {
+  function initMap(center) {
     map = L.map("map", { zoomControl: true, attributionControl: false }).setView(
-      [track.anchor.lat, track.anchor.lng],
-      15,
+      center || [20, 0],
+      center ? 15 : 2,
     );
-    new OfflineLayer("", { maxNativeZoom: 17, maxZoom: 19 }).addTo(map);
-    L.marker([track.anchor.lat, track.anchor.lng], { icon: anchorIcon }).addTo(map);
-    // Первичный фит по имеющимся точкам.
-    var pts = pathLatLngs();
-    if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+    // Базовый обзорный слой (всегда виден) + детальный поверх.
+    new BaseLayer("", { maxNativeZoom: 5, maxZoom: 19 }).addTo(map);
+    new OfflineLayer("", { maxNativeZoom: 16, maxZoom: 19 }).addTo(map);
   }
 
   function start() {
@@ -338,20 +484,25 @@
     $("openApp").addEventListener("click", function () { window.location.href = APP_URL; });
     $("enableCompass").addEventListener("click", enableCompass);
     $("enableCompass").classList.remove("hidden");
+    $("startBtn").addEventListener("click", startWayback);
+    $("finishBtn").addEventListener("click", finishWayback);
 
     loadTrack().then(function (loaded) {
-      if (!loaded || !loaded.anchor) {
-        $("empty").classList.remove("hidden");
-        $("active").classList.add("hidden");
-        return;
+      var hasTrack = loaded && loaded.anchor;
+      if (hasTrack) {
+        track = loaded;
+        if (!Array.isArray(track.points)) track.points = [];
+        initMap([track.anchor.lat, track.anchor.lng]);
+        showActiveMode();
+        drawAnchor();
+        var pts = pathLatLngs();
+        if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+        render();
+        tickDuration();
+      } else {
+        initMap(null);
+        showStartMode();
       }
-      track = loaded;
-      if (!Array.isArray(track.points)) track.points = [];
-      $("empty").classList.add("hidden");
-      $("active").classList.remove("hidden");
-      initMap();
-      render();
-      tickDuration();
       setInterval(tickDuration, 30000);
       startWatch(onPosition);
     });

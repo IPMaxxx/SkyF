@@ -51,6 +51,9 @@ export interface DownloadedRegion {
   /** Приблизительный объём в байтах. */
   sizeBytes: number;
   createdAt: number;
+  /** Центр и радиус (км) — чтобы показать зону на карте по клику. */
+  center?: { lat: number; lng: number };
+  radiusKm?: number;
 }
 
 export interface DownloadProgress {
@@ -222,9 +225,20 @@ async function deleteTile(sourceId: string, coord: TileCoord) {
   }
 }
 
+export interface ResolveOptions {
+  online: boolean;
+  /**
+   * Автокеширование: если тайла нет локально, но есть сеть — скачать его,
+   * сохранить на устройство и отдать локальную копию. Так карта достраивает
+   * офлайн-кеш по мере того, как пользователь её листает/идёт онлайн.
+   */
+  autoCache?: boolean;
+}
+
 /**
  * URL тайла для отрисовки на карте:
  *  - если тайл скачан — локальный URL (файл/blob);
+ *  - иначе, если есть сеть и autoCache — скачивает, кеширует и отдаёт локально;
  *  - иначе, если есть сеть — сетевой URL провайдера;
  *  - иначе null (Leaflet покажет пустой тайл).
  *
@@ -233,19 +247,36 @@ async function deleteTile(sourceId: string, coord: TileCoord) {
 export async function resolveTileUrl(
   source: TileSource,
   coord: TileCoord,
-  online: boolean,
+  opts: ResolveOptions | boolean,
 ): Promise<string | null> {
+  const online = typeof opts === "boolean" ? opts : opts.online;
+  const autoCache = typeof opts === "boolean" ? false : !!opts.autoCache;
+
   if (isNativeApp()) {
+    const { Filesystem, Directory } = await import("@capacitor/filesystem");
+    const path = tilePath(source.id, coord);
     try {
-      const { Filesystem, Directory } = await import("@capacitor/filesystem");
-      const path = tilePath(source.id, coord);
       await Filesystem.stat({ path, directory: Directory.Data });
       const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
       return convertFileSrc(uri);
     } catch {
       /* не скачан — ниже сеть */
     }
-    return online ? buildRemoteUrl(source, coord) : null;
+    if (!online) return null;
+    if (autoCache) {
+      try {
+        const resp = await fetch(buildRemoteUrl(source, coord));
+        if (resp.ok) {
+          const blob = await resp.blob();
+          await writeTileNative(source.id, coord, await blobToBase64(blob));
+          const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
+          return convertFileSrc(uri);
+        }
+      } catch {
+        /* сеть/квота — отдаём прямой сетевой URL ниже */
+      }
+    }
+    return buildRemoteUrl(source, coord);
   }
 
   if (typeof caches !== "undefined") {
@@ -257,7 +288,20 @@ export async function resolveTileUrl(
       /* нет доступа к Cache Storage */
     }
   }
-  return online ? buildRemoteUrl(source, coord) : null;
+  if (!online) return null;
+  if (autoCache && typeof caches !== "undefined") {
+    try {
+      const resp = await fetch(buildRemoteUrl(source, coord));
+      if (resp.ok) {
+        const blob = await resp.blob();
+        await writeTileWeb(source.id, coord, blob);
+        return URL.createObjectURL(blob);
+      }
+    } catch {
+      /* сеть/квота — отдаём прямой сетевой URL ниже */
+    }
+  }
+  return buildRemoteUrl(source, coord);
 }
 
 /* ------------------------------------------------------------------ */
@@ -318,6 +362,8 @@ export async function downloadRegion(
     bbox: BBox;
     minZoom: number;
     maxZoom: number;
+    center?: { lat: number; lng: number };
+    radiusKm?: number;
   },
   onProgress?: (p: DownloadProgress) => void,
   signal?: AbortSignal,
@@ -362,6 +408,8 @@ export async function downloadRegion(
     tileCount: tiles.length - failed,
     sizeBytes: bytes,
     createdAt: Date.now(),
+    center: opts.center,
+    radiusKm: opts.radiusKm,
   };
   const regions = await listRegions();
   await writeRegions([region, ...regions]);
