@@ -18,6 +18,15 @@
   "use strict";
 
   var Cap = window.Capacitor;
+
+  // Нативный splash не прячется автоматически (launchAutoHide: false) — на
+  // офлайн-странице прячем его сами, иначе он завис бы поверх карты.
+  function hideNativeSplash() {
+    if (Cap && Cap.Plugins && Cap.Plugins.SplashScreen) {
+      Cap.Plugins.SplashScreen.hide({ fadeOutDuration: 250 }).catch(function () {});
+    }
+  }
+
   var ACTIVE_TRACK_KEY = "sf_active_track";
   var TILE_DIR = "sf-tiles";
   var SOURCE_ID = "outdoor";
@@ -504,6 +513,7 @@
         initMap(null);
         showStartMode();
       }
+      hideNativeSplash();
       setInterval(tickDuration, 30000);
       startWatch(onPosition);
     });

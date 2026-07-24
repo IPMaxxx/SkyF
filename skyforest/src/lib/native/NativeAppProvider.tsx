@@ -63,13 +63,8 @@ export function NativeAppProvider() {
     (async () => {
       const platform = getPlatform();
 
-      // --- Splash screen ---
-      try {
-        const { SplashScreen } = await import("@capacitor/splash-screen");
-        await SplashScreen.hide();
-      } catch {
-        /* плагин недоступен — игнорируем */
-      }
+      // Нативный splash прячет NativeSplash (после отрисовки своего брендового
+      // экрана) — здесь этого не делаем, иначе между ними мелькнёт пустой WebView.
 
       // --- Status bar (тёмный фон бренда, светлые иконки) ---
       try {

@@ -86,6 +86,11 @@
 
     <script>
       (function () {
+        // Нативный splash не прячется автоматически — прячем его здесь.
+        var cap = window.Capacitor;
+        if (cap && cap.Plugins && cap.Plugins.SplashScreen) {
+          cap.Plugins.SplashScreen.hide({ fadeOutDuration: 250 }).catch(function () {});
+        }
         var ru = String(navigator.language || "").toLowerCase().indexOf("ru") === 0;
         // Небольшая пауза: даём шанс WebView перейти на боевой сайт; если через
         // 3 секунды всё ещё здесь — сервер недоступен, показываем офлайн-опции.
