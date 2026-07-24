@@ -60,11 +60,11 @@ export default async function AccountPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold">{t("title")}</h1>
+      <h1 className="mb-2 font-heading text-2xl font-extrabold tracking-tight">{t("title")}</h1>
       <p className="mb-8 text-sm text-muted-foreground">{t("subtitle")}</p>
 
       <div className="glass mb-6 rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
           <User className="h-5 w-5 text-primary" />
           {t("profile")}
         </h2>
@@ -92,7 +92,7 @@ export default async function AccountPage({ params }: Props) {
       </div>
 
       <div className="glass mb-6 rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
           <Lock className="h-5 w-5 text-primary" />
           {t("changePassword")}
         </h2>
@@ -100,7 +100,7 @@ export default async function AccountPage({ params }: Props) {
       </div>
 
       <div className="glass mb-6 rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
           <ShieldCheck className="h-5 w-5 text-primary" />
           {t("twoFactor")}
         </h2>
@@ -110,19 +110,19 @@ export default async function AccountPage({ params }: Props) {
       <BiometricLockSetting />
 
       <div className="glass mb-6 rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-          <Coins className="h-5 w-5 text-amber-400" />
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
+          <Coins className="h-5 w-5 text-token" />
           {t("tokens")}
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl bg-amber-500/10 p-4 text-center">
-            <p className="text-2xl font-bold text-amber-400">
+          <div className="rounded-xl bg-token/10 p-4 text-center">
+            <p className="font-heading text-2xl font-extrabold text-token">
               {(tokenBalance?.balance ?? 0) + (tokenBalance?.bonus_balance ?? 0)}
             </p>
             <p className="text-xs text-muted-foreground">{t("balanceTotal")}</p>
           </div>
-          <div className="rounded-xl bg-amber-500/10 p-4 text-center">
-            <p className="text-2xl font-bold text-amber-300">{tokenBalance?.balance ?? 0}</p>
+          <div className="rounded-xl bg-token/10 p-4 text-center">
+            <p className="font-heading text-2xl font-extrabold text-token/90">{tokenBalance?.balance ?? 0}</p>
             <p className="text-xs text-muted-foreground">{t("balancePurchased")}</p>
           </div>
           <div className="rounded-xl bg-cyan-500/10 p-4 text-center">
@@ -145,7 +145,7 @@ export default async function AccountPage({ params }: Props) {
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t("bonusHint")}</p>
         <Link
           href="/payment"
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-sm font-medium text-white transition-all hover:shadow-lg hover:shadow-amber-500/20"
+          className="btn-primary mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] py-3 text-sm transition-all hover:opacity-90"
         >
           <Coins className="h-4 w-4" />
           {t("buyTokens")}
@@ -160,12 +160,12 @@ export default async function AccountPage({ params }: Props) {
       </WebOnly>
 
       <div className="glass mb-6 rounded-2xl p-6">
-        <h2 className="mb-4 text-lg font-semibold">{t("history")}</h2>
+        <h2 className="mb-4 font-heading text-lg font-bold">{t("history")}</h2>
         <TransactionHistory initial={transactions} initialShow={3} />
       </div>
 
       <div className="glass rounded-2xl p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
           <Trash2 className="h-5 w-5 text-red-400" />
           {t("deleteAccount")}
         </h2>

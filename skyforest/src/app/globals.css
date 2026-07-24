@@ -1,20 +1,25 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #0f1a12;
-  --color-foreground: #e8f0ea;
-  --color-primary: #62a863;
-  --color-primary-dark: #4e8a4f;
-  --color-primary-light: #7bbe7c;
-  --color-muted: rgba(255, 255, 255, 0.06);
-  --color-muted-foreground: #94a3b8;
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-card: rgba(255, 255, 255, 0.05);
-  --color-card-foreground: #e8f0ea;
-  --color-glass: rgba(255, 255, 255, 0.07);
-  --color-glass-border: rgba(255, 255, 255, 0.12);
-  --color-glass-hover: rgba(255, 255, 255, 0.12);
-  --font-sans: var(--font-roboto);
+  --color-background: #0b120d;
+  --color-foreground: #eaf2ea;
+  --color-primary: #5fb573;
+  --color-primary-dark: #4fa863;
+  --color-primary-light: #6fce7f;
+  --color-identify: #37c9a6;
+  --color-identify-dark: #2aa084;
+  --color-token: #f2b34a;
+  --color-muted: rgba(255, 255, 255, 0.045);
+  --color-muted-foreground: #8aa090;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-card: rgba(255, 255, 255, 0.045);
+  --color-card-foreground: #eaf2ea;
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.09);
+  --color-glass-hover: rgba(255, 255, 255, 0.08);
+  --color-shell: #0c150f;
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-bricolage);
 }
 
 html {
@@ -137,6 +142,61 @@ html[data-theme="hc"] :focus-visible {
   animation: hero-tool-in 0.55s ease-out both;
 }
 
+/* Redesign v1A utilities */
+.font-heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4fa863, #6fce7f);
+  color: #06120a;
+  font-weight: 800;
+  box-shadow: 0 10px 24px -8px rgba(95, 181, 115, 0.55);
+}
+
+.btn-identify {
+  background: linear-gradient(135deg, #37c9a6, #2aa084);
+  color: #04140f;
+  font-weight: 800;
+  box-shadow: 0 12px 26px -8px rgba(55, 201, 166, 0.55);
+}
+
+.token-pill {
+  background: rgba(242, 179, 74, 0.12);
+  border: 1px solid rgba(242, 179, 74, 0.28);
+  color: #f2b34a;
+}
+
+.sheet-handle {
+  width: 38px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 auto 14px;
+}
+
+@keyframes sf-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes sf-pulse-dot {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-tool-btn {
     animation: none;
@@ -144,6 +204,11 @@ html[data-theme="hc"] :focus-visible {
 
   .hero-tool-btn:hover {
     transform: none;
+  }
+
+  .animate-sf-float,
+  .animate-sf-pulse-dot {
+    animation: none !important;
   }
 }
 
@@ -171,12 +236,12 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus {
-  border-color: #62a863 !important;
-  box-shadow: 0 0 0 1px #62a863;
+  border-color: #6fce7f !important;
+  box-shadow: 0 0 0 1px #6fce7f;
 }
 
 input[type="range"] {
-  accent-color: #62a863;
+  accent-color: #6fce7f;
 }
 
 /* Scrollbar */

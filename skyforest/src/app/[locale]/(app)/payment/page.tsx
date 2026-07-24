@@ -363,10 +363,10 @@ function PaymentContent() {
     <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
       {/* Header */}
       <div className="mb-4 sm:mb-6 text-center">
-        <div className="mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-amber-500/15">
-          <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-amber-400" />
+        <div className="mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-token/25 bg-token/12">
+          <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-token" />
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold">{t("pageTitle")}</h1>
+        <h1 className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight">{t("pageTitle")}</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
           {t("pageSubtitle")}
         </p>
@@ -470,7 +470,7 @@ function PaymentContent() {
                           onClick={() => setSubPeriod(p)}
                           className={`relative rounded-lg px-5 py-2 text-sm font-medium transition-all ${
                             subPeriod === p
-                              ? "bg-amber-500/20 text-amber-300 shadow-sm"
+                              ? "bg-primary/16 text-primary-light shadow-sm"
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
@@ -500,14 +500,14 @@ function PaymentContent() {
                         <div
                           key={tier}
                           className={`glass relative flex flex-col rounded-2xl p-5 ${
-                            isPro ? "border-amber-400/40 ring-1 ring-amber-400/20" : ""
+                            isPro ? "border-primary/40 ring-1 ring-primary/20" : ""
                           }`}
                         >
-                          <span className="absolute -top-2.5 right-4 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-white">
+                          <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-3 py-0.5 text-xs font-extrabold text-[#06120a]">
                             {ts("trialBadge")}
                           </span>
                           <div className="mb-1 flex items-center gap-2">
-                            <Crown className={`h-5 w-5 ${isPro ? "text-amber-400" : "text-emerald-400"}`} />
+                            <Crown className={`h-5 w-5 ${isPro ? "text-primary-light" : "text-emerald-400"}`} />
                             <span className="text-xl font-bold">{tierName(tier)}</span>
                           </div>
                           <div className="mb-3 flex items-baseline gap-1">
@@ -528,11 +528,7 @@ function PaymentContent() {
                             type="button"
                             onClick={() => handleSubscribe(tier)}
                             disabled={subPurchasing !== null}
-                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${
-                              isPro
-                                ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                                : "bg-gradient-to-r from-emerald-500 to-teal-600"
-                            }`}
+                            className="btn-primary flex w-full items-center justify-center gap-2 rounded-[13px] py-2.5 text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
                           >
                             {subPurchasing === product.productId ? (
                               <>
@@ -636,17 +632,17 @@ function PaymentContent() {
                   onClick={() => setSelectedPack(pack.id)}
                   className={`relative rounded-2xl p-5 text-left transition-all ${
                     selectedPack === pack.id
-                      ? "glass border-amber-400/50 ring-1 ring-amber-400/30 bg-amber-500/10"
+                      ? "glass border-primary/40 ring-1 ring-primary/30 bg-primary/[0.08]"
                       : "glass hover:bg-white/8"
                   }`}
                 >
                   {pack.popular && (
-                    <span className="absolute -top-2.5 right-4 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-semibold text-white">
+                    <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-3 py-0.5 text-xs font-extrabold text-[#06120a]">
                       {t("popularBadge")}
                     </span>
                   )}
                   <div className="mb-2 flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-amber-400" />
+                    <Coins className="h-5 w-5 text-token" />
                     <span className="text-2xl font-bold">{pack.tokens}</span>
                     {!native && hasReferrer && (
                       <span className="text-sm font-semibold text-emerald-400">+{Math.max(1, Math.round(pack.tokens * 0.1))}</span>
@@ -670,7 +666,7 @@ function PaymentContent() {
                   )}
                   {selectedPack === pack.id && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <Check className="h-5 w-5 text-amber-400" />
+                      <Check className="h-5 w-5 text-primary-light" />
                     </div>
                   )}
                 </button>
@@ -778,7 +774,7 @@ function PaymentContent() {
             type="button"
             onClick={handlePurchase}
             disabled={purchasing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:shadow-xl hover:shadow-amber-500/30 disabled:opacity-50"
+            className="btn-primary flex w-full items-center justify-center gap-2 rounded-[14px] py-3.5 sm:py-4 text-sm sm:text-base transition-all hover:opacity-90 disabled:opacity-50"
           >
             {purchasing ? (
               <Loader2 className="h-5 w-5 animate-spin" />

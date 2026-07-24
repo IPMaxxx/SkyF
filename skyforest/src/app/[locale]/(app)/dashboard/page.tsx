@@ -64,6 +64,7 @@ function LazyDashboardMap(props: {
   locations: ReturnType<typeof useAppData>["locations"];
   bestDays: ReturnType<typeof useAppData>["bestDays"];
   native?: boolean;
+  nativeFill?: boolean;
   nativeSelectedPoint?: { lat: number; lng: number } | null;
   onPointSelect?: (sel: MapSelection) => void;
 }) {
@@ -92,6 +93,7 @@ function LazyDashboardMap(props: {
           locations={props.locations}
           bestDays={props.bestDays}
           native={props.native}
+          nativeFill={props.nativeFill}
           nativeSelectedPoint={props.nativeSelectedPoint}
           onPointSelect={props.onPointSelect}
         />
@@ -201,36 +203,39 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
+      {!isNative && (
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          {isNative ? t("titleNative") : t("title")}
+          {t("title")}
         </h1>
-        {/* Native: под заголовком — только подсказка к карте (описание, кнопки
-            быстрых действий и welcome-блок скрыты). На вебе всё как раньше. */}
-        {isNative ? (
-          <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("mapHint")}</p>
-        ) : (
-          <>
-            <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("subtitle")}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/locations/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                {t("addLocation")}
-              </Link>
-              <Link
-                href="/dashboard/best-day/new"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                {t("addBestDay")}
-              </Link>
-            </div>
-          </>
-        )}
+        <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("subtitle")}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/locations/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3.5 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {t("addLocation")}
+          </Link>
+          <Link
+            href="/dashboard/best-day/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3.5 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {t("addBestDay")}
+          </Link>
+        </div>
       </div>
+      )}
+
+      {isNative && !selection && !loading && (
+        <div className="mb-4">
+          <h1 className="font-heading text-[19px] font-extrabold leading-tight tracking-tight text-foreground">
+            {t("titleNative")}
+          </h1>
+          <p className="mt-1 text-[12.5px] leading-snug text-[#8aa090]">{t("mapHint")}</p>
+        </div>
+      )}
 
       {!isNative && isEmpty && !loading && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8">
@@ -258,22 +263,41 @@ export default function DashboardPage() {
           координаты + прогноз погоды / тип леса). Показываем всегда, даже без
           локаций. На вебе карта остаётся ниже (см. блок с условием has*). */}
       {isNative && !loading && (
-        <div className="mb-6 space-y-3">
-          <LazyDashboardMap
-            locations={locations}
-            bestDays={allBestDays}
-            native
-            nativeSelectedPoint={
-              selection?.kind === "empty"
-                ? { lat: selection.lat, lng: selection.lng }
-                : null
-            }
-            onPointSelect={setSelection}
-          />
-          <MapActionPanel
-            selection={selection}
-            onLocationCreated={handleLocationCreated}
-          />
+        <div
+          className={
+            selection
+              ? "fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 px-0"
+              : "mb-6 space-y-3"
+          }
+        >
+          {selection ? (
+            <>
+              <div className="pointer-events-none fixed inset-x-0 top-[52px] bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-0">
+                <div className="pointer-events-auto h-full px-0">
+                  <LazyDashboardMap
+                    locations={locations}
+                    bestDays={allBestDays}
+                    native
+                    nativeFill
+                    nativeSelectedPoint={{ lat: selection.lat, lng: selection.lng }}
+                    onPointSelect={setSelection}
+                  />
+                </div>
+              </div>
+              <MapActionPanel selection={selection} onLocationCreated={handleLocationCreated} />
+            </>
+          ) : (
+            <>
+              <LazyDashboardMap
+                locations={locations}
+                bestDays={allBestDays}
+                native
+                nativeSelectedPoint={null}
+                onPointSelect={setSelection}
+              />
+              <MapActionPanel selection={selection} onLocationCreated={handleLocationCreated} />
+            </>
+          )}
         </div>
       )}
 

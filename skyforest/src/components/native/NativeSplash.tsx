@@ -1,21 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { Trees } from "lucide-react";
 
-/**
- * Брендовый сплэш поверх приложения при холодном запуске в нативной оболочке.
- *
- * Нативный сплэш Capacitor (до загрузки WebView) — «вшитая» картинка с логотипом
- * без подписи. Этот оверлей продолжает тот же тёмно-зелёный экран уже внутри
- * WebView, добавляя под логотип подпись, и плавно скрывается. В вебе/PWA не
- * рендерится (useIsNative до гидрации и в браузере даёт false).
- *
- * Показывается один раз за запуск: locale-layout переживает клиентскую
- * навигацию, поэтому модульный флаг не даёт оверлею всплывать при переходах.
- */
 let shownOnce = false;
 
 const VISIBLE_MS = 1500;
@@ -43,18 +32,33 @@ export function NativeSplash() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-5 bg-[#0f1a12] transition-opacity ease-out"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-5 bg-[#0e1710] transition-opacity ease-out"
       style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms` }}
     >
-      <Image
-        src="/images/logo-square.png"
-        alt=""
-        width={128}
-        height={128}
-        priority
-        className="h-28 w-28 rounded-2xl"
+      <div
+        className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_12%,#16281c_0%,#0c150f_55%,#070d09_100%)]"
+        aria-hidden="true"
       />
-      <p className="text-sm font-medium tracking-wide text-white/55">{t("splashTagline")}</p>
+      <div
+        className="relative flex h-28 w-28 animate-sf-float items-center justify-center rounded-[30px] border border-[rgba(120,220,150,0.3)] bg-gradient-to-br from-[#12261a] to-[#0b160f] shadow-[0_0_60px_-8px_rgba(95,181,115,0.55)]"
+      >
+        <Trees className="h-14 w-14 text-primary-light" strokeWidth={1.5} aria-hidden="true" />
+      </div>
+      <div className="relative text-center">
+        <p className="font-heading text-[30px] font-extrabold tracking-tight text-foreground">
+          SkyForest
+        </p>
+        <p className="mt-1 text-sm text-[#8aa090]">{t("splashTagline")}</p>
+      </div>
+      <div className="absolute bottom-11 flex gap-1.5" aria-hidden="true">
+        {[0, 0.2, 0.4].map((delay) => (
+          <span
+            key={delay}
+            className="h-1.5 w-1.5 animate-sf-pulse-dot rounded-full bg-primary-light"
+            style={{ animationDelay: `${delay}s` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

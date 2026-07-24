@@ -23,32 +23,27 @@ const NATIVE_ZOOM_DIAMETER_M = 10_000;
 
 const locationIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:32px;height:32px;background:#10b981;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M17 10c0 4.4-5 9-5 9s-5-4.6-5-9a5 5 0 1 1 10 0Z"/><circle cx="12" cy="10" r="1.5"/></svg>
-  </div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  html: `<div style="width:16px;height:16px;background:#6fce7f;border:3px solid #0b120d;border-radius:50%;box-shadow:0 0 0 6px rgba(95,181,115,0.25)"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 function makeBestDayIcon(count: number) {
   return new L.DivIcon({
     className: "",
-    html: `<div style="position:relative;width:32px;height:32px;background:#f59e0b;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      ${count > 1 ? `<div style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;background:#ef4444;border:2px solid #fff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;padding:0 3px">${count}</div>` : ""}
+    html: `<div style="position:relative;width:12px;height:12px;background:#f2b34a;border:2px solid #0b120d;border-radius:50%;box-shadow:0 0 0 3px rgba(242,179,74,0.2)">
+      ${count > 1 ? `<div style="position:absolute;top:-8px;right:-10px;min-width:16px;height:16px;background:#ef4444;border:2px solid #0b120d;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;padding:0 3px">${count}</div>` : ""}
     </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
   });
 }
 
 const queryIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:30px;height:30px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
-  </div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 15],
+  html: `<div style="width:16px;height:16px;background:#6fce7f;border:3px solid #0b120d;border-radius:50%;box-shadow:0 0 0 6px rgba(95,181,115,0.25)"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 type Filter = "all" | "locations" | "bestDays";
@@ -251,6 +246,8 @@ interface Props {
   nativeSelectedPoint?: { lat: number; lng: number } | null;
   /** Колбэк выбора точки (только native). */
   onPointSelect?: (sel: MapSelection) => void;
+  /** Native fullscreen: карта на всю высоту контейнера, без легенды снизу. */
+  nativeFill?: boolean;
 }
 
 export function DashboardMap({
@@ -259,6 +256,7 @@ export function DashboardMap({
   native = false,
   nativeSelectedPoint = null,
   onPointSelect,
+  nativeFill = false,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
@@ -342,12 +340,18 @@ export function DashboardMap({
     { value: "bestDays", label: tMap("bestDays") },
   ];
 
+  const mapHeightClass = nativeFill
+    ? "h-full min-h-[280px]"
+    : native
+      ? "h-[min(300px,calc(100dvh-16rem))] sm:h-[360px]"
+      : "h-[300px] sm:h-[360px]";
+
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className={cnMapShell(native, nativeFill)}>
       <MapContainer
         center={[53.9, 27.56]}
         zoom={7}
-        className="h-[300px] sm:h-[360px] w-full"
+        className={`${mapHeightClass} w-full`}
         zoomControl={true}
         attributionControl={false}
       >
@@ -544,17 +548,18 @@ export function DashboardMap({
         {allPoints.length > 0 && <FitBounds points={allPoints} />}
       </MapContainer>
 
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-card/50">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      {!nativeFill && (
+      <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] bg-[#0c150f]/80 px-3 py-2.5">
+        <div className="flex items-center gap-3 text-[11px] font-semibold text-[#a9bcae]">
           {showLocations && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-emerald-500 border border-white shadow-sm" />
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary-light shadow-sm" />
               {tMap("locations")}
             </span>
           )}
           {showBestDays && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-amber-500 border border-white shadow-sm" />
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-token shadow-sm" />
               {tMap("bestDays")}
             </span>
           )}
@@ -564,10 +569,10 @@ export function DashboardMap({
             <button
               key={btn.value}
               onClick={() => setFilter(btn.value)}
-              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                 filter === btn.value
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/15 text-primary-light"
+                  : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
               }`}
             >
               {btn.label}
@@ -575,6 +580,16 @@ export function DashboardMap({
           ))}
         </div>
       </div>
+      )}
     </div>
   );
+}
+
+function cnMapShell(native?: boolean, nativeFill?: boolean) {
+  if (nativeFill) {
+    return "h-full overflow-hidden rounded-none border-0";
+  }
+  return native
+    ? "overflow-hidden rounded-[18px] border border-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+    : "overflow-hidden rounded-xl border border-border";
 }

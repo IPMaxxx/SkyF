@@ -34,6 +34,12 @@ export default {
   deleteConfirmButton: "Удалить навсегда",
   deleteCancel: "Отмена",
   deleteError: "Не удалось удалить аккаунт. Попробуйте позже.",
+  biometric: {
+    lockTitle: "SkyForest заблокирован",
+    lockBody: "Разблокируйте через Face ID, чтобы ваши места оставались приватными.",
+    unlock: "Разблокировать",
+    authenticating: "Проверяем…",
+  },
   txEmpty: "Нет операций",
   txShowMore: "Показать ещё {n}",
   txLoadMore: "Загрузить ещё",

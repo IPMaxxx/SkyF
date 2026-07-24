@@ -385,7 +385,7 @@ export default function ChatsPage() {
           <MessageCircle className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg font-bold">{t("chatsTitle")}</h1>
+          <h1 className="font-heading text-lg font-extrabold tracking-tight">{t("chatsTitle")}</h1>
           <p className="text-xs text-muted-foreground">
             {conversations.length === 0
               ? t("chatsNoDialogs")

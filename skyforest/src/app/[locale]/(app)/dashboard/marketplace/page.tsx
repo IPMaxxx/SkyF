@@ -339,7 +339,7 @@ export default function MarketplacePage() {
           <Store className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">{t("title")}</h1>
+          <h1 className="font-heading text-lg sm:text-xl font-extrabold tracking-tight">{t("title")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {t("subtitle")}
           </p>

@@ -6,10 +6,12 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useIsNative } from "@/lib/native/useIsNative";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const t = useTranslations("auth");
+  const isNative = useIsNative();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,8 +74,22 @@ export default function ResetPasswordPage() {
     setLoading(false);
   };
 
+  const inputClass = isNative
+    ? "w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
+    : "w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary";
+  const errorClass = isNative
+    ? "mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400"
+    : "mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600";
+  const accent = isNative ? "text-primary-light" : "text-emerald-500";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
+    <div
+      className={
+        isNative
+          ? "flex min-h-screen items-center justify-center bg-[#0b120d] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground"
+          : "flex min-h-screen items-center justify-center bg-muted px-4"
+      }
+    >
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
           <Link href="/">
@@ -82,19 +98,25 @@ export default function ResetPasswordPage() {
               alt="SkyForest"
               width={64}
               height={64}
-              className="mx-auto mb-3 sm:mb-4 h-12 w-12 sm:h-16 sm:w-16 rounded-xl"
+              className={
+                isNative
+                  ? "mx-auto mb-4 h-16 w-16 rounded-[18px] border border-[rgba(120,220,150,0.25)]"
+                  : "mx-auto mb-3 sm:mb-4 h-12 w-12 sm:h-16 sm:w-16 rounded-xl"
+              }
             />
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold">{t("resetTitle")}</h1>
+          <h1 className={isNative ? "font-heading text-2xl font-extrabold tracking-tight" : "text-xl sm:text-2xl font-bold"}>
+            {t("resetTitle")}
+          </h1>
           <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">
             {t("resetSubtitle")}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-8 shadow-sm">
+        <div className={isNative ? "glass rounded-2xl p-5 sm:p-8" : "rounded-2xl border border-border bg-card p-5 sm:p-8 shadow-sm"}>
           {done ? (
             <div className="text-center">
-              <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
+              <CheckCircle2 className={`mx-auto mb-4 h-12 w-12 ${accent}`} />
               <h2 className="mb-2 text-lg font-semibold">{t("passwordUpdated")}</h2>
               <p className="text-sm text-muted-foreground">{t("redirecting")}</p>
             </div>
@@ -111,18 +133,18 @@ export default function ResetPasswordPage() {
               </p>
               <Link
                 href="/forgot-password"
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
+                className={
+                  isNative
+                    ? "btn-primary inline-flex items-center justify-center rounded-[13px] px-4 py-2.5 text-sm"
+                    : "inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
+                }
               >
                 {t("resetLinkRequestNew")}
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              {error && (
-                <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
+              {error && <div className={errorClass}>{error}</div>}
 
               <div className="mb-4">
                 <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
@@ -138,7 +160,7 @@ export default function ResetPasswordPage() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -157,7 +179,7 @@ export default function ResetPasswordPage() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -165,7 +187,11 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                className={
+                  isNative
+                    ? "btn-primary flex w-full items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] disabled:opacity-50"
+                    : "flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                }
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t("setNewPassword")}
