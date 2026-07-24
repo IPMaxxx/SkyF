@@ -19,10 +19,17 @@ import {
   stopTrackWatch,
   TRACK_CAPTURE_INTERVAL_MS,
 } from "@/lib/trackRecorder";
-import { TRACK_STATE_EVENT } from "@/lib/trackState";
+import { TRACK_STATE_EVENT, hydrateTrackFromNative } from "@/lib/trackState";
 
 export function TrackRecorder() {
   useEffect(() => {
+    // Поход мог быть начат в офлайн-экране (Preferences). Если сеть появилась и
+    // приложение открылось — переносим его в localStorage сайта, чтобы запись
+    // пути и точка входа продолжились без потери.
+    void hydrateTrackFromNative().then((restored) => {
+      if (restored) syncTrackWatch(document.visibilityState === "visible");
+    });
+
     void captureTrackPoint();
     syncTrackWatch(document.visibilityState === "visible");
 

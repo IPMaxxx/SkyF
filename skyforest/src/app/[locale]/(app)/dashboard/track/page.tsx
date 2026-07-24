@@ -27,6 +27,7 @@ import {
   loadTrack,
   startTrack,
   clearTrack,
+  hydrateTrackFromNative,
   haversineM,
   bearingDeg,
   compassDir,
@@ -105,8 +106,16 @@ export default function TrackPage() {
   const lastCourseAtRef = useRef(0);
 
   useEffect(() => {
-    setTrack(loadTrack());
+    const local = loadTrack();
+    setTrack(local);
     setMounted(true);
+    // Похода нет локально, но он мог быть начат в офлайн-экране (Preferences) —
+    // подхватываем, чтобы точка входа не потерялась при заходе в приложение.
+    if (!local) {
+      void hydrateTrackFromNative().then((restored) => {
+        if (restored) setTrack(restored);
+      });
+    }
   }, []);
 
   /**

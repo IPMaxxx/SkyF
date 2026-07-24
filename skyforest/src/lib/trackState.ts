@@ -85,19 +85,54 @@ function mirrorToNative(track: ActiveTrack | null) {
   })();
 }
 
+function isValidTrack(parsed: unknown): parsed is ActiveTrack {
+  const p = parsed as ActiveTrack | null;
+  return (
+    typeof p?.anchor?.lat === "number" &&
+    typeof p?.anchor?.lng === "number" &&
+    Array.isArray(p?.points)
+  );
+}
+
 export function loadTrack(): ActiveTrack | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ActiveTrack;
-    if (
-      typeof parsed?.anchor?.lat !== "number" ||
-      typeof parsed?.anchor?.lng !== "number" ||
-      !Array.isArray(parsed.points)
-    ) {
-      return null;
+    return isValidTrack(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Подхватывает поход, начатый в автономном офлайн-экране (другой origin, нет
+ * доступа к localStorage сайта). Такой трек лежит только в Capacitor
+ * Preferences. Если в localStorage сайта активного трека нет, но в Preferences
+ * он есть — переносим его сюда, чтобы при появлении сети и заходе в приложение
+ * поход и точка входа не потерялись, а продолжились штатно.
+ *
+ * Возвращает восстановленный трек либо null (нечего переносить). Никогда не
+ * затирает уже существующий локальный трек.
+ */
+export async function hydrateTrackFromNative(): Promise<ActiveTrack | null> {
+  if (typeof window === "undefined" || !isNativeApp()) return null;
+  if (loadTrack()) return null;
+  try {
+    const { Preferences } = await import("@capacitor/preferences");
+    const { value } = await Preferences.get({ key: STORAGE_KEY });
+    if (!value) return null;
+    const parsed = JSON.parse(value) as ActiveTrack;
+    if (!isValidTrack(parsed)) return null;
+    // Ещё раз убеждаемся, что за время await локально ничего не появилось.
+    if (loadTrack()) return null;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    } catch {
+      /* квота/приватный режим — трек продолжит жить в памяти вызвавшего */
     }
+    notifyStateChange();
     return parsed;
   } catch {
     return null;
