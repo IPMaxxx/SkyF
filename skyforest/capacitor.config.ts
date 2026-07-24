@@ -21,6 +21,11 @@ const config: CapacitorConfig = {
   server: {
     url: serverUrl,
     cleartext: false,
+    // Если боевой сайт недоступен (нет сети на холодном старте), Android
+    // открывает автономный офлайн-экран Track вместо системной ошибки.
+    // На iOS/общий случай fallback — mobile/shell/index.html, который сам
+    // ведёт на этот же экран (см. кнопки в index.html).
+    errorPath: "offline-track.html",
     // Домены, навигация на которые остаётся внутри WebView.
     // Stripe/OAuth-редиректы Supabase должны попадать сюда либо
     // открываться через @capacitor/browser (см. native bridge).

@@ -38,6 +38,7 @@ import {
 import { saveFinishedTrack } from "@/lib/trackHistory";
 import { useUnits } from "@/lib/units";
 import { TrackHistory } from "@/components/app/TrackHistory";
+import { OfflineMapManager } from "@/components/app/OfflineMapManager";
 
 const TrackMap = dynamic(
   () => import("@/components/app/TrackMap").then((m) => m.TrackMap),
@@ -326,6 +327,8 @@ export default function TrackPage() {
             <p className="mt-3 text-xs text-muted-foreground/80">{t("offlineHint")}</p>
           </div>
 
+          <OfflineMapManager center={current} />
+
           <TrackHistory />
         </div>
       ) : (
@@ -414,6 +417,8 @@ export default function TrackPage() {
             )}
             <p className="mt-1 text-[11px] text-muted-foreground/70">{t("gapHint")}</p>
           </div>
+
+          <OfflineMapManager center={track.anchor} />
 
           {/* Завершение похода */}
           {confirmFinish ? (
