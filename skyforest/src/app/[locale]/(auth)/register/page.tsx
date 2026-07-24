@@ -159,11 +159,9 @@ function RegisterForm() {
             <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-[#8aa090]">
               {t("registerSubtitle")}
             </p>
-            {refCode && (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary-light">
-                {t("refBonus")}
-              </div>
-            )}
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary-light">
+              {refCode ? t("refBonus") : t("welcomeBonus")}
+            </div>
           </div>
 
           {error && (
@@ -304,11 +302,9 @@ function RegisterForm() {
           <p className="mt-2 text-sm text-muted-foreground">
             {t("registerSubtitle")}
           </p>
-          {refCode && (
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-              {t("refBonus")}
-            </div>
-          )}
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            {refCode ? t("refBonus") : t("welcomeBonus")}
+          </div>
         </div>
 
         <form

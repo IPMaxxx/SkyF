@@ -683,6 +683,7 @@ export default {
     invalidCredentials: "Неверный email или пароль",
     registerTitle: "Регистрация",
     registerSubtitle: "Создайте аккаунт для доступа к сервису",
+    welcomeBonus: "🎁 10 токенов в подарок — попробуйте сервисы бесплатно",
     refBonus: "🎁 +10% токенов к каждой покупке",
     fullName: "Имя",
     namePlaceholder: "Ваше имя",

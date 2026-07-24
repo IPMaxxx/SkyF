@@ -680,6 +680,7 @@ export default {
     invalidCredentials: "Invalid email or password",
     registerTitle: "Sign up",
     registerSubtitle: "Create an account to access the service",
+    welcomeBonus: "🎁 10 free tokens to try the services",
     refBonus: "🎁 +10% tokens on every purchase",
     fullName: "Name",
     namePlaceholder: "Your name",
