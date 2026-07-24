@@ -33,7 +33,7 @@ const APP_STORE_URL = `https://apps.apple.com/us/app/skyforest-ai-mushroom-app/i
  * API «какая версия в сторе», поэтому обновляем это значение при каждой
  * публикации нового билда в Play (сейчас — internal testing).
  */
-const LATEST_ANDROID_VERSION = "1.33.0";
+const LATEST_ANDROID_VERSION = "1.34.0";
 
 const DISMISS_KEY = "sf_update_dismissed_version";
 /** Показываем окно после того, как отыграет брендовый splash. */

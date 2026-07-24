@@ -8,6 +8,12 @@ export default {
   starting: "Getting your location…",
   geoError:
     "Could not determine your location. Check GPS permission in settings and try again.",
+  geoErrorPick:
+    "Could not determine your location. You can set the entry point on the map manually.",
+  pickOnMap: "Set entry point on the map",
+  pickOnMapHint: "Tap the map to place your entry point.",
+  pickConfirm: "I entered here",
+  pickCancel: "Cancel",
 
   howTitle: "How it works",
   how1: "Tap the button at the forest edge — we'll remember your entry point.",
