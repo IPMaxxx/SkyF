@@ -42,8 +42,12 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.bepaid.by https://js.stripe.com https://www.googletagmanager.com https://mc.yandex.ru",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://server.arcgisonline.com https://www.googletagmanager.com https://mc.yandex.ru",
-      "connect-src 'self' https://*.supabase.co https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de https://api.inaturalist.org https://nominatim.openstreetmap.org https://checkout.bepaid.by https://api.stripe.com https://www.google-analytics.com https://www.googletagmanager.com https://mc.yandex.ru wss://mc.yandex.ru",
+      // Локальные схемы (capacitor://localhost, http(s)://localhost) нужны для
+      // офлайн-тайлов: Capacitor.convertFileSrc отдаёт тайлы из Filesystem по
+      // ним. Outdoor-тайлы (тропы) — OpenTopoMap по умолчанию; провайдер можно
+      // сменить через NEXT_PUBLIC_OUTDOOR_TILE_URL (Thunderforest/MapTiler).
+      "img-src 'self' data: blob: capacitor://localhost https://localhost http://localhost https://*.supabase.co https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://server.arcgisonline.com https://*.tile.opentopomap.org https://tile.opentopomap.org https://*.thunderforest.com https://api.maptiler.com https://www.googletagmanager.com https://mc.yandex.ru",
+      "connect-src 'self' capacitor://localhost https://localhost http://localhost https://*.supabase.co https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de https://api.inaturalist.org https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://server.arcgisonline.com https://*.tile.opentopomap.org https://tile.opentopomap.org https://*.thunderforest.com https://api.maptiler.com https://checkout.bepaid.by https://api.stripe.com https://www.google-analytics.com https://www.googletagmanager.com https://mc.yandex.ru wss://mc.yandex.ru",
       "media-src 'self'",
       "frame-src https://checkout.bepaid.by https://js.stripe.com https://hooks.stripe.com",
       "object-src 'none'",

@@ -14,6 +14,8 @@ import "leaflet/dist/leaflet.css";
 import { Maximize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { destinationPoint, haversineM, type TrackPoint } from "@/lib/trackState";
+import { OfflineTileLayer } from "@/components/app/OfflineTileLayer";
+import { OUTDOOR_SOURCE } from "@/lib/offline/tileStore";
 
 /** Зелёный флажок — точка входа в лес (якорь возврата). */
 const anchorIcon = new L.DivIcon({
@@ -167,7 +169,15 @@ export function TrackMap({ anchor, points, current, course }: Props) {
         attributionControl={false}
       >
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name={tc("mapLayerMap")}>
+          {/* Уличный слой с тропами — работает офлайн по скачанному региону. */}
+          <LayersControl.BaseLayer checked name={t("mapLayerOutdoor")}>
+            <OfflineTileLayer
+              source={OUTDOOR_SOURCE}
+              maxNativeZoom={OUTDOOR_SOURCE.maxZoom}
+              maxZoom={19}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name={tc("mapLayerMap")}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name={tc("mapLayerSatellite")}>
