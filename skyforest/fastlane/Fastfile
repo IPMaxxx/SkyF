@@ -141,11 +141,11 @@ platform :ios do
 end
 
 platform :android do
-  desc "Загрузить AAB во внутренний трек Google Play (черновик)"
+  desc "Загрузить AAB во внутренний трек Google Play (сразу доступно тестировщикам)"
   lane :internal do
     upload_to_play_store(
       track: "internal",
-      release_status: "draft",
+      release_status: "completed",
       aab: "android/app/build/outputs/bundle/release/app-release.aab",
       skip_upload_metadata: true,
       skip_upload_images: true,
