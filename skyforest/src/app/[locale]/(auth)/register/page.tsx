@@ -7,9 +7,10 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
-import { Mail, Lock, User, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Loader2, ScanSearch } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
+import { useIsNative } from "@/lib/native/useIsNative";
 
 export default function RegisterPage() {
   return (
@@ -25,6 +26,7 @@ function RegisterForm() {
   const redirect = searchParams.get("redirect") || "/dashboard";
   const refCode = searchParams.get("ref") || "";
   const t = useTranslations("auth");
+  const isNative = useIsNative();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -95,6 +97,31 @@ function RegisterForm() {
   };
 
   if (success) {
+    if (isNative) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-[#0b120d] px-6 text-foreground">
+          <div className="w-full max-w-md text-center">
+            <div className="glass rounded-2xl p-8">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Mail className="h-8 w-8 text-primary-light" />
+              </div>
+              <h2 className="mb-2 font-heading text-xl font-extrabold">{t("checkEmail")}</h2>
+              <p className="text-sm text-muted-foreground">
+                {t("confirmEmailBefore")}
+                <strong className="text-foreground">{email}</strong>
+                {t("confirmEmailAfter")}
+              </p>
+              <Link
+                href="/login"
+                className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-primary-light hover:underline"
+              >
+                {t("goToLogin")}
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted px-4">
         <div className="w-full max-w-md text-center">
@@ -115,6 +142,146 @@ function RegisterForm() {
               {t("goToLogin")}
             </Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isNative) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[#0b120d] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
+          <div className="mb-7 text-center">
+            <div className="mx-auto mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-[22px] border border-[rgba(55,201,166,0.35)] bg-gradient-to-br from-[#0e2b26] to-[#0a1712] shadow-[0_0_44px_-8px_rgba(55,201,166,0.5)]">
+              <ScanSearch className="h-9 w-9 text-identify" strokeWidth={1.6} aria-hidden="true" />
+            </div>
+            <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("registerTitle")}</h1>
+            <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-[#8aa090]">
+              {t("registerSubtitle")}
+            </p>
+            {refCode && (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary-light">
+                {t("refBonus")}
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+              <p>{error}</p>
+              {duplicate && (
+                <div className="mt-2 flex gap-3 text-xs font-medium">
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent(redirect)}`}
+                    className="text-primary-light hover:underline"
+                  >
+                    {t("signIn")}
+                  </Link>
+                  <Link href="/forgot-password" className="text-primary-light hover:underline">
+                    {t("forgotPassword")}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          <SocialLoginButtons redirect={redirect} hideDivider />
+
+          <div className="mb-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-white/10" />
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("orWithEmail")}
+            </span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label htmlFor="name-native" className="mb-1.5 block text-sm font-medium">
+                {t("fullName")}
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="name-native"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder={t("namePlaceholder")}
+                  required
+                  className="w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email-native" className="mb-1.5 block text-sm font-medium">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="email-native"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password-native" className="mb-1.5 block text-sm font-medium">
+                {t("password")}
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="password-native"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("passwordPlaceholder")}
+                  required
+                  minLength={6}
+                  className="w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {t("termsLead")}{" "}
+              <Link href="/offer" target="_blank" className="text-primary-light hover:underline">
+                {t("termsOffer")}
+              </Link>{" "}
+              {t("termsAnd")}{" "}
+              <Link href="/privacy" target="_blank" className="text-primary-light hover:underline">
+                {t("termsPrivacy")}
+              </Link>
+              .
+            </p>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary flex w-full items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] disabled:opacity-50"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("createAccount")}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            {t("haveAccount")}{" "}
+            <Link
+              href={`/login?redirect=${encodeURIComponent(redirect)}`}
+              className="font-medium text-primary-light hover:underline"
+            >
+              {t("signIn")}
+            </Link>
+          </p>
         </div>
       </div>
     );

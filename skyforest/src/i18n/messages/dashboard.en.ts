@@ -75,6 +75,7 @@ export default {
   },
   mapPanel: {
     prompt: "Tap the map to pick a point",
+    pointSelected: "Point selected",
     emptyHint: "Save this point as a location to run checks",
     savedHint: "Checks are available for this point",
     addLocation: "Add location",

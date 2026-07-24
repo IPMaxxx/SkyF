@@ -1,15 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Fingerprint } from "lucide-react";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { authenticateBiometric, isLockEnabled } from "@/lib/native/biometricLock";
 
-/**
- * Полноэкранный биометрический замок. Показывается поверх приложения, если
- * пользователь включил замок: при запуске и при возврате из фона.
- * В браузере/PWA не рендерится.
- */
 export function BiometricLockGate() {
+  const t = useTranslations("account.biometric");
   const [locked, setLocked] = useState(false);
   const [authing, setAuthing] = useState(false);
   const enabledRef = useRef(false);
@@ -62,38 +60,26 @@ export function BiometricLockGate() {
     <div
       role="dialog"
       aria-modal="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 2147483647,
-        background: "#0f1a12",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 20,
-        color: "#e8f0ea",
-        padding: 24,
-        textAlign: "center",
-      }}
+      className="fixed inset-0 z-[2147483647] flex flex-col items-center justify-center gap-6 bg-[#081009] px-6 text-center text-foreground"
     >
-      <div style={{ fontSize: 20, fontWeight: 600 }}>SkyForest</div>
-      <p style={{ opacity: 0.7, maxWidth: 280 }}>Unlock the app to continue.</p>
+      <div className="absolute inset-0 bg-[radial-gradient(90%_60%_at_50%_40%,#0f2418_0%,#081009_70%)]" aria-hidden="true" />
+      <div className="relative flex h-[120px] w-[120px] items-center justify-center">
+        <div className="absolute inset-0 animate-sf-pulse-dot rounded-full border border-primary/30" aria-hidden="true" />
+        <div className="flex h-[88px] w-[88px] items-center justify-center rounded-[26px] border border-[rgba(120,220,150,0.3)] bg-gradient-to-br from-[#12261a] to-[#0b160f]">
+          <Fingerprint className="h-11 w-11 text-primary-light" strokeWidth={1.5} aria-hidden="true" />
+        </div>
+      </div>
+      <div className="relative max-w-[280px]">
+        <p className="font-heading text-[23px] font-extrabold tracking-tight">{t("lockTitle")}</p>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-[#8aa090]">{t("lockBody")}</p>
+      </div>
       <button
+        type="button"
         onClick={() => void tryUnlock()}
         disabled={authing}
-        style={{
-          background: "#62a863",
-          color: "#0f1a12",
-          border: "none",
-          borderRadius: 12,
-          padding: "12px 24px",
-          fontSize: 16,
-          fontWeight: 600,
-          opacity: authing ? 0.6 : 1,
-        }}
+        className="relative mt-2 rounded-[14px] border border-white/15 bg-white/[0.05] px-6 py-3 text-[14px] font-bold text-foreground/90 disabled:opacity-60"
       >
-        {authing ? "Authenticating…" : "Unlock"}
+        {authing ? t("authenticating") : t("unlock")}
       </button>
     </div>
   );

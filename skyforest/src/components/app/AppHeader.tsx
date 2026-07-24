@@ -216,25 +216,37 @@ export function AppHeader() {
       : t("tokens");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0d1a12]/95 backdrop-blur-md">
-      <div className="flex h-14 items-center justify-between px-4">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0c150f]/95 backdrop-blur-md">
+      <div className="flex h-[52px] items-center justify-between px-4">
         <div className="flex flex-shrink-0 items-center gap-2">
           <Link
             href={isNative ? "/dashboard" : "/"}
-            className="flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+            className="flex flex-shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
             aria-label="SkyForest"
           >
             <Image
               src="/images/logo-square.png"
-              alt="SkyForest"
+              alt=""
               width={40}
               height={40}
-              className="h-8 w-8 rounded-lg"
+              className={cn(
+                "rounded-[9px]",
+                isNative ? "h-8 w-8 border border-[rgba(120,220,150,0.25)]" : "h-8 w-8 rounded-lg",
+              )}
             />
+            {isNative && (
+              <span className="font-heading text-[15px] font-bold tracking-tight text-foreground">
+                SkyForest
+              </span>
+            )}
           </Link>
-          <LocaleSwitcher className="hidden sm:inline-flex" />
-          <UnitSwitcher className="hidden sm:inline-flex" />
-          <ThemeToggle className="hidden sm:inline-flex" />
+          {!isNative && (
+            <>
+              <LocaleSwitcher className="hidden sm:inline-flex" />
+              <UnitSwitcher className="hidden sm:inline-flex" />
+              <ThemeToggle className="hidden sm:inline-flex" />
+            </>
+          )}
         </div>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t("home")}>
@@ -478,52 +490,57 @@ export function AppHeader() {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <LocaleSwitcher />
-          <UnitSwitcher />
-          {/* Баланс токенов скрыт в нативной оболочке (только индикатор; списание работает) */}
           {!isNative && (
-            <Link
-              href="/payment"
-              aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
-              title={balanceTitle}
-              className={cn(
-                "relative flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
-                isCritical
+            <>
+              <LocaleSwitcher />
+              <UnitSwitcher />
+            </>
+          )}
+          <Link
+            href="/payment"
+            aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
+            title={balanceTitle}
+            className={cn(
+              "relative flex min-h-[28px] items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+              isNative
+                ? "token-pill"
+                : isCritical
                   ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
                   : isLow
                     ? "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40"
-                    : "bg-amber-500/15 text-amber-400"
-              )}
+                    : "bg-amber-500/15 text-amber-400",
+            )}
+          >
+            <Coins className="h-3.5 w-3.5" aria-hidden="true" />
+            {balanceLoading ? "..." : balanceValue}
+            {isCritical && !isNative && (
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+            )}
+          </Link>
+          {!isNative && (
+            <Link
+              href="/dashboard/marketplace/chats"
+              aria-label={t("messages")}
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
             >
-              <Coins className="h-4 w-4" aria-hidden="true" />
-              {balanceLoading ? "..." : balanceValue}
-              {isCritical && (
-                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              {unreadChats > 0 && (
+                <span
+                  className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
+                  aria-label={`${unreadChats} ${t("messages").toLowerCase()}`}
+                >
+                  {unreadChats > 9 ? "9+" : unreadChats}
+                </span>
               )}
             </Link>
           )}
-          <Link
-            href="/dashboard/marketplace/chats"
-            aria-label={t("messages")}
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            {unreadChats > 0 && (
-              <span
-                className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
-                aria-label={`${unreadChats} ${t("messages").toLowerCase()}`}
-              >
-                {unreadChats > 9 ? "9+" : unreadChats}
-              </span>
-            )}
-          </Link>
           <button
             type="button"
             onClick={() => setMobileNav(!mobileNav)}
             aria-label={t("menu")}
             aria-expanded={mobileNav}
             aria-controls="app-mobile-nav"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+            className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-white/[0.05] text-foreground/80 transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
           >
             {mobileNav ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
           </button>
@@ -540,12 +557,10 @@ export function AppHeader() {
           <div
             id="app-mobile-nav"
             className={cn(
-              "relative z-40 border-t border-white/10 bg-[#0d1a12] px-4 pt-2 lg:hidden",
-              // В native даём скролл длинному меню и учитываем safe-area снизу;
-              // веб-версия остаётся без изменений (просто pb-4).
+              "relative z-40 border-t border-white/[0.06] bg-[#0c150f] px-3 pt-2 lg:hidden",
               isNative
-                ? "max-h-[calc(100dvh-3.5rem)] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
-                : "pb-4"
+                ? "max-h-[calc(100dvh-3.25rem)] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
+                : "pb-4",
             )}
           >
             <nav className="space-y-1" aria-label={t("home")}>
@@ -564,10 +579,10 @@ export function AppHeader() {
                         onClick={closeAll}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                          "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-semibold transition-colors",
                           active
-                            ? "bg-primary/20 text-primary-light"
-                            : "text-foreground/80 hover:bg-white/5"
+                            ? "bg-primary/15 text-primary-light"
+                            : "text-[#c7d4c9] hover:bg-white/[0.05]",
                         )}
                       >
                         <item.icon className="h-5 w-5" aria-hidden="true" />

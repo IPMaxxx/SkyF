@@ -46,7 +46,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </video>
         )}
         <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f0f]/40 via-transparent to-[#0a1f0f]/60" />
+        <div
+          className={
+            isNative
+              ? "absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(22,40,28,0.45)_0%,rgba(11,18,13,0.92)_55%,rgba(7,10,8,0.96)_100%)]"
+              : "absolute inset-0 bg-gradient-to-b from-[#0a1f0f]/40 via-transparent to-[#0a1f0f]/60"
+          }
+        />
       </div>
 
       <AppHeader />
@@ -56,9 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         id="main-content"
         className={
           isNative
-            ? // 5.5rem: высота таб-бара + выступ увеличенной центральной
-              // кнопки (68px, -mt-9), чтобы контент не прятался под ней.
-              "flex-1 pt-[env(safe-area-inset-top)] pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
+            ? "flex-1 pt-[env(safe-area-inset-top)] pb-[calc(4.75rem+env(safe-area-inset-bottom))]"
             : "flex-1"
         }
         tabIndex={-1}

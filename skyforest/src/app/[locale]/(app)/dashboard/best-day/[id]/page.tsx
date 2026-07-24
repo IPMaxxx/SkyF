@@ -373,7 +373,7 @@ export default function EditBestDayPage() {
           <Star className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold">{t("editTitle")}</h1>
+          <h1 className="font-heading text-lg sm:text-xl font-extrabold tracking-tight">{t("editTitle")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {t("createdAt", { date: new Date(bestDay.created_at).toLocaleDateString(locale) })}
           </p>

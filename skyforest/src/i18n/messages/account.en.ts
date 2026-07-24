@@ -34,6 +34,12 @@ export default {
   deleteConfirmButton: "Delete permanently",
   deleteCancel: "Cancel",
   deleteError: "Failed to delete account. Please try again later.",
+  biometric: {
+    lockTitle: "SkyForest is locked",
+    lockBody: "Unlock with Face ID to keep your spots private.",
+    unlock: "Unlock",
+    authenticating: "Authenticating…",
+  },
   txEmpty: "No transactions yet",
   txShowMore: "Show {n} more",
   txLoadMore: "Load more",

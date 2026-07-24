@@ -14,9 +14,7 @@ interface TokenConfirmModalProps {
   cost: number;
   balance: number | null;
   loading?: boolean;
-  /** Бесплатное действие: показываем «Бесплатно» и не списываем токены. */
   free?: boolean;
-  /** Язык подписей модалки. По умолчанию ru — веб-поведение без изменений. */
   locale?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -59,8 +57,6 @@ export function TokenConfirmModal({
   onConfirm,
   onCancel,
 }: TokenConfirmModalProps) {
-  // На вебе всегда false (в т.ч. при гидрации) — веб-вид модалки не меняется.
-  // В нативной оболочке дополнительно показываем сумму в долларах, как на сайте.
   const native = useIsNative();
   const intlLocale = useLocale();
 
@@ -71,61 +67,96 @@ export function TokenConfirmModal({
   const afterBalance = free ? currentBalance : currentBalance - cost;
   const notEnough = !free && afterBalance < 0;
 
-  // Портал в body: родители модалки (например .glass с backdrop-filter) создают
-  // свой stacking context, из-за чего z-index не спасал от Leaflet-панелей
-  // (z-index до ~1000) — модалка пряталась за картой. Из body z-[9999]
-  // гарантированно перекрывает карту и все контролы.
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div className="relative z-[10000] w-full max-w-sm rounded-2xl bg-[#1a2a1f]/95 border border-white/10 p-6 shadow-2xl backdrop-blur-xl">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15">
-            <Coins className="h-5 w-5 text-amber-400" />
-          </div>
-          <h3 className="text-lg font-bold">{title}</h3>
-        </div>
+  const sheet = native;
 
-        <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+  return createPortal(
+    <div
+      className={cnSheetRoot(sheet)}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="token-confirm-title"
+    >
+      <div className={cnBackdrop(sheet)} onClick={onCancel} aria-hidden="true" />
+      <div className={cnPanel(sheet)}>
+        {!sheet && (
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-token/15">
+              <Coins className="h-5 w-5 text-token" />
+            </div>
+            <h3 id="token-confirm-title" className="text-lg font-bold">
+              {title}
+            </h3>
+          </div>
+        )}
+
+        {sheet && (
+          <>
+            <div className="sheet-handle" aria-hidden="true" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[17px] border border-primary/30 bg-primary/15">
+              <Coins className="h-7 w-7 text-primary-light" />
+            </div>
+            <h3
+              id="token-confirm-title"
+              className="font-heading text-center text-xl font-extrabold tracking-tight"
+            >
+              {title}
+            </h3>
+          </>
+        )}
+
+        <p
+          className={cnDesc(sheet)}
+        >
           {description}
         </p>
 
-        <div className="mb-4 space-y-2 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className={cnCostBlock(sheet)}>
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{L.cost}</span>
             {free ? (
-              <span className="font-semibold text-emerald-400">{L.free}</span>
+              <span className="font-semibold text-primary-light">{L.free}</span>
             ) : (
-              <span className="flex items-center gap-1 font-semibold text-amber-400">
-                -{cost} <Coins className="h-3 w-3" />
+              <span className="flex items-center gap-1.5 font-extrabold text-token">
+                <Coins className="h-3.5 w-3.5" />
+                {cost} {intlLocale === "en" ? "tokens" : "токенов"}
                 {native && (
-                  <span className="ml-1 font-normal text-muted-foreground">
+                  <span className="font-normal text-muted-foreground">
                     {formatTokenUsd(cost)}
                   </span>
                 )}
               </span>
             )}
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{L.currentBalance}</span>
-            <span className="font-semibold">{currentBalance}</span>
-          </div>
-          {!free && (
-            <div className="border-t border-white/10 pt-2">
+          {!sheet && (
+            <>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{L.afterOp}</span>
-                <span
-                  className={`font-bold ${notEnough ? "text-red-400" : "text-emerald-400"}`}
-                >
-                  {afterBalance}
-                </span>
+                <span className="text-muted-foreground">{L.currentBalance}</span>
+                <span className="font-semibold">{currentBalance}</span>
               </div>
-            </div>
+              {!free && (
+                <div className="border-t border-white/10 pt-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{L.afterOp}</span>
+                    <span
+                      className={`font-bold ${notEnough ? "text-red-400" : "text-primary-light"}`}
+                    >
+                      {afterBalance}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
+
+        {sheet && !free && (
+          <div className="mb-4 flex items-center justify-between px-1 text-[11.5px] text-muted-foreground">
+            <span>{L.afterOp}</span>
+            <span className={`font-bold ${notEnough ? "text-red-400" : "text-foreground/90"}`}>
+              {afterBalance} {intlLocale === "en" ? "tokens" : "токенов"}
+            </span>
+          </div>
+        )}
 
         {notEnough && (
           <div className="mb-4 space-y-2">
@@ -138,12 +169,10 @@ export function TokenConfirmModal({
                 </Link>
               </span>
             </div>
-            {/* Пейволл подписки — только в нативном приложении (на вебе
-                подписок ещё нет, Stripe — следующая итерация). */}
             {native && (
               <Link
                 href="/payment#subscriptions"
-                className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20"
+                className="flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm font-medium text-primary-light transition-colors hover:bg-primary/20"
               >
                 <Crown className="h-4 w-4" />
                 {L.subscribe}
@@ -152,28 +181,72 @@ export function TokenConfirmModal({
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-          >
-            {L.cancel}
-          </button>
+        <div className={sheet ? "flex flex-col gap-2" : "flex gap-3"}>
           <button
             onClick={onConfirm}
             disabled={notEnough || loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className={cnConfirmBtn(sheet, notEnough || !!loading)}
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Coins className="h-4 w-4" />
-            )}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {L.confirm}
+          </button>
+          <button
+            onClick={onCancel}
+            className={cnCancelBtn(sheet)}
+          >
+            {L.cancel}
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
+}
+
+function cnSheetRoot(sheet: boolean) {
+  return sheet
+    ? "fixed inset-0 z-[9999] flex items-end justify-center"
+    : "fixed inset-0 z-[9999] flex items-center justify-center p-4";
+}
+
+function cnBackdrop(sheet: boolean) {
+  return sheet
+    ? "fixed inset-0 bg-[rgba(4,8,6,0.7)] backdrop-blur-[3px]"
+    : "fixed inset-0 bg-black/60 backdrop-blur-sm";
+}
+
+function cnPanel(sheet: boolean) {
+  return sheet
+    ? "relative z-[10000] w-full max-w-lg rounded-t-[24px] border border-white/[0.09] border-b-0 bg-[#0e1710] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_30px_60px_-18px_rgba(0,0,0,0.7)]"
+    : "relative z-[10000] w-full max-w-sm rounded-2xl border border-white/10 bg-[#0e1710]/95 p-6 shadow-2xl backdrop-blur-xl";
+}
+
+function cnDesc(sheet: boolean) {
+  return sheet
+    ? "mb-4 text-center text-[13px] leading-relaxed text-[#8aa090]"
+    : "mb-4 text-sm leading-relaxed text-muted-foreground";
+}
+
+function cnCostBlock(sheet: boolean) {
+  return sheet
+    ? "mb-3 flex items-center justify-between rounded-[14px] border border-token/25 bg-token/10 px-4 py-3"
+    : "mb-4 space-y-2 rounded-xl border border-white/10 bg-white/5 p-4";
+}
+
+function cnConfirmBtn(sheet: boolean, disabled: boolean) {
+  return [
+    sheet ? "btn-primary h-[50px] w-full rounded-[14px] text-[15px]" : "",
+    !sheet
+      ? "flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-token to-orange-500 px-4 py-2.5 text-sm font-medium text-[#06120a] transition-opacity hover:opacity-90 disabled:opacity-50"
+      : "",
+    disabled ? "opacity-50" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function cnCancelBtn(sheet: boolean) {
+  return sheet
+    ? "h-[46px] w-full rounded-[14px] bg-transparent text-[14px] font-bold text-[#8aa090] hover:text-foreground/90"
+    : "flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5";
 }

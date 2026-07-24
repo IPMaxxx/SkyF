@@ -1,12 +1,18 @@
 import { routing } from "@/i18n/routing";
-import { Roboto } from "next/font/google";
+import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 
-const roboto = Roboto({
-  variable: "--font-roboto",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin", "cyrillic"],
-  weight: ["300", "400", "500", "700"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
 });
 
 export default async function RootLayout({
@@ -64,7 +70,7 @@ export default async function RootLayout({
           content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
         />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#0f1a12" />
+        <meta name="theme-color" content="#0b120d" />
         <meta name="application-name" content="SkyForest" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -74,7 +80,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" sizes="192x192" href="/favicon.png" />
         <link rel="apple-touch-icon" sizes="256x256" href="/favicon.png" />
       </head>
-      <body className={`${roboto.variable} antialiased`}>{children}</body>
+      <body className={`${manrope.variable} ${bricolage.variable} antialiased`}>{children}</body>
     </html>
   );
 }

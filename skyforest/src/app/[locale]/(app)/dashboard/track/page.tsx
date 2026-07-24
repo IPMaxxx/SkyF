@@ -60,7 +60,7 @@ function MapFallback() {
  */
 function ReturnArrow() {
   return (
-    <svg viewBox="0 0 24 24" className="h-16 w-16 text-emerald-400" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-16 w-16 text-primary-light" aria-hidden="true">
       <path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
     </svg>
   );
@@ -287,7 +287,7 @@ export default function TrackPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t("title")}</h1>
+        <h1 className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">{t("title")}</h1>
         <p className="mt-1 text-sm sm:text-base text-muted-foreground">{t("subtitle")}</p>
       </div>
 
@@ -298,7 +298,7 @@ export default function TrackPage() {
             type="button"
             onClick={handleStart}
             disabled={starting}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-5 text-base sm:text-lg font-semibold text-white shadow-lg shadow-emerald-500/25 transition-colors hover:bg-emerald-600 disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+            className="btn-primary flex w-full items-center justify-center gap-3 rounded-[16px] px-6 py-5 text-base sm:text-lg disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
           >
             {starting ? (
               <>
@@ -314,8 +314,8 @@ export default function TrackPage() {
           </button>
 
           <div className="glass rounded-2xl p-5">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <Compass className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+            <h2 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold">
+              <Compass className="h-4 w-4 text-primary-light" aria-hidden="true" />
               {t("howTitle")}
             </h2>
             <ol className="space-y-2 text-sm leading-relaxed text-muted-foreground">
@@ -334,7 +334,7 @@ export default function TrackPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="glass rounded-2xl p-4">
               <p className="text-xs text-muted-foreground">{t("distanceLabel")}</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-400">
+              <p className="mt-1 font-heading text-2xl font-extrabold text-primary-light">
                 {distanceM != null ? formatDistance(distanceM) : "—"}
               </p>
             </div>
@@ -356,7 +356,7 @@ export default function TrackPage() {
           <div className="glass flex flex-col items-center gap-3 rounded-2xl p-5">
             {arrowDeg != null ? (
               <>
-                <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-emerald-500/30 bg-emerald-500/5">
+                <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/5">
                   <div
                     className="transition-transform duration-300 ease-out"
                     style={{ transform: `rotate(${arrowDeg}deg)` }}

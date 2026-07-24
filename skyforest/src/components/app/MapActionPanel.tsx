@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useTokens } from "@/lib/TokenContext";
 import { useAppData } from "@/lib/AppDataContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { useIsNative } from "@/lib/native/useIsNative";
 import { WeatherChart } from "@/components/app/WeatherChart";
 import { ForestInfoPanel } from "@/components/app/ForestInfoPanel";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
@@ -96,6 +97,7 @@ interface Props {
 export function MapActionPanel({ selection, onLocationCreated }: Props) {
   const t = useTranslations("dashboard.mapPanel");
   const locale = useLocale();
+  const isNative = useIsNative();
   const { spend, balance } = useTokens();
   const { updateLocation } = useAppData();
 
@@ -304,10 +306,15 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
 
   // Тап по кнопке действия открывает подтверждение списания; сам запуск и
   // списание токенов происходят только после подтверждения в модалке.
-  const actions: { key: Exclude<ActiveAction, null>; label: string; icon: typeof CloudSun }[] = [
-    { key: "weather", label: t("weather"), icon: CloudSun },
-    { key: "precip", label: t("rainMap"), icon: CloudRain },
-    { key: "forest", label: t("forest"), icon: Trees },
+  const actions: {
+    key: Exclude<ActiveAction, null>;
+    label: string;
+    icon: typeof CloudSun;
+    cost: number;
+  }[] = [
+    { key: "weather", label: t("weather"), icon: CloudSun, cost: TOKEN_COSTS.weather_check },
+    { key: "precip", label: t("rainMap"), icon: CloudRain, cost: PRECIP_COST },
+    { key: "forest", label: t("forest"), icon: Trees, cost: TOKEN_COSTS.forest_info },
   ];
 
   // Конфиг подтверждения по действию: стоимость и тексты. Forest списывается
@@ -327,8 +334,14 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
     else if (action === "forest") setActive("forest");
   };
 
+  const panelClass = isNative
+    ? "rounded-t-[22px] border border-white/[0.08] border-b-0 bg-[#0d160f] px-[18px] pb-5 pt-4 shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.6)]"
+    : "glass rounded-2xl p-3 sm:p-4";
+
   return (
-    <div className="glass rounded-2xl p-3 sm:p-4">
+    <div className={panelClass}>
+      {isNative && selection && <div className="sheet-handle" aria-hidden="true" />}
+
       {/* Заголовок: имя точки + Детали (saved) / координаты + Добавить (empty) */}
       {!selection ? (
         <p className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
@@ -338,9 +351,9 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
       ) : selection.kind === "empty" ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-sm font-medium">
-              <MapPin className="h-4 w-4 flex-shrink-0 text-blue-400" aria-hidden="true" />
-              {selection.lat.toFixed(5)}, {selection.lng.toFixed(5)}
+            <p className="font-heading text-[15px] font-bold">{t("pointSelected")}</p>
+            <p className="mt-0.5 font-mono text-[11px] text-[#8aa090]">
+              {selection.lat.toFixed(4)}, {selection.lng.toFixed(4)}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">{t("emptyHint")}</p>
           </div>
@@ -348,7 +361,7 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
             type="button"
             onClick={handleAdd}
             disabled={adding}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-emerald-500/15 px-4 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[9px] border border-primary/30 bg-primary/15 px-3 text-sm font-bold text-primary-light transition-colors hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light disabled:opacity-50"
           >
             {adding ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -398,8 +411,6 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
             <button
               key={a.key}
               type="button"
-              // Лес с уже сохранёнными данными показывается из locations.forest_info
-              // без запроса и списания — модалка со стоимостью была бы обманом.
               onClick={() =>
                 a.key === "forest" && savedLocation?.forest_info
                   ? setActive("forest")
@@ -407,16 +418,21 @@ export function MapActionPanel({ selection, onLocationCreated }: Props) {
               }
               disabled={disabled}
               aria-pressed={active === a.key}
-              className={`flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light ${
+              className={`flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[14px] border px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light ${
                 disabled
-                  ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-muted-foreground/40"
+                  ? "cursor-not-allowed border-white/[0.05] bg-white/[0.02] text-muted-foreground/40"
                   : active === a.key
-                    ? "border-primary/40 bg-primary/15 text-primary"
-                    : "border-white/10 bg-white/5 text-foreground/80 hover:bg-white/10"
+                    ? "border-primary/35 bg-primary/15 text-primary-light"
+                    : "border-white/[0.09] bg-white/[0.045] text-foreground/90 hover:bg-white/[0.07]"
               }`}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {a.label}
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              <span className="text-[11px] font-bold leading-tight">{a.label}</span>
+              {!disabled && (
+                <span className="text-[9px] font-bold text-token">
+                  {a.cost} {locale === "en" ? "tokens" : "т."}
+                </span>
+              )}
             </button>
           );
         })}

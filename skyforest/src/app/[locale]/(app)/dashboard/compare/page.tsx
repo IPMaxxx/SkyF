@@ -637,11 +637,11 @@ export default function ComparePage() {
 
       <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
-            <GitCompareArrows className="h-5 w-5" />
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] border border-primary/30 bg-gradient-to-br from-[#12261a] to-[#0b160f] text-primary-light shadow-[0_0_30px_-8px_rgba(95,181,115,0.5)]">
+            <GitCompareArrows className="h-5 w-5" strokeWidth={1.7} />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold">{t("title")}</h1>
+            <h1 className="font-heading text-lg sm:text-xl font-extrabold tracking-tight">{t("title")}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
           <HowItWorksPopover>
@@ -676,7 +676,7 @@ export default function ComparePage() {
               setShowCreate(true);
             }}
             disabled={bestDays.length === 0}
-            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="btn-primary flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-[13px] px-4 py-2.5 text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> {t("newComparison")}
           </button>
@@ -898,9 +898,9 @@ export default function ComparePage() {
       )}
 
       {showCreate && (
-        <div className="mb-6 glass rounded-2xl p-5 border border-violet-500/20">
+        <div className="mb-6 glass rounded-2xl p-5 border border-primary/20">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">{t("newComparisonTitle")}</h3>
+            <h3 className="font-heading text-sm font-bold">{t("newComparisonTitle")}</h3>
             <button type="button" onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -943,7 +943,7 @@ export default function ComparePage() {
             </div>
           </div>
           <button type="button" onClick={handleCreate} disabled={creating || !newBdId || !newLocId}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 py-3 text-sm font-medium text-white disabled:opacity-50">
+            className="btn-primary mt-4 flex w-full items-center justify-center gap-2 rounded-[13px] py-3 text-sm disabled:opacity-50">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t("create")}
           </button>
         </div>
@@ -1060,7 +1060,7 @@ export default function ComparePage() {
                 {/* Actions bar */}
                 <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                   <button type="button" onClick={() => requestCompare(cmp)} disabled={isRunning || !bd?.weather_data}
-                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                    className="btn-primary flex w-full sm:w-auto items-center justify-center gap-2 rounded-[13px] px-5 py-2.5 text-sm transition-opacity hover:opacity-90 disabled:opacity-50">
                     {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     {t("compareNow", { n: TOKEN_COSTS.compare })}
                   </button>
@@ -1140,7 +1140,7 @@ export default function ComparePage() {
                           })}
                         </p>
                       )}
-                      <p className="text-4xl sm:text-5xl font-bold">{Math.round(result.overall)}%</p>
+                      <p className="font-heading text-4xl sm:text-5xl font-extrabold tracking-tight">{Math.round(result.overall)}%</p>
                       <p className="mt-1 text-sm font-medium opacity-90">{matchLabel(result.overall)}</p>
                     </div>
 
@@ -1314,7 +1314,7 @@ export default function ComparePage() {
                   <div
                     className={`rounded-2xl bg-gradient-to-br ${getMatchBgGradient(detail.overall)} p-4 sm:p-6 text-center text-white`}
                   >
-                    <p className="text-4xl sm:text-5xl font-bold">{Math.round(detail.overall)}%</p>
+                    <p className="font-heading text-4xl sm:text-5xl font-extrabold tracking-tight">{Math.round(detail.overall)}%</p>
                     <p className="mt-1 text-sm font-medium opacity-90">{matchLabel(detail.overall)}</p>
                   </div>
 

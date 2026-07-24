@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, ScanSearch } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { useIsNative } from "@/lib/native/useIsNative";
@@ -70,19 +70,14 @@ function LoginForm() {
 
   if (isNative) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#0f1a12] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground">
+      <div className="flex min-h-screen flex-col bg-[#0b120d] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground">
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
           <div className="mb-8 text-center">
-            <Image
-              src="/images/logo-square.png"
-              alt="SkyForest"
-              width={88}
-              height={88}
-              priority
-              className="mx-auto mb-5 h-20 w-20 rounded-2xl shadow-lg shadow-black/30"
-            />
-            <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            <div className="mx-auto mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-[22px] border border-[rgba(55,201,166,0.35)] bg-gradient-to-br from-[#0e2b26] to-[#0a1712] shadow-[0_0_44px_-8px_rgba(55,201,166,0.5)]">
+              <ScanSearch className="h-9 w-9 text-identify" strokeWidth={1.6} aria-hidden="true" />
+            </div>
+            <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("loginTitle")}</h1>
+            <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-[#8aa090]">
               {t("nativeSlogan")}
             </p>
           </div>
@@ -119,7 +114,7 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
                 />
               </div>
             </div>
@@ -143,7 +138,7 @@ function LoginForm() {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-[13px] border border-white/10 bg-white/[0.045] py-3 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-[#6f8577] focus:border-primary-light focus:ring-1 focus:ring-primary-light"
                 />
               </div>
             </div>
@@ -151,7 +146,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+              className="btn-primary flex w-full items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] disabled:opacity-50"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {t("signIn")}

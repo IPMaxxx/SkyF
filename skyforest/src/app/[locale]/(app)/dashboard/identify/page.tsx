@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Camera,
   ImagePlus,
-  Loader2,
   ScanSearch,
   RefreshCw,
   AlertTriangle,
@@ -169,11 +168,11 @@ export default function IdentifyPage() {
       </Link>
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-          <ScanSearch className="h-5 w-5" />
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] border border-identify/35 bg-gradient-to-br from-[#0e2b26] to-[#0a1712] text-identify shadow-[0_0_30px_-8px_rgba(55,201,166,0.5)]">
+          <ScanSearch className="h-5 w-5" strokeWidth={1.6} />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg sm:text-xl font-bold">{t("title")}</h1>
+          <h1 className="font-heading text-lg sm:text-xl font-extrabold tracking-tight">{t("title")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
       </div>
@@ -181,16 +180,22 @@ export default function IdentifyPage() {
       {/* --- Анализ --- */}
       {analyzing && (
         <div className="glass rounded-2xl p-8 text-center">
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt=""
-              className="mx-auto mb-5 h-40 w-40 rounded-2xl object-cover opacity-80"
-            />
-          )}
-          <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-emerald-400" />
-          <p className="text-sm font-medium">{t("analyzing")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("analyzingHint")}</p>
+          <div className="relative mx-auto mb-5 grid h-[120px] w-[120px] place-items-center">
+            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-identify/15 border-t-identify" />
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt=""
+                className="h-[78px] w-[78px] rounded-[22px] object-cover"
+              />
+            ) : (
+              <div className="h-[78px] w-[78px] rounded-[22px] bg-white/5" />
+            )}
+          </div>
+          <p className="font-heading text-lg font-extrabold">{t("analyzing")}</p>
+          <p className="mx-auto mt-2 max-w-[210px] text-xs leading-relaxed text-muted-foreground">
+            {t("analyzingHint")}
+          </p>
         </div>
       )}
 
@@ -424,15 +429,15 @@ export default function IdentifyPage() {
       {!analyzing && !result && (
         <div className="space-y-5">
           {/* Подсказки по съёмке */}
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-400">
+          <div className="rounded-2xl border border-identify/20 bg-identify/[0.06] p-4">
+            <p className="mb-2 flex items-center gap-1.5 font-heading text-sm font-bold text-identify">
               <Camera className="h-4 w-4" />
               {t("tipsTitle")}
             </p>
-            <ul className="space-y-1 text-xs text-muted-foreground">
+            <ul className="space-y-1.5 text-xs text-muted-foreground">
               {tips.map((tip, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="text-emerald-400">•</span>
+                  <span className="text-identify">•</span>
                   <span>{tip}</span>
                 </li>
               ))}
@@ -453,7 +458,7 @@ export default function IdentifyPage() {
               <button
                 type="button"
                 onClick={() => setConfirming(true)}
-                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                className="btn-identify flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[16px] py-3.5 text-[15px] transition-opacity hover:opacity-90"
               >
                 <ScanSearch className="h-5 w-5" />
                 {t("identify")} · {t("costSuffix")}
@@ -479,7 +484,7 @@ export default function IdentifyPage() {
               <button
                 type="button"
                 onClick={handleTakePhoto}
-                className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
+                className="btn-identify flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[16px] py-4 text-base transition-opacity hover:opacity-90"
               >
                 <Camera className="h-5 w-5" />
                 {t("takePhoto")}
@@ -487,7 +492,7 @@ export default function IdentifyPage() {
               <button
                 type="button"
                 onClick={handleGallery}
-                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-border py-3.5 text-sm font-medium transition-colors hover:bg-white/5"
+                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[16px] border border-white/12 bg-white/[0.04] py-3.5 text-sm font-bold transition-colors hover:bg-white/[0.07]"
               >
                 <ImagePlus className="h-4 w-4" />
                 {t("chooseFromGallery")}
