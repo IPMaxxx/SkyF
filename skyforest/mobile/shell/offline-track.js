@@ -474,9 +474,10 @@
       center || [20, 0],
       center ? 15 : 2,
     );
-    // Базовый обзорный слой (всегда виден) + детальный поверх.
+    // Базовый обзорный слой (всегда виден) + детальный поверх. Детальный при
+    // онлайне и приближении подгружает нативные тайлы до z18 (все дорожки).
     new BaseLayer("", { maxNativeZoom: 5, maxZoom: 19 }).addTo(map);
-    new OfflineLayer("", { maxNativeZoom: 16, maxZoom: 19 }).addTo(map);
+    new OfflineLayer("", { maxNativeZoom: 18, maxZoom: 19 }).addTo(map);
   }
 
   function start() {
