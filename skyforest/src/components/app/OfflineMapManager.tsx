@@ -5,8 +5,9 @@
  * и хранит их на устройстве, чтобы карта Track работала без интернета. Показывает
  * оценку размера, прогресс и список уже скачанных участков с удалением.
  *
- * Качество фиксировано «минимальным» (обзорные зумы), а недостающая детализация
- * докешируется автоматически на месте, когда есть сеть (см. OfflineTileLayer).
+ * Пользователь выбирает радиус и глубину детализации (базовая/средняя/максимальная);
+ * недостающие зумы докешируются автоматически на месте, когда есть сеть
+ * (см. OfflineTileLayer), а без сети показывается увеличенный родительский тайл.
  */
 
 import dynamic from "next/dynamic";
@@ -26,17 +27,40 @@ import {
   type DownloadedRegion,
 } from "@/lib/offline/tileStore";
 
-/**
- * «Супер-минимальное» качество: только обзорные зумы. Детали в точке, где вы
- * реально находитесь, докешируются сами при наличии сети. Это держит объём
- * скачивания небольшим даже для радиуса 50 км.
- */
 const DOWNLOAD_MIN_ZOOM = 9;
-const DOWNLOAD_MAX_ZOOM = 13;
 /** Средний вес PNG-тайла (для оценки размера до загрузки). */
 const AVG_TILE_BYTES = 14 * 1024;
 
 const RADIUS_OPTIONS = [10, 25, 50] as const;
+
+/**
+ * Глубина детализации скачивания. Базовая — обзорные зумы (минимальный объём),
+ * средняя — читаемые тропы (z15), максимальная — пешеходная детализация (z16).
+ * Число тайлов растёт в ~4 раза на каждый следующий зум, поэтому честная оценка
+ * размера показывается до старта загрузки.
+ */
+const QUALITY_OPTIONS = [
+  {
+    id: "base",
+    maxZoom: 13,
+    labelKey: "offlineMapQualityBase",
+    hintKey: "offlineMapQualityBaseHint",
+  },
+  {
+    id: "medium",
+    maxZoom: 15,
+    labelKey: "offlineMapQualityMedium",
+    hintKey: "offlineMapQualityMediumHint",
+  },
+  {
+    id: "max",
+    maxZoom: 16,
+    labelKey: "offlineMapQualityMax",
+    hintKey: "offlineMapQualityMaxHint",
+  },
+] as const;
+
+type QualityId = (typeof QUALITY_OPTIONS)[number]["id"];
 
 const RegionPreview = dynamic(
   () => import("@/components/app/RegionPreview").then((m) => m.RegionPreview),
@@ -60,6 +84,7 @@ export function OfflineMapManager({ center }: Props) {
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(center ?? null);
   const [locating, setLocating] = useState(false);
   const [radiusKm, setRadiusKm] = useState<number>(10);
+  const [quality, setQuality] = useState<QualityId>("base");
   const [regions, setRegions] = useState<DownloadedRegion[]>([]);
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -78,11 +103,13 @@ export function OfflineMapManager({ center }: Props) {
     refreshRegions();
   }, [refreshRegions]);
 
+  const qualityOption =
+    QUALITY_OPTIONS.find((q) => q.id === quality) ?? QUALITY_OPTIONS[0];
   const estimateTiles = origin
     ? countTilesForBbox(
         bboxAround(origin.lat, origin.lng, radiusKm),
         DOWNLOAD_MIN_ZOOM,
-        DOWNLOAD_MAX_ZOOM,
+        qualityOption.maxZoom,
       )
     : 0;
   const estimateSize = formatBytes(estimateTiles * AVG_TILE_BYTES);
@@ -108,11 +135,11 @@ export function OfflineMapManager({ center }: Props) {
     try {
       await downloadRegion(
         {
-          name: `${radiusKm} ${t("offlineMapKm")} · ${new Date().toLocaleDateString()}`,
+          name: `${radiusKm} ${t("offlineMapKm")} · ${t(qualityOption.labelKey)} · ${new Date().toLocaleDateString()}`,
           source: OUTDOOR_SOURCE,
           bbox: bboxAround(origin.lat, origin.lng, radiusKm),
           minZoom: DOWNLOAD_MIN_ZOOM,
-          maxZoom: DOWNLOAD_MAX_ZOOM,
+          maxZoom: qualityOption.maxZoom,
           center: origin,
           radiusKm,
         },
@@ -199,10 +226,35 @@ export function OfflineMapManager({ center }: Props) {
             </div>
           </div>
 
+          {/* Глубина детализации */}
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+              {t("offlineMapQuality")}
+            </p>
+            <div className="flex gap-2">
+              {QUALITY_OPTIONS.map((q) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => setQuality(q.id)}
+                  disabled={!!progress}
+                  className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+                    quality === q.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-white/10 text-foreground hover:bg-white/15"
+                  }`}
+                >
+                  {t(q.labelKey)}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground/80">
+              {t(qualityOption.hintKey)}
+            </p>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             {t("offlineMapEstimate", { tiles: estimateTiles, size: estimateSize })}
-            {" · "}
-            {t("offlineMapMinimalQuality")}
           </p>
 
           {progress ? (

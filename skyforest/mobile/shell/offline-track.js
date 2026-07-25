@@ -311,6 +311,56 @@
     return Promise.resolve(remote);
   }
 
+  /* ---------------- Фолбэк ближайшего родительского тайла ---------------- */
+
+  // Насколько уровней вверх ищем родителя: 2^6 = 64-кратное увеличение — предел
+  // читаемости; дальше карта не лучше зашитого basemap.
+  var MAX_FALLBACK_DZ = 6;
+
+  // Ищет вверх по пирамиде ближайший сохранённый офлайн тайл (скачанный регион
+  // или автокеш). Возвращает { url, dz, px, py } либо null.
+  function resolveParentTile(coords) {
+    if (!(Cap && Cap.Plugins && Cap.Plugins.Filesystem)) return Promise.resolve(null);
+    function attempt(dz) {
+      if (dz > MAX_FALLBACK_DZ || coords.z - dz < 0) return Promise.resolve(null);
+      var px = coords.x >> dz, py = coords.y >> dz;
+      var path = TILE_DIR + "/" + SOURCE_ID + "/" + (coords.z - dz) + "/" + px + "/" + py + ".png";
+      return Cap.Plugins.Filesystem.stat({ path: path, directory: "DATA" })
+        .then(function () { return Cap.Plugins.Filesystem.getUri({ path: path, directory: "DATA" }); })
+        .then(function (r) {
+          return { url: Cap.convertFileSrc ? Cap.convertFileSrc(r.uri) : r.uri, dz: dz, px: px, py: py };
+        })
+        .catch(function () { return attempt(dz + 1); });
+    }
+    return attempt(1);
+  }
+
+  // Вырезает из родительского тайла фрагмент, соответствующий coords, и
+  // растягивает его до полного тайла. Так на пешеходных зумах вместо белого
+  // поля виден увеличенный (пусть и менее чёткий) кусок ближайшей карты.
+  function upscaleFromParent(coords, hit) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var size = 256;
+          var scale = Math.pow(2, hit.dz);
+          var frac = img.width / scale;
+          var sx = (coords.x - hit.px * scale) * frac;
+          var sy = (coords.y - hit.py * scale) * frac;
+          var canvas = document.createElement("canvas");
+          canvas.width = size; canvas.height = size;
+          var ctx = canvas.getContext("2d");
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, sx, sy, frac, frac, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/png"));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = reject;
+      img.src = hit.url;
+    });
+  }
+
   /* ------------------------- Геолокация ------------------------- */
 
   function geoPlugin() {
@@ -348,20 +398,43 @@
 
   /* ------------------------- Карта ------------------------- */
 
-  // Детальный слой: скачанные/докешированные тайлы, прозрачно где нет.
+  // Детальный слой: скачанные/докешированные тайлы; если нужного зума нет —
+  // увеличенный фрагмент ближайшего родительского тайла; прозрачно, если нет
+  // вообще ничего (тогда просвечивает basemap).
   var OfflineLayer = L.TileLayer.extend({
     createTile: function (coords, done) {
       var tile = document.createElement("img");
       tile.setAttribute("role", "presentation");
       tile.alt = "";
+
+      var finished = false;
+      var triedParent = false;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        done(null, tile);
+      }
+      function show(src) {
+        tile.onload = finish;
+        tile.onerror = function () {
+          if (src !== BLANK_TILE && !triedParent) tryParent();
+          else finish();
+        };
+        tile.src = src;
+      }
+      function tryParent() {
+        triedParent = true;
+        resolveParentTile(coords)
+          .then(function (hit) {
+            if (!hit) { show(BLANK_TILE); return null; }
+            return upscaleFromParent(coords, hit).then(show);
+          })
+          .catch(function () { show(BLANK_TILE); });
+      }
+
       resolveTile(coords)
-        .then(function (url) {
-          var finalUrl = url || BLANK_TILE;
-          tile.onload = function () { done(null, tile); };
-          tile.onerror = function () { done(null, tile); };
-          tile.src = finalUrl;
-        })
-        .catch(function () { tile.src = BLANK_TILE; done(null, tile); });
+        .then(function (url) { if (url) show(url); else tryParent(); })
+        .catch(tryParent);
       return tile;
     },
   });
