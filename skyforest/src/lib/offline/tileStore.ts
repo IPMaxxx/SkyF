@@ -305,6 +305,108 @@ export async function resolveTileUrl(
 }
 
 /* ------------------------------------------------------------------ */
+/* Фолбэк ближайшего родительского тайла                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Насколько уровней вверх ищем родителя: 2^6 = 64-кратное увеличение — предел
+ * читаемости, дальше фрагмент не информативнее обзорного слоя.
+ */
+const MAX_FALLBACK_DZ = 6;
+
+export interface ParentTileHit {
+  /** Локальный URL родительского тайла (file/blob). */
+  url: string;
+  /** На сколько уровней выше найден родитель. */
+  dz: number;
+  parent: TileCoord;
+  /** blob: URL нужно revoke после использования. */
+  isBlob: boolean;
+}
+
+/**
+ * Ищет вверх по пирамиде ближайший сохранённый офлайн тайл (скачанный регион
+ * или автокеш). Используется, когда тайла нужного зума нет и сети нет, — чтобы
+ * вместо белого поля показать увеличенный фрагмент ближайшей карты.
+ */
+export async function resolveParentTile(
+  source: TileSource,
+  coord: TileCoord,
+): Promise<ParentTileHit | null> {
+  const native = isNativeApp();
+  for (let dz = 1; dz <= MAX_FALLBACK_DZ && coord.z - dz >= 0; dz++) {
+    const parent: TileCoord = { z: coord.z - dz, x: coord.x >> dz, y: coord.y >> dz };
+    if (native) {
+      try {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const path = tilePath(source.id, parent);
+        await Filesystem.stat({ path, directory: Directory.Data });
+        const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
+        return { url: convertFileSrc(uri), dz, parent, isBlob: false };
+      } catch {
+        /* нет — выше по пирамиде */
+      }
+    } else if (typeof caches !== "undefined") {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        const hit = await cache.match(webCacheUrl(source.id, parent));
+        if (hit) {
+          return { url: URL.createObjectURL(await hit.blob()), dz, parent, isBlob: true };
+        }
+      } catch {
+        /* нет доступа к Cache Storage */
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Вырезает из родительского тайла фрагмент, соответствующий coord, и растягивает
+ * его до полного тайла (crop+scale через canvas). Возвращает data: URL.
+ */
+export async function upscaleFromParent(
+  coord: TileCoord,
+  hit: ParentTileHit,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const cleanup = () => {
+      if (hit.isBlob) URL.revokeObjectURL(hit.url);
+    };
+    img.onload = () => {
+      try {
+        const size = 256;
+        const scale = 2 ** hit.dz;
+        const frac = img.width / scale;
+        const sx = (coord.x - hit.parent.x * scale) * frac;
+        const sy = (coord.y - hit.parent.y * scale) * frac;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, sx, sy, frac, frac, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/png"));
+      } catch {
+        resolve(null);
+      } finally {
+        cleanup();
+      }
+    };
+    img.onerror = () => {
+      cleanup();
+      resolve(null);
+    };
+    img.src = hit.url;
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Индекс регионов                                                     */
 /* ------------------------------------------------------------------ */
 
