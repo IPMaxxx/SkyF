@@ -140,19 +140,15 @@
   var T = RU
     ? {
         title: "Возврат к точке входа",
-        offline: "Офлайн",
+        offline: "ОФЛАЙН",
+        offlineNote: "Вы сейчас офлайн — всё работает без интернета.",
         distance: "До входа",
         duration: "В лесу",
-        startPrompt: "Отметьте точку входа в лес — покажем направление и расстояние обратно. Работает без интернета.",
-        start: "Я вошёл в лес",
-        starting: "Определяем местоположение…",
+        startPrompt: "Выберите на карте стартовую точку, к которой нужно выйти: коснитесь карты или используйте свою геолокацию. Стрелка покажет направление.",
+        start: "Way Back",
         finish: "Я вышел из леса",
         geoError: "Не удалось определить местоположение. Проверьте разрешение на геолокацию.",
-        geoErrorPick: "Не удалось определить местоположение. Поставьте точку входа на карте вручную.",
-        pickPoint: "Указать точку входа на карте",
-        pickHint: "Коснитесь карты, чтобы поставить точку входа.",
-        pickStart: "Я вошёл здесь",
-        cancel: "Отмена",
+        locate: "Моё местоположение",
         openApp: "Открыть приложение",
         waiting: "Определяем местоположение…",
         move: "Пройдите несколько шагов — направление определится по GPS.",
@@ -163,19 +159,15 @@
       }
     : {
         title: "Return to entry point",
-        offline: "Offline",
+        offline: "OFFLINE",
+        offlineNote: "You are currently offline — everything works without internet.",
         distance: "To entry point",
         duration: "In forest",
-        startPrompt: "Mark where you entered the forest — we'll show the direction and distance back. Works without internet.",
-        start: "I'm entering the forest",
-        starting: "Getting your location…",
+        startPrompt: "Pick the start point on the map you need to get back to: tap the map or use your location. The arrow will show the direction.",
+        start: "Way Back",
         finish: "I'm out of the forest",
         geoError: "Could not determine your location. Check GPS permission.",
-        geoErrorPick: "Could not determine your location. Place your entry point on the map manually.",
-        pickPoint: "Set entry point on the map",
-        pickHint: "Tap the map to place your entry point.",
-        pickStart: "I entered here",
-        cancel: "Cancel",
+        locate: "My location",
         openApp: "Open the app",
         waiting: "Determining your location…",
         move: "Walk a few steps — we'll detect your direction from GPS.",
@@ -190,15 +182,16 @@
   function applyStrings() {
     $("t-title").textContent = T.title;
     $("t-offline").textContent = T.offline;
+    $("t-offlineNote").textContent = T.offlineNote;
     $("t-distance").textContent = T.distance;
     $("t-duration").textContent = T.duration;
     $("t-startPrompt").textContent = T.startPrompt;
     $("startBtn").textContent = T.start;
-    $("pickBtn").textContent = T.pickPoint;
-    $("pickStartBtn").textContent = T.pickStart;
     $("finishBtn").textContent = T.finish;
     $("openApp").textContent = T.openApp;
     $("enableCompass").textContent = T.enableCompass;
+    $("locateBtn").setAttribute("aria-label", T.locate);
+    $("locateBtn").setAttribute("title", T.locate);
     $("dir").textContent = T.waiting;
     $("hint").textContent = T.move;
     document.documentElement.lang = RU ? "ru" : "en";
@@ -412,7 +405,6 @@
   var samples = [];
   var lastCourseAt = 0;
   var centeredOnUser = false;
-  var pickMode = false;
   var picked = null;
   var pickMarker = null;
 
@@ -427,8 +419,9 @@
     var now = Date.now();
     current = { lat: pos.lat, lng: pos.lng, t: now };
 
-    // Пока похода нет — один раз центрируем карту на пользователе.
+    // Пока похода нет — активируем Way Back и один раз центрируем карту.
     if (!track) {
+      updateStartButton();
       if (map && !centeredOnUser) { centeredOnUser = true; map.setView([pos.lat, pos.lng], 15); }
       return;
     }
@@ -492,12 +485,9 @@
   }
 
   function showActiveMode() {
-    if (pickMode) exitPickMode();
     $("active").classList.remove("hidden");
     $("startPane").classList.add("hidden");
     $("startBtn").classList.add("hidden");
-    $("pickBtn").classList.add("hidden");
-    $("pickStartBtn").classList.add("hidden");
     $("finishBtn").classList.remove("hidden");
     refreshMapSize();
   }
@@ -506,9 +496,14 @@
     $("active").classList.add("hidden");
     $("startPane").classList.remove("hidden");
     $("startBtn").classList.remove("hidden");
-    $("pickBtn").classList.remove("hidden");
     $("finishBtn").classList.add("hidden");
+    updateStartButton();
     refreshMapSize();
+  }
+
+  /** Way Back активна, когда есть точка старта: своя геолокация или тап по карте. */
+  function updateStartButton() {
+    $("startBtn").disabled = !(picked || current);
   }
 
   function drawAnchor() {
@@ -534,53 +529,46 @@
     tickDuration();
   }
 
+  /**
+   * Way Back: стартуем от ручной точки (приоритет — человек поставил её
+   * осознанно, например уже потерявшись) либо от своей геолокации.
+   */
   function startWayback() {
-    $("startBtn").textContent = T.starting;
-    $("startBtn").disabled = true;
-    var reset = function () { $("startBtn").textContent = T.start; $("startBtn").disabled = false; };
-    if (current) { beginTrack(current, true); reset(); return; }
-    getCurrentPositionOnce()
-      .then(function (pos) { beginTrack(pos, true); reset(); })
-      .catch(function () {
-        // GPS не дался — предлагаем поставить точку входа вручную.
-        reset();
-        alert(T.geoErrorPick);
-        if (!pickMode) enterPickMode();
-      });
+    var pos = picked || current;
+    if (!pos) return;
+    var fromGps = !picked;
+    if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+    picked = null;
+    beginTrack(pos, fromGps);
   }
 
-  /* --------------------- Ручная точка входа --------------------- */
+  /* --------------------- Точка старта тапом по карте --------------------- */
 
-  function onMapPick(e) {
+  function onMapClick(e) {
+    if (track) return;
     picked = { lat: e.latlng.lat, lng: e.latlng.lng };
     if (!pickMarker) pickMarker = L.marker([picked.lat, picked.lng], { icon: anchorIcon }).addTo(map);
     else pickMarker.setLatLng([picked.lat, picked.lng]);
-    $("pickStartBtn").classList.remove("hidden");
+    updateStartButton();
   }
 
-  function enterPickMode() {
-    pickMode = true;
-    $("startBtn").classList.add("hidden");
-    $("pickBtn").textContent = T.cancel;
-    $("t-startPrompt").textContent = T.pickHint;
-    map.on("click", onMapPick);
-  }
+  /* --------------------- Центрирование по геолокации --------------------- */
 
-  function exitPickMode() {
-    pickMode = false;
-    picked = null;
-    if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
-    map.off("click", onMapPick);
-    $("pickStartBtn").classList.add("hidden");
-    $("pickBtn").textContent = T.pickPoint;
-    $("t-startPrompt").textContent = T.startPrompt;
-    $("startBtn").classList.remove("hidden");
-  }
-
-  function confirmPickedStart() {
-    if (!picked) return;
-    var pos = picked;
-    beginTrack(pos, false);
+  function locateMe() {
+    if (current) { map.setView([current.lat, current.lng], 16); return; }
+    var btn = $("locateBtn");
+    btn.disabled = true;
+    getCurrentPositionOnce()
+      .then(function (p) {
+        current = { lat: p.lat, lng: p.lng, t: Date.now() };
+        updateStartButton();
+        map.setView([p.lat, p.lng], 16);
+        btn.disabled = false;
+      })
+      .catch(function () {
+        btn.disabled = false;
+        alert(T.geoError);
+      });
   }
 
   function finishWayback() {
@@ -595,6 +583,8 @@
     if (returnLine) { map.removeLayer(returnLine); returnLine = null; }
     if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
     if (anchorMarker) { map.removeLayer(anchorMarker); anchorMarker = null; }
+    if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
+    picked = null;
     showStartMode();
     $("distance").textContent = "—";
     $("duration").textContent = "0:00";
@@ -659,6 +649,8 @@
     // онлайне и приближении подгружает нативные тайлы до z18 (все дорожки).
     new BaseLayer("", { maxNativeZoom: 5, maxZoom: 19 }).addTo(map);
     new OfflineLayer("", { maxNativeZoom: 18, maxZoom: 19 }).addTo(map);
+    // Тап по карте ставит стартовую точку (пока поход не начат).
+    map.on("click", onMapClick);
   }
 
   function start() {
@@ -670,8 +662,7 @@
     $("enableCompass").addEventListener("click", enableCompass);
     $("enableCompass").classList.remove("hidden");
     $("startBtn").addEventListener("click", startWayback);
-    $("pickBtn").addEventListener("click", function () { pickMode ? exitPickMode() : enterPickMode(); });
-    $("pickStartBtn").addEventListener("click", confirmPickedStart);
+    $("locateBtn").addEventListener("click", locateMe);
     $("finishBtn").addEventListener("click", finishWayback);
 
     loadTrack().then(function (loaded) {
