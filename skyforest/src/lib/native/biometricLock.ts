@@ -11,9 +11,18 @@ import { isNativeApp } from "./capacitor";
 
 const PREF_KEY = "biometric_lock_enabled";
 
+/**
+ * Прокси плагина нельзя возвращать из async-функции напрямую: движок проверяет
+ * у результата `.then` (thenable), а прокси Capacitor трактует это как вызов
+ * метода плагина и падает («Preferences.then() is not implemented»). Поэтому
+ * оборачиваем в объект.
+ */
 async function prefs() {
   const { Preferences } = await import("@capacitor/preferences");
-  return Preferences;
+  return {
+    get: (options: { key: string }) => Preferences.get(options),
+    set: (options: { key: string; value: string }) => Preferences.set(options),
+  };
 }
 
 /** Доступна ли биометрия на устройстве. */
