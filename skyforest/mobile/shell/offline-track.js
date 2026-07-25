@@ -17,7 +17,91 @@
 (function () {
   "use strict";
 
-  var Cap = window.Capacitor;
+  /**
+   * Мост для Android-errorPath: при заданном server.url Capacitor не инжектит
+   * native-bridge.js в офлайн-страницу, поэтому window.Capacitor здесь нет.
+   * Но androidBridge (WebMessageListener) на странице есть — реализуем поверх
+   * него минимальный совместимый слой: постим вызовы плагинов в штатном
+   * формате {callbackId, pluginId, methodName, options} и разбираем ответы
+   * {callbackId, success, data, save} из onmessage (см. MessageHandler.java).
+   * На iOS window.Capacitor инжектится штатно — шим не используется.
+   */
+  function createAndroidBridgeShim() {
+    var ab = window.androidBridge;
+    if (!ab || typeof ab.postMessage !== "function") return null;
+
+    var callbacks = {};
+    var counter = Math.floor(Math.random() * 134217728);
+
+    ab.onmessage = function (event) {
+      var result;
+      try { result = JSON.parse(event.data); } catch (e) { return; }
+      var stored = callbacks[result.callbackId];
+      if (!stored) return;
+      if (!result.save) delete callbacks[result.callbackId];
+      if (result.success) stored.onResult(result.data);
+      else stored.onError(result.error || {});
+    };
+
+    function post(id, pluginId, methodName, options) {
+      ab.postMessage(JSON.stringify({
+        callbackId: id,
+        pluginId: pluginId,
+        methodName: methodName,
+        options: options || {},
+      }));
+    }
+
+    function callMethod(pluginId, methodName, options) {
+      return new Promise(function (resolve, reject) {
+        var id = String(++counter);
+        callbacks[id] = { onResult: resolve, onError: reject };
+        try { post(id, pluginId, methodName, options); }
+        catch (e) { delete callbacks[id]; reject(e); }
+      });
+    }
+
+    // Callback-методы (watchPosition): ответы приходят многократно (save=true).
+    function callWatch(pluginId, methodName, options, cb) {
+      var id = String(++counter);
+      callbacks[id] = {
+        onResult: function (data) { cb(data); },
+        onError: function () { cb(null); },
+      };
+      try { post(id, pluginId, methodName, options); } catch (e) {}
+      return id;
+    }
+
+    return {
+      convertFileSrc: function (uri) {
+        return typeof uri === "string" && uri.indexOf("file://") === 0
+          ? window.location.origin + "/_capacitor_file_" + uri.slice(7)
+          : uri;
+      },
+      Plugins: {
+        SplashScreen: {
+          hide: function (o) { return callMethod("SplashScreen", "hide", o); },
+        },
+        Preferences: {
+          get: function (o) { return callMethod("Preferences", "get", o); },
+          set: function (o) { return callMethod("Preferences", "set", o); },
+          remove: function (o) { return callMethod("Preferences", "remove", o); },
+        },
+        Filesystem: {
+          stat: function (o) { return callMethod("Filesystem", "stat", o); },
+          getUri: function (o) { return callMethod("Filesystem", "getUri", o); },
+          writeFile: function (o) { return callMethod("Filesystem", "writeFile", o); },
+        },
+        Geolocation: {
+          getCurrentPosition: function (o) { return callMethod("Geolocation", "getCurrentPosition", o); },
+          requestPermissions: function () { return callMethod("Geolocation", "requestPermissions", {}); },
+          watchPosition: function (o, cb) { return callWatch("Geolocation", "watchPosition", o, cb); },
+        },
+      },
+    };
+  }
+
+  var Cap = window.Capacitor || createAndroidBridgeShim();
 
   // Нативный splash не прячется автоматически (launchAutoHide: false) — на
   // офлайн-странице прячем его сами, иначе он завис бы поверх карты.
