@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import { getCurrentPosition } from "@/lib/native/geolocation";
 import {
   OUTDOOR_SOURCE,
+  SATELLITE_SOURCE,
   bboxAround,
   countTilesForBbox,
   deleteRegion,
@@ -28,8 +29,10 @@ import {
 } from "@/lib/offline/tileStore";
 
 const DOWNLOAD_MIN_ZOOM = 9;
-/** Средний вес PNG-тайла (для оценки размера до загрузки). */
+/** Средний вес тайла троп (PNG) для оценки размера до загрузки. */
 const AVG_TILE_BYTES = 14 * 1024;
+/** Средний вес спутникового тайла (JPEG Esri) — заметно тяжелее. */
+const AVG_SAT_TILE_BYTES = 25 * 1024;
 
 const RADIUS_OPTIONS = [10, 25, 50] as const;
 
@@ -105,14 +108,16 @@ export function OfflineMapManager({ center }: Props) {
 
   const qualityOption =
     QUALITY_OPTIONS.find((q) => q.id === quality) ?? QUALITY_OPTIONS[0];
-  const estimateTiles = origin
+  // Регион качается в двух слоях (тропы + спутник) — тайлов вдвое больше.
+  const tilesPerLayer = origin
     ? countTilesForBbox(
         bboxAround(origin.lat, origin.lng, radiusKm),
         DOWNLOAD_MIN_ZOOM,
         qualityOption.maxZoom,
       )
     : 0;
-  const estimateSize = formatBytes(estimateTiles * AVG_TILE_BYTES);
+  const estimateTiles = tilesPerLayer * 2;
+  const estimateSize = formatBytes(tilesPerLayer * (AVG_TILE_BYTES + AVG_SAT_TILE_BYTES));
 
   const useMyLocation = async () => {
     setLocating(true);
@@ -136,7 +141,7 @@ export function OfflineMapManager({ center }: Props) {
       await downloadRegion(
         {
           name: `${radiusKm} ${t("offlineMapKm")} · ${t(qualityOption.labelKey)} · ${new Date().toLocaleDateString()}`,
-          source: OUTDOOR_SOURCE,
+          sources: [OUTDOOR_SOURCE, SATELLITE_SOURCE],
           bbox: bboxAround(origin.lat, origin.lng, radiusKm),
           minZoom: DOWNLOAD_MIN_ZOOM,
           maxZoom: qualityOption.maxZoom,
@@ -255,6 +260,8 @@ export function OfflineMapManager({ center }: Props) {
 
           <p className="text-xs text-muted-foreground">
             {t("offlineMapEstimate", { tiles: estimateTiles, size: estimateSize })}
+            {" · "}
+            {t("offlineMapIncludesSatellite")}
           </p>
 
           {progress ? (
@@ -320,6 +327,7 @@ export function OfflineMapManager({ center }: Props) {
                       tiles: r.tileCount,
                       size: formatBytes(r.sizeBytes),
                     })}
+                    {` · z${r.minZoom}–${r.maxZoom}`}
                     {" · "}
                     {t("offlineMapOpenOnMap")}
                   </p>

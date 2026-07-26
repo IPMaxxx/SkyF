@@ -14,7 +14,7 @@ import { Maximize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { destinationPoint, haversineM, type TrackPoint } from "@/lib/trackState";
 import { OfflineTileLayer } from "@/components/app/OfflineTileLayer";
-import { OUTDOOR_SOURCE } from "@/lib/offline/tileStore";
+import { OUTDOOR_SOURCE, SATELLITE_SOURCE } from "@/lib/offline/tileStore";
 
 /** Зелёный флажок — точка входа в лес (якорь возврата). */
 const anchorIcon = new L.DivIcon({
@@ -231,10 +231,9 @@ export function TrackMap({ anchor, points, current, course }: Props) {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
         )}
         {baseLayer === "satellite" && (
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={19}
-          />
+          /* Спутник тоже офлайн-осведомлённый: скачанный регион + автокеш,
+             офлайн — увеличенный родительский тайл вместо пустоты. */
+          <OfflineTileLayer source={SATELLITE_SOURCE} maxNativeZoom={18} maxZoom={19} />
         )}
 
         <LayerSwitch

@@ -43,6 +43,8 @@ export interface DownloadedRegion {
   id: string;
   name: string;
   sourceId: string;
+  /** Все источники региона (тропы + спутник). Старые записи — только sourceId. */
+  sourceIds?: string[];
   bbox: BBox;
   minZoom: number;
   maxZoom: number;
@@ -76,6 +78,20 @@ export const OUTDOOR_SOURCE: TileSource = {
   minZoom: 1,
   maxZoom: 22,
   attribution: "© Thunderforest, © OpenStreetMap",
+};
+
+/**
+ * Спутниковый слой (Esri World Imagery) — тот же, что в TrackMap онлайн.
+ * Скачивается вместе с регионом, чтобы «Спутник» работал офлайн.
+ */
+export const SATELLITE_SOURCE: TileSource = {
+  id: "satellite",
+  urlTemplate:
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  subdomains: [""],
+  minZoom: 1,
+  maxZoom: 19,
+  attribution: "© Esri, Maxar, Earthstar Geographics",
 };
 
 const TILE_DIR = "sf-tiles";
@@ -453,14 +469,16 @@ export async function storageSummary(): Promise<{ bytes: number; tiles: number; 
 /* ------------------------------------------------------------------ */
 
 /**
- * Скачивает регион карты и сохраняет его на устройстве. Не бросает на
- * отдельных сетевых ошибках тайлов — считает их в failed. Поддерживает отмену
+ * Скачивает регион карты (по всем переданным источникам: тропы + спутник) и
+ * сохраняет его на устройстве. Не бросает на отдельных сетевых ошибках тайлов —
+ * считает их в failed; неудачные тайлы один раз ретраятся (провайдеры вроде
+ * Thunderforest изредка отдают 429 при массовой загрузке). Поддерживает отмену
  * через AbortSignal.
  */
 export async function downloadRegion(
   opts: {
     name: string;
-    source: TileSource;
+    sources: TileSource[];
     bbox: BBox;
     minZoom: number;
     maxZoom: number;
@@ -470,44 +488,67 @@ export async function downloadRegion(
   onProgress?: (p: DownloadProgress) => void,
   signal?: AbortSignal,
 ): Promise<DownloadedRegion> {
-  const tiles = tilesForBbox(opts.bbox, opts.minZoom, opts.maxZoom);
+  const coords = tilesForBbox(opts.bbox, opts.minZoom, opts.maxZoom);
+  const jobs: { source: TileSource; coord: TileCoord }[] = [];
+  for (const source of opts.sources) {
+    for (const coord of coords) jobs.push({ source, coord });
+  }
   const native = isNativeApp();
   let done = 0;
   let failed = 0;
   let bytes = 0;
-  let idx = 0;
 
-  const worker = async () => {
-    while (idx < tiles.length) {
-      if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-      const coord = tiles[idx++];
-      try {
-        const resp = await fetch(buildRemoteUrl(opts.source, coord));
-        if (!resp.ok) throw new Error(`http ${resp.status}`);
-        const blob = await resp.blob();
-        bytes += blob.size;
-        if (native) await writeTileNative(opts.source.id, coord, await blobToBase64(blob));
-        else await writeTileWeb(opts.source.id, coord, blob);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") throw err;
-        failed++;
-      }
-      done++;
-      onProgress?.({ done, total: tiles.length, failed, bytes });
-    }
+  const fetchOne = async (job: { source: TileSource; coord: TileCoord }) => {
+    const resp = await fetch(buildRemoteUrl(job.source, job.coord));
+    if (!resp.ok) throw new Error(`http ${resp.status}`);
+    const blob = await resp.blob();
+    bytes += blob.size;
+    if (native) await writeTileNative(job.source.id, job.coord, await blobToBase64(blob));
+    else await writeTileWeb(job.source.id, job.coord, blob);
   };
 
-  const concurrency = Math.min(6, tiles.length) || 1;
-  await Promise.all(Array.from({ length: concurrency }, worker));
+  const runPass = async (queue: { source: TileSource; coord: TileCoord }[], countFailed: boolean) => {
+    const retry: { source: TileSource; coord: TileCoord }[] = [];
+    let idx = 0;
+    const worker = async () => {
+      while (idx < queue.length) {
+        if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+        const job = queue[idx++];
+        try {
+          await fetchOne(job);
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") throw err;
+          if (countFailed) failed++;
+          else {
+            retry.push(job);
+            continue; // done/прогресс засчитаем в ретрай-проходе
+          }
+        }
+        done++;
+        onProgress?.({ done, total: jobs.length, failed, bytes });
+      }
+    };
+    const concurrency = Math.min(6, queue.length) || 1;
+    await Promise.all(Array.from({ length: concurrency }, worker));
+    return retry;
+  };
+
+  const retryQueue = await runPass(jobs, false);
+  if (retryQueue.length > 0) {
+    // Небольшая пауза перед ретраем — даём остыть rate-limit провайдера.
+    await new Promise((r) => setTimeout(r, 1500));
+    await runPass(retryQueue, true);
+  }
 
   const region: DownloadedRegion = {
     id: randomId(),
     name: opts.name,
-    sourceId: opts.source.id,
+    sourceId: opts.sources[0].id,
+    sourceIds: opts.sources.map((s) => s.id),
     bbox: opts.bbox,
     minZoom: opts.minZoom,
     maxZoom: opts.maxZoom,
-    tileCount: tiles.length - failed,
+    tileCount: jobs.length - failed,
     sizeBytes: bytes,
     createdAt: Date.now(),
     center: opts.center,
@@ -525,14 +566,17 @@ export async function deleteRegion(id: string): Promise<void> {
   const remaining = regions.filter((r) => r.id !== id);
 
   if (target) {
-    const keep = new Set<string>();
-    for (const r of remaining) {
-      if (r.sourceId !== target.sourceId) continue;
-      for (const c of tilesForBbox(r.bbox, r.minZoom, r.maxZoom)) keep.add(tileKey(c));
-    }
-    for (const coord of tilesForBbox(target.bbox, target.minZoom, target.maxZoom)) {
-      if (keep.has(tileKey(coord))) continue;
-      await deleteTile(target.sourceId, coord);
+    const targetSources = target.sourceIds ?? [target.sourceId];
+    for (const sourceId of targetSources) {
+      const keep = new Set<string>();
+      for (const r of remaining) {
+        if (!(r.sourceIds ?? [r.sourceId]).includes(sourceId)) continue;
+        for (const c of tilesForBbox(r.bbox, r.minZoom, r.maxZoom)) keep.add(tileKey(c));
+      }
+      for (const coord of tilesForBbox(target.bbox, target.minZoom, target.maxZoom)) {
+        if (keep.has(tileKey(coord))) continue;
+        await deleteTile(sourceId, coord);
+      }
     }
   }
   await writeRegions(remaining);

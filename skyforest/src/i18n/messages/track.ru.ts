@@ -71,6 +71,7 @@ export default {
   offlineMapQualityBaseHint: "Обзорная карта, минимальный объём. Детали докешируются сами при сети.",
   offlineMapQualityMediumHint: "Тропы читаемы при приближении. Заметно больший объём загрузки.",
   offlineMapQualityMaxHint: "Полная пешеходная детализация офлайн. Объём может быть очень большим.",
+  offlineMapIncludesSatellite: "слои «тропы» + «спутник»",
   offlineMapOpenOnMap: "открыть на карте",
   offlineMapClosePreview: "Закрыть",
   offlineMapEstimate: "≈ {tiles} тайлов · {size}",
