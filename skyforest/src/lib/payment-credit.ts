@@ -31,12 +31,18 @@ export interface CreditPurchaseParams {
   paidMinorUnits: number | null;
   currency: string;
   trackingId: string;
+  /**
+   * Не сверять сумму с брендовым прайсом. Для IAP сумму уже подтвердил стор,
+   * а записывается каталожная цена USD, которая не обязана совпадать с
+   * веб-прайсом текущего бренда (например, BYN на skyforest.by).
+   */
+  skipAmountCheck?: boolean;
 }
 
 export async function creditTokenPurchase(
   params: CreditPurchaseParams
 ): Promise<{ status: string; result?: unknown; referral_bonus?: unknown }> {
-  const { userId, tokens, paymentId, paidMinorUnits, currency, trackingId } =
+  const { userId, tokens, paymentId, paidMinorUnits, currency, trackingId, skipAmountCheck } =
     params;
 
   const supabase = getSupabaseAdmin();
@@ -56,6 +62,7 @@ export async function creditTokenPurchase(
 
   const expectedMinor = getExpectedPriceMinorUnits(tokens);
   if (
+    !skipAmountCheck &&
     typeof paidMinorUnits === "number" &&
     paidMinorUnits < expectedMinor
   ) {
