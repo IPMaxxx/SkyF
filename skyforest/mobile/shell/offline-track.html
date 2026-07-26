@@ -124,6 +124,31 @@
         cursor: pointer;
       }
       #locateBtn:disabled { opacity: 0.6; }
+      #layerSwitch {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        z-index: 1000;
+        display: flex;
+        padding: 2px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      }
+      #layerSwitch button {
+        border: none;
+        background: transparent;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 7px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      #layerSwitch button[aria-pressed="true"] {
+        background: var(--primary);
+        color: #0b130d;
+      }
       .start-pane { padding: 0 16px 12px; }
       .start-pane p { color: var(--muted); font-size: 13px; margin: 0; }
       .actions {
@@ -205,6 +230,10 @@
       <!-- Карта видна всегда; тап по ней ставит стартовую точку -->
       <div id="mapWrap">
         <div id="map"></div>
+        <div id="layerSwitch">
+          <button id="layerTrails" aria-pressed="true">Тропы</button>
+          <button id="layerSatellite" aria-pressed="false">Спутник</button>
+        </div>
         <button id="locateBtn" aria-label="Моё местоположение" title="Моё местоположение">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="7" />

@@ -116,10 +116,20 @@
 
   var ACTIVE_TRACK_KEY = "sf_active_track";
   var TILE_DIR = "sf-tiles";
-  var SOURCE_ID = "outdoor";
-  var OUTDOOR_URL =
-    "https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=1faca5b7ed0d462b8630f4c3ec1acbcb";
-  var SUBS = ["a", "b", "c"];
+  // Источники тайлов — те же id и шаблоны, что в src/lib/offline/tileStore.ts:
+  // регион скачивается сайтом в оба слоя (тропы + спутник).
+  var SOURCES = {
+    outdoor: {
+      id: "outdoor",
+      url: "https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=1faca5b7ed0d462b8630f4c3ec1acbcb",
+      subs: ["a", "b", "c"],
+    },
+    satellite: {
+      id: "satellite",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      subs: [""],
+    },
+  };
   var APP_URL = "https://skyforest.ai/dashboard/track";
 
   var MIN_POINT_DISTANCE_M = 20;
@@ -149,6 +159,8 @@
         finish: "Я вышел из леса",
         geoError: "Не удалось определить местоположение. Проверьте разрешение на геолокацию.",
         locate: "Моё местоположение",
+        layerTrails: "Тропы",
+        layerSatellite: "Спутник",
         openApp: "Открыть приложение",
         waiting: "Определяем местоположение…",
         move: "Пройдите несколько шагов — направление определится по GPS.",
@@ -168,6 +180,8 @@
         finish: "I'm out of the forest",
         geoError: "Could not determine your location. Check GPS permission.",
         locate: "My location",
+        layerTrails: "Trails",
+        layerSatellite: "Satellite",
         openApp: "Open the app",
         waiting: "Determining your location…",
         move: "Walk a few steps — we'll detect your direction from GPS.",
@@ -192,6 +206,8 @@
     $("enableCompass").textContent = T.enableCompass;
     $("locateBtn").setAttribute("aria-label", T.locate);
     $("locateBtn").setAttribute("title", T.locate);
+    $("layerTrails").textContent = T.layerTrails;
+    $("layerSatellite").textContent = T.layerSatellite;
     $("dir").textContent = T.waiting;
     $("hint").textContent = T.move;
     document.documentElement.lang = RU ? "ru" : "en";
@@ -270,9 +286,9 @@
     try { localStorage.removeItem(ACTIVE_TRACK_KEY); } catch (e) {}
   }
 
-  function remoteUrl(coords) {
-    var s = SUBS[(coords.x + coords.y) % SUBS.length];
-    return OUTDOOR_URL.replace("{s}", s).replace("{z}", coords.z).replace("{x}", coords.x).replace("{y}", coords.y);
+  function remoteUrl(source, coords) {
+    var s = source.subs[(coords.x + coords.y) % source.subs.length];
+    return source.url.replace("{s}", s).replace("{z}", coords.z).replace("{x}", coords.x).replace("{y}", coords.y);
   }
 
   function base64FromBlob(blob) {
@@ -299,9 +315,9 @@
   }
 
   // Детальный слой: локальный тайл → (онлайн) докешируем из сети → иначе пусто.
-  function resolveTile(coords) {
-    var path = TILE_DIR + "/" + SOURCE_ID + "/" + coords.z + "/" + coords.x + "/" + coords.y + ".png";
-    var remote = navigator.onLine ? remoteUrl(coords) : null;
+  function resolveTile(source, coords) {
+    var path = TILE_DIR + "/" + source.id + "/" + coords.z + "/" + coords.x + "/" + coords.y + ".png";
+    var remote = navigator.onLine ? remoteUrl(source, coords) : null;
     if (Cap && Cap.Plugins && Cap.Plugins.Filesystem) {
       return Cap.Plugins.Filesystem.stat({ path: path, directory: "DATA" })
         .then(function () { return Cap.Plugins.Filesystem.getUri({ path: path, directory: "DATA" }); })
@@ -319,12 +335,12 @@
 
   // Ищет вверх по пирамиде ближайший сохранённый офлайн тайл (скачанный регион
   // или автокеш). Возвращает { url, dz, px, py } либо null.
-  function resolveParentTile(coords) {
+  function resolveParentTile(source, coords) {
     if (!(Cap && Cap.Plugins && Cap.Plugins.Filesystem)) return Promise.resolve(null);
     function attempt(dz) {
       if (dz > MAX_FALLBACK_DZ || coords.z - dz < 0) return Promise.resolve(null);
       var px = coords.x >> dz, py = coords.y >> dz;
-      var path = TILE_DIR + "/" + SOURCE_ID + "/" + (coords.z - dz) + "/" + px + "/" + py + ".png";
+      var path = TILE_DIR + "/" + source.id + "/" + (coords.z - dz) + "/" + px + "/" + py + ".png";
       return Cap.Plugins.Filesystem.stat({ path: path, directory: "DATA" })
         .then(function () { return Cap.Plugins.Filesystem.getUri({ path: path, directory: "DATA" }); })
         .then(function (r) {
@@ -400,9 +416,11 @@
 
   // Детальный слой: скачанные/докешированные тайлы; если нужного зума нет —
   // увеличенный фрагмент ближайшего родительского тайла; прозрачно, если нет
-  // вообще ничего (тогда просвечивает basemap).
+  // вообще ничего (тогда просвечивает basemap). Источник (тропы/спутник) —
+  // в options.sfSource.
   var OfflineLayer = L.TileLayer.extend({
     createTile: function (coords, done) {
+      var source = this.options.sfSource || SOURCES.outdoor;
       var tile = document.createElement("img");
       tile.setAttribute("role", "presentation");
       tile.alt = "";
@@ -424,7 +442,7 @@
       }
       function tryParent() {
         triedParent = true;
-        resolveParentTile(coords)
+        resolveParentTile(source, coords)
           .then(function (hit) {
             if (!hit) { show(BLANK_TILE); return null; }
             return upscaleFromParent(coords, hit).then(show);
@@ -432,7 +450,7 @@
           .catch(function () { show(BLANK_TILE); });
       }
 
-      resolveTile(coords)
+      resolveTile(source, coords)
         .then(function (url) { if (url) show(url); else tryParent(); })
         .catch(tryParent);
       return tile;
@@ -721,9 +739,28 @@
     // Базовый обзорный слой (всегда виден) + детальный поверх. Детальный при
     // онлайне и приближении подгружает нативные тайлы до z18 (все дорожки).
     new BaseLayer("", { maxNativeZoom: 5, maxZoom: 19 }).addTo(map);
-    new OfflineLayer("", { maxNativeZoom: 18, maxZoom: 19 }).addTo(map);
+    detailLayers.outdoor = new OfflineLayer("", {
+      maxNativeZoom: 18, maxZoom: 19, sfSource: SOURCES.outdoor,
+    }).addTo(map);
+    detailLayers.satellite = new OfflineLayer("", {
+      maxNativeZoom: 18, maxZoom: 19, sfSource: SOURCES.satellite,
+    });
     // Тап по карте ставит стартовую точку (пока поход не начат).
     map.on("click", onMapClick);
+  }
+
+  /* --------------- Переключатель слоя: Тропы / Спутник --------------- */
+
+  var detailLayers = { outdoor: null, satellite: null };
+  var activeLayerId = "outdoor";
+
+  function setLayer(id) {
+    if (!map || !detailLayers[id] || id === activeLayerId) return;
+    map.removeLayer(detailLayers[activeLayerId]);
+    map.addLayer(detailLayers[id]);
+    activeLayerId = id;
+    $("layerTrails").setAttribute("aria-pressed", String(id === "outdoor"));
+    $("layerSatellite").setAttribute("aria-pressed", String(id === "satellite"));
   }
 
   function start() {
@@ -736,6 +773,8 @@
     $("enableCompass").classList.remove("hidden");
     $("startBtn").addEventListener("click", startWayback);
     $("locateBtn").addEventListener("click", locateMe);
+    $("layerTrails").addEventListener("click", function () { setLayer("outdoor"); });
+    $("layerSatellite").addEventListener("click", function () { setLayer("satellite"); });
     $("finishBtn").addEventListener("click", finishWayback);
 
     loadTrack().then(function (loaded) {

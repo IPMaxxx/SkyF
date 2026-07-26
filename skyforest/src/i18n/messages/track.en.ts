@@ -71,6 +71,7 @@ export default {
   offlineMapQualityBaseHint: "Overview map, smallest download. Fine details auto-cache when online.",
   offlineMapQualityMediumHint: "Trails readable when zoomed in. A noticeably larger download.",
   offlineMapQualityMaxHint: "Full walking detail offline. Can be a very large download.",
+  offlineMapIncludesSatellite: "trails + satellite layers",
   offlineMapOpenOnMap: "open on map",
   offlineMapClosePreview: "Close",
   offlineMapEstimate: "≈ {tiles} tiles · {size}",
