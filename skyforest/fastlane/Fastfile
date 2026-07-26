@@ -227,7 +227,11 @@ platform :ios do
       .find { |b| b.identifier == options[:app_id] }
     unless bundle
       UI.message("Регистрируем bundle id #{options[:app_id]} в Developer Portal")
-      Spaceship::ConnectAPI::BundleId.create(name: options[:name], identifier: options[:app_id])
+      Spaceship::ConnectAPI::BundleId.create(
+        name: options[:name],
+        identifier: options[:app_id],
+        platform: "IOS",
+      )
     end
 
     app = Spaceship::ConnectAPI::App.create(
