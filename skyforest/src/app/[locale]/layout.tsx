@@ -13,7 +13,9 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { BRAND } from "@/lib/brand";
+import { flavorFromHost, flavorConfig } from "@/lib/appFlavor";
 
 type Props = {
   children: React.ReactNode;
@@ -30,6 +32,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = BRAND.url;
   const ogImage = `${base}/images/og-cover.png`;
   const keywords = t.raw("keywords") as string[];
+
+  // На поддоменах флейворов — свои название и иконка.
+  const flavor = flavorConfig(flavorFromHost((await headers()).get("host")));
+  if (flavor.id !== "skyforest") {
+    return {
+      title: { default: flavor.name, template: `%s | ${flavor.name}` },
+      description: t("description"),
+      icons: { icon: flavor.faviconPath },
+      robots: { index: false }, // посадочные поддоменов не индексируем
+    };
+  }
 
   return {
     title: {

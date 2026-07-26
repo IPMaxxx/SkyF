@@ -1,0 +1,30 @@
+{
+  "name": "Mushroom Checker — определение грибов по фото",
+  "short_name": "Mushroom Checker",
+  "description": "ИИ-распознавание грибов по фотографии с процентами уверенности и предупреждением об опасных двойниках.",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#0f1a12",
+  "theme_color": "#0f1a12",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/checker-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/checker-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

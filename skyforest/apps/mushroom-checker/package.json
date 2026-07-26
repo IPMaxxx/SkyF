@@ -1,0 +1,26 @@
+{
+  "name": "mushroom-checker-shell",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Нативная Capacitor-оболочка Mushroom Checker (WebView -> checker.skyforest.ai)",
+  "scripts": {
+    "sync": "npx cap sync",
+    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#0f1a12' --iconBackgroundColorDark '#0f1a12' --splashBackgroundColor '#0f1a12' --splashBackgroundColorDark '#0f1a12'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/camera": "^8.2.0",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.4.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
+    "cordova-plugin-purchase": "^13.17.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
+}
