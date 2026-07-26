@@ -61,6 +61,16 @@ next-env.d.ts
 /android/build
 /android/app/build
 
+# флейворы (apps/*): зависимости, сборки и генерируемый www (wayback —
+# копия mobile/shell из sync-shell.mjs; checker www версионируем)
+/apps/*/node_modules
+/apps/*/android/.gradle
+/apps/*/android/build
+/apps/*/android/app/build
+/apps/*/ios/App/Pods
+/apps/*/ios/App/build
+/apps/wayback/www
+
 # android signing secrets (never commit)
 /fastlane/skyforest-upload.jks
 /android/keystore.properties

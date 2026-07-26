@@ -1,6 +1,7 @@
 import { routing } from "@/i18n/routing";
+import { flavorFromHost, flavorConfig } from "@/lib/appFlavor";
 import { Bricolage_Grotesque, Manrope } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -26,6 +27,10 @@ export default async function RootLayout({
     cookieLocale === "en" || cookieLocale === "ru"
       ? cookieLocale
       : routing.defaultLocale;
+
+  // Флейвор по хосту: на checker./wayback. — свой манифест, иконки и имя PWA.
+  const headerStore = await headers();
+  const flavor = flavorConfig(flavorFromHost(headerStore.get("host")));
 
   return (
     <html lang={lang === "en" ? "en" : "ru"} suppressHydrationWarning>
@@ -69,16 +74,16 @@ export default async function RootLayout({
           name="ai-content-declaration"
           content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
         />
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href={flavor.manifestPath} />
         <meta name="theme-color" content="#0b120d" />
-        <meta name="application-name" content="SkyForest" />
+        <meta name="application-name" content={flavor.name} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="SkyForest" />
-        <link rel="apple-touch-icon" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="192x192" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="256x256" href="/favicon.png" />
+        <meta name="apple-mobile-web-app-title" content={flavor.name} />
+        <link rel="apple-touch-icon" href={flavor.faviconPath} />
+        <link rel="apple-touch-icon" sizes="192x192" href={flavor.faviconPath} />
+        <link rel="apple-touch-icon" sizes="256x256" href={flavor.faviconPath} />
       </head>
       <body className={`${manrope.variable} ${bricolage.variable} antialiased`}>{children}</body>
     </html>

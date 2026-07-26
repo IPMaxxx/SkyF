@@ -104,6 +104,11 @@ export function UpdatePrompt() {
 
   useEffect(() => {
     if (!isNative) return;
+    // Флейворы (Checker/WayBack) — другие приложения в сторах со своими
+    // версиями; их URL/версий здесь нет, подсказку не показываем.
+    if (typeof window !== "undefined" && /^(checker|wayback)\./i.test(window.location.hostname)) {
+      return;
+    }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 

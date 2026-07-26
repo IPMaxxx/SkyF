@@ -30,6 +30,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
+import { FLAVORS } from "@/lib/appFlavor";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { UnitSwitcher } from "@/components/UnitSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -49,6 +51,11 @@ export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const isNative = useIsNative();
+  // Флейвор (Mushroom Checker / WayBack на поддоменах): урезанная навигация.
+  const flavor = useAppFlavor();
+  const flavorCfg = FLAVORS[flavor];
+  const isFlavored = flavor !== "skyforest";
+  const showTokens = flavorCfg.showTokens;
   const t = useTranslations("appHeader");
   const tHeader = useTranslations("header");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -113,6 +120,14 @@ export function AppHeader() {
     [t]
   );
 
+  const visibleNav = useMemo(
+    () =>
+      flavorCfg.navHrefs
+        ? NAV.filter((item) => flavorCfg.navHrefs!.includes(item.href))
+        : NAV,
+    [NAV, flavorCfg]
+  );
+
   const closeAll = useCallback(() => {
     setMobileNav(false);
     setMenuOpen(false);
@@ -146,10 +161,12 @@ export function AppHeader() {
       if (data?.account_type === "admin") setIsAdmin(true);
     };
     check();
+    // В урезанных флейворах маркетплейса нет — чаты не опрашиваем.
+    if (isFlavored) return;
     fetchUnread();
     unreadTimer.current = setInterval(fetchUnread, 60_000);
     return () => clearInterval(unreadTimer.current);
-  }, [fetchUnread]);
+  }, [fetchUnread, isFlavored]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -220,12 +237,12 @@ export function AppHeader() {
       <div className="flex h-[52px] items-center justify-between px-4">
         <div className="flex flex-shrink-0 items-center gap-2">
           <Link
-            href={isNative ? "/dashboard" : "/"}
+            href={isNative ? flavorCfg.homePath : "/"}
             className="flex flex-shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
-            aria-label="SkyForest"
+            aria-label={flavorCfg.name}
           >
             <Image
-              src="/images/logo-square.png"
+              src={isFlavored ? flavorCfg.faviconPath : "/images/logo-square.png"}
               alt=""
               width={40}
               height={40}
@@ -234,9 +251,9 @@ export function AppHeader() {
                 isNative ? "h-8 w-8 border border-[rgba(120,220,150,0.25)]" : "h-8 w-8 rounded-lg",
               )}
             />
-            {isNative && (
+            {(isNative || isFlavored) && (
               <span className="font-heading text-[15px] font-bold tracking-tight text-foreground">
-                SkyForest
+                {flavorCfg.name}
               </span>
             )}
           </Link>
@@ -250,10 +267,10 @@ export function AppHeader() {
         </div>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label={t("home")}>
-          {NAV.map((item, index) => {
+          {visibleNav.map((item) => {
             const active = isActive(item);
 
-            if (index === 0) {
+            if (item.href === "/dashboard") {
               return (
                 <div key={item.href} className="relative" ref={homeMenuRef}>
                   <button
@@ -345,7 +362,7 @@ export function AppHeader() {
 
         <div className="hidden items-center gap-2 lg:flex">
           {/* Баланс токенов скрыт в нативной оболочке (только индикатор; списание работает) */}
-          {!isNative && (
+          {!isNative && showTokens && (
             <Link
               href="/payment"
               title={balanceTitle}
@@ -373,6 +390,7 @@ export function AppHeader() {
             </Link>
           )}
 
+          {!isFlavored && (
           <Link
             href="/dashboard/marketplace/chats"
             aria-label={t("messages")}
@@ -389,6 +407,7 @@ export function AppHeader() {
               </span>
             )}
           </Link>
+          )}
 
           <div className="relative" ref={menuRef}>
             <button
@@ -433,36 +452,42 @@ export function AppHeader() {
                     <User className="h-4 w-4" aria-hidden="true" />
                     {t("account")}
                   </Link>
-                  <Link
-                    href="/dashboard#locations"
-                    role="menuitem"
-                    onClick={closeAll}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
-                  >
-                    <MapPin className="h-4 w-4" aria-hidden="true" />
-                    {t("myLocations")}
-                  </Link>
-                  <Link
-                    href="/dashboard#best-days"
-                    role="menuitem"
-                    onClick={closeAll}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
-                  >
-                    <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-                    {t("myBestDays")}
-                  </Link>
-                  <Link
-                    href="/payment"
-                    role="menuitem"
-                    onClick={closeAll}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
-                  >
-                    <Coins className="h-4 w-4" aria-hidden="true" />
-                    {t("tokens")}
-                  </Link>
+                  {!isFlavored && (
+                    <>
+                      <Link
+                        href="/dashboard#locations"
+                        role="menuitem"
+                        onClick={closeAll}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                      >
+                        <MapPin className="h-4 w-4" aria-hidden="true" />
+                        {t("myLocations")}
+                      </Link>
+                      <Link
+                        href="/dashboard#best-days"
+                        role="menuitem"
+                        onClick={closeAll}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                      >
+                        <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+                        {t("myBestDays")}
+                      </Link>
+                    </>
+                  )}
+                  {showTokens && (
+                    <Link
+                      href="/payment"
+                      role="menuitem"
+                      onClick={closeAll}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                    >
+                      <Coins className="h-4 w-4" aria-hidden="true" />
+                      {t("tokens")}
+                    </Link>
+                  )}
                   {/* Реферальная программа скрыта в нативе: токены за
                       промокоды — механизм вне IAP (Apple 3.1.1). */}
-                  {!isNative && (
+                  {!isNative && !isFlavored && (
                     <Link
                       href="/dashboard/referral"
                       role="menuitem"
@@ -496,28 +521,30 @@ export function AppHeader() {
               <UnitSwitcher />
             </>
           )}
-          <Link
-            href="/payment"
-            aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
-            title={balanceTitle}
-            className={cn(
-              "relative flex min-h-[28px] items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
-              isNative
-                ? "token-pill"
-                : isCritical
-                  ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
-                  : isLow
-                    ? "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40"
-                    : "bg-amber-500/15 text-amber-400",
-            )}
-          >
-            <Coins className="h-3.5 w-3.5" aria-hidden="true" />
-            {balanceLoading ? "..." : balanceValue}
-            {isCritical && !isNative && (
-              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-            )}
-          </Link>
-          {!isNative && (
+          {showTokens && (
+            <Link
+              href="/payment"
+              aria-label={`${t("tokens")}: ${balanceLoading ? "..." : balanceValue}`}
+              title={balanceTitle}
+              className={cn(
+                "relative flex min-h-[28px] items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light",
+                isNative
+                  ? "token-pill"
+                  : isCritical
+                    ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
+                    : isLow
+                      ? "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40"
+                      : "bg-amber-500/15 text-amber-400",
+              )}
+            >
+              <Coins className="h-3.5 w-3.5" aria-hidden="true" />
+              {balanceLoading ? "..." : balanceValue}
+              {isCritical && !isNative && (
+                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              )}
+            </Link>
+          )}
+          {!isNative && !isFlavored && (
             <Link
               href="/dashboard/marketplace/chats"
               aria-label={t("messages")}
@@ -564,14 +591,14 @@ export function AppHeader() {
             )}
           >
             <nav className="space-y-1" aria-label={t("home")}>
-              {NAV.map((item, index) => {
+              {visibleNav.map((item) => {
                 // В native скрываем «Грибные туры» (на вебе пункт остаётся).
                 if (isNative && item.href === "/dashboard/mushroom-tours") {
                   return null;
                 }
                 const active = isActive(item);
 
-                if (index === 0) {
+                if (item.href === "/dashboard") {
                   return (
                     <div key={item.href}>
                       <Link
@@ -591,7 +618,7 @@ export function AppHeader() {
                       {/* Сайтовые ссылки на вебе показываем сразу под «Главной»
                           (текущее веб-поведение). В native они уносятся вниз
                           в отдельную группу «Site Section». */}
-                      {!isNative && (
+                      {!isNative && !isFlavored && (
                         <>
                           <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-foreground/45">
                             {t("siteSections")}
@@ -633,19 +660,21 @@ export function AppHeader() {
 
               {/* Токены: в нативе — точка входа к покупке через IAP,
                   на вебе — как раньше */}
-              <Link
-                href="/payment"
-                onClick={closeAll}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                  pathname === "/payment" || pathname.startsWith("/payment/")
-                    ? "bg-amber-500/20 text-amber-300"
-                    : "text-amber-400 hover:bg-white/5"
-                )}
-              >
-                <Coins className="h-5 w-5" aria-hidden="true" />
-                {t("tokens")}
-              </Link>
+              {showTokens && (
+                <Link
+                  href="/payment"
+                  onClick={closeAll}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    pathname === "/payment" || pathname.startsWith("/payment/")
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "text-amber-400 hover:bg-white/5"
+                  )}
+                >
+                  <Coins className="h-5 w-5" aria-hidden="true" />
+                  {t("tokens")}
+                </Link>
+              )}
 
               <div className="my-2 border-t border-white/10" />
 
@@ -673,24 +702,28 @@ export function AppHeader() {
                 <User className="h-5 w-5" aria-hidden="true" />
                 {t("account")}
               </Link>
-              <Link
-                href="/dashboard#locations"
-                onClick={closeAll}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
-              >
-                <MapPin className="h-5 w-5" aria-hidden="true" />
-                {t("myLocations")}
-              </Link>
-              <Link
-                href="/dashboard#best-days"
-                onClick={closeAll}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
-              >
-                <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                {t("myBestDays")}
-              </Link>
+              {!isFlavored && (
+                <>
+                  <Link
+                    href="/dashboard#locations"
+                    onClick={closeAll}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+                  >
+                    <MapPin className="h-5 w-5" aria-hidden="true" />
+                    {t("myLocations")}
+                  </Link>
+                  <Link
+                    href="/dashboard#best-days"
+                    onClick={closeAll}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-white/5"
+                  >
+                    <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+                    {t("myBestDays")}
+                  </Link>
+                </>
+              )}
               {/* Реферальная программа скрыта в нативе (Apple 3.1.1). */}
-              {!isNative && (
+              {!isNative && !isFlavored && (
                 <Link
                   href="/dashboard/referral"
                   onClick={closeAll}
@@ -715,7 +748,7 @@ export function AppHeader() {
               {/* Раздел сайта — только в native, отдельной группой снизу.
                   Веб-меню сюда не попадает (сайтовые ссылки на вебе показаны
                   вверху под «Главной»). */}
-              {isNative && (
+              {isNative && !isFlavored && (
                 <>
                   <div className="my-2 border-t border-white/10" />
                   <p className="px-4 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-foreground/45">

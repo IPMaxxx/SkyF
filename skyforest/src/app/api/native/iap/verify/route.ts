@@ -6,8 +6,11 @@ import { iapProductFor } from "@/lib/native/iapProducts";
 
 export const runtime = "nodejs";
 
+// Основное приложение (fallback для старых товаров без bundleId в каталоге).
+// Для consumable-товаров bundle/package берётся из каталога
+// (IapProduct.bundleId): у Mushroom Checker свои товары под
+// ai.skyforest.mushroomchecker.
 const BUNDLE_ID = process.env.IAP_BUNDLE_ID || "ai.skyforest.app";
-const ANDROID_PACKAGE = process.env.ANDROID_PACKAGE || "ai.skyforest.app";
 
 function b64url(input: Buffer | string): string {
   return Buffer.from(input)
@@ -19,7 +22,7 @@ function b64url(input: Buffer | string): string {
 
 // ---------------- Apple (App Store Server API) ----------------
 
-function appleToken(): string | null {
+function appleToken(bundleId: string): string | null {
   const keyId = process.env.APPLE_IAP_KEY_ID;
   const issuerId = process.env.APPLE_IAP_ISSUER_ID;
   const key = process.env.APPLE_IAP_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -32,7 +35,7 @@ function appleToken(): string | null {
     iat: now,
     exp: now + 600,
     aud: "appstoreconnect-v1",
-    bid: BUNDLE_ID,
+    bid: bundleId,
   };
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
   const signer = createSign("SHA256");
@@ -69,8 +72,9 @@ function sandboxAllowed(userEmail: string | undefined): boolean {
 async function verifyApple(
   transactionId: string,
   allowSandbox: boolean,
+  bundleId: string,
 ): Promise<{ productId: string; appAccountToken: string | null } | null> {
-  const token = appleToken();
+  const token = appleToken(bundleId);
   if (!token) throw new Error("apple_not_configured");
 
   const hosts =
@@ -96,7 +100,7 @@ async function verifyApple(
     const parts = jws.split(".");
     if (parts.length < 2) continue;
     const info = JSON.parse(Buffer.from(parts[1], "base64").toString("utf8"));
-    if (info.bundleId && info.bundleId !== BUNDLE_ID) return null;
+    if (info.bundleId && info.bundleId !== bundleId) return null;
     if (info.productId) {
       return {
         productId: info.productId,
@@ -150,6 +154,7 @@ async function googleAccessToken(): Promise<string | null> {
 async function verifyGoogle(
   productId: string,
   purchaseToken: string,
+  packageName: string,
 ): Promise<{
   state: "purchased" | "pending" | "rejected";
   obfuscatedExternalAccountId: string | null;
@@ -157,7 +162,7 @@ async function verifyGoogle(
   const accessToken = await googleAccessToken();
   if (!accessToken) throw new Error("google_not_configured");
 
-  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${ANDROID_PACKAGE}/purchases/products/${encodeURIComponent(
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/products/${encodeURIComponent(
     productId,
   )}/tokens/${encodeURIComponent(purchaseToken)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -211,6 +216,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unknown product" }, { status: 400 });
   }
   const tokens = product.tokens;
+  // Приложение-владелец товара: у Mushroom Checker свой bundle/package.
+  const productBundle = product.bundleId || BUNDLE_ID;
 
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -234,7 +241,7 @@ export async function POST(req: NextRequest) {
       if (!transactionId) {
         return NextResponse.json({ ok: false, error: "transactionId required" }, { status: 400 });
       }
-      const result = await verifyApple(transactionId, sandboxAllowed(user.email));
+      const result = await verifyApple(transactionId, sandboxAllowed(user.email), productBundle);
       if (!result || result.productId !== productId) {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
       }
@@ -263,7 +270,7 @@ export async function POST(req: NextRequest) {
       if (!purchaseToken) {
         return NextResponse.json({ ok: false, error: "purchaseToken required" }, { status: 400 });
       }
-      const result = await verifyGoogle(productId, purchaseToken);
+      const result = await verifyGoogle(productId, purchaseToken, productBundle);
       if (result.state === "pending") {
         // Оплата ещё не завершена (например, отложенный платёж). НЕ 402:
         // клиент не должен финишировать транзакцию — стор доставит approved

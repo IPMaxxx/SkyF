@@ -15,16 +15,33 @@ export interface IapProduct {
   tokens: number;
   /** Базовая цена товара в сторах (USD) — для записи суммы платежа в БД. */
   priceUsd: number;
+  /** Bundle id / package name приложения, которому принадлежит товар. */
+  bundleId: string;
 }
 
+/** Package name основного приложения и флейвора Mushroom Checker. */
+export const MAIN_BUNDLE_ID = "ai.skyforest.app";
+export const CHECKER_BUNDLE_ID = "ai.skyforest.mushroomchecker";
+
 export const IAP_PRODUCTS: IapProduct[] = [
-  { productId: "ai.skyforest.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99 },
-  { productId: "ai.skyforest.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99 },
-  { productId: "ai.skyforest.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99 },
+  // SkyForest (ai.skyforest.app)
+  { productId: "ai.skyforest.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99, bundleId: MAIN_BUNDLE_ID },
+  { productId: "ai.skyforest.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99, bundleId: MAIN_BUNDLE_ID },
+  { productId: "ai.skyforest.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99, bundleId: MAIN_BUNDLE_ID },
+  // Mushroom Checker (ai.skyforest.mushroomchecker) — те же пакеты и цены,
+  // но товары зарегистрированы под отдельным приложением в сторах.
+  { productId: "ai.skyforest.mushroomchecker.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99, bundleId: CHECKER_BUNDLE_ID },
+  { productId: "ai.skyforest.mushroomchecker.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99, bundleId: CHECKER_BUNDLE_ID },
+  { productId: "ai.skyforest.mushroomchecker.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99, bundleId: CHECKER_BUNDLE_ID },
 ];
 
-export function productForPack(packId: string): IapProduct | undefined {
-  return IAP_PRODUCTS.find((p) => p.packId === packId);
+/** Товары одного приложения (для register()/цен в конкретной оболочке). */
+export function iapProductsForBundle(bundleId: string): IapProduct[] {
+  return IAP_PRODUCTS.filter((p) => p.bundleId === bundleId);
+}
+
+export function productForPack(packId: string, bundleId: string = MAIN_BUNDLE_ID): IapProduct | undefined {
+  return IAP_PRODUCTS.find((p) => p.packId === packId && p.bundleId === bundleId);
 }
 
 export function iapProductFor(productId: string): IapProduct | undefined {

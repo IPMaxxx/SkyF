@@ -10,6 +10,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppFlavor } from "@/lib/useAppFlavor";
+import { FLAVORS } from "@/lib/appFlavor";
 
 type Tab = {
   href: string;
@@ -35,6 +37,11 @@ const TABS: Tab[] = [
 export function NativeTabBar() {
   const pathname = usePathname();
   const t = useTranslations("appHeader");
+  // Во флейворах (Checker/WayBack) остаётся один экран — таб-бар не нужен.
+  const flavor = useAppFlavor();
+  const navHrefs = FLAVORS[flavor].navHrefs;
+  const tabs = navHrefs ? TABS.filter((tab) => navHrefs.includes(tab.href)) : TABS;
+  if (tabs.length < 2) return null;
 
   const isActive = (tab: Tab) =>
     tab.exact
@@ -47,7 +54,7 @@ export function NativeTabBar() {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.06] bg-[rgba(9,15,11,0.92)] pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur-xl"
     >
       <ul className="flex items-start justify-around px-1 pt-2">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = isActive(tab);
 
           if (tab.accent) {

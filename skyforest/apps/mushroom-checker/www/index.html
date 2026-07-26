@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mushroom Checker</title>
+    <style>
+      html, body {
+        margin: 0; height: 100%;
+        background: #0f1a12; color: #e8f0ea;
+        font-family: -apple-system, Roboto, system-ui, sans-serif;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .box { text-align: center; padding: 24px; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      p { color: rgba(232, 240, 234, 0.65); font-size: 14px; margin: 0 0 20px; }
+      button {
+        background: #62a863; color: #0b130d; border: none; border-radius: 14px;
+        padding: 13px 28px; font-size: 15px; font-weight: 700; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1 id="t1">Нет соединения</h1>
+      <p id="t2">Для распознавания грибов нужен интернет. Проверьте связь и попробуйте снова.</p>
+      <button id="retry">Повторить</button>
+    </div>
+    <script>
+      if ((navigator.language || "").slice(0, 2) !== "ru") {
+        document.getElementById("t1").textContent = "No connection";
+        document.getElementById("t2").textContent =
+          "Mushroom identification needs internet. Check your connection and try again.";
+        document.getElementById("retry").textContent = "Retry";
+      }
+      // Прячем нативный splash (launchAutoHide=false), иначе экран не виден.
+      (function hide() {
+        var s = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen;
+        if (s) s.hide().catch(function () {});
+        else setTimeout(hide, 300);
+      })();
+      document.getElementById("retry").addEventListener("click", function () {
+        location.href = "https://checker.skyforest.ai/dashboard/identify";
+      });
+    </script>
+  </body>
+</html>

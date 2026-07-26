@@ -17,13 +17,35 @@
  */
 import { isNativeApp, getPlatform } from "./capacitor";
 import { createClient } from "@/lib/supabase/client";
+import { getClientFlavor } from "@/lib/appFlavor";
 import {
-  IAP_PRODUCTS,
   SUBSCRIPTION_PRODUCTS,
+  MAIN_BUNDLE_ID,
+  CHECKER_BUNDLE_ID,
+  iapProductsForBundle,
   productForPack,
   tokensForProduct,
   isSubscriptionProduct,
 } from "./iapProducts";
+
+/**
+ * Bundle id активной оболочки: во флейворе Mushroom Checker
+ * (checker.skyforest.ai в WebView ai.skyforest.mushroomchecker) — свои
+ * товары со своими id; в основном приложении — как раньше.
+ */
+function activeBundleId(): string {
+  return getClientFlavor() === "checker" ? CHECKER_BUNDLE_ID : MAIN_BUNDLE_ID;
+}
+
+/** Consumable-товары активной оболочки. */
+function activeProducts() {
+  return iapProductsForBundle(activeBundleId());
+}
+
+/** Подписки есть только в основном приложении SkyForest. */
+function activeSubscriptions() {
+  return activeBundleId() === MAIN_BUNDLE_ID ? SUBSCRIPTION_PRODUCTS : [];
+}
 
 // Тип плагина не импортируем как модуль — он подключается нативно и доступен
 // как глобальный объект window.CdvPurchase.
@@ -142,7 +164,7 @@ export function getStorePrices(): Record<string, string> {
   const store: AnyStore = CdvPurchase.store;
   const platform = platformConst();
   const prices: Record<string, string> = {};
-  for (const p of IAP_PRODUCTS) {
+  for (const p of activeProducts()) {
     const price = store.get(p.productId, platform)?.pricing?.price;
     if (typeof price === "string" && price) prices[p.packId] = price;
   }
@@ -156,7 +178,7 @@ export function getSubscriptionPrices(): Record<string, string> {
   const store: AnyStore = CdvPurchase.store;
   const platform = platformConst();
   const prices: Record<string, string> = {};
-  for (const p of SUBSCRIPTION_PRODUCTS) {
+  for (const p of activeSubscriptions()) {
     // Первая pricing phase при бесплатном триале — «Free», поэтому берём
     // последнюю фазу (базовая регулярная цена подписки).
     const phases = store.get(p.productId, platform)?.getOffer?.()?.pricingPhases;
@@ -207,12 +229,12 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
   store.obfuscator = "disabled";
 
   store.register([
-    ...IAP_PRODUCTS.map((p) => ({
+    ...activeProducts().map((p) => ({
       id: p.productId,
       type: CdvPurchase.ProductType.CONSUMABLE,
       platform,
     })),
-    ...SUBSCRIPTION_PRODUCTS.map((p) => ({
+    ...activeSubscriptions().map((p) => ({
       id: p.productId,
       type: CdvPurchase.ProductType.PAID_SUBSCRIPTION,
       platform,
@@ -354,7 +376,7 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
   await initIap();
   // Обновляем id пользователя перед заказом (мог войти после initIap).
   await refreshUserId();
-  const product = productForPack(packId);
+  const product = productForPack(packId, activeBundleId());
   if (!product) return { ok: false, error: msg.productNotFound };
 
   const store: AnyStore = CdvPurchase.store;
