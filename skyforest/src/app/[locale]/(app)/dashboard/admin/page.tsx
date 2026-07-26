@@ -489,7 +489,7 @@ const TABLES: TableConfig[] = [
       },
       {
         key: "payment_amount_cents",
-        label: "Сумма (банк)",
+        label: "Сумма",
         render: (_v, row) => {
           const cents = row.payment_amount_cents as number | null | undefined;
           const cur = (row.payment_currency as string) || "BYN";
@@ -505,8 +505,28 @@ const TABLES: TableConfig[] = [
         },
       },
       {
+        key: "payment_source",
+        label: "Источник",
+        // Источник определяем по префиксу payment_id (работает и для
+        // исторических IAP-записей): android:<token> / ios:<txid> — маркеты,
+        // остальное — веб-платёжка бренда (Stripe / bePaid).
+        render: (_v, row) => {
+          const id = (row.payment_id as string) || "";
+          const src = id.startsWith("android:")
+            ? { label: "Google Play", cls: "bg-emerald-500/15 text-emerald-400" }
+            : id.startsWith("ios:")
+              ? { label: "App Store", cls: "bg-sky-500/15 text-sky-400" }
+              : { label: BRAND.paymentProviderName, cls: "bg-violet-500/15 text-violet-400" };
+          return (
+            <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-medium ${src.cls}`}>
+              {src.label}
+            </span>
+          );
+        },
+      },
+      {
         key: "payment_id",
-        label: `ID платежа (${BRAND.paymentProviderName})`,
+        label: "ID платежа",
         render: (_v, row) => {
           const id = row.payment_id as string | null;
           if (!id) return <span className="text-xs text-muted-foreground">—</span>;

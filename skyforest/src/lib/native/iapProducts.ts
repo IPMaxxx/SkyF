@@ -13,20 +13,26 @@ export interface IapProduct {
   /** id пакета из TOKEN_PACKAGES */
   packId: string;
   tokens: number;
+  /** Базовая цена товара в сторах (USD) — для записи суммы платежа в БД. */
+  priceUsd: number;
 }
 
 export const IAP_PRODUCTS: IapProduct[] = [
-  { productId: "ai.skyforest.tokens.30", packId: "pack_30", tokens: 30 },
-  { productId: "ai.skyforest.tokens.100", packId: "pack_100", tokens: 100 },
-  { productId: "ai.skyforest.tokens.300", packId: "pack_300", tokens: 300 },
+  { productId: "ai.skyforest.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99 },
+  { productId: "ai.skyforest.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99 },
+  { productId: "ai.skyforest.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99 },
 ];
 
 export function productForPack(packId: string): IapProduct | undefined {
   return IAP_PRODUCTS.find((p) => p.packId === packId);
 }
 
+export function iapProductFor(productId: string): IapProduct | undefined {
+  return IAP_PRODUCTS.find((p) => p.productId === productId);
+}
+
 export function tokensForProduct(productId: string): number | null {
-  return IAP_PRODUCTS.find((p) => p.productId === productId)?.tokens ?? null;
+  return iapProductFor(productId)?.tokens ?? null;
 }
 
 // ---------------- Подписки ----------------

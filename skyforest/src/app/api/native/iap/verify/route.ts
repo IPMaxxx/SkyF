@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSign } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { creditTokenPurchase } from "@/lib/payment-credit";
-import { tokensForProduct } from "@/lib/native/iapProducts";
+import { iapProductFor } from "@/lib/native/iapProducts";
 
 export const runtime = "nodejs";
 
@@ -144,12 +144,16 @@ async function googleAccessToken(): Promise<string | null> {
 
 /**
  * Проверяет покупку через Play Developer API.
- * Возвращает статус и obfuscatedExternalAccountId (привязка к пользователю).
+ * Возвращает статус (purchased/pending/rejected) и
+ * obfuscatedExternalAccountId (привязка к пользователю).
  */
 async function verifyGoogle(
   productId: string,
   purchaseToken: string,
-): Promise<{ purchased: boolean; obfuscatedExternalAccountId: string | null }> {
+): Promise<{
+  state: "purchased" | "pending" | "rejected";
+  obfuscatedExternalAccountId: string | null;
+}> {
   const accessToken = await googleAccessToken();
   if (!accessToken) throw new Error("google_not_configured");
 
@@ -157,11 +161,15 @@ async function verifyGoogle(
     productId,
   )}/tokens/${encodeURIComponent(purchaseToken)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!res.ok) return { purchased: false, obfuscatedExternalAccountId: null };
+  if (!res.ok) return { state: "rejected", obfuscatedExternalAccountId: null };
   const data = await res.json();
-  // purchaseState: 0 = Purchased, 1 = Cancelled, 2 = Pending
+  // purchaseState: 0 = Purchased, 1 = Cancelled, 2 = Pending.
+  // Pending важно НЕ помечать окончательным отказом: клиент не должен
+  // финишировать (consume) незавершённую оплату.
+  const state =
+    data.purchaseState === 0 ? "purchased" : data.purchaseState === 2 ? "pending" : "rejected";
   return {
-    purchased: data.purchaseState === 0,
+    state,
     obfuscatedExternalAccountId:
       typeof data.obfuscatedExternalAccountId === "string" ? data.obfuscatedExternalAccountId : null,
   };
@@ -198,20 +206,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tokens = tokensForProduct(productId);
-  if (!tokens) {
+  const product = iapProductFor(productId);
+  if (!product) {
     return NextResponse.json({ ok: false, error: "Unknown product" }, { status: 400 });
   }
+  const tokens = product.tokens;
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   try {
     let verifiedProductId: string | null = null;
     let paymentRef: string | null = null;
+    let source: "app_store" | "google_play";
+    // Кому начислять токены. По умолчанию — авторизованный пользователь.
+    // Если чек привязан к ДРУГОМУ пользователю (appAccountToken / obfuscated
+    // AccountId, которые мы сами кладём при order()), начисляем законному
+    // владельцу из чека и отвечаем ok — иначе consumable-транзакция никогда
+    // не финишируется и стор блокирует повторные покупки этого товара
+    // (Google Play: ITEM_ALREADY_OWNED, окно оплаты не открывается вовсе).
+    let creditUserId = user.id;
 
     // Сверка привязки чека к пользователю: клиент при order() передаёт
     // user.id (appAccountToken на iOS / obfuscatedAccountId на Android).
-    // Если значение в чеке есть и НЕ совпадает — 403 (чек чужого аккаунта).
-    // Если отсутствует — переходный режим (старые/прерванные покупки без
-    // привязки): начисляем, но логируем warning.
+    // Если привязка отсутствует — переходный режим (старые/прерванные покупки
+    // без привязки): начисляем текущему пользователю, но логируем warning.
     if (platform === "ios") {
       if (!transactionId) {
         return NextResponse.json({ ok: false, error: "transactionId required" }, { status: 400 });
@@ -222,10 +240,16 @@ export async function POST(req: NextRequest) {
       }
       if (result.appAccountToken) {
         if (result.appAccountToken.toLowerCase() !== user.id.toLowerCase()) {
-          console.error(
-            `IAP verify: appAccountToken mismatch (tx ${transactionId}, user ${user.id})`,
+          if (!UUID_RE.test(result.appAccountToken)) {
+            console.error(
+              `IAP verify: invalid appAccountToken in Apple transaction ${transactionId} (user ${user.id})`,
+            );
+            return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+          }
+          console.warn(
+            `IAP verify: appAccountToken mismatch (tx ${transactionId}, auth user ${user.id}) — crediting receipt owner ${result.appAccountToken}`,
           );
-          return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+          creditUserId = result.appAccountToken.toLowerCase();
         }
       } else {
         console.warn(
@@ -234,20 +258,32 @@ export async function POST(req: NextRequest) {
       }
       verifiedProductId = result.productId;
       paymentRef = `ios:${transactionId}`;
+      source = "app_store";
     } else if (platform === "android") {
       if (!purchaseToken) {
         return NextResponse.json({ ok: false, error: "purchaseToken required" }, { status: 400 });
       }
       const result = await verifyGoogle(productId, purchaseToken);
-      if (!result.purchased) {
+      if (result.state === "pending") {
+        // Оплата ещё не завершена (например, отложенный платёж). НЕ 402:
+        // клиент не должен финишировать транзакцию — стор доставит approved
+        // повторно после завершения оплаты.
+        return NextResponse.json({ ok: false, error: "Purchase pending" }, { status: 409 });
+      }
+      if (result.state !== "purchased") {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
       }
-      if (result.obfuscatedExternalAccountId) {
-        if (result.obfuscatedExternalAccountId.toLowerCase() !== user.id.toLowerCase()) {
-          console.error(
-            `IAP verify: obfuscatedExternalAccountId mismatch (user ${user.id})`,
+      const receiptAccount = result.obfuscatedExternalAccountId;
+      if (receiptAccount) {
+        if (receiptAccount.toLowerCase() !== user.id.toLowerCase()) {
+          if (!UUID_RE.test(receiptAccount)) {
+            console.error(`IAP verify: invalid obfuscatedExternalAccountId (user ${user.id})`);
+            return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+          }
+          console.warn(
+            `IAP verify: obfuscatedExternalAccountId mismatch (auth user ${user.id}) — crediting receipt owner ${receiptAccount}`,
           );
-          return NextResponse.json({ ok: false, error: "Account mismatch" }, { status: 403 });
+          creditUserId = receiptAccount.toLowerCase();
         }
       } else {
         console.warn(
@@ -256,6 +292,7 @@ export async function POST(req: NextRequest) {
       }
       verifiedProductId = productId;
       paymentRef = `android:${purchaseToken}`;
+      source = "google_play";
     } else {
       return NextResponse.json({ ok: false, error: "Unsupported platform" }, { status: 400 });
     }
@@ -265,12 +302,17 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await creditTokenPurchase({
-      userId: user.id,
+      userId: creditUserId,
       tokens,
+      // Сумма и источник — чтобы IAP-покупки были видны в админке в разделе
+      // оплат наравне со Stripe/bePaid: сумма — каталожная цена товара в USD
+      // (стор подтвердил покупку; фактическая валюта списания может отличаться
+      // по региону), источник — в payment_tracking_id.
       paymentId: paymentRef,
-      paidMinorUnits: null, // сумма подтверждена сторой; проверка суммы не нужна
+      paidMinorUnits: Math.round(product.priceUsd * 100),
       currency: "USD",
-      trackingId: paymentRef,
+      trackingId: source,
+      skipAmountCheck: true,
     });
 
     return NextResponse.json({ ok: true, status: result.status, tokens });

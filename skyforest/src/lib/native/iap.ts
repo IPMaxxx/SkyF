@@ -274,14 +274,20 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
           pending.delete(productId);
           p.resolve(false);
         }
-        // Окончательно отклонённые ПОДПИСОЧНЫЕ транзакции (например,
-        // истёкшая sandbox-подписка из прошлой сессии) закрываем: иначе
-        // они висят в очереди StoreKit, повторно доставляются как approved
-        // при каждом запуске и «съедают» pending новой покупки, показывая
-        // ложную ошибку. Право на подписку от finish() не теряется —
-        // текущий статус всегда перепроверяется у стора по transactionId.
-        // Consumable-токены без верификации НЕ закрываем никогда.
-        if (result.permanent && productId && isSubscriptionProduct(productId)) {
+        // Окончательно отклонённые транзакции (402/403) закрываем — и подписки,
+        // и consumable-токены:
+        //  - подписки: истёкшие sandbox-транзакции висят в очереди StoreKit,
+        //    повторно доставляются как approved и «съедают» pending новой
+        //    покупки; право на подписку от finish() не теряется — статус
+        //    всегда перепроверяется у стора;
+        //  - consumable: незакрытая (unconsumed) покупка НАВСЕГДА блокирует
+        //    повторную покупку того же товара в Google Play
+        //    (ITEM_ALREADY_OWNED — окно оплаты даже не открывается). 402 стор
+        //    вернул для отменённой/невалидной покупки, а чек чужого аккаунта
+        //    (mismatch) сервер теперь начисляет владельцу из чека и отвечает
+        //    ok, так что сюда он не попадает. Pending-платежи сервер помечает
+        //    409 (НЕ permanent) — их не финишируем.
+        if (result.permanent && productId) {
           try {
             transaction.finish();
           } catch {
@@ -317,6 +323,8 @@ const IAP_ERRORS = {
     productNotFound: "Товар не найден",
     productUnavailable: "Товар недоступен в магазине",
     cancelled: "Покупка отменена",
+    alreadyOwned:
+      "Предыдущая покупка этого пакета ещё не проведена до конца. Перезапустите приложение — она зачислится автоматически, после чего пакет снова можно купить.",
     storeTimeout:
       "Магазин не ответил. Если оплата прошла, токены или подписка будут зачислены автоматически — перезапустите приложение.",
   },
@@ -326,6 +334,8 @@ const IAP_ERRORS = {
     productNotFound: "Product not found",
     productUnavailable: "Product is unavailable in the store",
     cancelled: "Purchase cancelled",
+    alreadyOwned:
+      "A previous purchase of this pack has not been fully processed yet. Restart the app — it will be credited automatically, then you can buy this pack again.",
     storeTimeout:
       "Store did not respond. If you were charged, tokens/subscription will be credited automatically — restart the app.",
   },
@@ -390,7 +400,11 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
         code: e?.code,
         message: e?.message ?? String(e),
       });
-      resolve({ ok: false, error: e?.message || msg.cancelled });
+      // ITEM_ALREADY_OWNED: незакрытая consumable-покупка блокирует повторную
+      // (Google Play не показывает окно оплаты) — подсказываем перезапуск,
+      // при котором approved допроведётся и товар разблокируется.
+      const alreadyOwned = /already.?own/i.test(String(e?.message ?? ""));
+      resolve({ ok: false, error: alreadyOwned ? msg.alreadyOwned : e?.message || msg.cancelled });
     });
   });
 }
