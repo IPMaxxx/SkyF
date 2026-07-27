@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
         transactionId,
         sandboxAllowed(user.email),
         productId,
+        product.bundleId,
       );
       if (!state || state.productId !== productId) {
         console.error(
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      state = await getGoogleSubscription(purchaseToken);
+      state = await getGoogleSubscription(purchaseToken, product.bundleId);
       if (!state || state.productId !== productId) {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
       }

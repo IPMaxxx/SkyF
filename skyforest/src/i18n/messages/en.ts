@@ -204,6 +204,7 @@ export default {
     myLocations: "My locations",
     myBestDays: "My mushroom days",
     tokens: "Tokens",
+    subscription: "Subscription",
     referral: "Invite a friend",
     logout: "Log out",
     menu: "Menu",

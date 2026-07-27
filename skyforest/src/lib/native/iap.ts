@@ -19,32 +19,36 @@ import { isNativeApp, getPlatform } from "./capacitor";
 import { createClient } from "@/lib/supabase/client";
 import { getClientFlavor } from "@/lib/appFlavor";
 import {
-  SUBSCRIPTION_PRODUCTS,
   MAIN_BUNDLE_ID,
   CHECKER_BUNDLE_ID,
+  WAYBACK_BUNDLE_ID,
   iapProductsForBundle,
+  subscriptionProductsForBundle,
   productForPack,
   tokensForProduct,
   isSubscriptionProduct,
 } from "./iapProducts";
 
 /**
- * Bundle id активной оболочки: во флейворе Mushroom Checker
- * (checker.skyforest.ai в WebView ai.skyforest.mushroomchecker) — свои
- * товары со своими id; в основном приложении — как раньше.
+ * Bundle id активной оболочки: во флейворах Mushroom Checker / WayBack
+ * (поддомены в WebView своих приложений) — свои товары со своими id;
+ * в основном приложении — как раньше.
  */
 function activeBundleId(): string {
-  return getClientFlavor() === "checker" ? CHECKER_BUNDLE_ID : MAIN_BUNDLE_ID;
+  const flavor = getClientFlavor();
+  if (flavor === "checker") return CHECKER_BUNDLE_ID;
+  if (flavor === "wayback") return WAYBACK_BUNDLE_ID;
+  return MAIN_BUNDLE_ID;
 }
 
-/** Consumable-товары активной оболочки. */
+/** Consumable-товары активной оболочки (во флейворах — пусто, только подписка). */
 function activeProducts() {
   return iapProductsForBundle(activeBundleId());
 }
 
-/** Подписки есть только в основном приложении SkyForest. */
+/** Подписки активной оболочки: SkyForest — Forager/Pro, флейворы — своя одна. */
 function activeSubscriptions() {
-  return activeBundleId() === MAIN_BUNDLE_ID ? SUBSCRIPTION_PRODUCTS : [];
+  return subscriptionProductsForBundle(activeBundleId());
 }
 
 // Тип плагина не импортируем как модуль — он подключается нативно и доступен

@@ -95,6 +95,19 @@ export default {
     proF4: "Pattern match forecast — up to 8 per month",
     proF5: "Free marketplace listings",
     proF6: "+100 bonus tokens every month",
+    // Mushroom Checker / WayBack flavors (single subscription, no tokens)
+    checkerSubtitle:
+      "Full access to AI mushroom identification: 25 identifications per month with confidence scores",
+    waybackSubtitle:
+      "Full access to WayBack: offline maps, region downloads and finding your way back without signal",
+    checkerF1: "25 mushroom identifications per month",
+    checkerF2: "Confidence scores and similar species",
+    checkerF3: "Identification history in your account",
+    waybackF1: "Offline maps and region downloads",
+    waybackF2: "Way back to your entry point without signal",
+    waybackF3: "Track history in your account",
+    trialNote: "7 days free, then auto-renews. Cancel anytime.",
+    webNote: "Subscribe in the mobile app",
     subscribeBtn: "Subscribe to {tier}",
     purchasing: "Processing...",
     purchaseError: "Failed to complete the subscription",

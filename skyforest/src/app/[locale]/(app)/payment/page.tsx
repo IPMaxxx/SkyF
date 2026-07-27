@@ -40,10 +40,12 @@ import {
   subscribeSubscriptionPrices,
 } from "@/lib/native/iap";
 import {
-  SUBSCRIPTION_PRODUCTS,
+  subscriptionProductsForBundle,
   type SubscriptionPeriod,
   type SubscriptionTier,
 } from "@/lib/native/iapProducts";
+import { useAppFlavor } from "@/lib/useAppFlavor";
+import { FLAVORS } from "@/lib/appFlavor";
 
 export default function PaymentPage() {
   return (
@@ -82,6 +84,13 @@ function PaymentContent() {
       setTab("buy");
     }
   }, []);
+
+  // Флейворы Mushroom Checker / WayBack: токенов нет вообще — страница
+  // превращается в пейволл единственной подписки (месяц/год, триал 7 дней).
+  const flavor = useAppFlavor();
+  const isFlavored = flavor !== "skyforest";
+  // Каталог подписок текущего приложения (skyforest → Forager/Pro).
+  const subCatalog = subscriptionProductsForBundle(FLAVORS[flavor].nativeAppId);
   // Название стора по платформе (на iOS нельзя упоминать Google Play).
   // До гидрации native=false → нейтральное «App Store / Google Play».
   const store = native ? storeName() : "App Store / Google Play";
@@ -124,9 +133,10 @@ function PaymentContent() {
       .then((d) => setActiveSub(d.subscription ?? null))
       .catch(() => {});
   useEffect(() => {
-    if (!native) return;
+    // Во флейворах секция подписки видна и на вебе — статус нужен и там.
+    if (!native && !isFlavored) return;
     loadActiveSub();
-  }, [native]);
+  }, [native, isFlavored]);
 
   // Годовой период по умолчанию: он выгоднее (−50% + триал 7 дней).
   const [subPeriod, setSubPeriod] = useState<SubscriptionPeriod>("yearly");
@@ -271,7 +281,7 @@ function PaymentContent() {
   // --- Subscriptions (native only) ---
   const ts = useTranslations("payment.subscriptions");
   const handleSubscribe = async (tier: SubscriptionTier) => {
-    const product = SUBSCRIPTION_PRODUCTS.find(
+    const product = subCatalog.find(
       (p) => p.tier === tier && p.period === subPeriod
     );
     if (!product || subPurchasing) return;
@@ -291,7 +301,11 @@ function PaymentContent() {
   };
 
   const tierName = (tier: SubscriptionTier) =>
-    tier === "pro" ? ts("proName") : ts("foragerName");
+    tier === "pro"
+      ? ts("proName")
+      : tier === "checker" || tier === "wayback"
+        ? `${FLAVORS[flavor].name} Premium`
+        : ts("foragerName");
   const formatSubDate = (iso: string) =>
     new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "ru-RU", {
       day: "numeric",
@@ -361,18 +375,27 @@ function PaymentContent() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
-      {/* Header */}
+      {/* Header. Во флейворах — заголовок подписки вместо токенов. */}
       <div className="mb-4 sm:mb-6 text-center">
         <div className="mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border border-token/25 bg-token/12">
-          <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-token" />
+          {isFlavored ? (
+            <Crown className="h-7 w-7 sm:h-8 sm:w-8 text-amber-400" />
+          ) : (
+            <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-token" />
+          )}
         </div>
-        <h1 className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight">{t("pageTitle")}</h1>
+        <h1 className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight">
+          {isFlavored ? ts("title") : t("pageTitle")}
+        </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          {t("pageSubtitle")}
+          {isFlavored
+            ? ts(flavor === "checker" ? "checkerSubtitle" : "waybackSubtitle")
+            : t("pageSubtitle")}
         </p>
       </div>
 
-      {/* Balance */}
+      {/* Balance (токены — только основной SkyForest) */}
+      {!isFlavored && (
       <div className="glass mb-4 sm:mb-6 rounded-2xl p-4 sm:p-6 text-center">
         <p className="mb-1 text-sm text-muted-foreground">{t("yourBalance")}</p>
         <div className="flex items-center justify-center gap-2">
@@ -383,8 +406,10 @@ function PaymentContent() {
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{t("tokensPlural")}</p>
       </div>
+      )}
 
       {/* Tabs */}
+      {!isFlavored && (
       <div className="mb-6 flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
         <button
           type="button"
@@ -416,13 +441,16 @@ function PaymentContent() {
           </button>
         )}
       </div>
+      )}
 
       {/* ========== BUY TAB ========== */}
       {tab === "buy" && (
         <>
-          {/* Subscriptions — первыми (только натив; веб — Stripe в следующей итерации) */}
-          {native && (
+          {/* Subscriptions — первыми (натив; во флейворах также на вебе,
+              но покупка возможна только в приложении) */}
+          {(native || isFlavored) && (
             <div id="subscriptions" className="mb-8 scroll-mt-20">
+              {!isFlavored && (
               <div className="mb-4 text-center">
                 <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">
                   <Crown className="h-5 w-5 text-amber-400" />
@@ -432,6 +460,7 @@ function PaymentContent() {
                   {ts("subtitle")}
                 </p>
               </div>
+              )}
 
               {activeSub ? (
                 <div className="glass rounded-2xl border-emerald-400/30 p-5 text-center">
@@ -485,17 +514,30 @@ function PaymentContent() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {(["forager", "pro"] as const).map((tier) => {
-                      const product = SUBSCRIPTION_PRODUCTS.find(
+                  <div
+                    className={
+                      isFlavored
+                        ? "mx-auto max-w-sm"
+                        : "grid gap-3 sm:grid-cols-2"
+                    }
+                  >
+                    {(isFlavored
+                      ? ([flavor] as SubscriptionTier[])
+                      : (["forager", "pro"] as SubscriptionTier[])
+                    ).map((tier) => {
+                      const product = subCatalog.find(
                         (p) => p.tier === tier && p.period === subPeriod
                       )!;
                       const price = subPrices[product.productId] || product.fallbackPrice;
                       const features =
                         tier === "pro"
                           ? (["proF1", "proF2", "proF3", "proF4", "proF5", "proF6"] as const)
-                          : (["foragerF1", "foragerF2", "foragerF3", "foragerF4"] as const);
-                      const isPro = tier === "pro";
+                          : tier === "checker"
+                            ? (["checkerF1", "checkerF2", "checkerF3"] as const)
+                            : tier === "wayback"
+                              ? (["waybackF1", "waybackF2", "waybackF3"] as const)
+                              : (["foragerF1", "foragerF2", "foragerF3", "foragerF4"] as const);
+                      const isPro = tier === "pro" || isFlavored;
                       return (
                         <div
                           key={tier}
@@ -524,21 +566,33 @@ function PaymentContent() {
                               </li>
                             ))}
                           </ul>
-                          <button
-                            type="button"
-                            onClick={() => handleSubscribe(tier)}
-                            disabled={subPurchasing !== null}
-                            className="btn-primary flex w-full items-center justify-center gap-2 rounded-[13px] py-2.5 text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-                          >
-                            {subPurchasing === product.productId ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                {ts("purchasing")}
-                              </>
-                            ) : (
-                              ts("subscribeBtn", { tier: tierName(tier) })
-                            )}
-                          </button>
+                          {isFlavored && (
+                            <p className="mb-3 text-center text-xs text-emerald-300">
+                              {ts("trialNote")}
+                            </p>
+                          )}
+                          {native ? (
+                            <button
+                              type="button"
+                              onClick={() => handleSubscribe(tier)}
+                              disabled={subPurchasing !== null}
+                              className="btn-primary flex w-full items-center justify-center gap-2 rounded-[13px] py-2.5 text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                            >
+                              {subPurchasing === product.productId ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  {ts("purchasing")}
+                                </>
+                              ) : (
+                                ts("subscribeBtn", { tier: tierName(tier) })
+                              )}
+                            </button>
+                          ) : (
+                            // Флейвор на вебе: оформление только внутри приложения.
+                            <p className="rounded-[13px] border border-white/10 bg-white/5 px-4 py-2.5 text-center text-xs text-muted-foreground">
+                              {ts("webNote")}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -570,6 +624,9 @@ function PaymentContent() {
             </div>
           )}
 
+          {/* Всё, что связано с токенами, — только основной SkyForest. */}
+          {!isFlavored && (
+          <>
           {/* Referral promo. В нативных приложениях скрыто полностью:
               Apple 3.1.1 запрещает разблокировать токены промокодами
               (механизмами вне IAP). */}
@@ -843,6 +900,8 @@ function PaymentContent() {
             </div>
           </div>
           )}
+          </>
+          )}
         </>
       )}
 
@@ -1057,7 +1116,8 @@ function PaymentContent() {
         </>
       )}
 
-      {/* Transaction history */}
+      {/* Transaction history (токен-транзакции — только основной SkyForest) */}
+      {!isFlavored && (
       <div className="glass mt-8 rounded-2xl p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
           <History className="h-5 w-5 text-muted-foreground" />
@@ -1065,6 +1125,7 @@ function PaymentContent() {
         </h2>
         <TransactionHistory limit={20} />
       </div>
+      )}
     </div>
   );
 }

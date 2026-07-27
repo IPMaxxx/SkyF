@@ -25,6 +25,7 @@ import {
   CalendarCheck,
   ChevronDown,
   Footprints,
+  Crown,
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -485,6 +486,18 @@ export function AppHeader() {
                       {t("tokens")}
                     </Link>
                   )}
+                  {/* Флейворы: вместо токенов — пункт «Подписка» (пейволл). */}
+                  {isFlavored && (
+                    <Link
+                      href="/payment"
+                      role="menuitem"
+                      onClick={closeAll}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/80 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:bg-white/10"
+                    >
+                      <Crown className="h-4 w-4" aria-hidden="true" />
+                      {t("subscription")}
+                    </Link>
+                  )}
                   {/* Реферальная программа скрыта в нативе: токены за
                       промокоды — механизм вне IAP (Apple 3.1.1). */}
                   {!isNative && !isFlavored && (
@@ -673,6 +686,23 @@ export function AppHeader() {
                 >
                   <Coins className="h-5 w-5" aria-hidden="true" />
                   {t("tokens")}
+                </Link>
+              )}
+
+              {/* Флейворы: вместо токенов — пункт «Подписка» (пейволл). */}
+              {isFlavored && (
+                <Link
+                  href="/payment"
+                  onClick={closeAll}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    pathname === "/payment" || pathname.startsWith("/payment/")
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "text-amber-400 hover:bg-white/5"
+                  )}
+                >
+                  <Crown className="h-5 w-5" aria-hidden="true" />
+                  {t("subscription")}
                 </Link>
               )}
 
