@@ -6,9 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import { Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
+import { CheckerResetPassword } from "@/components/checker/CheckerAuth";
+import { WayBackResetPassword } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 
 export default function ResetPasswordPage() {
+  const flavor = useAppFlavor();
+  if (flavor === "checker") return <CheckerResetPassword />;
+  if (flavor === "wayback") return <WayBackResetPassword />;
+  return <ResetPasswordForm />;
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
   const t = useTranslations("auth");
   const isNative = useIsNative();

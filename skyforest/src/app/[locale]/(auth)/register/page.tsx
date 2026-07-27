@@ -10,13 +10,23 @@ import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
+import { CheckerRegister } from "@/components/checker/CheckerAuth";
+import { WayBackRegister } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 export default function RegisterPage() {
+  const flavor = useAppFlavor();
   return (
     <Suspense>
-      <RegisterForm />
+      {flavor === "checker" ? (
+        <CheckerRegister />
+      ) : flavor === "wayback" ? (
+        <WayBackRegister />
+      ) : (
+        <RegisterForm />
+      )}
     </Suspense>
   );
 }

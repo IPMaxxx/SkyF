@@ -8,13 +8,23 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
+import { CheckerLogin } from "@/components/checker/CheckerAuth";
+import { WayBackLogin } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 export default function LoginPage() {
+  const flavor = useAppFlavor();
   return (
     <Suspense>
-      <LoginForm />
+      {flavor === "checker" ? (
+        <CheckerLogin />
+      ) : flavor === "wayback" ? (
+        <WayBackLogin />
+      ) : (
+        <LoginForm />
+      )}
     </Suspense>
   );
 }
