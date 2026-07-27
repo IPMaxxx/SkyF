@@ -19,20 +19,17 @@ export interface IapProduct {
   bundleId: string;
 }
 
-/** Package name основного приложения и флейвора Mushroom Checker. */
+/** Package name основного приложения и флейворов. */
 export const MAIN_BUNDLE_ID = "ai.skyforest.app";
 export const CHECKER_BUNDLE_ID = "ai.skyforest.mushroomchecker";
+export const WAYBACK_BUNDLE_ID = "ai.skyforest.wayback";
 
+// Токен-пакеты продаются ТОЛЬКО в основном SkyForest. Во флейворах
+// (Mushroom Checker / WayBack) монетизация — подписка (см. ниже).
 export const IAP_PRODUCTS: IapProduct[] = [
-  // SkyForest (ai.skyforest.app)
   { productId: "ai.skyforest.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99, bundleId: MAIN_BUNDLE_ID },
   { productId: "ai.skyforest.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99, bundleId: MAIN_BUNDLE_ID },
   { productId: "ai.skyforest.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99, bundleId: MAIN_BUNDLE_ID },
-  // Mushroom Checker (ai.skyforest.mushroomchecker) — те же пакеты и цены,
-  // но товары зарегистрированы под отдельным приложением в сторах.
-  { productId: "ai.skyforest.mushroomchecker.tokens.30", packId: "pack_30", tokens: 30, priceUsd: 5.99, bundleId: CHECKER_BUNDLE_ID },
-  { productId: "ai.skyforest.mushroomchecker.tokens.100", packId: "pack_100", tokens: 100, priceUsd: 14.99, bundleId: CHECKER_BUNDLE_ID },
-  { productId: "ai.skyforest.mushroomchecker.tokens.300", packId: "pack_300", tokens: 300, priceUsd: 35.99, bundleId: CHECKER_BUNDLE_ID },
 ];
 
 /** Товары одного приложения (для register()/цен в конкретной оболочке). */
@@ -54,7 +51,9 @@ export function tokensForProduct(productId: string): number | null {
 
 // ---------------- Подписки ----------------
 
-export type SubscriptionTier = "forager" | "pro";
+// forager/pro — тиры основного SkyForest; checker/wayback — единственные
+// подписки одноимённых флейвор-приложений (без бонус-токенов).
+export type SubscriptionTier = "forager" | "pro" | "checker" | "wayback";
 export type SubscriptionPeriod = "monthly" | "yearly";
 
 export interface SubscriptionProduct {
@@ -63,34 +62,80 @@ export interface SubscriptionProduct {
   period: SubscriptionPeriod;
   /** Fallback-цена до загрузки реальной цены из стора */
   fallbackPrice: string;
+  /** Bundle id / package name приложения, которому принадлежит подписка. */
+  bundleId: string;
 }
 
 export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
+  // ---- SkyForest (ai.skyforest.app): Forager / Pro ----
   {
     productId: "ai.skyforest.sub.forager.monthly",
     tier: "forager",
     period: "monthly",
     fallbackPrice: "$5.99",
+    bundleId: MAIN_BUNDLE_ID,
   },
   {
     productId: "ai.skyforest.sub.forager.yearly",
     tier: "forager",
     period: "yearly",
     fallbackPrice: "$35.99",
+    bundleId: MAIN_BUNDLE_ID,
   },
   {
     productId: "ai.skyforest.sub.pro.monthly",
     tier: "pro",
     period: "monthly",
     fallbackPrice: "$11.99",
+    bundleId: MAIN_BUNDLE_ID,
   },
   {
     productId: "ai.skyforest.sub.pro.yearly",
     tier: "pro",
     period: "yearly",
     fallbackPrice: "$71.99",
+    bundleId: MAIN_BUNDLE_ID,
+  },
+  // ---- Mushroom Checker: единственная подписка месяц/год, триал 7 дней,
+  // без токенов (25 определений/мес включено в подписку, тир "checker").
+  {
+    productId: "ai.skyforest.mushroomchecker.sub.monthly",
+    tier: "checker",
+    period: "monthly",
+    fallbackPrice: "$4.99",
+    bundleId: CHECKER_BUNDLE_ID,
+  },
+  {
+    productId: "ai.skyforest.mushroomchecker.sub.yearly",
+    tier: "checker",
+    period: "yearly",
+    fallbackPrice: "$29.99",
+    bundleId: CHECKER_BUNDLE_ID,
+  },
+  // ---- WayBack: единственная подписка месяц/год, триал 7 дней,
+  // без токенов (подписка = полный доступ к приложению, тир "wayback").
+  {
+    productId: "ai.skyforest.wayback.sub.monthly",
+    tier: "wayback",
+    period: "monthly",
+    fallbackPrice: "$2.99",
+    bundleId: WAYBACK_BUNDLE_ID,
+  },
+  {
+    productId: "ai.skyforest.wayback.sub.yearly",
+    tier: "wayback",
+    period: "yearly",
+    fallbackPrice: "$19.99",
+    bundleId: WAYBACK_BUNDLE_ID,
   },
 ];
+
+/** Подписки одного приложения (для register()/пейволла конкретной оболочки). */
+export function subscriptionProductsForBundle(
+  bundleId: string,
+): SubscriptionProduct[] {
+  return SUBSCRIPTION_PRODUCTS.filter((p) => p.bundleId === bundleId);
+}
 
 export function subscriptionProductFor(
   productId: string,

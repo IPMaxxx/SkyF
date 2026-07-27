@@ -61,6 +61,25 @@ export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
     monthlyBonusTokens: 100,
     freeMarketplaceList: true,
   },
+  // Подписка приложения Mushroom Checker: только распознавание грибов,
+  // без токенов (никаких бонус-пулов — в флейворах токены не используются).
+  checker: {
+    unlimitedActions: [],
+    freeMonitors: 0,
+    identifyPerMonth: 25,
+    forecastPerMonth: 0,
+    monthlyBonusTokens: 0,
+    freeMarketplaceList: false,
+  },
+  // Подписка приложения WayBack: полный доступ к приложению, токенов нет.
+  wayback: {
+    unlimitedActions: [],
+    freeMonitors: 0,
+    identifyPerMonth: 0,
+    forecastPerMonth: 0,
+    monthlyBonusTokens: 0,
+    freeMarketplaceList: false,
+  },
 };
 
 export interface ActiveSubscription {
@@ -213,9 +232,10 @@ export async function grantMonthlyBonus(params: {
   isTrial?: boolean;
 }): Promise<"granted" | "already_granted" | "error"> {
   const { userId, platform, txId, tier, sliceStart, isTrial } = params;
-  const amount = isTrial
-    ? TRIAL_BONUS_TOKENS
-    : TIER_BENEFITS[tier].monthlyBonusTokens;
+  const monthlyPool = TIER_BENEFITS[tier].monthlyBonusTokens;
+  const amount = isTrial ? Math.min(TRIAL_BONUS_TOKENS, monthlyPool) : monthlyPool;
+  // Тиры без бонус-пула (checker/wayback): токены не зачисляются вовсе.
+  if (amount <= 0) return "granted";
   const sliceKey = sliceStart.toISOString().slice(0, 10);
   // Суффикс ":trial" отделяет триальный пул от полного: у Google startTime
   // (якорь слайсов) не меняется при конверсии триала в оплаченный период,
@@ -226,7 +246,7 @@ export async function grantMonthlyBonus(params: {
   const { data, error } = await supabase.rpc("add_bonus_tokens", {
     p_user_id: userId,
     p_amount: amount,
-    p_description: `Бонус подписки ${tier === "pro" ? "Pro" : "Forager"}${isTrial ? " (триал)" : ""} (${sliceKey})`,
+    p_description: `Бонус подписки ${tier === "pro" ? "Pro" : "Forager"}${isTrial ? " (триал)" : ""} (${sliceKey})`, // сюда попадают только forager/pro: у флейворов amount = 0
     p_payment_id: paymentId,
   });
 

@@ -76,7 +76,8 @@ export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
     ],
     anonymousPaths: [],
     navHrefs: ["/dashboard/identify"],
-    showTokens: true,
+    // Токенов в Checker нет — монетизация только подпиской (/payment).
+    showTokens: false,
     manifestPath: "/manifest-checker.webmanifest",
     faviconPath: "/icons/checker-192.png",
     nativeAppId: "ai.skyforest.mushroomchecker",
@@ -85,7 +86,8 @@ export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
     id: "wayback",
     name: "WayBack",
     homePath: "/dashboard/track",
-    allowedPaths: [...COMMON_ALLOWED, "/dashboard/track"],
+    // /payment и /offer нужны для пейволла подписки (требует логин).
+    allowedPaths: [...COMMON_ALLOWED, "/dashboard/track", "/payment", "/offer"],
     anonymousPaths: ["/dashboard/track"],
     navHrefs: ["/dashboard/track"],
     showTokens: false,

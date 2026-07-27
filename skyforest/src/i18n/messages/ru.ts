@@ -204,6 +204,7 @@ export default {
     myLocations: "Мои локации",
     myBestDays: "Мои грибные дни",
     tokens: "Токены",
+    subscription: "Подписка",
     referral: "Пригласить друга",
     logout: "Выйти",
     menu: "Меню",

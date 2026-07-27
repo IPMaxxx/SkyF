@@ -74,6 +74,7 @@ next-env.d.ts
 # android signing secrets (never commit)
 /fastlane/skyforest-upload.jks
 /android/keystore.properties
+/apps/*/android/keystore.properties
 *.jks
 
 # oauth / apple-google credentials (never commit — defensive, any location)

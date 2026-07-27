@@ -9,6 +9,9 @@
  */
 import { createSign } from "node:crypto";
 
+// Fallback для вызовов без явного bundle (основной SkyForest). Подписки
+// флейворов (Mushroom Checker / WayBack) передают свой bundle/package
+// из каталога (SubscriptionProduct.bundleId).
 const BUNDLE_ID = process.env.IAP_BUNDLE_ID || "ai.skyforest.app";
 const ANDROID_PACKAGE = process.env.ANDROID_PACKAGE || "ai.skyforest.app";
 
@@ -48,7 +51,7 @@ export interface StoreSubscriptionState {
 
 // ---------------- Apple ----------------
 
-function appleToken(): string | null {
+function appleToken(bundleId: string): string | null {
   const keyId = process.env.APPLE_IAP_KEY_ID;
   const issuerId = process.env.APPLE_IAP_ISSUER_ID;
   const key = process.env.APPLE_IAP_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -61,7 +64,7 @@ function appleToken(): string | null {
     iat: now,
     exp: now + 600,
     aud: "appstoreconnect-v1",
-    bid: BUNDLE_ID,
+    bid: bundleId,
   };
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
   const signer = createSign("SHA256");
@@ -85,8 +88,9 @@ export async function getAppleSubscription(
   transactionId: string,
   allowSandbox: boolean,
   expectedProductId?: string,
+  bundleId: string = BUNDLE_ID,
 ): Promise<StoreSubscriptionState | null> {
-  const token = appleToken();
+  const token = appleToken(bundleId);
   if (!token) throw new Error("apple_not_configured");
 
   const hosts =
@@ -121,7 +125,7 @@ export async function getAppleSubscription(
         const jws = last.signedTransactionInfo as string | undefined;
         const info = jws ? decodeJwsPayload(jws) : null;
         if (!info) continue;
-        if (info.bundleId && info.bundleId !== BUNDLE_ID) continue;
+        if (info.bundleId && info.bundleId !== bundleId) continue;
 
         // status: 1 active, 2 expired, 3 billing retry, 4 grace, 5 revoked
         const appleStatus = Number(last.status);
@@ -212,11 +216,12 @@ async function googleAccessToken(): Promise<string | null> {
 /** Статус подписки через purchases.subscriptionsv2.get. */
 export async function getGoogleSubscription(
   purchaseToken: string,
+  packageName: string = ANDROID_PACKAGE,
 ): Promise<StoreSubscriptionState | null> {
   const accessToken = await googleAccessToken();
   if (!accessToken) throw new Error("google_not_configured");
 
-  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${ANDROID_PACKAGE}/purchases/subscriptionsv2/tokens/${encodeURIComponent(
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptionsv2/tokens/${encodeURIComponent(
     purchaseToken,
   )}`;
   const res = await fetch(url, {
