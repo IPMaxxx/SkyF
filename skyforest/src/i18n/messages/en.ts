@@ -101,6 +101,46 @@ export default {
     seasonSpring: "Spring",
     seasonSummer: "Summer",
     seasonAutumn: "Autumn",
+    flavorLegalNote:
+      "The document below is the operator’s legal document for {app}. Requisites and jurisdiction are shared with the operator’s other services.",
+  },
+  // Тексты про задачу приложения для флейворов на поддоменах (см.
+  // src/lib/useFlavorBrand.ts). В SkyForest не используются.
+  flavor: {
+    checker: {
+      tagline: "Check your find",
+      metaDescription:
+        "Mushroom Checker identifies mushrooms from a photo: the species with a confidence score, dangerous lookalikes and a self-check list.",
+      authSubtitle: "Sign in to identify mushrooms from a photo.",
+      accountSubtitle: "Profile, subscription and account settings.",
+      accountDeleteHint:
+        "Deleting your account is irreversible: your profile and identification history will be removed. A store subscription has to be cancelled separately in App Store or Google Play.",
+      lockBody: "Unlock with Face ID to open Mushroom Checker.",
+      deletedItems: [
+        "Profile (name and email address)",
+        "Photos you sent for identification and their results",
+        "Push notification tokens of your devices",
+        "Subscription records kept on our side",
+      ],
+    },
+    wayback: {
+      tagline: "Always find your way back",
+      metaDescription:
+        "WayBack remembers where you entered the forest and always shows the arrow and the distance back — works without a network.",
+      authSubtitle: "Sign in for a subscription and to sync your hikes.",
+      accountSubtitle: "Profile, subscription and account settings.",
+      accountDeleteHint:
+        "Deleting your account is irreversible: your profile and the hikes synced to the cloud will be removed. A store subscription has to be cancelled separately in App Store or Google Play.",
+      accountDeleteNote:
+        "Hikes and offline maps saved on this device are not affected — remove them in the app.",
+      lockBody: "Unlock with Face ID to open WayBack.",
+      deletedItems: [
+        "Profile (name and email address)",
+        "Hikes synced to the cloud",
+        "Push notification tokens of your devices",
+        "Subscription records kept on our side",
+      ],
+    },
   },
   units: {
     switcherLabel: "Unit system",

@@ -1,11 +1,20 @@
 import { Header } from "@/components/marketing/Header";
 import { Footer } from "@/components/marketing/Footer";
+import { FlavorLegalShell } from "@/components/marketing/FlavorLegalShell";
+import { getServerFlavorConfig } from "@/lib/serverFlavor";
 
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // На поддоменах флейворов из этой группы доступны только юридические
+  // страницы — им нужна своя минимальная оболочка без навигации SkyForest.
+  const flavor = await getServerFlavorConfig();
+  if (flavor.id !== "skyforest") {
+    return <FlavorLegalShell flavor={flavor}>{children}</FlavorLegalShell>;
+  }
+
   return (
     <div className="relative min-h-screen">
       {/* Video background */}

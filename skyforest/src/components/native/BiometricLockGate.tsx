@@ -5,20 +5,23 @@ import { useTranslations } from "next-intl";
 import { Fingerprint } from "lucide-react";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { authenticateBiometric, isLockEnabled } from "@/lib/native/biometricLock";
+import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 export function BiometricLockGate() {
   const t = useTranslations("account.biometric");
+  const brand = useFlavorBrand();
   const [locked, setLocked] = useState(false);
   const [authing, setAuthing] = useState(false);
   const enabledRef = useRef(false);
+  const appName = brand.name;
 
   const tryUnlock = useCallback(async () => {
     if (authing) return;
     setAuthing(true);
-    const ok = await authenticateBiometric("Unlock SkyForest");
+    const ok = await authenticateBiometric(`Unlock ${appName}`);
     setAuthing(false);
     if (ok) setLocked(false);
-  }, [authing]);
+  }, [authing, appName]);
 
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -70,8 +73,12 @@ export function BiometricLockGate() {
         </div>
       </div>
       <div className="relative max-w-[280px]">
-        <p className="font-heading text-[23px] font-extrabold tracking-tight">{t("lockTitle")}</p>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-[#8aa090]">{t("lockBody")}</p>
+        <p className="font-heading text-[23px] font-extrabold tracking-tight">
+          {t("lockTitle", { app: appName })}
+        </p>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-[#8aa090]">
+          {brand.isFlavored ? brand.text("lockBody") : t("lockBody")}
+        </p>
       </div>
       <button
         type="button"

@@ -21,6 +21,7 @@ import {
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 import { capturePhoto, pickPhotoFromGallery } from "@/lib/capturePhoto";
 import { toast } from "sonner";
 import type { IdentifyResponse } from "@/app/api/mushrooms/identify/route";
@@ -35,6 +36,9 @@ export default function IdentifyPage() {
   const t = useTranslations("identify");
   const locale = useLocale();
   const { balance, refresh: refreshTokens } = useTokens();
+  // В Mushroom Checker монетизация — подписка: ни цены в токенах, ни
+  // подтверждения списания, ни ссылки «назад» (приложение одноэкранное).
+  const isChecker = useAppFlavor() === "checker";
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -101,7 +105,7 @@ export default function IdentifyPage() {
   };
 
   const mapError = (status: number, code?: string): string => {
-    if (status === 402) return t("errInsufficient");
+    if (status === 402) return isChecker ? t("errSubscriptionLimit") : t("errInsufficient");
     if (status === 413) return t("errTooLarge");
     if (status === 415) return t("errUnsupported");
     if (status === 422) return code === "no_result" ? t("errNoResult") : t("errNotMushroom");
@@ -142,7 +146,7 @@ export default function IdentifyPage() {
       }
 
       setResult(data as IdentifyResponse);
-      toast.success(t("toastCharged"));
+      if (!isChecker) toast.success(t("toastCharged"));
       refreshTokens();
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
@@ -159,13 +163,15 @@ export default function IdentifyPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
-      <Link
-        href="/dashboard"
-        className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("back")}
-      </Link>
+      {!isChecker && (
+        <Link
+          href="/dashboard"
+          className="mb-4 sm:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("back")}
+        </Link>
+      )}
 
       <div className="mb-4 sm:mb-6 flex items-center gap-3">
         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] border border-identify/35 bg-gradient-to-br from-[#0e2b26] to-[#0a1712] text-identify shadow-[0_0_30px_-8px_rgba(55,201,166,0.5)]">
@@ -457,11 +463,11 @@ export default function IdentifyPage() {
 
               <button
                 type="button"
-                onClick={() => setConfirming(true)}
+                onClick={() => (isChecker ? void runIdentify() : setConfirming(true))}
                 className="btn-identify flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[16px] py-3.5 text-[15px] transition-opacity hover:opacity-90"
               >
                 <ScanSearch className="h-5 w-5" />
-                {t("identify")} · {t("costSuffix")}
+                {isChecker ? t("identify") : `${t("identify")} · ${t("costSuffix")}`}
               </button>
 
               <button
@@ -502,6 +508,7 @@ export default function IdentifyPage() {
         </div>
       )}
 
+      {!isChecker && (
       <TokenConfirmModal
         open={confirming}
         title={t("confirmTitle")}
@@ -512,6 +519,7 @@ export default function IdentifyPage() {
         onConfirm={runIdentify}
         onCancel={() => setConfirming(false)}
       />
+      )}
     </div>
   );
 }

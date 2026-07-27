@@ -91,14 +91,15 @@ flowchart TD
   `launchAutoHide: false`).
 - **Назначение:** перекрыть загрузку боевого сайта в WebView, чтобы не мелькал
   пустой белый экран.
-- **Элементы:** логотип `public/images/logo-square.png` (анимация `animate-sf-float`),
-  тег-лайн `common.splashTagline` («Идём за грибами!»), три пульсирующие точки.
+- **Элементы:** иконка флейвора `public/icons/checker-512.png` (анимация
+  `animate-sf-float`), название **Mushroom Checker**, таглайн
+  `flavor.checker.tagline`, три пульсирующие точки.
 - **Тайминги:** видим 1300 мс → затухание 500 мс; страховка 3000 мс, если логотип
   не загрузился. Показывается один раз за загрузку документа (module-level `shownOnce`).
 - **Данные:** нет.
 - **Переход:** дальше `NativeAppProvider` уводит на `/dashboard/identify` или `/login`.
-- ⚠️ **Находка для редизайна:** splash использует **общий логотип SkyForest**, а не
-  иконку Mushroom Checker — визуально приложение открывается «чужим» брендом.
+- **История:** до v1.41.0 здесь был логотип SkyForest — приложение открывалось
+  «чужим» брендом.
 
 ### 3.2 Посадочная страница (только браузер)
 
@@ -120,8 +121,9 @@ flowchart TD
 - **Файл:** `src/app/[locale]/(auth)/login/page.tsx` — **две разные разметки**:
   `if (isNative)` (на скриншоте) и веб-вариант ниже в том же файле.
 - **Элементы:**
-  - иконка `ScanSearch` в «стеклянном» квадрате 76×76 — единственный элемент,
-    который в нативе намекает на Checker;
+  - иконка Mushroom Checker 76×76 (`AuthBrandMark mode="native-hero"`; в
+    SkyForest на этом месте по-прежнему глиф `ScanSearch`) и подзаголовок
+    `flavor.checker.authSubtitle`;
   - **Continue with Google** / **Continue with Apple** — `src/components/auth/SocialLoginButtons.tsx`,
     OAuth через Supabase; вынесены **выше** email-формы (в нативе это основной путь);
   - разделитель `OR WITH EMAIL` (`auth.orWithEmail`);
@@ -174,9 +176,9 @@ flowchart TD
   **нет таб-бара** (один экран), `<main>` с отступами под safe-area.
 - **Элементы:**
   - шапка: иконка приложения, название **Mushroom Checker**, кнопка **☰** (меню);
-  - ссылка **← Back** (`identify.back`) → `/dashboard` (в этом флейворе
-    middleware вернёт обратно на identify — ссылка фактически бесполезна,
-    **кандидат на удаление при редизайне**);
+  - ссылка **← Back** (`identify.back`) ведёт на `/dashboard`; в Checker
+    middleware возвращает обратно на identify, поэтому на отдельном экране
+    Checker (`src/components/checker/CheckerIdentify.tsx`) её нет;
   - заголовок с иконкой `ScanSearch` в «стеклянном» квадрате;
   - карточка **How to take a good photo** (`identify.tips` — 4 пункта);
   - **Take photo** (`btn-identify`, min-height 56px) — `capturePhoto()`;
@@ -213,22 +215,24 @@ flowchart TD
 веб-шапка и переключатели RU/EN и °C/°F. Содержимое экрана в нативе идентично.*
 
 - **Элементы:** превью 256px (`object-cover`), кнопка **Identify · 1 token**
-  (`identify.identify` + `identify.costSuffix`), кнопка **Retake** (переснять).
+  (`identify.identify` + `identify.costSuffix` — цена только в SkyForest),
+  кнопка **Retake** (переснять).
 - **Логика:** `setCaptured()` создаёт `URL.createObjectURL` и новый `requestId`
   (`crypto.randomUUID()`), который затем уходит в заголовке `Idempotency-Key`.
 
-### 3.10 Модалка подтверждения списания
+### 3.10 Модалка подтверждения списания (только SkyForest)
 
 ![Модалка списания](ui-flows/checker/12-identify-confirm.png)
 
 - **Файл:** `src/components/app/TokenConfirmModal.tsx`.
+- **В Checker модалки нет:** тап по **Identify** сразу запускает распознавание,
+  а исчерпанный лимит подписки объясняется сообщением
+  `identify.errSubscriptionLimit`. Скриншот оставлен как описание модалки
+  SkyForest.
 - **Элементы:** заголовок `identify.confirmTitle`, описание `identify.confirmDesc`
   («токен списывается только при успешном результате»), строки **Cost** / **Current
   balance** / **After operation**, кнопки **Confirm** и **Cancel**.
 - **Данные:** баланс из `useTokens()`.
-- ⚠️ **Находка:** во флейворе Checker `showTokens: false` (баланс в шапке скрыт,
-  монетизация — подписка), но модалка всё равно говорит на языке токенов.
-  При редизайне это стоит привести к «осталось N распознаваний из 25».
 
 ### 3.11 Идёт распознавание
 
@@ -304,8 +308,10 @@ flowchart TD
 - **Маршрут:** `/account` · **файл:** `src/app/[locale]/(app)/account/page.tsx`
   (серверный компонент, тянет данные и раскладывает клиентские карточки).
 - **Карточки и их файлы:**
-  - **Profile** — email, имя (`src/components/app/EditProfileName.tsx`),
-    контактная ссылка (`src/components/app/EditContactLink.tsx`);
+  - **Profile** — email и имя (`src/components/app/EditProfileName.tsx`);
+    контактная ссылка (`EditContactLink.tsx`) — только в SkyForest, она нужна
+    организаторам туров;
+  - **Subscription** — статус и переход на `/payment`, только во флейворах;
   - **Change password** — `src/components/app/ChangePassword.tsx`
     (поля «новый пароль» ≥ 6 символов и подтверждение);
   - **Two-factor authentication** — `src/components/app/TwoFactorSetup.tsx`
@@ -313,15 +319,15 @@ flowchart TD
   - **App Lock** — `src/components/native/BiometricLockSetting.tsx`, рендерится
     **только в нативе и только если есть биометрия** (Face ID / отпечаток),
     настройка хранится в Capacitor Preferences (`biometric_lock_enabled`);
-  - **история транзакций** — `src/components/app/TransactionHistory.tsx` (20 записей);
+  - **Legal** — оферта, политика, удаление аккаунта; во флейворах и только в
+    нативе (в вебе те же ссылки есть в футере);
   - **Delete account** — `src/components/app/DeleteAccount.tsx`: модалка с вводом
     email для подтверждения, удаление с 14-дневным периодом отмены;
-  - `MushroomBotCard` — только в вебе (обёрнута в `WebOnly`).
-- **Данные:** Supabase — `profiles`, `token_balances`, `token_transactions`
-  (последние 20, `created_at desc`); без сессии — `redirect("/login")`.
-- ⚠️ **Находка:** подзаголовок и история говорят про токены, хотя в Checker
-  токенов у пользователя быть не должно; блоки 2FA/токены на «одноэкранном»
-  приложении выглядят тяжело — главный кандидат на упрощение.
+  - **баланс и история токенов**, `MushroomBotCard` — только в SkyForest.
+- **Данные:** Supabase — `profiles`; баланс и транзакции запрашиваются только в
+  SkyForest; без сессии — `redirect("/login")`.
+- **История:** до v1.41.0 экран целиком повторял SkyForest — с балансом токенов,
+  историей транзакций и подзаголовком про «token transaction history».
 
 ### 3.16 Оферта / EULA и Политика конфиденциальности
 
@@ -333,6 +339,10 @@ flowchart TD
 - Длинные юридические тексты в `prose`-разметке. Открываются из пейволла
   (обязательное требование App Review) и из меню. Внутри нативной оболочки
   показываются в том же WebView.
+- **Во флейворах** документы подставляют название и адрес приложения, предмет и
+  модель оплаты (подписка вместо токенов) и свой дисклеймер; вместо
+  маркетингового header/footer SkyForest — компактная оболочка
+  `src/components/marketing/FlavorLegalShell.tsx` со ссылками на документы.
 
 ### 3.17 Удаление аккаунта (публичная страница)
 
@@ -447,12 +457,20 @@ flowchart TD
 
 ### Что стоит исправить (найдено при съёмке)
 
-1. Splash показывает логотип SkyForest вместо иконки Mushroom Checker.
-2. Ссылка **← Back** на домашнем экране ведёт в никуда (редирект возвращает обратно).
-3. Экран `/account` и модалка списания говорят про токены, хотя в Checker
-   монетизация — подписка; подзаголовок «…token transaction history» вводит в заблуждение.
-4. На `/account` в Checker показываются тяжёлые для «одноэкранного» приложения
-   блоки (2FA, история транзакций) — просится компактный вид.
+Пункты 1, 3 и 4 закрыты в v1.41.0 — оставлено как история находок:
+
+1. ~~Splash показывает логотип SkyForest вместо иконки Mushroom Checker.~~
+   Splash, экраны входа/регистрации/восстановления и экран блокировки берут
+   иконку, название и таглайн из флейвора (`useFlavorBrand`, `AuthBrandMark`).
+2. Ссылка **← Back** на домашнем экране ведёт в никуда — закрывается вместе с
+   отдельным экраном Checker (`src/components/checker/CheckerIdentify.tsx`):
+   на одноэкранном приложении ссылки «назад» нет.
+3. ~~`/account` говорит про токены.~~ На `/account` вместо баланса и истории
+   токенов — карточка подписки; исчерпанный лимит объясняется сообщением
+   `identify.errSubscriptionLimit` вместо модалки списания.
+4. ~~На `/account` тяжёлые для одноэкранного приложения блоки.~~ Скрыты баланс
+   и история транзакций, бот, контакт для организаторов туров; добавлены
+   подписка и юридические ссылки (в нативной оболочке, где нет футера).
 
 ---
 
@@ -513,8 +531,9 @@ flowchart TD
 
 **PWA / иконки:**
 
-- `public/manifest-checker.webmanifest`, `public/icons/checker-*.png`,
-  `public/images/logo-square.png` (splash), `public/images/app-bg-forest.png` (фон)
+- `public/manifest-checker.webmanifest`, `public/icons/checker-*.png`
+  (в том числе `checker-512.png` — splash и экраны входа),
+  `public/images/app-bg-forest.png` (фон)
 
 > Нативные проекты (`apps/`, `ios/`, `android/`, `fastlane/`) в этой задаче не
 > трогались: UI живёт в вебе, оболочка лишь открывает боевой сайт в WebView.
@@ -531,6 +550,12 @@ node scripts/capture-ui-flows.mjs identify-result    # +анализ и резу
 
 Учётные данные демо-аккаунта переопределяются через `UI_FLOWS_EMAIL` / `UI_FLOWS_PASSWORD`,
 хост — через `UI_FLOWS_CHECKER`. Реестр снятых экранов — `docs/ui-flows/manifest.json`.
+
+Проверить, что во флейворах не осталось «чужих» сущностей, можно на локальной
+прод-сборке: `npm start`, затем `node scripts/verify-flavor-cleanup.mjs` — скрипт
+подменяет хосты через host-resolver Chromium, логинится демо-аккаунтом и ищет на
+экранах упоминания SkyForest, токенов, рефералки и функций, которых в приложении
+нет.
 
 ### Что не удалось снять и почему
 

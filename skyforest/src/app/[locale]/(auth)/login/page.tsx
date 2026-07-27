@@ -1,14 +1,15 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Lock, Loader2, ScanSearch } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
+import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 export default function LoginPage() {
   return (
@@ -24,6 +25,7 @@ function LoginForm() {
   const redirect = searchParams.get("redirect") || "/dashboard";
   const t = useTranslations("auth");
   const isNative = useIsNative();
+  const brand = useFlavorBrand();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,12 +75,10 @@ function LoginForm() {
       <div className="flex min-h-screen flex-col bg-[#0b120d] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground">
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-[22px] border border-[rgba(55,201,166,0.35)] bg-gradient-to-br from-[#0e2b26] to-[#0a1712] shadow-[0_0_44px_-8px_rgba(55,201,166,0.5)]">
-              <ScanSearch className="h-9 w-9 text-identify" strokeWidth={1.6} aria-hidden="true" />
-            </div>
+            <AuthBrandMark mode="native-hero" />
             <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("loginTitle")}</h1>
             <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-[#8aa090]">
-              {t("nativeSlogan")}
+              {brand.isFlavored ? brand.text("authSubtitle") : t("nativeSlogan")}
             </p>
           </div>
 
@@ -171,17 +171,11 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
-          <Link href="/">
-            <Image
-              src="/images/logo-square.png"
-              alt="SkyForest"
-              width={64}
-              height={64}
-              className="mx-auto mb-4 h-14 w-14 sm:h-16 sm:w-16 rounded-xl"
-            />
-          </Link>
+          <AuthBrandMark mode="web-logo" />
           <h1 className="text-xl sm:text-2xl font-bold">{t("loginTitle")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{t("loginSubtitle")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {brand.isFlavored ? brand.text("authSubtitle") : t("loginSubtitle")}
+          </p>
         </div>
 
         <form

@@ -1,6 +1,35 @@
 import { BRAND } from "@/lib/brand";
+import { getLegalProduct } from "@/lib/serverFlavor";
+import type { AppFlavor } from "@/lib/appFlavor";
 
-export function PrivacySamplify() {
+/**
+ * Политика конфиденциальности оператора (SAMPLIFY FZCO) — общая для всех
+ * продуктов юрлица. Название/адрес продукта и перечень собираемых данных
+ * подставляются по флейвору: в Checker нет треков, в WayBack — фотографий.
+ */
+const PRODUCT_COPY: Record<
+  AppFlavor,
+  { content: string; payments: string }
+> = {
+  skyforest: {
+    content: "User content: coordinates, notes, photos, mushroom day records",
+    payments: "Processing token purchases and account management",
+  },
+  checker: {
+    content: "User content: photos you submit for mushroom identification",
+    payments: "Processing subscription payments and account management",
+  },
+  wayback: {
+    content:
+      "User content: coordinates of your entry point and walking tracks (kept on your device; they are not uploaded to the Operator)",
+    payments: "Processing subscription payments and account management",
+  },
+};
+
+export async function PrivacySamplify() {
+  const { flavor, appName, appUrl } = await getLegalProduct();
+  const copy = PRODUCT_COPY[flavor];
+
   return (
     <div className="prose prose-sm max-w-none space-y-6 text-foreground">
       <p className="text-muted-foreground">Revision of March 24, 2026</p>
@@ -9,7 +38,7 @@ export function PrivacySamplify() {
       <p>
         This Privacy Policy describes how {BRAND.company.legalName} (the
         Operator) collects, uses, and protects personal data of users of{" "}
-        {BRAND.name} at {BRAND.url}.
+        {appName} at {appUrl}.
       </p>
       <p>
         Operator address: {BRAND.company.address}. By using the Service you
@@ -23,9 +52,7 @@ export function PrivacySamplify() {
           Payment metadata processed by {BRAND.paymentProviderName} (PCI DSS
           Level 1). We do not store card numbers.
         </li>
-        <li>
-          User content: coordinates, notes, photos, mushroom day records
-        </li>
+        <li>{copy.content}</li>
         <li>
           Technical data: IP address, browser, device type, session information
         </li>
@@ -35,7 +62,7 @@ export function PrivacySamplify() {
       <h2 className="text-xl font-semibold">3. Purposes</h2>
       <ul className="list-disc space-y-2 pl-6">
         <li>Providing and improving the Service</li>
-        <li>Processing token purchases and account management</li>
+        <li>{copy.payments}</li>
         <li>Customer support and security</li>
         <li>Analytics and service quality (aggregated where possible)</li>
       </ul>

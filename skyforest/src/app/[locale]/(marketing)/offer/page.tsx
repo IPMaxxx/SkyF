@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BRAND, isSamplify } from "@/lib/brand";
 import { OfferSamplify } from "@/components/legal/OfferSamplify";
+import { FlavorLegalNote } from "@/components/legal/FlavorLegalNote";
+import { getServerFlavorConfig } from "@/lib/serverFlavor";
 import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
 import { marketingPageMetadata } from "@/lib/marketingSeo";
 
@@ -9,10 +11,14 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const flavor = await getServerFlavorConfig();
   const title = isSamplify ? "Terms of Service" : "Договор-оферта";
-  const description = isSamplify
-    ? "Terms of Service for SkyForest — weather analysis and mushroom picking assistant."
-    : "Публичный договор-оферта SkyForest — условия предоставления услуг по анализу погодных данных.";
+  const description =
+    flavor.id !== "skyforest"
+      ? `Terms of Service for ${flavor.name} — the services provided by the operator.`
+      : isSamplify
+        ? "Terms of Service for SkyForest — weather analysis and mushroom picking assistant."
+        : "Публичный договор-оферта SkyForest — условия предоставления услуг по анализу погодных данных.";
   return marketingPageMetadata({ title, description, path: "/offer", locale });
 }
 
@@ -32,6 +38,7 @@ export default async function OfferPage({ params }: Props) {
             { name: pageTitle },
           ]}
         />
+        <FlavorLegalNote />
         <OfferSamplify />
       </div>
     );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BRAND, isSamplify } from "@/lib/brand";
 import { DeleteAccountSamplify } from "@/components/legal/DeleteAccountSamplify";
+import { getServerFlavorConfig } from "@/lib/serverFlavor";
 import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
 import { marketingPageMetadata } from "@/lib/marketingSeo";
 
@@ -9,12 +10,13 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const app = (await getServerFlavorConfig()).name;
   const title = isSamplify
     ? "Delete your account and data"
     : "Удаление аккаунта и данных";
   const description = isSamplify
-    ? "How to delete your SkyForest account and personal data, what is removed, what may be retained, and for how long."
-    : "Как удалить аккаунт SkyForest и персональные данные: что удаляется, что может храниться и в течение какого срока.";
+    ? `How to delete your ${app} account and personal data, what is removed, what may be retained, and for how long.`
+    : `Как удалить аккаунт ${app} и персональные данные: что удаляется, что может храниться и в течение какого срока.`;
   return marketingPageMetadata({ title, description, path: "/delete-account", locale });
 }
 

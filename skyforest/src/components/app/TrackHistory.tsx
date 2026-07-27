@@ -14,6 +14,7 @@ import { History, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { useUnits } from "@/lib/units";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 import {
   loadTrackHistory,
   deleteSavedTrack,
@@ -29,6 +30,7 @@ export function TrackHistory() {
   const t = useTranslations("track");
   const locale = useLocale();
   const units = useUnits();
+  const flavor = useAppFlavor();
 
   const [items, setItems] = useState<SavedTrack[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -83,7 +85,10 @@ export function TrackHistory() {
       minute: "2-digit",
     });
 
-  if (!items || items.length === 0) return null;
+  // До загрузки списка блока нет (данные лежат на устройстве). Пустое состояние
+  // нужно в WayBack, где поход — единственный сценарий; в SkyForest трек —
+  // второстепенная функция, и пустая карточка там только шумит.
+  if (!items || (items.length === 0 && flavor !== "wayback")) return null;
 
   return (
     <div className="glass rounded-2xl p-5">
@@ -91,6 +96,15 @@ export function TrackHistory() {
         <History className="h-4 w-4 text-emerald-400" aria-hidden="true" />
         {t("historyTitle")}
       </h2>
+
+      {items.length === 0 && (
+        <div className="rounded-xl bg-white/5 px-4 py-5 text-center">
+          <p className="text-sm font-medium">{t("historyEmpty")}</p>
+          <p className="mx-auto mt-1.5 max-w-[280px] text-xs leading-relaxed text-muted-foreground">
+            {t("historyEmptyHint")}
+          </p>
+        </div>
+      )}
 
       <ul className="space-y-2">
         {items.map((item) => {

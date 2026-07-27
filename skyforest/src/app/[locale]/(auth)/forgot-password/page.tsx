@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
 import { useIsNative } from "@/lib/native/useIsNative";
 
 export default function ForgotPasswordPage() {
@@ -46,15 +46,7 @@ export default function ForgotPasswordPage() {
       <div className="flex min-h-screen flex-col bg-[#0b120d] px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-[max(env(safe-area-inset-top),2.5rem)] text-foreground">
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
           <div className="mb-7 text-center">
-            <Link href="/">
-              <Image
-                src="/images/logo-square.png"
-                alt="SkyForest"
-                width={64}
-                height={64}
-                className="mx-auto mb-4 h-16 w-16 rounded-[18px] border border-[rgba(120,220,150,0.25)]"
-              />
-            </Link>
+            <AuthBrandMark mode="native-logo" />
             <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("forgotTitle")}</h1>
             <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-[#8aa090]">
               {t("forgotSubtitle")}
@@ -133,15 +125,7 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
-          <Link href="/">
-            <Image
-              src="/images/logo-square.png"
-              alt="SkyForest"
-              width={64}
-              height={64}
-              className="mx-auto mb-4 h-16 w-16 rounded-xl"
-            />
-          </Link>
+          <AuthBrandMark mode="web-logo" className="mx-auto mb-4 h-16 w-16 rounded-xl" />
           <h1 className="text-2xl font-bold">{t("forgotTitle")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {t("forgotSubtitle")}

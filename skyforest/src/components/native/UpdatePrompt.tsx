@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { getPlatform, type NativePlatform } from "@/lib/native/capacitor";
+import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 const APP_STORE_ID = "6786255697";
 const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=ai.skyforest.app";
@@ -98,6 +99,8 @@ async function setDismissed(version: string): Promise<void> {
 export function UpdatePrompt() {
   const isNative = useIsNative();
   const t = useTranslations("common");
+  const brand = useFlavorBrand();
+  const isFlavored = brand.isFlavored;
   const [installed, setInstalled] = useState<string | null>(null);
   const [latest, setLatest] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -106,9 +109,7 @@ export function UpdatePrompt() {
     if (!isNative) return;
     // Флейворы (Checker/WayBack) — другие приложения в сторах со своими
     // версиями; их URL/версий здесь нет, подсказку не показываем.
-    if (typeof window !== "undefined" && /^(checker|wayback)\./i.test(window.location.hostname)) {
-      return;
-    }
+    if (isFlavored) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -145,7 +146,7 @@ export function UpdatePrompt() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [isNative]);
+  }, [isNative, isFlavored]);
 
   const handleUpdate = () => {
     const url = storeUrl(getPlatform());
@@ -179,7 +180,7 @@ export function UpdatePrompt() {
         <div className="flex flex-col items-center gap-4 px-6 pb-6 pt-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/logo-square.png"
+            src={brand.logoPath}
             alt=""
             className="h-16 w-16 rounded-2xl object-contain shadow-[0_0_40px_-10px_rgba(95,181,115,0.6)]"
           />

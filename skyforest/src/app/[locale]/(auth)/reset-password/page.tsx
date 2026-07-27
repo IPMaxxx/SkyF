@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
 import { useIsNative } from "@/lib/native/useIsNative";
 
 export default function ResetPasswordPage() {
@@ -92,19 +92,14 @@ export default function ResetPasswordPage() {
     >
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
-          <Link href="/">
-            <Image
-              src="/images/logo-square.png"
-              alt="SkyForest"
-              width={64}
-              height={64}
-              className={
-                isNative
-                  ? "mx-auto mb-4 h-16 w-16 rounded-[18px] border border-[rgba(120,220,150,0.25)]"
-                  : "mx-auto mb-3 sm:mb-4 h-12 w-12 sm:h-16 sm:w-16 rounded-xl"
-              }
-            />
-          </Link>
+          <AuthBrandMark
+            mode={isNative ? "native-logo" : "web-logo"}
+            className={
+              isNative
+                ? "mx-auto mb-4 h-16 w-16 rounded-[18px] border border-[rgba(120,220,150,0.25)]"
+                : "mx-auto mb-3 sm:mb-4 h-12 w-12 sm:h-16 sm:w-16 rounded-xl"
+            }
+          />
           <h1 className={isNative ? "font-heading text-2xl font-extrabold tracking-tight" : "text-xl sm:text-2xl font-bold"}>
             {t("resetTitle")}
           </h1>

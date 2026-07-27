@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -11,6 +12,7 @@ export default async function WaybackLanding({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const tFooter = await getTranslations({ locale, namespace: "footer" });
   const en = locale === "en";
   const t = en
     ? {
@@ -45,9 +47,26 @@ export default async function WaybackLanding({
       >
         {t.cta}
       </Link>
+      {/* Документы приложения: требование сторов и просто нужны пользователю. */}
+      <ul className="mt-10 flex flex-wrap justify-center gap-x-4 gap-y-2">
+        {[
+          { href: "/offer", label: tFooter("offer") },
+          { href: "/privacy", label: tFooter("privacy") },
+          { href: "/delete-account", label: tFooter("deleteAccount") },
+        ].map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="text-xs text-white/45 underline-offset-4 hover:text-white/70 hover:underline"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
       <a
         href="https://skyforest.ai"
-        className="mt-10 text-xs text-white/35 underline-offset-4 hover:text-white/60 hover:underline"
+        className="mt-4 text-xs text-white/35 underline-offset-4 hover:text-white/60 hover:underline"
       >
         {t.full}
       </a>
