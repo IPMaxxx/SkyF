@@ -1,0 +1,338 @@
+[
+  {
+    "flavor": "checker",
+    "id": "00-splash",
+    "title": "Брендовый splash нативной оболочки (холодный старт)",
+    "note": null,
+    "file": "docs/ui-flows/checker/00-splash.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "01-landing",
+    "title": "Посадочная страница (браузер, без входа)",
+    "note": null,
+    "file": "docs/ui-flows/checker/01-landing.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "02-login",
+    "title": "Вход",
+    "note": null,
+    "file": "docs/ui-flows/checker/02-login.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "03-register",
+    "title": "Регистрация",
+    "note": null,
+    "file": "docs/ui-flows/checker/03-register.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "04-forgot-password",
+    "title": "Восстановление пароля",
+    "note": null,
+    "file": "docs/ui-flows/checker/04-forgot-password.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "05-reset-password",
+    "title": "Новый пароль — недействительная ссылка",
+    "note": null,
+    "file": "docs/ui-flows/checker/05-reset-password.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "10-identify",
+    "title": "Определить гриб — единственный рабочий экран приложения",
+    "note": null,
+    "file": "docs/ui-flows/checker/10-identify.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "11-identify-preview",
+    "title": "Фото выбрано — превью перед распознаванием",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/11-identify-preview.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "12-identify-confirm",
+    "title": "Модалка подтверждения списания токена",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/12-identify-confirm.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "13-identify-analyzing",
+    "title": "Идёт распознавание — прогресс",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/13-identify-analyzing.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "14-identify-result",
+    "title": "Результат распознавания — виды, вероятности, двойники",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/14-identify-result.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "15-identify-result-details",
+    "title": "Результат — подробности, двойники, чеклист",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/15-identify-result-details.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "16-paywall-yearly",
+    "title": "Пейволл подписки — годовой тариф (по умолчанию)",
+    "note": null,
+    "file": "docs/ui-flows/checker/16-paywall-yearly.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "17-paywall-monthly",
+    "title": "Пейволл подписки — месячный тариф",
+    "note": null,
+    "file": "docs/ui-flows/checker/17-paywall-monthly.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "18-account",
+    "title": "Аккаунт (снято в браузерной раскладке)",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/18-account.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "19-offer",
+    "title": "Оферта / EULA",
+    "note": null,
+    "file": "docs/ui-flows/checker/19-offer.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "20-privacy",
+    "title": "Политика конфиденциальности",
+    "note": null,
+    "file": "docs/ui-flows/checker/20-privacy.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "21-delete-account",
+    "title": "Удаление аккаунта",
+    "note": null,
+    "file": "docs/ui-flows/checker/21-delete-account.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "22-blocked-route-redirect",
+    "title": "Чужой маршрут → редирект на «Определить гриб»",
+    "note": null,
+    "file": "docs/ui-flows/checker/22-blocked-route-redirect.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "23-paywall-web",
+    "title": "Пейволл в браузере — оформление только в приложении",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/checker/23-paywall-web.png"
+  },
+  {
+    "flavor": "checker",
+    "id": "24-menu",
+    "title": "Меню (☰) — вся навигация приложения",
+    "note": null,
+    "file": "docs/ui-flows/checker/24-menu.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "00-splash",
+    "title": "Брендовый splash нативной оболочки (холодный старт)",
+    "note": null,
+    "file": "docs/ui-flows/wayback/00-splash.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "01-landing",
+    "title": "Посадочная страница (браузер, без входа)",
+    "note": null,
+    "file": "docs/ui-flows/wayback/01-landing.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "02-login",
+    "title": "Вход",
+    "note": null,
+    "file": "docs/ui-flows/wayback/02-login.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "03-register",
+    "title": "Регистрация",
+    "note": null,
+    "file": "docs/ui-flows/wayback/03-register.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "04-forgot-password",
+    "title": "Восстановление пароля",
+    "note": null,
+    "file": "docs/ui-flows/wayback/04-forgot-password.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "05-reset-password",
+    "title": "Новый пароль — недействительная ссылка",
+    "note": null,
+    "file": "docs/ui-flows/wayback/05-reset-password.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "06-track-anonymous",
+    "title": "Трек доступен без входа (анонимный режим)",
+    "note": null,
+    "file": "docs/ui-flows/wayback/06-track-anonymous.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "10-track-idle",
+    "title": "Трек — похода нет",
+    "note": null,
+    "file": "docs/ui-flows/wayback/10-track-idle.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "11-track-pick-on-map",
+    "title": "Ручной выбор точки входа на карте",
+    "note": null,
+    "file": "docs/ui-flows/wayback/11-track-pick-on-map.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "12-offline-region",
+    "title": "Скачивание региона для офлайна — радиус и детализация",
+    "note": null,
+    "file": "docs/ui-flows/wayback/12-offline-region.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "13-offline-region-downloading",
+    "title": "Загрузка тайлов региона — прогресс",
+    "note": null,
+    "file": "docs/ui-flows/wayback/13-offline-region-downloading.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "14-track-history",
+    "title": "История походов — сохранённый поход, тап разворачивает карту",
+    "note": null,
+    "file": "docs/ui-flows/wayback/14-track-history.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "15-track-active",
+    "title": "Активный поход — расстояние, компас возврата, карта",
+    "note": null,
+    "file": "docs/ui-flows/wayback/15-track-active.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "16-track-active-moved",
+    "title": "Активный поход после смещения — путь на карте и азимут",
+    "note": null,
+    "file": "docs/ui-flows/wayback/16-track-active-moved.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "17-track-finish-confirm",
+    "title": "Подтверждение завершения похода",
+    "note": null,
+    "file": "docs/ui-flows/wayback/17-track-finish-confirm.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "18-paywall-yearly",
+    "title": "Пейволл подписки — годовой тариф (по умолчанию)",
+    "note": null,
+    "file": "docs/ui-flows/wayback/18-paywall-yearly.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "19-paywall-monthly",
+    "title": "Пейволл подписки — месячный тариф",
+    "note": null,
+    "file": "docs/ui-flows/wayback/19-paywall-monthly.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "20-account",
+    "title": "Аккаунт (снято в браузерной раскладке)",
+    "note": "web-раскладка",
+    "file": "docs/ui-flows/wayback/20-account.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "21-offer",
+    "title": "Оферта / EULA",
+    "note": null,
+    "file": "docs/ui-flows/wayback/21-offer.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "22-privacy",
+    "title": "Политика конфиденциальности",
+    "note": null,
+    "file": "docs/ui-flows/wayback/22-privacy.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "23-delete-account",
+    "title": "Удаление аккаунта",
+    "note": null,
+    "file": "docs/ui-flows/wayback/23-delete-account.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "24-blocked-route-redirect",
+    "title": "Чужой маршрут → редирект на «Трек»",
+    "note": null,
+    "file": "docs/ui-flows/wayback/24-blocked-route-redirect.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "25-menu",
+    "title": "Меню (☰) — вся навигация приложения",
+    "note": null,
+    "file": "docs/ui-flows/wayback/25-menu.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "30-shell-start",
+    "title": "Офлайн-экран — похода нет, точка входа ставится тапом по карте",
+    "note": null,
+    "file": "docs/ui-flows/wayback/30-shell-start.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "31-shell-satellite",
+    "title": "Офлайн-экран — слой «Спутник»",
+    "note": null,
+    "file": "docs/ui-flows/wayback/31-shell-satellite.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "32-shell-point-picked",
+    "title": "Офлайн-экран — точка входа выбрана, «Way Back» активна",
+    "note": null,
+    "file": "docs/ui-flows/wayback/32-shell-point-picked.png"
+  },
+  {
+    "flavor": "wayback",
+    "id": "33-shell-active",
+    "title": "Офлайн-экран — активный поход: расстояние, время, компас",
+    "note": null,
+    "file": "docs/ui-flows/wayback/33-shell-active.png"
+  }
+]
