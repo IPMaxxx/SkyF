@@ -642,13 +642,20 @@ export function CheckerIdentify() {
   /* ---------------- Превью выбранного фото ---------------- */
 
   if (previewUrl) {
-    const used = limit != null && left != null ? limit - left + 1 : null;
+    // Порядковый номер этого определения в месяце; при исчерпанном лимите
+    // считать нечего — кнопка блокируется, ведём на подписку.
+    const exhausted = left != null && left <= 0;
+    const used =
+      limit != null && left != null && !exhausted ? limit - left + 1 : null;
     return (
       <>
         <CkScreen
           bottom={
             <div className="flex flex-col gap-2.5">
-              <CkPrimaryButton onClick={() => setConfirming(true)}>
+              <CkPrimaryButton
+                onClick={() => setConfirming(true)}
+                disabled={exhausted}
+              >
                 {t("preview.identify")}
                 {used != null && limit != null && (
                   <span className="text-[13px] font-semibold opacity-85">
@@ -678,7 +685,36 @@ export function CheckerIdentify() {
 
             {errorCard}
 
-            {!error && (
+            {/* Лимит исчерпан ещё до отправки: объясняем заблокированную
+                кнопку и сразу даём дорогу на пейволл. */}
+            {!error && exhausted && (
+              <CkStatusCard
+                variant="warn"
+                icon="◑"
+                title={t("errors.limitTitle")}
+                body={
+                  resetDate
+                    ? t("errors.limitBody", {
+                        limit: limit ?? CHECKER_MONTHLY_LIMIT,
+                        date: resetDate,
+                      })
+                    : t("errors.limitBodyNoDate", {
+                        limit: limit ?? CHECKER_MONTHLY_LIMIT,
+                      })
+                }
+                action={
+                  <button
+                    type="button"
+                    onClick={() => router.push("/payment")}
+                    className="flex h-12 w-full items-center justify-center rounded-3xl bg-ck-amber text-[14.5px] font-extrabold text-white"
+                  >
+                    {t("errors.limitCta")}
+                  </button>
+                }
+              />
+            )}
+
+            {!error && !exhausted && (
               <div className="flex flex-col gap-2 rounded-[22px] border border-ck-border-2 bg-ck-surface p-4">
                 <span className="text-[13px] font-extrabold text-ck-ink-2">
                   {t("preview.beforeTitle")}
