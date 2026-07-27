@@ -16,6 +16,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { BRAND } from "@/lib/brand";
 import { flavorFromHost, flavorConfig } from "@/lib/appFlavor";
+import { FlavorProvider } from "@/lib/FlavorProvider";
 
 type Props = {
   children: React.ReactNode;
@@ -36,9 +37,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // На поддоменах флейворов — свои название и иконка.
   const flavor = flavorConfig(flavorFromHost((await headers()).get("host")));
   if (flavor.id !== "skyforest") {
+    const tFlavor = await getTranslations({ locale, namespace: `flavor.${flavor.id}` });
     return {
       title: { default: flavor.name, template: `%s | ${flavor.name}` },
-      description: t("description"),
+      description: tFlavor("metaDescription"),
       icons: { icon: flavor.faviconPath },
       robots: { index: false }, // посадочные поддоменов не индексируем
     };
@@ -99,27 +101,37 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const jsonLd = getSiteJsonLd(locale as "ru" | "en");
+  // Разметка организации и PWA-подсказки описывают сайт SkyForest — на
+  // поддоменах флейворов (у них свои приложения в сторах) они не нужны.
+  const flavor = flavorFromHost((await headers()).get("host"));
+  const isFlavored = flavor !== "skyforest";
+  const jsonLd = isFlavored ? null : getSiteJsonLd(locale as "ru" | "en");
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <PwaInstallProvider>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <SkipLink />
-        <NativeAppProvider />
-        <NativeSplash />
-        <UpdatePrompt />
-        <BiometricLockGate />
-        {children}
-        {/* PWA-подсказки только в вебе/браузере — в нативном приложении не нужны */}
-        <WebOnly>
-          <MobileInstallBanner />
-          <IosInstallHelpModal />
-        </WebOnly>
-      </PwaInstallProvider>
+      <FlavorProvider flavor={flavor}>
+        <PwaInstallProvider>
+          {jsonLd && (
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+          )}
+          <SkipLink />
+          <NativeAppProvider />
+          <NativeSplash />
+          <UpdatePrompt />
+          <BiometricLockGate />
+          {children}
+          {/* PWA-подсказки только в вебе/браузере — в нативном приложении не нужны */}
+          {!isFlavored && (
+            <WebOnly>
+              <MobileInstallBanner />
+              <IosInstallHelpModal />
+            </WebOnly>
+          )}
+        </PwaInstallProvider>
+      </FlavorProvider>
     </NextIntlClientProvider>
   );
 }

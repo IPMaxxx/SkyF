@@ -1,12 +1,22 @@
+import { getTranslations } from "next-intl/server";
 import { BRAND } from "@/lib/brand";
+import { getServerFlavorConfig } from "@/lib/serverFlavor";
 
-export function DeleteAccountSamplify() {
+export async function DeleteAccountSamplify() {
+  // На поддоменах флейворов страница описывает удаление данных именно этого
+  // приложения: локаций, маркетплейса и токенов в Checker/WayBack нет.
+  const flavor = await getServerFlavorConfig();
+  const appName = flavor.id === "skyforest" ? BRAND.name : flavor.name;
+  const tFlavor =
+    flavor.id === "skyforest" ? null : await getTranslations(`flavor.${flavor.id}`);
+  const flavorItems = tFlavor ? (tFlavor.raw("deletedItems") as string[]) : null;
+
   return (
     <div className="prose prose-sm max-w-none space-y-6 text-foreground">
       <p className="text-muted-foreground">Revision of July 2, 2026</p>
 
       <p>
-        This page explains how to delete your {BRAND.name} account and the
+        This page explains how to delete your {appName} account and the
         personal data associated with it, operated by {BRAND.company.legalName}{" "}
         ({BRAND.company.address}). You can start a deletion request without
         signing in.
@@ -19,7 +29,7 @@ export function DeleteAccountSamplify() {
         If you can sign in, you can delete your account yourself:
       </p>
       <ol className="list-decimal space-y-2 pl-6">
-        <li>Open {BRAND.name} and go to your Account page.</li>
+        <li>Open {appName} and go to your Account page.</li>
         <li>
           Scroll to the danger zone and tap <strong>Delete account</strong>.
         </li>
@@ -55,17 +65,25 @@ export function DeleteAccountSamplify() {
       <h2 className="text-xl font-semibold">What gets deleted</h2>
       <p>When your account is deleted, we permanently remove:</p>
       <ul className="list-disc space-y-2 pl-6">
-        <li>Your profile (name and email address)</li>
-        <li>Saved locations and your notes</li>
-        <li>&ldquo;Best days&rdquo; records</li>
-        <li>Photos you uploaded</li>
-        <li>Marketplace listings and messages</li>
-        <li>Push notification tokens for your devices</li>
-        <li>
-          Search history, comparisons, referral codes, and any subscriptions
-        </li>
-        <li>Token balance and unused tokens (these are not refundable)</li>
+        {flavorItems ? (
+          flavorItems.map((item) => <li key={item}>{item}</li>)
+        ) : (
+          <>
+            <li>Your profile (name and email address)</li>
+            <li>Saved locations and your notes</li>
+            <li>&ldquo;Best days&rdquo; records</li>
+            <li>Photos you uploaded</li>
+            <li>Marketplace listings and messages</li>
+            <li>Push notification tokens for your devices</li>
+            <li>
+              Search history, comparisons, referral codes, and any subscriptions
+            </li>
+            <li>Token balance and unused tokens (these are not refundable)</li>
+          </>
+        )}
       </ul>
+
+      {flavor.id === "wayback" && <p>{tFlavor!("accountDeleteNote")}</p>}
 
       <h2 className="text-xl font-semibold">What may be retained, and for how long</h2>
       <p>

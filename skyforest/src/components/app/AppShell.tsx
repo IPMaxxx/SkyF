@@ -2,9 +2,11 @@
 
 import { AppHeader } from "@/components/app/AppHeader";
 import { Footer } from "@/components/marketing/Footer";
+import { FlavorAppFooter } from "@/components/app/FlavorAppFooter";
 import { ReferralApplier } from "@/components/app/ReferralApplier";
 import { NativeTabBar } from "@/components/native/NativeTabBar";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 
 /**
  * Layout-оболочка кабинета `(app)`.
@@ -19,6 +21,9 @@ import { useIsNative } from "@/lib/native/useIsNative";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const isNative = useIsNative();
+  const flavor = useAppFlavor();
+  // Во флейворах футер и реферальная механика SkyForest не нужны.
+  const isFlavored = flavor !== "skyforest";
 
   return (
     <div className="relative flex min-h-screen flex-col">
@@ -56,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <AppHeader />
-      <ReferralApplier />
+      {!isFlavored && <ReferralApplier />}
 
       <main
         id="main-content"
@@ -70,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {isNative ? <NativeTabBar /> : <Footer />}
+      {isNative ? <NativeTabBar /> : isFlavored ? <FlavorAppFooter /> : <Footer />}
     </div>
   );
 }

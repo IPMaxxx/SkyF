@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Fingerprint } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { isNativeApp } from "@/lib/native/capacitor";
 import {
   authenticateBiometric,
@@ -15,6 +16,7 @@ import {
  * при наличии биометрии; в браузере/PWA возвращает null (карточки нет).
  */
 export function BiometricLockSetting() {
+  const t = useTranslations("account");
   const [available, setAvailable] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,7 @@ export function BiometricLockSetting() {
     setBusy(true);
     try {
       if (!enabled) {
-        const ok = await authenticateBiometric("Confirm to enable app lock");
+        const ok = await authenticateBiometric(t("appLockPrompt"));
         if (!ok) return;
         await setLockEnabled(true);
         setEnabled(true);
@@ -52,12 +54,10 @@ export function BiometricLockSetting() {
     <div className="glass mb-6 rounded-2xl p-6">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
         <Fingerprint className="h-5 w-5 text-primary" />
-        App Lock
+        {t("appLock")}
       </h2>
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          Require Face ID / fingerprint to open the app.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("appLockHint")}</p>
         <button
           onClick={toggle}
           disabled={busy}
@@ -65,7 +65,7 @@ export function BiometricLockSetting() {
             enabled ? "bg-primary" : "bg-white/20"
           } ${busy ? "opacity-60" : ""}`}
           aria-pressed={enabled}
-          aria-label="Toggle app lock"
+          aria-label={t("appLockToggle")}
         >
           <span
             className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${

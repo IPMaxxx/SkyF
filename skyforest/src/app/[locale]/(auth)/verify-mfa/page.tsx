@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
 
 export default function VerifyMfaPage() {
   const router = useRouter();
@@ -113,15 +112,7 @@ export default function VerifyMfaPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <Link href="/">
-            <Image
-              src="/images/logo-square.png"
-              alt="SkyForest"
-              width={64}
-              height={64}
-              className="mx-auto mb-4 h-14 w-14 rounded-xl"
-            />
-          </Link>
+          <AuthBrandMark mode="web-logo" className="mx-auto mb-4 h-14 w-14 rounded-xl" />
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <ShieldCheck className="h-7 w-7 text-primary" />
           </div>

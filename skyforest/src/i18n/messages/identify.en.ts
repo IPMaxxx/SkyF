@@ -153,6 +153,9 @@ export default {
   errNoResult:
     "Couldn't recognize a mushroom in this photo. Try shooting in daylight, in focus, with the cap from above and below.",
   errInsufficient: "Not enough tokens. Please top up your balance.",
+  // Mushroom Checker: подписка вместо токенов.
+  errSubscriptionLimit:
+    "Your identifications for this month are used up. Check your subscription to continue.",
   errTooLarge: "File is too large (max 10 MB).",
   errUnsupported: "Unsupported format. Use JPEG, PNG or WebP.",
   errTimeout: "Recognition took too long. Please try again.",

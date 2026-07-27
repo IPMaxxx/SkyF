@@ -13,6 +13,13 @@ export interface Coords {
   lng: number;
 }
 
+/** Каждый удачный замер запоминаем — им центрируем карты без GPS-фикса. */
+async function remember(pos: Coords): Promise<Coords> {
+  const { rememberPosition } = await import("@/lib/lastKnownPosition");
+  rememberPosition(pos);
+  return pos;
+}
+
 export async function getCurrentPosition(): Promise<Coords> {
   if (isNativeApp()) {
     try {
@@ -20,7 +27,7 @@ export async function getCurrentPosition(): Promise<Coords> {
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
       });
-      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      return remember({ lat: pos.coords.latitude, lng: pos.coords.longitude });
     } catch {
       /* плагин недоступен — падаем в браузерный API ниже */
     }
@@ -32,7 +39,8 @@ export async function getCurrentPosition(): Promise<Coords> {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        resolve(remember({ lat: pos.coords.latitude, lng: pos.coords.longitude })),
       (err) => reject(err),
       { enableHighAccuracy: true, timeout: 15000 },
     );

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BRAND, isSamplify } from "@/lib/brand";
 import { PrivacySamplify } from "@/components/legal/PrivacySamplify";
+import { FlavorLegalNote } from "@/components/legal/FlavorLegalNote";
+import { getServerFlavorConfig } from "@/lib/serverFlavor";
 import { MarketingPageHeader } from "@/components/marketing/MarketingPageHeader";
 import { marketingPageMetadata } from "@/lib/marketingSeo";
 
@@ -9,10 +11,12 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  // На поддоменах флейворов в описании должно стоять имя их приложения.
+  const app = (await getServerFlavorConfig()).name;
   const title = isSamplify ? "Privacy Policy" : "Политика конфиденциальности";
   const description = isSamplify
-    ? "SkyForest Privacy Policy — how we collect, use, and protect your personal data."
-    : "Политика конфиденциальности SkyForest — обработка и защита персональных данных пользователей.";
+    ? `${app} Privacy Policy — how we collect, use, and protect your personal data.`
+    : `Политика конфиденциальности ${app} — обработка и защита персональных данных пользователей.`;
   return marketingPageMetadata({ title, description, path: "/privacy", locale });
 }
 
@@ -32,6 +36,7 @@ export default async function PrivacyPage({ params }: Props) {
             { name: pageTitle },
           ]}
         />
+        <FlavorLegalNote />
         <PrivacySamplify />
       </div>
     );

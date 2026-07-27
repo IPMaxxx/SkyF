@@ -4,8 +4,10 @@
  * Ручной выбор точки входа в лес на карте — фолбэк для «Я вошёл в лес»,
  * когда GPS недоступен (нет разрешения, холодный старт без сети и т.п.).
  *
- * Центр карты: текущая позиция (если известна) → центр последнего скачанного
- * офлайн-региона → обзор мира. Тап по карте ставит маркер, кнопка подтверждает.
+ * Центр карты: текущая позиция → последняя известная позиция устройства →
+ * якорь активного похода → центр скачанного офлайн-региона → обзорный вид
+ * сервиса. Карту мира не показываем: тыкать в глобус бессмысленно.
+ * Тап по карте ставит маркер, кнопка подтверждает.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -16,7 +18,16 @@ import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { OfflineTileLayer } from "@/components/app/OfflineTileLayer";
 import { OUTDOOR_SOURCE, listRegions } from "@/lib/offline/tileStore";
+import { loadLastKnownPosition } from "@/lib/lastKnownPosition";
+import { loadTrack } from "@/lib/trackState";
 import type { Coords } from "@/lib/native/geolocation";
+
+/**
+ * Последний фолбэк, если об устройстве неизвестно ничего: тот же центр, с
+ * которого открываются остальные карты сервиса (см. LocationPicker,
+ * ForestSearchMap), обзорным зумом — доскроллить оттуда проще, чем с глобуса.
+ */
+const FALLBACK_VIEW = { center: { lat: 53.9, lng: 27.56 }, zoom: 6 };
 
 /** Тот же зелёный маркер, что и якорь входа на TrackMap. */
 const pickIcon = new L.DivIcon({
@@ -47,9 +58,13 @@ interface Props {
 export function StartPointPicker({ center, onConfirm, onCancel }: Props) {
   const t = useTranslations("track");
   const [picked, setPicked] = useState<Coords | null>(null);
-  const [initial, setInitial] = useState<{ center: Coords; zoom: number } | null>(
-    center ? { center, zoom: 14 } : null,
-  );
+  const [initial, setInitial] = useState<{ center: Coords; zoom: number } | null>(() => {
+    if (center) return { center, zoom: 14 };
+    // Подсказки с устройства (localStorage): последняя известная позиция, затем
+    // якорь активного похода — если экран открыли, чтобы переставить точку.
+    const local = loadLastKnownPosition() ?? loadTrack()?.anchor ?? null;
+    return local ? { center: local, zoom: 13 } : null;
+  });
   const [ready, setReady] = useState(Boolean(center));
   const cancelled = useRef(false);
 
@@ -59,10 +74,12 @@ export function StartPointPicker({ center, onConfirm, onCancel }: Props) {
     void listRegions()
       .then((regions) => {
         if (cancelled.current) return;
-        const withCenter = regions.find((r) => r.center);
-        if (withCenter?.center) {
-          setInitial({ center: withCenter.center, zoom: 12 });
-        }
+        setInitial((cur) => {
+          // Позиция самого устройства точнее скачанного региона — не перебиваем.
+          if (cur) return cur;
+          const withCenter = regions.find((r) => r.center);
+          return withCenter?.center ? { center: withCenter.center, zoom: 12 } : cur;
+        });
       })
       .catch(() => {})
       .finally(() => {
@@ -85,8 +102,12 @@ export function StartPointPicker({ center, onConfirm, onCancel }: Props) {
     <div className="glass overflow-hidden rounded-2xl">
       <p className="px-4 py-3 text-sm text-muted-foreground">{t("pickOnMapHint")}</p>
       <MapContainer
-        center={initial ? [initial.center.lat, initial.center.lng] : [30, 10]}
-        zoom={initial ? initial.zoom : 2}
+        center={
+          initial
+            ? [initial.center.lat, initial.center.lng]
+            : [FALLBACK_VIEW.center.lat, FALLBACK_VIEW.center.lng]
+        }
+        zoom={initial ? initial.zoom : FALLBACK_VIEW.zoom}
         className="h-[320px] sm:h-[400px] w-full"
         zoomControl={true}
         attributionControl={false}

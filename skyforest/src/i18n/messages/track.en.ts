@@ -102,4 +102,7 @@ export default {
   historyDelete: "Delete track",
   historyDeleted: "Track deleted",
   historyDeleteError: "Could not delete the track. Please try again.",
+  historyEmpty: "No hikes yet",
+  historyEmptyHint:
+    "Mark your entry point before you walk into the forest — after you finish, the hike appears here with its distance and duration.",
 } as const;

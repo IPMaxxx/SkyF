@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 let shownOnce = false;
 
@@ -28,6 +29,9 @@ const SAFETY_MS = 3000;
 export function NativeSplash() {
   const isNative = useIsNative();
   const t = useTranslations("common");
+  // Логотип и тег-лайн своего приложения (Mushroom Checker / WayBack), чтобы
+  // флейвор не открывался «чужим» брендом SkyForest.
+  const brand = useFlavorBrand();
   const [gone, setGone] = useState(shownOnce);
   const [ready, setReady] = useState(false);
   const [fading, setFading] = useState(false);
@@ -69,13 +73,20 @@ export function NativeSplash() {
       {/* Тот же логотип, что и в нативном splash — бесшовный переход. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/logo-square.png"
+        src={brand.logoPath}
         alt=""
         onLoad={() => setReady(true)}
         onError={() => setReady(true)}
         className="relative h-40 w-40 animate-sf-float rounded-[28px] object-contain shadow-[0_0_60px_-8px_rgba(95,181,115,0.5)]"
       />
-      <p className="relative -mt-1 text-base font-medium text-[#8aa090]">{t("splashTagline")}</p>
+      {brand.isFlavored && (
+        <p className="relative -mt-2 font-heading text-2xl font-extrabold tracking-tight text-foreground">
+          {brand.name}
+        </p>
+      )}
+      <p className="relative -mt-1 text-base font-medium text-[#8aa090]">
+        {brand.isFlavored ? brand.text("tagline") : t("splashTagline")}
+      </p>
       <div className="absolute bottom-11 flex gap-1.5" aria-hidden="true">
         {[0, 0.2, 0.4].map((delay) => (
           <span

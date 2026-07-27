@@ -261,7 +261,8 @@ export function AppHeader() {
           {!isNative && (
             <>
               <LocaleSwitcher className="hidden sm:inline-flex" />
-              <UnitSwitcher className="hidden sm:inline-flex" />
+              {/* В Checker единиц измерения на экранах нет — переключатель лишний. */}
+              {flavor !== "checker" && <UnitSwitcher className="hidden sm:inline-flex" />}
               <ThemeToggle className="hidden sm:inline-flex" />
             </>
           )}
@@ -531,7 +532,7 @@ export function AppHeader() {
           {!isNative && (
             <>
               <LocaleSwitcher />
-              <UnitSwitcher />
+              {flavor !== "checker" && <UnitSwitcher />}
             </>
           )}
           {showTokens && (

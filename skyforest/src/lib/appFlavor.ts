@@ -35,6 +35,8 @@ export interface FlavorConfig {
   /** PWA-манифест и favicon этого флейвора. */
   manifestPath: string;
   faviconPath: string;
+  /** Логотип для splash и экранов входа (квадратный, ≥512px). */
+  logoPath: string;
   /** id нативного приложения (Capacitor appId). */
   nativeAppId: string;
 }
@@ -62,6 +64,7 @@ export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
     showTokens: true,
     manifestPath: "/manifest.webmanifest",
     faviconPath: "/favicon.png",
+    logoPath: "/images/logo-square.png",
     nativeAppId: "ai.skyforest.app",
   },
   checker: {
@@ -80,6 +83,7 @@ export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
     showTokens: false,
     manifestPath: "/manifest-checker.webmanifest",
     faviconPath: "/icons/checker-192.png",
+    logoPath: "/icons/checker-512.png",
     nativeAppId: "ai.skyforest.mushroomchecker",
   },
   wayback: {
@@ -93,6 +97,7 @@ export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
     showTokens: false,
     manifestPath: "/manifest-wayback.webmanifest",
     faviconPath: "/icons/wayback-192.png",
+    logoPath: "/icons/wayback-512.png",
     nativeAppId: "ai.skyforest.wayback",
   },
 };

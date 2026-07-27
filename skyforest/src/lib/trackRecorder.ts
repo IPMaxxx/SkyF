@@ -14,6 +14,7 @@
 
 import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
 import { isNativeApp } from "@/lib/native/capacitor";
+import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
 
 /** Интервал страховочного одиночного замера при активном походе. */
@@ -31,6 +32,7 @@ export interface TrackCaptureDetail {
 }
 
 function recordPosition(position: Coords): void {
+  rememberPosition(position);
   const track = loadTrack();
   if (!track) return;
   const next = appendPoint(track, position);
