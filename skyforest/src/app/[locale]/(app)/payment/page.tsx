@@ -46,8 +46,13 @@ import {
 } from "@/lib/native/iapProducts";
 import { useAppFlavor } from "@/lib/useAppFlavor";
 import { FLAVORS } from "@/lib/appFlavor";
+import { CheckerPaywall } from "@/components/checker/CheckerPaywall";
+import { WayBackPaywall } from "@/components/wayback/WayBackPaywall";
 
 export default function PaymentPage() {
+  // Mushroom Checker и WayBack: токенов нет, страница — пейволл/управление
+  // подпиской в собственной светлой схеме.
+  const flavor = useAppFlavor();
   return (
     <Suspense
       fallback={
@@ -56,7 +61,13 @@ export default function PaymentPage() {
         </div>
       }
     >
-      <PaymentContent />
+      {flavor === "checker" ? (
+        <CheckerPaywall />
+      ) : flavor === "wayback" ? (
+        <WayBackPaywall />
+      ) : (
+        <PaymentContent />
+      )}
     </Suspense>
   );
 }

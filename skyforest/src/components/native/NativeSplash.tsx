@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
 let shownOnce = false;
@@ -32,6 +33,7 @@ export function NativeSplash() {
   // Логотип и тег-лайн своего приложения (Mushroom Checker / WayBack), чтобы
   // флейвор не открывался «чужим» брендом SkyForest.
   const brand = useFlavorBrand();
+  const isChecker = useAppFlavor() === "checker";
   const [gone, setGone] = useState(shownOnce);
   const [ready, setReady] = useState(false);
   const [fading, setFading] = useState(false);
@@ -59,6 +61,48 @@ export function NativeSplash() {
   }, [ready]);
 
   if (!isNative || gone) return null;
+
+  // Mushroom Checker — светлая схема: зелёный→canvas градиент, 104px плитка
+  // логотипа, три точки и мono-подпись внизу (экран 01 дизайна).
+  if (isChecker) {
+    return (
+      <div
+        aria-hidden="true"
+        className="font-ck fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-5 bg-[linear-gradient(180deg,#E7F4E9_0%,#F3F7F1_100%)] transition-opacity ease-out"
+        style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms` }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={brand.logoPath}
+          alt=""
+          onLoad={() => setReady(true)}
+          onError={() => setReady(true)}
+          className="animate-sf-float rounded-[32px] object-cover shadow-[0_22px_40px_-18px_rgba(63,156,88,0.8)]"
+          style={{ height: 104, width: 104 }}
+        />
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-[21px] font-extrabold tracking-[-0.02em] text-ck-ink">
+            {brand.name}
+          </p>
+          <p className="text-[13.5px] font-medium text-ck-body-soft">
+            {brand.text("tagline")}
+          </p>
+        </div>
+        <div className="flex gap-1.5">
+          {["#3F9C58", "#9ECFA9", "#CFE4D3"].map((color, i) => (
+            <span
+              key={color}
+              className="h-[7px] w-[7px] animate-sf-pulse-dot rounded-full"
+              style={{ background: color, animationDelay: `${i * 0.2}s` }}
+            />
+          ))}
+        </div>
+        <p className="ck-mono absolute bottom-10 text-[10px] tracking-[0.14em] text-ck-muted-2">
+          BY SKYFOREST
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -1,0 +1,880 @@
+"use client";
+
+/**
+ * Mushroom Checker — весь флоу распознавания в светлой схеме:
+ * главный экран → превью → подтверждение → анализ → результат / ошибка.
+ *
+ * Поведение, которое нельзя терять при редизайне:
+ *  - идемпотентность: `requestId` в теле и в заголовке `Idempotency-Key`;
+ *  - клиентский таймаут 35 с через AbortController (Cancel его же и рвёт);
+ *  - распознавание засчитывается только при успешном ответе — любая ошибка
+ *    возвращает на превью и явно сообщает, что ничего не списано;
+ *  - дисклеймер на экране результата (требование App Review).
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { ArrowLeft, Camera, Check, Share2 } from "lucide-react";
+import { capturePhoto, pickPhotoFromGallery } from "@/lib/capturePhoto";
+import {
+  CHECKER_MONTHLY_LIMIT,
+  formatQuotaDate,
+  useCheckerSubscription,
+} from "@/lib/checker/useSubscription";
+import { cn } from "@/lib/utils";
+import type { IdentifyResponse } from "@/app/api/mushrooms/identify/route";
+import {
+  CkFeatureRow,
+  CkModal,
+  CkMono,
+  CkPrimaryButton,
+  CkQuietButton,
+  CkScreen,
+  CkSecondaryButton,
+  CkStatusCard,
+  type CkStatusVariant,
+} from "@/components/checker/primitives";
+
+const REQUEST_TIMEOUT_MS = 35000;
+/** Шаг «признаки выделены» отмечаем по времени — сервер промежуточных событий не шлёт. */
+const STEP2_AFTER_MS = 2200;
+
+interface CheckerError {
+  variant: CkStatusVariant;
+  title: string;
+  body: string;
+  action?: "subscription" | "retry";
+}
+
+function pct(probability: number): string {
+  return `${Math.round(probability * 100)}%`;
+}
+
+function pctColor(probability: number): string {
+  if (probability >= 0.5) return "text-ck-primary";
+  if (probability >= 0.3) return "text-ck-amber";
+  return "text-ck-muted-2";
+}
+
+export function CheckerIdentify() {
+  const t = useTranslations("checker");
+  const tSub = useTranslations("checker.subscription");
+  const tIdentify = useTranslations("identify");
+  const locale = useLocale();
+  const router = useRouter();
+  const {
+    subscription,
+    left,
+    limit,
+    loading: subLoading,
+    refresh: refreshSub,
+  } = useCheckerSubscription();
+
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [step2Done, setStep2Done] = useState(false);
+  const [result, setResult] = useState<IdentifyResponse | null>(null);
+  const [error, setError] = useState<CheckerError | null>(null);
+  const [checked, setChecked] = useState<number[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const habitatData = tIdentify.raw("habitatData") as Record<
+    string,
+    { zone: string; weather: string }
+  >;
+  const lookalikeLabels = tIdentify.raw("lookalikeLabels") as Record<
+    string,
+    string
+  >;
+  const checklist = tIdentify.raw("checklist") as string[];
+
+  const resetDate = subscription
+    ? formatQuotaDate(subscription.quota_resets_at, locale)
+    : null;
+
+  const setCaptured = (f: File | null) => {
+    if (!f) return;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
+    setRequestId(crypto.randomUUID());
+    setResult(null);
+    setError(null);
+  };
+
+  const captureError = (): CheckerError => ({
+    variant: "error",
+    title: t("errors.captureTitle"),
+    body: t("errors.captureBody"),
+  });
+
+  const handleTakePhoto = async () => {
+    try {
+      setCaptured(await capturePhoto());
+    } catch {
+      setError(captureError());
+    }
+  };
+
+  const handleGallery = async () => {
+    try {
+      setCaptured(await pickPhotoFromGallery());
+    } catch {
+      setError(captureError());
+    }
+  };
+
+  const resetAll = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl(null);
+    setRequestId(null);
+    setResult(null);
+    setError(null);
+    setChecked([]);
+  };
+
+  const mapError = useCallback(
+    (status: number, code?: string): CheckerError => {
+      if (status === 402) {
+        return {
+          variant: "warn",
+          title: t("errors.limitTitle"),
+          body: resetDate
+            ? t("errors.limitBody", {
+                limit: limit ?? CHECKER_MONTHLY_LIMIT,
+                date: resetDate,
+              })
+            : t("errors.limitBodyNoDate", {
+                limit: limit ?? CHECKER_MONTHLY_LIMIT,
+              }),
+          action: "subscription",
+        };
+      }
+      if (status === 413) {
+        return {
+          variant: "neutral",
+          title: t("errors.tooLargeTitle"),
+          body: t("errors.tooLargeBody"),
+        };
+      }
+      if (status === 415) {
+        return {
+          variant: "neutral",
+          title: t("errors.unsupportedTitle"),
+          body: t("errors.unsupportedBody"),
+        };
+      }
+      if (status === 422) {
+        return code === "no_result"
+          ? {
+              variant: "error",
+              title: t("errors.noResultTitle"),
+              body: t("errors.noResultBody"),
+            }
+          : {
+              variant: "error",
+              title: t("errors.notMushroomTitle"),
+              body: t("errors.notMushroomBody"),
+            };
+      }
+      if (status === 502 || status === 503) {
+        return {
+          variant: "neutral",
+          title: t("errors.unavailableTitle"),
+          body: t("errors.unavailableBody"),
+          action: "retry",
+        };
+      }
+      return {
+        variant: "neutral",
+        title: t("errors.genericTitle"),
+        body: t("errors.genericBody"),
+        action: "retry",
+      };
+    },
+    [limit, resetDate, t],
+  );
+
+  const runIdentify = async () => {
+    if (!file || !requestId) return;
+    setConfirming(false);
+    setAnalyzing(true);
+    setStep2Done(false);
+    setError(null);
+    setResult(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const stepTimer = setTimeout(() => setStep2Done(true), STEP2_AFTER_MS);
+
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      form.append("request_id", requestId);
+      form.append("locale", locale);
+
+      const res = await fetch("/api/mushrooms/identify", {
+        method: "POST",
+        body: form,
+        headers: { "Idempotency-Key": requestId },
+        signal: controller.signal,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(mapError(res.status, data?.error));
+        return;
+      }
+
+      setResult(data as IdentifyResponse);
+      void refreshSub();
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError({
+          variant: "neutral",
+          title: t("errors.timeoutTitle"),
+          body: t("errors.timeoutBody"),
+          action: "retry",
+        });
+      } else {
+        setError({
+          variant: "neutral",
+          title: t("errors.genericTitle"),
+          body: t("errors.genericBody"),
+          action: "retry",
+        });
+      }
+    } finally {
+      clearTimeout(timer);
+      clearTimeout(stepTimer);
+      abortRef.current = null;
+      setAnalyzing(false);
+    }
+  };
+
+  const cancelAnalyzing = () => abortRef.current?.abort();
+
+  const errorAction = error?.action && (
+    <button
+      type="button"
+      onClick={() =>
+        error.action === "subscription" ? router.push("/payment") : runIdentify()
+      }
+      className={cn(
+        "flex h-12 w-full items-center justify-center rounded-3xl text-[14.5px] font-extrabold",
+        error.action === "subscription"
+          ? "bg-ck-amber text-white"
+          : "border border-ck-border bg-ck-canvas text-ck-ink-3",
+      )}
+    >
+      {error.action === "subscription" ? t("errors.limitCta") : t("errors.retry")}
+    </button>
+  );
+
+  const errorCard = error && (
+    <div className="ck-step-in">
+      <CkStatusCard
+        variant={error.variant}
+        icon={error.action === "subscription" ? "◑" : "!"}
+        title={error.title}
+        body={error.body}
+        action={errorAction || undefined}
+      />
+    </div>
+  );
+
+  /* ---------------- Анализ ---------------- */
+
+  if (analyzing) {
+    return (
+      <CkScreen
+        className="bg-[linear-gradient(180deg,#e7f4e9_0%,#f3f7f1_60%)]"
+        bottom={
+          <CkSecondaryButton onClick={cancelAnalyzing}>
+            {t("analyzing.cancel")}
+          </CkSecondaryButton>
+        }
+      >
+        <div className="flex min-h-[70vh] flex-col items-center justify-center gap-[26px]">
+          <div className="flex h-[150px] w-[150px] animate-spin items-center justify-center rounded-full border-[3px] border-[#cfe4d3] border-t-ck-primary [animation-duration:1.4s]">
+            <div className="ck-photo-stripes h-24 w-24 overflow-hidden rounded-full">
+              {previewUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previewUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold tracking-[-0.025em] text-ck-ink">
+              {t("analyzing.title")}
+            </h1>
+            <p className="max-w-[250px] text-center text-[13.5px] font-medium leading-[1.5] text-ck-body-soft">
+              {t("analyzing.body")}
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-2.5">
+            {[
+              { label: t("analyzing.step1"), done: true },
+              { label: t("analyzing.step2"), done: step2Done },
+              { label: t("analyzing.step3"), done: false },
+            ].map((step) => (
+              <div
+                key={step.label}
+                className={cn(
+                  "flex items-center gap-2.5 text-[12.5px] font-semibold",
+                  step.done ? "text-ck-primary" : "text-ck-muted-2",
+                )}
+              >
+                {step.done ? (
+                  <i className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ck-primary text-white">
+                    <Check className="h-2.5 w-2.5" strokeWidth={4} />
+                  </i>
+                ) : (
+                  <i className="block h-[18px] w-[18px] flex-none rounded-full border-2 border-[#cfe4d3]" />
+                )}
+                {step.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CkScreen>
+    );
+  }
+
+  /* ---------------- Результат ---------------- */
+
+  if (result) {
+    const top = result.suggestions[0];
+    const details = result.details;
+    const habitat = result.habitat
+      ? (habitatData[result.habitat.code] ?? null)
+      : null;
+    const habitatZone = result.habitat?.zone ?? habitat?.zone ?? null;
+
+    const share = async () => {
+      const title = top?.common_name || details.scientific_name;
+      const url = details.wikipedia_url || details.gbif_url || undefined;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title, text: details.scientific_name, url });
+        } else if (url) {
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+      } catch {
+        /* пользователь закрыл системный лист — это не ошибка */
+      }
+    };
+
+    return (
+      <CkScreen
+        padding="px-0"
+        bottom={
+          <div className="flex gap-2.5 px-5">
+            <CkPrimaryButton onClick={resetAll} className="h-14 flex-1">
+              {t("result.newPhoto")}
+            </CkPrimaryButton>
+            <button
+              type="button"
+              onClick={share}
+              aria-label={t("result.share")}
+              className="flex h-14 w-14 flex-none items-center justify-center rounded-full border border-ck-border-3 bg-ck-surface text-ck-ink-3"
+            >
+              <Share2 className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+        }
+      >
+        {/* Фото пользователя во всю ширину + кнопка возврата */}
+        <div className="ck-photo-stripes relative h-[206px] w-full overflow-hidden">
+          {previewUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          )}
+          <button
+            type="button"
+            onClick={resetAll}
+            aria-label={t("result.back")}
+            className="absolute left-4 top-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white/90 text-ck-ink-3"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.4} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5 px-5 pt-[18px]">
+          {top && (
+            <div className="flex flex-col gap-1.5">
+              <CkMono>{t("result.topMatch", { pct: pct(top.probability) })}</CkMono>
+              <h1 className="text-[26px] font-extrabold leading-[1.05] tracking-[-0.03em] text-ck-ink">
+                {top.common_name || top.scientific_name}
+              </h1>
+              {top.common_name && (
+                <span className="text-sm font-medium italic text-ck-body-soft">
+                  {top.scientific_name}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Чипы: токсичность формулируется как пометка базы, а не как
+              совет о съедобности — приложение его не даёт. */}
+          <div className="flex flex-wrap gap-2">
+            {top?.toxic != null && (
+              <span
+                className={cn(
+                  "rounded-full border px-3 py-[7px] text-xs font-extrabold",
+                  top.toxic
+                    ? "border-ck-danger-border bg-ck-danger-tint text-ck-danger-deep"
+                    : "border-ck-primary-border bg-ck-primary-tint text-ck-primary-deep",
+                )}
+              >
+                {top.toxic ? t("result.toxicChip") : t("result.edibleChip")}
+              </span>
+            )}
+            {details.family && (
+              <span className="rounded-full border border-ck-border bg-ck-surface px-3 py-[7px] text-xs font-bold text-ck-body">
+                {details.family}
+              </span>
+            )}
+            {top?.toxic_source && (
+              <span className="rounded-full border border-ck-border bg-ck-surface px-3 py-[7px] text-xs font-bold text-ck-body">
+                {t("result.sourceChip", { source: top.toxic_source })}
+              </span>
+            )}
+          </div>
+
+          {result.low_confidence && (
+            <CkStatusCard
+              variant="warn"
+              icon="!"
+              title={t("result.lowConfidence")}
+            />
+          )}
+
+          {/* Возможные совпадения */}
+          <div className="flex flex-col rounded-[24px] border border-ck-border bg-ck-surface px-4">
+            <span className="pb-2 pt-3 text-[13px] font-extrabold text-ck-ink-2">
+              {t("result.possibleMatches")}
+            </span>
+            {result.suggestions.map((s) => (
+              <a
+                key={s.rank}
+                href={(s.wikipedia_url || s.gbif_url) ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 border-t border-ck-hairline py-[11px]"
+              >
+                <span className="ck-photo-stripes h-[52px] w-[52px] flex-none overflow-hidden rounded-[14px]">
+                  {s.reference_photo_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={s.reference_photo_url}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate text-sm font-extrabold text-ck-ink">
+                    {s.common_name || s.scientific_name}
+                  </span>
+                  <span className="truncate text-xs font-medium italic text-ck-muted">
+                    {s.scientific_name}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "flex-none text-[15px] font-extrabold",
+                    pctColor(s.probability),
+                  )}
+                >
+                  {pct(s.probability)}
+                </span>
+              </a>
+            ))}
+            <span className="border-t border-ck-hairline py-3 text-[10.5px] font-medium leading-[1.4] text-ck-muted-2">
+              {t("result.referenceNote")}
+            </span>
+          </div>
+
+          {/* О виде */}
+          {(details.family || details.genus || details.summary || habitatZone) && (
+            <div className="flex flex-col gap-2.5 rounded-[24px] border border-ck-border bg-ck-surface p-4">
+              <span className="text-[15px] font-extrabold text-ck-ink-2">
+                {t("result.aboutTitle")}
+              </span>
+              <div className="grid grid-cols-[auto_1fr] gap-x-3.5 gap-y-1.5 text-[12.5px]">
+                {details.family && (
+                  <>
+                    <span className="text-ck-muted-2">{t("result.family")}</span>
+                    <b className="font-bold text-ck-ink">{details.family}</b>
+                  </>
+                )}
+                {details.genus && (
+                  <>
+                    <span className="text-ck-muted-2">{t("result.genus")}</span>
+                    <b className="font-bold text-ck-ink">{details.genus}</b>
+                  </>
+                )}
+                {habitatZone && (
+                  <>
+                    <span className="text-ck-muted-2">{t("result.habitat")}</span>
+                    <b className="font-bold text-ck-ink">{habitatZone}</b>
+                  </>
+                )}
+              </div>
+              {details.summary && (
+                <p className="text-[12.5px] font-medium leading-[1.5] text-ck-body-soft">
+                  {details.summary}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Опасные двойники */}
+          {result.lookalikes.length > 0 && (
+            <div className="flex flex-col gap-3 rounded-[24px] border border-ck-danger-border bg-ck-danger-tint p-4">
+              <div className="flex items-center gap-2.5">
+                <i className="flex h-[26px] w-[26px] items-center justify-center rounded-[9px] bg-ck-danger text-sm font-extrabold text-white">
+                  !
+                </i>
+                <span className="text-[15px] font-extrabold text-ck-danger-deep">
+                  {t("result.lookalikesTitle")}
+                </span>
+              </div>
+              {result.lookalikes.map((la) => (
+                <div key={la.scientific_name} className="flex items-center gap-3">
+                  <span className="h-14 w-14 flex-none overflow-hidden rounded-2xl bg-[repeating-linear-gradient(135deg,#f0ddd8_0_6px,#f8ebe7_6px_12px)]">
+                    {la.photo_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={la.photo_url}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </span>
+                  <div className="flex min-w-0 flex-col gap-[3px]">
+                    <span className="text-[13.5px] font-extrabold text-[#7c2b20]">
+                      {la.scientific_name}
+                    </span>
+                    <span className="text-[11.5px] font-medium leading-[1.35] text-ck-danger-mid">
+                      {la.label ?? lookalikeLabels[la.scientific_name] ?? ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Чеклист самопроверки */}
+          <div className="flex flex-col gap-2.5 rounded-[24px] border border-ck-border bg-ck-surface p-4">
+            <span className="text-[15px] font-extrabold text-ck-ink-2">
+              {t("result.checkTitle")}
+            </span>
+            <div className="flex flex-col gap-2.5">
+              {checklist.map((item, i) => {
+                const on = checked.includes(i);
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() =>
+                      setChecked((prev) =>
+                        prev.includes(i)
+                          ? prev.filter((n) => n !== i)
+                          : [...prev, i],
+                      )
+                    }
+                    className="flex items-start gap-2.5 text-left text-[12.5px] font-semibold text-ck-body"
+                  >
+                    <i
+                      className={cn(
+                        "mt-px flex h-5 w-5 flex-none items-center justify-center rounded-[7px] border-[1.5px]",
+                        on
+                          ? "border-ck-primary bg-ck-primary text-white"
+                          : "border-[#cfe4d3]",
+                      )}
+                    >
+                      {on && <Check className="h-3 w-3" strokeWidth={3.5} />}
+                    </i>
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Дисклеймер — обязателен для App Review */}
+          <p className="text-[10.5px] font-medium leading-[1.45] text-ck-muted">
+            {t("result.disclaimer")}
+          </p>
+        </div>
+      </CkScreen>
+    );
+  }
+
+  /* ---------------- Превью выбранного фото ---------------- */
+
+  if (previewUrl) {
+    const used = limit != null && left != null ? limit - left + 1 : null;
+    return (
+      <>
+        <CkScreen
+          bottom={
+            <div className="flex flex-col gap-2.5">
+              <CkPrimaryButton onClick={() => setConfirming(true)}>
+                {t("preview.identify")}
+                {used != null && limit != null && (
+                  <span className="text-[13px] font-semibold opacity-85">
+                    {t("preview.counter", { used, limit })}
+                  </span>
+                )}
+              </CkPrimaryButton>
+              <CkSecondaryButton onClick={handleTakePhoto}>
+                {t("preview.retake")}
+              </CkSecondaryButton>
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-4 pt-[18px]">
+            <h1 className="text-[22px] font-extrabold tracking-[-0.025em] text-ck-ink">
+              {t("preview.title")}
+            </h1>
+
+            <div className="relative h-[330px] overflow-hidden rounded-[28px] border border-ck-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            {errorCard}
+
+            {!error && (
+              <div className="flex flex-col gap-2 rounded-[22px] border border-ck-border-2 bg-ck-surface p-4">
+                <span className="text-[13px] font-extrabold text-ck-ink-2">
+                  {t("preview.beforeTitle")}
+                </span>
+                <span className="text-[12.5px] font-medium leading-[1.45] text-ck-body-soft">
+                  {t("preview.beforeBody")}
+                </span>
+              </div>
+            )}
+          </div>
+        </CkScreen>
+
+        <CkModal
+          open={confirming}
+          onClose={() => setConfirming(false)}
+          label={t("confirm.cancel")}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px] bg-ck-primary-tint text-ck-primary">
+              <Camera className="h-[22px] w-[22px]" strokeWidth={1.8} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[21px] font-extrabold tracking-[-0.02em] text-ck-ink">
+                {t("confirm.title")}
+              </span>
+              <span className="text-[13.5px] font-medium leading-[1.5] text-ck-body-soft">
+                {t("confirm.body")}
+              </span>
+            </div>
+
+            {left != null && (
+              <div className="flex flex-col rounded-[20px] border border-ck-border-2 bg-ck-canvas-2 px-4 py-1.5">
+                {[
+                  { label: t("confirm.thisScan"), value: "1", accent: false },
+                  {
+                    label: t("confirm.leftThisMonth"),
+                    value: String(left),
+                    accent: false,
+                  },
+                  {
+                    label: t("confirm.afterScan"),
+                    value: String(Math.max(0, left - 1)),
+                    accent: true,
+                  },
+                ].map((row, i) => (
+                  <div
+                    key={row.label}
+                    className={cn(
+                      "flex justify-between py-[11px] text-[13.5px] font-semibold text-ck-body",
+                      i > 0 && "border-t border-[#e6ede4]",
+                    )}
+                  >
+                    <span>{row.label}</span>
+                    <span
+                      className={cn(
+                        "font-extrabold",
+                        row.accent ? "text-ck-primary" : "text-ck-ink",
+                      )}
+                    >
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2.5">
+              <CkPrimaryButton
+                onClick={runIdentify}
+                className="h-14 text-[16.5px] shadow-none"
+              >
+                {t("confirm.cta")}
+              </CkPrimaryButton>
+              <CkQuietButton onClick={() => setConfirming(false)}>
+                {t("confirm.cancel")}
+              </CkQuietButton>
+            </div>
+          </div>
+        </CkModal>
+      </>
+    );
+  }
+
+  /* ---------------- Главный экран ---------------- */
+
+  const tips = [
+    { glyph: "◠", label: t("home.tipCap") },
+    { glyph: "▮", label: t("home.tipStem") },
+    { glyph: "≡", label: t("home.tipGills") },
+    { glyph: "☀", label: t("home.tipLight") },
+  ];
+
+  return (
+    <CkScreen
+      bottom={
+        <div className="flex flex-col gap-2.5">
+          <CkPrimaryButton onClick={handleTakePhoto}>
+            {t("home.takePhoto")}
+          </CkPrimaryButton>
+          <CkSecondaryButton onClick={handleGallery}>
+            {t("home.fromGallery")}
+          </CkSecondaryButton>
+          <p className="mt-0.5 text-center text-[10.5px] font-medium leading-[1.4] text-ck-muted">
+            {t("home.disclaimer")}
+          </p>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4 pt-5">
+        <h1 className="text-[38px] font-extrabold leading-[0.98] tracking-[-0.035em] text-ck-ink">
+          {t("home.titleLine1")}
+          <br />
+          <span className="text-ck-primary">{t("home.titleLine2")}</span>
+        </h1>
+
+        {!subLoading &&
+          (subscription ? (
+            <div className="flex items-center gap-3 rounded-[24px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3.5">
+              <span className="text-[26px] font-extrabold leading-none text-ck-amber">
+                {left ?? 0}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
+                  {t("home.quotaLeft", { limit: limit ?? CHECKER_MONTHLY_LIMIT })}
+                </span>
+                {resetDate && (
+                  <CkMono className="text-ck-amber-mid">
+                    {tSub("quotaReset", { date: resetDate })}
+                  </CkMono>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/payment"
+              className="flex items-center gap-3 rounded-[24px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3.5"
+            >
+              <span className="text-[26px] font-extrabold leading-none text-ck-amber">
+                0
+              </span>
+              <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
+                {t("home.quotaNoSub", { limit: CHECKER_MONTHLY_LIMIT })}
+              </span>
+            </Link>
+          ))}
+
+        {errorCard}
+
+        <div className="ck-lift flex h-[206px] flex-col items-center justify-center gap-3 rounded-[28px] border border-ck-border bg-ck-surface">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ck-primary-tint">
+            <Camera
+              className="h-6 w-6 text-ck-primary-light"
+              strokeWidth={1.8}
+            />
+          </div>
+          <CkMono className="tracking-[0.08em] text-[11px] text-[#7a8d7e]">
+            {t("home.photoCaption")}
+          </CkMono>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          {tips.map((tip) => (
+            <div
+              key={tip.label}
+              className="flex flex-col gap-1.5 rounded-[20px] border border-ck-border-2 bg-ck-surface px-3.5 py-3"
+            >
+              <span className="text-base leading-none text-ck-primary">
+                {tip.glyph}
+              </span>
+              <span className="text-xs font-bold text-ck-ink-2">
+                {tip.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </CkScreen>
+  );
+}
+
+/** Пейволл переиспользует список фич — экспортируем, чтобы не дублировать. */
+export function CheckerFeatureList({ limit }: { limit: number }) {
+  const t = useTranslations("checker.paywall");
+  const items = useMemo(
+    () => [
+      t("feature1", { limit }),
+      t("feature2"),
+      t("feature3"),
+    ],
+    [limit, t],
+  );
+  return (
+    <div className="flex flex-col gap-2.5">
+      {items.map((item) => (
+        <CkFeatureRow key={item}>{item}</CkFeatureRow>
+      ))}
+    </div>
+  );
+}

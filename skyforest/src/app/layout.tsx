@@ -1,6 +1,12 @@
 import { routing } from "@/i18n/routing";
 import { flavorFromHost, flavorConfig } from "@/lib/appFlavor";
-import { Bricolage_Grotesque, Manrope } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  IBM_Plex_Mono,
+  JetBrains_Mono,
+  Manrope,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import { cookies, headers } from "next/headers";
 import "./globals.css";
 
@@ -14,6 +20,26 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
   weight: ["500", "700", "800"],
+});
+
+// Интерфейсный шрифт Mushroom Checker; JetBrains Mono — только микро-лейблы.
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
+
+// WayBack: моно-подписи к данным («TO ENTRY», «≈ 198 tiles · 3.8 MB»).
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export default async function RootLayout({
@@ -31,9 +57,21 @@ export default async function RootLayout({
   // Флейвор по хосту: на checker./wayback. — свой манифест, иконки и имя PWA.
   const headerStore = await headers();
   const flavor = flavorConfig(flavorFromHost(headerStore.get("host")));
+  // Checker и WayBack — светлые схемы: статус-бар должен быть с тёмным текстом.
+  const isLightFlavor = flavor.id === "checker" || flavor.id === "wayback";
+  const themeColor =
+    flavor.id === "checker"
+      ? "#f3f7f1"
+      : flavor.id === "wayback"
+        ? "#eef0ec"
+        : "#0b120d";
 
   return (
-    <html lang={lang === "en" ? "en" : "ru"} suppressHydrationWarning>
+    <html
+      lang={lang === "en" ? "en" : "ru"}
+      data-flavor={flavor.id}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -75,17 +113,24 @@ export default async function RootLayout({
           content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
         />
         <link rel="manifest" href={flavor.manifestPath} />
-        <meta name="theme-color" content="#0b120d" />
+        <meta name="theme-color" content={themeColor} />
         <meta name="application-name" content={flavor.name} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content={isLightFlavor ? "default" : "black-translucent"}
+        />
         <meta name="apple-mobile-web-app-title" content={flavor.name} />
         <link rel="apple-touch-icon" href={flavor.faviconPath} />
         <link rel="apple-touch-icon" sizes="192x192" href={flavor.faviconPath} />
         <link rel="apple-touch-icon" sizes="256x256" href={flavor.faviconPath} />
       </head>
-      <body className={`${manrope.variable} ${bricolage.variable} antialiased`}>{children}</body>
+      <body
+        className={`${manrope.variable} ${bricolage.variable} ${jakarta.variable} ${jetbrains.variable} ${plexMono.variable} antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

@@ -7,6 +7,8 @@ import forestSearch from "./forestSearch.ru";
 import marketplace from "./marketplace.ru";
 import identify from "./identify.ru";
 import track from "./track.ru";
+import checker from "./checker.ru";
+import wayback from "./wayback.ru";
 
 export default {
   metadata: {
@@ -845,4 +847,6 @@ export default {
   marketplace,
   identify,
   track,
+  checker,
+  wayback,
 } as const;

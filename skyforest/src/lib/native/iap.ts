@@ -498,6 +498,30 @@ export async function purchaseSubscription(
   });
 }
 
+/**
+ * Восстановить покупки (кнопка «Restore» на пейволле — требование
+ * App Review 3.1.1). Плагин переотправляет чеки как approved-транзакции,
+ * которые проходят обычную верификацию на сервере; после паузы вызывающий
+ * код перечитывает /api/subscription и видит восстановленную подписку.
+ */
+export async function restorePurchases(): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  const CdvPurchase = cdv();
+  if (!CdvPurchase) return false;
+  await initIap();
+  await refreshUserId();
+  try {
+    await CdvPurchase.store.restorePurchases();
+    return true;
+  } catch (e: any) {
+    logIapError("restore_failed", {
+      code: e?.code,
+      message: e?.message ?? String(e),
+    });
+    return false;
+  }
+}
+
 /** Открыть управление подписками стора (App Store / Google Play). */
 export async function manageSubscriptions(): Promise<void> {
   if (!isNativeApp()) return;

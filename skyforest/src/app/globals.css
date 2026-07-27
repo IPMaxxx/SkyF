@@ -20,6 +20,75 @@
   --color-shell: #0c150f;
   --font-sans: var(--font-manrope);
   --font-heading: var(--font-bricolage);
+
+  /* Mushroom Checker (флейвор `checker`) — светлая схема «Soft Product».
+     Отдельный набор токенов с префиксом `ck-`: он не влияет на тёмную тему
+     SkyForest и WayBack, но даёт готовые утилиты вида `bg-ck-surface`. */
+  --color-ck-primary: #3f9c58;
+  --color-ck-primary-light: #5fb573;
+  --color-ck-primary-tint: #e7f4e9;
+  --color-ck-primary-border: #c3e2c9;
+  --color-ck-primary-deep: #1e4a2b;
+  --color-ck-primary-mid: #3d6248;
+  --color-ck-amber: #c07a20;
+  --color-ck-amber-tint: #fff6ea;
+  --color-ck-amber-border: #f2ddc0;
+  --color-ck-amber-deep: #8a5f14;
+  --color-ck-amber-mid: #6a5a44;
+  --color-ck-danger: #c0392b;
+  --color-ck-danger-tint: #fdeeeb;
+  --color-ck-danger-border: #f3cfc8;
+  --color-ck-danger-deep: #8e2b20;
+  --color-ck-danger-mid: #7c4238;
+  --color-ck-ink: #132318;
+  --color-ck-ink-2: #1e3325;
+  --color-ck-ink-3: #28402f;
+  --color-ck-body: #4a5c50;
+  --color-ck-body-soft: #5f7167;
+  --color-ck-muted: #7d8d80;
+  --color-ck-muted-2: #8b9a91;
+  --color-ck-canvas: #f3f7f1;
+  --color-ck-canvas-2: #f5f9f4;
+  --color-ck-surface: #ffffff;
+  --color-ck-border: #dfe8db;
+  --color-ck-border-2: #e2eade;
+  --color-ck-border-3: #d7e2d3;
+  --color-ck-border-4: #dde6d9;
+  --color-ck-hairline: #eaf0e8;
+  --font-ck: var(--font-jakarta);
+  --font-ck-mono: var(--font-jetbrains);
+
+  /* WayBack (флейвор `wayback`) — светлая схема «Widget Board»: белые плитки
+     на холсте #eef0ec, зелёные действия, моно-подписи капсом. Префикс `wb-`,
+     на тёмную тему SkyForest и на схему Checker не влияет. */
+  --color-wb-primary: #2f6b3f;
+  --color-wb-primary-deep: #26582f;
+  --color-wb-primary-soft: #cdeed5;
+  --color-wb-primary-tint: #eaf1ea;
+  --color-wb-primary-tint-2: #e3ebe2;
+  --color-wb-on-primary: #f2f7f2;
+  --color-wb-canvas: #eef0ec;
+  --color-wb-surface: #ffffff;
+  --color-wb-surface-2: #f4f6f3;
+  --color-wb-surface-3: #eef2ec;
+  --color-wb-ink: #141a15;
+  --color-wb-ink-2: #253027;
+  --color-wb-body: #414a42;
+  --color-wb-body-soft: #4f5b4c;
+  --color-wb-muted: #5d675f;
+  --color-wb-muted-2: #7d867e;
+  --color-wb-muted-3: #97a098;
+  --color-wb-border: #dcdfd8;
+  --color-wb-border-2: #e3ebe2;
+  --color-wb-border-3: #d9e2d2;
+  --color-wb-hairline: #e9ede8;
+  --color-wb-danger: #a83b3b;
+  --color-wb-danger-tint: #fbeceb;
+  --color-wb-danger-ink: #8d5150;
+  --color-wb-amber-tint: #f6ecdc;
+  --color-wb-amber-border: #f6e3b8;
+  --color-wb-amber-ink: #7d6435;
+  --font-wb-mono: var(--font-plex-mono);
 }
 
 html {
@@ -288,6 +357,330 @@ table th {
 }
 .sf-track-pulse {
   animation: sf-track-pulse 2s ease-out infinite;
+}
+
+/* ==========================================================================
+   Mushroom Checker — светлая схема «Soft Product»
+
+   Включается атрибутом `data-flavor="checker"` на <html> (ставится в
+   src/app/layout.tsx по хосту). Всё, что ниже, действует только на
+   поддомене checker.* и в нативной оболочке ai.skyforest.mushroomchecker.
+   ========================================================================== */
+html[data-flavor="checker"] {
+  color-scheme: light;
+  background: var(--color-ck-canvas);
+}
+
+html[data-flavor="checker"] body {
+  background: var(--color-ck-canvas);
+  color: var(--color-ck-ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+/* Глобальные правила выше красят поля под тёмный фон через !important —
+   в светлой схеме их нужно перебить. */
+html[data-flavor="checker"] input[type="text"],
+html[data-flavor="checker"] input[type="email"],
+html[data-flavor="checker"] input[type="password"],
+html[data-flavor="checker"] input[type="number"],
+html[data-flavor="checker"] input[type="date"],
+html[data-flavor="checker"] select,
+html[data-flavor="checker"] textarea {
+  background: var(--color-ck-surface) !important;
+  border-color: var(--color-ck-border-4) !important;
+  color: var(--color-ck-ink) !important;
+}
+
+html[data-flavor="checker"] input::placeholder,
+html[data-flavor="checker"] textarea::placeholder {
+  color: var(--color-ck-muted-2) !important;
+}
+
+html[data-flavor="checker"] input:focus,
+html[data-flavor="checker"] textarea:focus {
+  border-color: var(--color-ck-primary-light) !important;
+  box-shadow: 0 0 0 4px rgba(95, 181, 115, 0.15) !important;
+}
+
+html[data-flavor="checker"] :focus-visible {
+  outline-color: var(--color-ck-primary);
+}
+
+html[data-flavor="checker"] ::-webkit-scrollbar-thumb {
+  background: rgba(19, 35, 24, 0.18);
+}
+
+/* Мелкие подписи-«моно»: 10–11px, разрядка, uppercase. Только микро-лейблы. */
+.ck-mono {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+/* Кнопки: 58 primary / 52 secondary — трогать высоты нельзя (HIG). */
+.ck-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-weight: 800;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+.ck-btn:disabled {
+  opacity: 0.55;
+}
+
+.ck-btn-primary {
+  height: 58px;
+  background: var(--color-ck-primary);
+  color: #fff;
+  font-size: 17px;
+  box-shadow: 0 14px 28px -14px rgba(63, 156, 88, 0.8);
+}
+
+.ck-btn-secondary {
+  height: 52px;
+  background: var(--color-ck-surface);
+  border: 1px solid var(--color-ck-border-3);
+  color: #26402d;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-btn-quiet {
+  height: 52px;
+  background: var(--color-ck-canvas);
+  color: var(--color-ck-body);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-btn-danger {
+  height: 56px;
+  background: var(--color-ck-danger);
+  color: #fff;
+  font-size: 16.5px;
+}
+
+.ck-card {
+  background: var(--color-ck-surface);
+  border: 1px solid var(--color-ck-border);
+  border-radius: 24px;
+}
+
+.ck-lift {
+  box-shadow: 0 10px 26px -18px rgba(20, 60, 35, 0.5);
+}
+
+/* Заглушка фото — диагональная штриховка, поверх неё кладётся реальный <img>. */
+.ck-photo-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    #e5ebe2 0 10px,
+    #eef2eb 10px 20px
+  );
+}
+
+@keyframes ck-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.ck-step-in {
+  animation: ck-step-in 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-step-in {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   WayBack — светлая схема «Widget Board»
+
+   Включается атрибутом `data-flavor="wayback"` на <html> (ставится в
+   src/app/layout.tsx по хосту). Действует только на поддомене wayback.*
+   и в нативной оболочке ai.skyforest.wayback.
+
+   Правило системы: контент живёт в белых плитках 26px на холсте #eef0ec,
+   действия — зелёные #2f6b3f, подписи к данным — моно капсом.
+   ========================================================================== */
+html[data-flavor="wayback"] {
+  color-scheme: light;
+  background: var(--color-wb-canvas);
+}
+
+html[data-flavor="wayback"] body {
+  background: var(--color-wb-canvas);
+  color: var(--color-wb-ink);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+/* Правила выше красят поля под тёмный фон через !important — перебиваем. */
+html[data-flavor="wayback"] input[type="text"],
+html[data-flavor="wayback"] input[type="email"],
+html[data-flavor="wayback"] input[type="password"],
+html[data-flavor="wayback"] input[type="number"],
+html[data-flavor="wayback"] input[type="date"],
+html[data-flavor="wayback"] select,
+html[data-flavor="wayback"] textarea {
+  background: var(--color-wb-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--color-wb-ink) !important;
+}
+
+html[data-flavor="wayback"] input::placeholder,
+html[data-flavor="wayback"] textarea::placeholder {
+  color: var(--color-wb-muted-3) !important;
+}
+
+html[data-flavor="wayback"] input:focus,
+html[data-flavor="wayback"] textarea:focus {
+  border-color: var(--color-wb-primary) !important;
+  box-shadow: 0 0 0 3px rgba(47, 107, 63, 0.16) !important;
+}
+
+html[data-flavor="wayback"] :focus-visible {
+  outline-color: var(--color-wb-primary);
+}
+
+html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
+  background: rgba(20, 26, 21, 0.18);
+}
+
+/* Плитка — базовый носитель контента. 26px радиус во всей системе. */
+.wb-tile {
+  background: var(--color-wb-surface);
+  border-radius: 26px;
+}
+
+.wb-tile-tint {
+  background: var(--color-wb-primary-tint);
+  border-radius: 26px;
+}
+
+.wb-tile-quiet {
+  background: var(--color-wb-surface-3);
+  border-radius: 26px;
+}
+
+.wb-tile-danger {
+  background: var(--color-wb-danger-tint);
+  border-radius: 26px;
+}
+
+/* Моно-подписи к данным: 11px, капс, разрядка. Только микро-лейблы. */
+.wb-mono {
+  font-family: var(--font-wb-mono), ui-monospace, monospace;
+}
+
+.wb-label {
+  font-family: var(--font-wb-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-wb-muted-2);
+}
+
+/* Кнопки. Высоты по HIG: 58 primary / 56 compact / 50 quiet — не уменьшать,
+   их жмут в лесу и в перчатках. */
+.wb-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 18px;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+.wb-btn:disabled {
+  opacity: 0.55;
+}
+
+.wb-btn-primary {
+  height: 58px;
+  background: var(--color-wb-primary);
+  color: var(--color-wb-on-primary);
+  font-weight: 800;
+  font-size: 17px;
+}
+.wb-btn-primary:hover:not(:disabled) {
+  background: var(--color-wb-primary-deep);
+}
+
+.wb-btn-quiet {
+  height: 50px;
+  background: var(--color-wb-surface);
+  color: #3a453c;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.wb-btn-soft {
+  height: 52px;
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-ink-2);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Мягкая опасная — основная для «Я вышел из леса»: заметная, но не кричит. */
+.wb-btn-danger-soft {
+  height: 62px;
+  border-radius: 22px;
+  background: var(--color-wb-danger-tint);
+  color: var(--color-wb-danger);
+  font-weight: 800;
+  font-size: 17px;
+}
+
+/* Сплошная опасная — только в подтверждении необратимого действия. */
+.wb-btn-danger {
+  height: 64px;
+  border-radius: 20px;
+  background: var(--color-wb-danger);
+  color: #fdf4f3;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* Сегментные переключатели: радиус/детализация, месяц/год, слои, EN/RU. */
+.wb-seg {
+  height: 44px;
+  border-radius: 999px;
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-body);
+  font-weight: 700;
+  font-size: 14px;
+  border: 0;
+  transition: background-color 0.15s ease;
+}
+.wb-seg[aria-pressed="true"],
+.wb-seg[data-active="true"] {
+  background: var(--color-wb-primary);
+  color: var(--color-wb-on-primary);
+}
+
+/* Заглушка карты/фото — та же штриховка, что в макете. */
+.wb-map-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    #e0e8dd 0 10px,
+    #e7eee4 10px 20px
+  );
 }
 
 /* Better touch targets on mobile */

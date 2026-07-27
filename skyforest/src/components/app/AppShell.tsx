@@ -5,8 +5,12 @@ import { Footer } from "@/components/marketing/Footer";
 import { FlavorAppFooter } from "@/components/app/FlavorAppFooter";
 import { ReferralApplier } from "@/components/app/ReferralApplier";
 import { NativeTabBar } from "@/components/native/NativeTabBar";
+import { CheckerHeader } from "@/components/checker/CheckerHeader";
+import { usePathname } from "@/i18n/navigation";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { useAppFlavor } from "@/lib/useAppFlavor";
+
+const CHECKER_HEADERLESS = ["/payment", "/account"];
 
 /**
  * Layout-оболочка кабинета `(app)`.
@@ -22,8 +26,49 @@ import { useAppFlavor } from "@/lib/useAppFlavor";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const isNative = useIsNative();
   const flavor = useAppFlavor();
+  const pathname = usePathname();
   // Во флейворах футер и реферальная механика SkyForest не нужны.
   const isFlavored = flavor !== "skyforest";
+
+  // Mushroom Checker — светлая схема: непрозрачный холст вместо видео/фото
+  // с блюром, своя шапка и никакого таб-бара (экран один).
+  if (flavor === "checker") {
+    // Пейволл и аккаунт по дизайну — «вложенные» экраны со своим крестиком
+    // или стрелкой назад, шапка там дублировала бы навигацию.
+    const withHeader = !CHECKER_HEADERLESS.some((p) => pathname.startsWith(p));
+    return (
+      <div
+        className="flex min-h-screen flex-col bg-ck-canvas"
+        style={
+          withHeader
+            ? ({
+                // Высота шапки: 8px + 38px кнопка + 6px = 52px.
+                "--ck-chrome": "calc(52px + env(safe-area-inset-top))",
+                "--ck-safe-top": "0px",
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {withHeader && <CheckerHeader />}
+        <main id="main-content" className="flex-1" tabIndex={-1}>
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  // WayBack — светлая схема «Widget Board»: холст без фонового изображения
+  // (важно для читаемости на солнце и для батареи), общей шапки нет —
+  // каждый экран рисует свою верхнюю панель, они слишком разные.
+  if (flavor === "wayback") {
+    return (
+      <div className="flex min-h-screen flex-col bg-wb-canvas">
+        <main id="main-content" className="flex-1" tabIndex={-1}>
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col">

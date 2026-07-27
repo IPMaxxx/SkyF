@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveSubscription } from "@/lib/subscription";
+import {
+  currentMonthlySliceStart,
+  getActiveSubscription,
+} from "@/lib/subscription";
 
 /** Текущая подписка пользователя для UI (/payment). */
 export async function GET() {
@@ -15,6 +18,12 @@ export async function GET() {
   const sub = await getActiveSubscription(user.id);
   if (!sub) return NextResponse.json({ subscription: null });
 
+  // Счётчик распознаваний обнуляется на границе месячного слайса, а не в
+  // конце оплаченного периода (для годовой подписки это разные даты).
+  const sliceStart = currentMonthlySliceStart(new Date(sub.currentPeriodStart));
+  const quotaResetsAt = new Date(sliceStart);
+  quotaResetsAt.setUTCMonth(quotaResetsAt.getUTCMonth() + 1);
+
   return NextResponse.json({
     subscription: {
       tier: sub.tier,
@@ -26,6 +35,7 @@ export async function GET() {
       forecast_used: sub.forecastUsed,
       identify_limit: sub.benefits.identifyPerMonth,
       forecast_limit: sub.benefits.forecastPerMonth,
+      quota_resets_at: quotaResetsAt.toISOString(),
     },
   });
 }

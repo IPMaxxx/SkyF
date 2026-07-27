@@ -11,7 +11,8 @@ const config: CapacitorConfig = {
   appId: "ai.skyforest.mushroomchecker",
   appName: "Mushroom Checker",
   webDir: "www",
-  backgroundColor: "#0f1a12",
+  // Светлая схема редизайна: WebView не должен мигать тёмным.
+  backgroundColor: "#F3F7F1",
   server: {
     url: serverUrl,
     cleartext: false,
@@ -32,7 +33,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#0f1a12",
+      backgroundColor: "#F3F7F1",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashImmersive: true,

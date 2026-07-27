@@ -20,6 +20,8 @@ import { EditProfileName } from "@/components/app/EditProfileName";
 import { EditContactLink } from "@/components/app/EditContactLink";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
+import { CheckerAccount } from "@/components/checker/CheckerAccount";
+import { WayBackAccount } from "@/components/wayback/WayBackAccount";
 import { NativeOnly, WebOnly } from "@/components/native/NativeOnly";
 import { BiometricLockSetting } from "@/components/native/BiometricLockSetting";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -83,6 +85,25 @@ export default async function AccountPage({ params }: Props) {
   const profile = profileRes.data;
   const tokenBalance = tokenRes?.[0].data ?? null;
   const transactions = tokenRes?.[1].data ?? [];
+
+  // Mushroom Checker и WayBack — собственные экраны аккаунта в светлых схемах.
+  if (flavor === "checker") {
+    return (
+      <CheckerAccount
+        email={profile?.email || userEmail!}
+        initialName={profile?.full_name || null}
+      />
+    );
+  }
+
+  if (flavor === "wayback") {
+    return (
+      <WayBackAccount
+        email={profile?.email || userEmail!}
+        initialName={profile?.full_name || null}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -255,9 +276,6 @@ export default async function AccountPage({ params }: Props) {
         <p className="mb-4 text-sm text-muted-foreground">
           {tFlavor ? tFlavor("accountDeleteHint") : t("deleteHint")}
         </p>
-        {flavor === "wayback" && (
-          <p className="mb-4 text-xs text-muted-foreground">{tFlavor!("accountDeleteNote")}</p>
-        )}
         <DeleteAccount email={userEmail!} />
       </div>
     </div>

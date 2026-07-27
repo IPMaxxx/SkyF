@@ -6,8 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
+import { CheckerVerifyMfa } from "@/components/checker/CheckerAuth";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 
 export default function VerifyMfaPage() {
+  if (useAppFlavor() === "checker") return <CheckerVerifyMfa />;
+  return <VerifyMfaForm />;
+}
+
+function VerifyMfaForm() {
   const router = useRouter();
   const t = useTranslations("auth");
   const [code, setCode] = useState(["", "", "", "", "", ""]);

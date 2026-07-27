@@ -163,6 +163,15 @@ export async function loadTrackHistory(): Promise<SavedTrack[]> {
   return [...local, ...remote].sort((a, b) => b.finishedAt - a.finishedAt);
 }
 
+/**
+ * Сколько походов лежит именно на этом устройстве. Экран аккаунта WayBack
+ * обещает, что удаление аккаунта их не тронет, поэтому считаем локальные
+ * записи отдельно от синхронизированных.
+ */
+export function countLocalTracks(): number {
+  return loadLocal().length;
+}
+
 export async function deleteSavedTrack(track: SavedTrack): Promise<void> {
   if (track.local) {
     try {

@@ -7,9 +7,19 @@ import { createClient } from "@/lib/supabase/client";
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
+import { CheckerForgotPassword } from "@/components/checker/CheckerAuth";
+import { WayBackForgotPassword } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useAppFlavor } from "@/lib/useAppFlavor";
 
 export default function ForgotPasswordPage() {
+  const flavor = useAppFlavor();
+  if (flavor === "checker") return <CheckerForgotPassword />;
+  if (flavor === "wayback") return <WayBackForgotPassword />;
+  return <ForgotPasswordForm />;
+}
+
+function ForgotPasswordForm() {
   const t = useTranslations("auth");
   const isNative = useIsNative();
   const [email, setEmail] = useState("");
