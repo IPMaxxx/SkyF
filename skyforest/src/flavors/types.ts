@@ -31,6 +31,43 @@ export interface FlavorSubscriptionPlan {
   priceYearlyUsd: number;
 }
 
+/**
+ * Ссылки на контент приложения, которые уходят в `<head>`: RSS-фид блога,
+ * карточка для ИИ-ассистентов (llms.txt) и объявление о ней. Есть только у
+ * продуктов, у которых этот контент действительно есть.
+ */
+export interface FlavorContentFeed {
+  /** Абсолютный URL RSS-фида. */
+  feedUrl: string;
+  /** Заголовок фида на языке фида — его показывают читалки. */
+  feedTitle: string;
+  /** Абсолютный URL карточки автора (llms.txt). */
+  authorUrl: string;
+  /** Текст меты ai-content-declaration. */
+  aiDeclaration: string;
+}
+
+/**
+ * Приложение, в котором тему выбирает пользователь (Mushroom Checker: тёмная
+ * по умолчанию, светлая по желанию). Выбор лежит в куке, потому что схему
+ * нужно знать ещё на сервере: атрибут `data-scheme` уезжает на <html> вместе
+ * с разметкой, и первая отрисовка идёт сразу в нужных цветах.
+ *
+ * `themes` описывает только чром вокруг страницы — его нельзя получить из CSS:
+ * `theme-color` уходит в <meta>, стиль статус-бара iOS — в свой <meta> и в
+ * @capacitor/status-bar. Сами цвета интерфейса живут в CSS приложения.
+ */
+export interface FlavorThemeSwitch<Theme extends string = string> {
+  /** Кука с выбором пользователя. */
+  cookie: string;
+  /** Тема, которую показываем, пока выбора нет. */
+  defaultTheme: Theme;
+  themes: Record<
+    Theme,
+    { themeColor: string; statusBarStyle: "default" | "black-translucent" }
+  >;
+}
+
 export interface FlavorConfig {
   id: AppFlavor;
   /** Публичное имя приложения (заголовки, манифест, header). */
@@ -61,10 +98,22 @@ export interface FlavorConfig {
   logoPath: string;
   /** id нативного приложения (Capacitor appId). */
   nativeAppId: string;
-  /** Цвет `theme-color`: фон холста приложения. */
+  /** Цвет `theme-color`: фон холста приложения (тема по умолчанию). */
   themeColor: string;
   /** Стиль статус-бара iOS: светлым схемам нужен тёмный текст. */
   statusBarStyle: "default" | "black-translucent";
+  /**
+   * Задано, если тему выбирает пользователь. Приложение само следит за
+   * статус-баром (общий NativeAppProvider в такие флейворы не лезет).
+   */
+  themeSwitch?: FlavorThemeSwitch;
+  /**
+   * Контентный фид приложения: RSS блога, карточка автора для читалок и
+   * ботов. Поле необязательное, и это главное в нём: у приложений без блога
+   * (Checker, WayBack) фида нет, и в `<head>` не должно быть чужого — раньше
+   * туда всем подряд уходил русский фид skyforest.by.
+   */
+  contentFeed?: FlavorContentFeed;
   /**
    * Внутренний префикс сегментов приложения в src/app (например "/ck").
    * Публично такие пути недоступны — middleware отдаёт их только через

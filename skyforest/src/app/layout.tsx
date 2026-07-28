@@ -60,10 +60,24 @@ export default async function RootLayout({
   const headerStore = await headers();
   const flavor = flavorConfig(flavorFromHost(headerStore.get("host")));
 
+  // Приложения, где тему выбирает пользователь (Checker), приносят выбор в
+  // куке. Схему ставим атрибутом на <html> ещё на сервере: CSS флейвора берёт
+  // из него цвета, поэтому первая отрисовка идёт сразу в выбранной теме и
+  // тёмное приложение не мигает светлым фоном.
+  const themeSwitch = flavor.themeSwitch;
+  const chosen = themeSwitch && cookieStore.get(themeSwitch.cookie)?.value;
+  const scheme = themeSwitch
+    ? chosen && chosen in themeSwitch.themes
+      ? chosen
+      : themeSwitch.defaultTheme
+    : null;
+  const chrome = themeSwitch && scheme ? themeSwitch.themes[scheme] : flavor;
+
   return (
     <html
       lang={lang === "en" ? "en" : "ru"}
       data-flavor={flavor.id}
+      data-scheme={scheme ?? undefined}
       suppressHydrationWarning
     >
       <head>
@@ -95,25 +109,32 @@ export default async function RootLayout({
             __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TDWX0SFE2M');`,
           }}
         />
-        <link rel="author" href="https://www.skyforest.by/llms.txt" />
-        <link
-          rel="alternate"
-          type="application/rss+xml"
-          title="Skyforest.by — Блог для грибников"
-          href="https://www.skyforest.by/feed.xml"
-        />
-        <meta
-          name="ai-content-declaration"
-          content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
-        />
+        {/* Фид и карточка автора есть не у всех приложений: у Checker и
+            WayBack блога нет, и раньше им отдавался чужой русский фид
+            skyforest.by. Значения берём из конфига флейвора. */}
+        {flavor.contentFeed && (
+          <>
+            <link rel="author" href={flavor.contentFeed.authorUrl} />
+            <link
+              rel="alternate"
+              type="application/rss+xml"
+              title={flavor.contentFeed.feedTitle}
+              href={flavor.contentFeed.feedUrl}
+            />
+            <meta
+              name="ai-content-declaration"
+              content={flavor.contentFeed.aiDeclaration}
+            />
+          </>
+        )}
         <link rel="manifest" href={flavor.manifestPath} />
-        <meta name="theme-color" content={flavor.themeColor} />
+        <meta name="theme-color" content={chrome.themeColor} />
         <meta name="application-name" content={flavor.name} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta
           name="apple-mobile-web-app-status-bar-style"
-          content={flavor.statusBarStyle}
+          content={chrome.statusBarStyle}
         />
         <meta name="apple-mobile-web-app-title" content={flavor.name} />
         <link rel="apple-touch-icon" href={flavor.faviconPath} />
