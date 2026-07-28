@@ -5,7 +5,8 @@
 // Для каждого продукта: pricing:convertRegionPrices (региональные цены из
 // USD) → subscriptions.create → basePlans:activate → offers.create
 // (фаза FREE, длительность из продукта) → offers:activate. Скрипт
-// идемпотентен: существующие продукты/офферы пропускаются.
+// идемпотентен: существующие продукты/офферы пропускаются, а если цена в
+// конфиге разошлась с той, что в консоли, базовый план патчится новой ценой.
 //
 // Запуск: node fastlane/play-subs-create.mjs
 import { readFileSync } from 'node:fs';
@@ -60,6 +61,23 @@ function usdPrice(amount) {
   return { currencyCode: 'USD', units: String(units), nanos };
 }
 
+const priceAmount = (price) =>
+  price ? Number(price.units || 0) + Number(price.nanos || 0) / 1e9 : null;
+
+// Региональные цены из USD: массив regionalConfigs + цена для «остальных».
+async function convertPrices(pkg, usd) {
+  const conv = await api('POST', `/applications/${pkg}/pricing:convertRegionPrices`, { price: usdPrice(usd) });
+  if (!conv.ok) return { error: conv };
+  return {
+    regionalConfigs: Object.values(conv.json.convertedRegionPrices || {}).map((r) => ({
+      regionCode: r.regionCode,
+      newSubscriberAvailability: true,
+      price: r.price,
+    })),
+    other: conv.json.convertedOtherRegionsPrice || {},
+  };
+}
+
 const PRODUCTS = [
   {
     pkg: 'ai.skyforest.mushroomchecker',
@@ -89,24 +107,21 @@ const PRODUCTS = [
   },
   {
     pkg: 'ai.skyforest.wayback',
-    productId: 'ai.skyforest.wayback.sub.monthly',
-    basePlanId: 'monthly',
-    billingPeriod: 'P1M',
-    usd: 2.99,
-    listings: [
-      { languageCode: 'en-US', title: 'Premium Monthly', description: 'Offline maps, region downloads and way back to your entry point.' },
-      { languageCode: 'ru-RU', title: 'Премиум (месяц)', description: 'Офлайн-карты, скачивание регионов и возврат к точке входа.' },
-    ],
-  },
-  {
-    pkg: 'ai.skyforest.wayback',
     productId: 'ai.skyforest.wayback.sub.yearly',
     basePlanId: 'yearly',
     billingPeriod: 'P1Y',
-    usd: 19.99,
+    usd: 3.99,
     listings: [
-      { languageCode: 'en-US', title: 'Premium Yearly', description: 'Offline maps, region downloads and way back to your entry point.' },
-      { languageCode: 'ru-RU', title: 'Премиум (год)', description: 'Офлайн-карты, скачивание регионов и возврат к точке входа.' },
+      {
+        languageCode: 'en-US',
+        title: 'Premium Yearly',
+        description: 'Offline areas, satellite imagery and sync across devices. 7-day free trial.',
+      },
+      {
+        languageCode: 'ru-RU',
+        title: 'Премиум (год)',
+        description: 'Офлайн-области, спутниковые снимки и синхронизация. 7 дней бесплатно.',
+      },
     ],
   },
 ];
@@ -126,19 +141,12 @@ for (const p of PRODUCTS) {
 
   if (!sub) {
     // 1. Региональные цены из USD.
-    const conv = await api('POST', `/applications/${p.pkg}/pricing:convertRegionPrices`, {
-      price: usdPrice(p.usd),
-    });
-    if (!conv.ok) {
-      console.error('convertRegionPrices failed:', conv.status, JSON.stringify(conv.json).slice(0, 500));
+    const conv = await convertPrices(p.pkg, p.usd);
+    if (conv.error) {
+      console.error('convertRegionPrices failed:', conv.error.status, JSON.stringify(conv.error.json).slice(0, 500));
       continue;
     }
-    const regionalConfigs = Object.values(conv.json.convertedRegionPrices || {}).map((r) => ({
-      regionCode: r.regionCode,
-      newSubscriberAvailability: true,
-      price: r.price,
-    }));
-    const other = conv.json.convertedOtherRegionsPrice || {};
+    const { regionalConfigs, other } = conv;
 
     // 2. Создать подписку с базовым планом.
     const createBody = {
@@ -177,6 +185,68 @@ for (const p of PRODUCTS) {
     console.log('created subscription');
   } else {
     console.log('subscription already exists');
+
+    // 2b. Догнать консоль до конфига: цена базового плана и листинги.
+    // Новая цена применяется к новым подписчикам; уже подписанные остаются на
+    // старой, пока их не мигрируют вручную в консоли.
+    const bp = sub.basePlans?.find((b) => b.basePlanId === p.basePlanId);
+    const currentUsd =
+      bp?.regionalConfigs?.find((r) => r.regionCode === 'US')?.price ?? bp?.otherRegionsConfig?.usdPrice;
+    const priceStale = bp && priceAmount(currentUsd) !== p.usd;
+    const listingsStale = p.listings.some((l) => {
+      const cur = (sub.listings || []).find((c) => c.languageCode === l.languageCode);
+      return !cur || cur.title !== l.title || cur.description !== l.description;
+    });
+
+    if (!priceStale) console.log(`price already ${p.usd} USD`);
+    if (priceStale || listingsStale) {
+      const masks = [];
+      const body = { packageName: p.pkg, productId: p.productId };
+
+      if (priceStale) {
+        console.log(`price differs: ${priceAmount(currentUsd)} → ${p.usd} USD, updating`);
+        const conv = await convertPrices(p.pkg, p.usd);
+        if (conv.error) {
+          console.error('convertRegionPrices failed:', conv.error.status, JSON.stringify(conv.error.json).slice(0, 500));
+          continue;
+        }
+        body.basePlans = sub.basePlans.map(({ state, ...rest }) =>
+          rest.basePlanId === p.basePlanId
+            ? {
+                ...rest,
+                regionalConfigs: conv.regionalConfigs,
+                otherRegionsConfig: {
+                  usdPrice: conv.other.usdPrice,
+                  eurPrice: conv.other.eurPrice,
+                  newSubscriberAvailability: true,
+                },
+              }
+            : rest,
+        );
+        masks.push('basePlans');
+      }
+
+      if (listingsStale) {
+        console.log('listings differ, updating');
+        body.listings = p.listings;
+        masks.push('listings');
+      }
+
+      const patched = await api(
+        'PATCH',
+        `/applications/${p.pkg}/subscriptions/${p.productId}` +
+          `?updateMask=${masks.join(',')}&regionsVersion.version=2025%2F03`,
+        body,
+      );
+      if (!patched.ok) {
+        console.error('update failed:', patched.status, JSON.stringify(patched.json).slice(0, 800));
+        continue;
+      }
+      sub = patched.json;
+      console.log(`updated: ${masks.join(', ')}`);
+    } else {
+      console.log('listings already up to date');
+    }
   }
 
   // 3. Активировать базовый план.

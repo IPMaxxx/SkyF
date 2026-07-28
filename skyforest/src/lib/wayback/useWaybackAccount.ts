@@ -16,7 +16,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface WaybackSubscription {
   tier: string;
-  period: "monthly" | "yearly";
+  /** У приложения один тариф — годовой (месячного товара в сторах нет). */
+  period: "yearly";
   status: "active" | "grace" | "canceled";
   platform: "ios" | "android" | "web";
   current_period_end: string;
