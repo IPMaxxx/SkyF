@@ -89,11 +89,14 @@ function PaymentContent() {
   }, []);
 
   // Флейворы Mushroom Checker / WayBack: токенов нет вообще — страница
-  // превращается в пейволл единственной подписки (месяц/год, триал 7 дней).
+  // превращается в пейволл единственной подписки (месяц/год с триалом).
   const flavor = useAppFlavor();
   const isFlavored = flavor !== "skyforest";
   // Каталог подписок текущего приложения (skyforest → Forager/Pro).
   const subCatalog = subscriptionProductsForBundle(FLAVORS[flavor].nativeAppId);
+  // Длительность триала берём из конфига приложения: у Mushroom Checker она
+  // своя (3 дня), у остальных — стандартные 7 дней продуктов в сторах.
+  const trialDays = FLAVORS[flavor].subscriptionPlan?.trialDays ?? 7;
   // Название стора по платформе (на iOS нельзя упоминать Google Play).
   // До гидрации native=false → нейтральное «App Store / Google Play».
   const store = native ? storeName() : "App Store / Google Play";
@@ -141,7 +144,7 @@ function PaymentContent() {
     loadActiveSub();
   }, [native, isFlavored]);
 
-  // Годовой период по умолчанию: он выгоднее (−50% + триал 7 дней).
+  // Годовой период по умолчанию: он выгоднее (−50% + бесплатный триал).
   const [subPeriod, setSubPeriod] = useState<SubscriptionPeriod>("yearly");
   const [subPurchasing, setSubPurchasing] = useState<string | null>(null);
   const [subError, setSubError] = useState("");
@@ -547,7 +550,7 @@ function PaymentContent() {
                           }`}
                         >
                           <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-3 py-0.5 text-xs font-extrabold text-[#06120a]">
-                            {ts("trialBadge")}
+                            {ts("trialBadge", { days: trialDays })}
                           </span>
                           <div className="mb-1 flex items-center gap-2">
                             <Crown className={`h-5 w-5 ${isPro ? "text-primary-light" : "text-emerald-400"}`} />
@@ -569,7 +572,7 @@ function PaymentContent() {
                           </ul>
                           {isFlavored && (
                             <p className="mb-3 text-center text-xs text-emerald-300">
-                              {ts("trialNote")}
+                              {ts("trialNote", { days: trialDays })}
                             </p>
                           )}
                           {native ? (

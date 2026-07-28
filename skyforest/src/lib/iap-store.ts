@@ -250,8 +250,8 @@ export async function getGoogleSubscription(
   const startMs = data.startTime ? Date.parse(data.startTime) : null;
 
   // Триал: покупка через offer (offerId у нас только на бесплатном триале)
-  // и текущий период короткий (7 дней триала; после конверсии в платный
-  // период expiryTime уходит от startTime на месяц/год).
+  // и текущий период короткий (3 дня у Checker, 7 у остальных; после
+  // конверсии в платный период expiryTime уходит от startTime на месяц/год).
   const isTrial = Boolean(
     line.offerDetails?.offerId &&
       startMs != null &&
