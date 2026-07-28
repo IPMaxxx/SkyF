@@ -9,14 +9,32 @@
 
 export type AppFlavor = "skyforest" | "checker" | "wayback";
 
+/**
+ * Параметры подписки приложения — единственное место, где живут числа
+ * триала, лимитов и цен. Их читают серверная квота (src/lib/subscription.ts),
+ * каталог IAP (src/lib/native/iapProducts.ts) и экраны приложения, поэтому
+ * менять модель монетизации нужно только здесь.
+ */
+export interface FlavorSubscriptionPlan {
+  /** Длина бесплатного пробного периода: introductory offer в сторах. */
+  trialDays: number;
+  /** Распознаваний на весь триал целиком (не в день); null — без лимита. */
+  trialIdentifyLimit: number | null;
+  /** Распознаваний в месяц в оплаченной подписке; null — без лимита. */
+  identifyLimit: number | null;
+  /** Цены подписки в USD — одинаковые в сторах и на сайте. */
+  priceMonthlyUsd: number;
+  priceYearlyUsd: number;
+}
+
 export interface FlavorConfig {
   id: AppFlavor;
   /** Публичное имя приложения (заголовки, манифест, header). */
   name: string;
   /**
-   * Основной язык приложения. Если он отличается от локали без префикса
-   * (`routing.defaultLocale`), middleware уводит первый заход на `/<locale>`;
-   * выбор пользователя хранится в куке NEXT_LOCALE и приоритетнее.
+   * Основной язык приложения: на нём middleware рендерит страницы без
+   * префикса локали в URL, независимо от `routing.defaultLocale` сборки.
+   * Выбор пользователя хранится в куке NEXT_LOCALE и приоритетнее.
    */
   defaultLocale: "ru" | "en";
   /** Домашняя страница кабинета — сюда уводим с чужих маршрутов. */
@@ -55,6 +73,8 @@ export interface FlavorConfig {
    * экранами других флейворов.
    */
   internalRewrites: Record<string, string>;
+  /** Модель подписки приложения (у SkyForest тиры описаны в TIER_BENEFITS). */
+  subscriptionPlan?: FlavorSubscriptionPlan;
 }
 
 /** Пути, доступные во всех урезанных приложениях (вход, аккаунт, документы). */

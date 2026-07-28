@@ -7,6 +7,8 @@
  *
  * Подписки — **auto-renewable** товары (группа «SkyForest Premium»).
  */
+import { FLAVORS } from "@/flavors/registry";
+
 export interface IapProduct {
   /** ID товара в App Store Connect / Google Play */
   productId: string;
@@ -56,6 +58,13 @@ export function tokensForProduct(productId: string): number | null {
 export type SubscriptionTier = "forager" | "pro" | "checker" | "wayback";
 export type SubscriptionPeriod = "monthly" | "yearly";
 
+/** Цены Checker живут в конфиге приложения, а не двумя строками здесь. */
+const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan;
+
+function usd(amount: number | undefined): string {
+  return amount == null ? "" : `$${amount.toFixed(2)}`;
+}
+
 export interface SubscriptionProduct {
   productId: string;
   tier: SubscriptionTier;
@@ -96,20 +105,22 @@ export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
     fallbackPrice: "$71.99",
     bundleId: MAIN_BUNDLE_ID,
   },
-  // ---- Mushroom Checker: единственная подписка месяц/год, триал 7 дней,
-  // без токенов (25 определений/мес включено в подписку, тир "checker").
+  // ---- Mushroom Checker: единственная подписка месяц/год с бесплатным
+  // пробным периодом. Цены и длина триала описаны в одном месте —
+  // FLAVORS.checker.subscriptionPlan; там же они должны совпадать с
+  // App Store Connect и Google Play.
   {
     productId: "ai.skyforest.mushroomchecker.sub.monthly",
     tier: "checker",
     period: "monthly",
-    fallbackPrice: "$4.99",
+    fallbackPrice: usd(CHECKER_PLAN?.priceMonthlyUsd),
     bundleId: CHECKER_BUNDLE_ID,
   },
   {
     productId: "ai.skyforest.mushroomchecker.sub.yearly",
     tier: "checker",
     period: "yearly",
-    fallbackPrice: "$29.99",
+    fallbackPrice: usd(CHECKER_PLAN?.priceYearlyUsd),
     bundleId: CHECKER_BUNDLE_ID,
   },
   // ---- WayBack: единственная подписка месяц/год, триал 7 дней,

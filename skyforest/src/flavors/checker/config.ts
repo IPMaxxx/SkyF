@@ -41,4 +41,17 @@ export const checkerFlavor: FlavorConfig = {
     "/account": "/ck/account",
     "/payment": "/ck/payment",
   },
+  /**
+   * Модель монетизации: пробный период на 3 дня с ограниченным числом
+   * распознаваний, затем подписка без лимита за $2/мес или $14.99/год.
+   * Числа отсюда идут и в квоту на сервере, и в тексты пейволла —
+   * менять их нужно только тут (и синхронно в App Store Connect / Play).
+   */
+  subscriptionPlan: {
+    trialDays: 3,
+    trialIdentifyLimit: 10,
+    identifyLimit: null,
+    priceMonthlyUsd: 2,
+    priceYearlyUsd: 14.99,
+  },
 };

@@ -23,6 +23,7 @@ import {
   setLockEnabled,
 } from "@/lib/native/biometricLock";
 import {
+  CHECKER_PLAN,
   formatFullDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
@@ -52,7 +53,8 @@ export function CheckerAccount({
   const td = useTranslations("checker.deleteAccount");
   const locale = useLocale();
   const router = useRouter();
-  const { subscription, left, limit } = useCheckerSubscription();
+  const { subscription, left, limit, isTrial, unlimited } =
+    useCheckerSubscription();
 
   const [sheet, setSheet] = useState<Sheet>(null);
   const [name, setName] = useState(initialName ?? "");
@@ -169,7 +171,7 @@ export function CheckerAccount({
           <div className="flex items-center justify-between gap-3 rounded-[26px] border border-ck-primary-border bg-ck-primary-tint p-[18px]">
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="text-[14.5px] font-extrabold text-ck-primary-deep">
-                {t("premiumPlan", {
+                {t(isTrial ? "trialPlan" : "premiumPlan", {
                   plan:
                     subscription.period === "yearly"
                       ? t("premiumYearly")
@@ -177,7 +179,12 @@ export function CheckerAccount({
                 })}
               </span>
               <span className="text-[11.5px] font-medium text-ck-primary-mid">
-                {t("idsLeft", { left: left ?? 0, limit: limit ?? 0 })}
+                {unlimited
+                  ? t("idsUnlimited")
+                  : t("idsTrialLeft", {
+                      left: left ?? 0,
+                      limit: limit ?? CHECKER_PLAN.trialIdentifyLimit ?? 0,
+                    })}
               </span>
             </div>
             <Link
@@ -194,7 +201,7 @@ export function CheckerAccount({
                 {t("noSubscription")}
               </span>
               <span className="text-[11.5px] font-medium text-ck-muted">
-                {t("noSubscriptionHint")}
+                {t("noSubscriptionHint", { days: CHECKER_PLAN.trialDays })}
               </span>
             </div>
             <Link

@@ -24,22 +24,26 @@ export const checkerBrand = {
 
 export default {
   menu: {
-    brandShort: "Checker",
+    brandShort: "Mushroom Checker",
     open: "Открыть меню",
     close: "Закрыть меню",
     identify: "Определить гриб",
     subscription: "Подписка",
     account: "Мой аккаунт",
     premiumPill: "PREMIUM",
+    language: "Язык",
     logout: "Выйти",
   },
 
   home: {
     titleLine1: "Гриб?",
     titleLine2: "Проверим.",
-    quotaLeft: "распознаваний осталось в этом месяце, из {limit}",
-    quotaNoSub:
-      "распознаваний осталось — по подписке {limit} каждый месяц",
+    quotaUnlimited: "Распознавания без ограничений",
+    quotaUnlimitedNote: "PREMIUM",
+    quotaTrialLeft: "распознаваний осталось в пробном периоде, из {limit}",
+    quotaTrialEnded:
+      "Пробные распознавания закончились — оформите подписку",
+    quotaNoSub: "{days, plural, one {день} few {дня} other {дней}} бесплатно — нажмите, чтобы начать",
     photoCaption: "ФОТО ГРИБА",
     tipCap: "Шляпка сверху",
     tipStem: "Ножка целиком",
@@ -56,7 +60,9 @@ export default {
     lighting: "Освещение хорошее",
     beforeTitle: "Перед отправкой",
     beforeBody:
-      "Из месячного лимита спишется одно распознавание — только если мы вернём результат.",
+      "Из лимита пробного периода спишется одно распознавание — только если мы вернём результат.",
+    beforeBodyUnlimited:
+      "В подписке лимита нет — определяйте столько находок, сколько нужно.",
     identify: "Определить",
     counter: "· {used} из {limit}",
     retake: "Переснять",
@@ -66,7 +72,7 @@ export default {
     title: "Определить этот гриб?",
     body: "Распознавание засчитывается, только если анализ вернул результат. Ошибки и «это не гриб» бесплатны.",
     thisScan: "Это распознавание",
-    leftThisMonth: "Осталось в месяце",
+    leftInTrial: "Осталось в пробном",
     afterScan: "После распознавания",
     cta: "Определить",
     cancel: "Отмена",
@@ -114,10 +120,12 @@ export default {
     noResultTitle: "Уверенного совпадения нет",
     noResultBody:
       "Ничего не списано. Снимайте при дневном свете, в фокусе, шляпку сверху и пластинки снизу.",
-    limitTitle: "Месячный лимит исчерпан",
+    limitTitle: "Лимит пробного периода исчерпан",
     limitBody:
-      "Вы использовали все {limit} распознаваний. Счётчик обнулится {date}.",
-    limitBodyNoDate: "Вы использовали все {limit} распознаваний в этом месяце.",
+      "Вы использовали все {limit} распознаваний пробного периода. В подписке лимита нет.",
+    noSubTitle: "Нужна подписка",
+    noSubBody:
+      "Начните бесплатный период на {days, plural, one {# день} few {# дня} other {# дней}} — в него входит {limit} распознаваний.",
     limitCta: "Посмотреть подписку",
     timeoutTitle: "Анализ занял слишком долго",
     timeoutBody: "Соединение прервалось через 35 секунд. Ничего не списано.",
@@ -133,29 +141,38 @@ export default {
     genericTitle: "Что-то пошло не так",
     genericBody: "Ничего не списано. Попробуйте ещё раз через минуту.",
     captureTitle: "Не удалось получить фото",
-    captureBody:
-      "Проверьте доступ к камере и галерее в настройках и попробуйте снова.",
+    captureBody: "Попробуйте ещё раз или выберите фото из галереи.",
+    cameraDeniedTitle: "Доступ к камере закрыт",
+    cameraDeniedBody:
+      "Разрешите камеру для Mushroom Checker в «Настройки › Конфиденциальность › Камера» и снимите фото снова.",
+    photosDeniedTitle: "Доступ к галерее закрыт",
+    photosDeniedBody:
+      "Разрешите доступ к фото для Mushroom Checker в «Настройки › Конфиденциальность › Фото» и выберите снимок снова.",
+    captureDetail: "Подробности: {reason}",
   },
 
   paywall: {
     close: "Закрыть",
-    title: "Checker Premium",
+    title: "Mushroom Checker Premium",
     subtitle:
-      "{limit} распознаваний в месяц, полные данные о видах и предупреждения о двойниках.",
+      "Распознавания без ограничений, полные данные о видах и предупреждения о двойниках.",
     monthly: "Месяц",
     yearly: "Год",
     yearlyBadge: "−{percent}%",
-    trialBadge: "7 ДНЕЙ БЕСПЛАТНО",
+    trialBadge:
+      "{days, plural, one {# ДЕНЬ} few {# ДНЯ} other {# ДНЕЙ}} БЕСПЛАТНО",
     perYear: "/ год",
     perMonth: "/ месяц",
     perMonthHint: "· {price} в месяц",
-    feature1: "{limit} распознаваний каждый месяц",
+    feature1: "Распознавания без ограничений",
     feature2: "Опасные двойники и пометки о токсичности",
     feature3: "Полная таксономия и места роста",
+    trialNote:
+      "В бесплатный период входит {limit} распознаваний на {days, plural, one {# день} few {# дня} other {# дней}}. После начала списаний лимита нет.",
     autoRenewYear:
-      "7 дней бесплатно, затем автопродление за {price} в год. Отменить можно в любой момент в {store}.",
+      "{days, plural, one {# день} few {# дня} other {# дней}} бесплатно, затем автопродление за {price} в год. Отменить можно в любой момент в {store}.",
     autoRenewMonth:
-      "7 дней бесплатно, затем автопродление за {price} в месяц. Отменить можно в любой момент в {store}.",
+      "{days, plural, one {# день} few {# дня} other {# дней}} бесплатно, затем автопродление за {price} в месяц. Отменить можно в любой момент в {store}.",
     cta: "Начать бесплатный период",
     ctaBusy: "Открываем {store}…",
     eula: "Условия использования (EULA)",
@@ -173,10 +190,15 @@ export default {
     activeTitle: "Premium активен",
     activeBody:
       "Тариф «{plan}» · продление {date}. Управление через аккаунт {store}.",
+    trialTitle: "Идёт бесплатный период",
+    trialBody:
+      "Тариф «{plan}» · списания начнутся {date}. Управление через аккаунт {store}.",
     planMonthly: "Месяц",
     planYearly: "Год",
-    quotaLine: "из {limit} распознаваний осталось",
-    quotaReset: "обнулится {date}",
+    quotaUnlimited: "Распознавания без ограничений",
+    quotaUnlimitedNote: "месячного лимита нет",
+    quotaLine: "из {limit} пробных распознаваний осталось",
+    quotaReset: "пробный период до {date}",
     manage: "Управлять подпиской",
     canceledTitle: "Статус · отменена",
     canceledBody:
@@ -192,11 +214,14 @@ export default {
     title: "Мой аккаунт",
     back: "Назад",
     premiumPlan: "Premium · {plan}",
+    trialPlan: "Бесплатный период · {plan}",
     premiumMonthly: "Помесячно",
     premiumYearly: "Годовая",
-    idsLeft: "{left} из {limit} распознаваний в этом месяце",
+    idsUnlimited: "Распознавания без ограничений",
+    idsTrialLeft: "{left} из {limit} пробных распознаваний осталось",
     noSubscription: "Активной подписки нет",
-    noSubscriptionHint: "Оформите подписку, чтобы распознавать грибы",
+    noSubscriptionHint:
+      "Начните бесплатный период на {days, plural, one {# день} few {# дня} other {# дней}}",
     manage: "Управлять",
     subscribe: "Оформить",
     displayName: "Отображаемое имя",

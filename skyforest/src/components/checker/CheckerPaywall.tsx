@@ -28,9 +28,8 @@ import {
   type SubscriptionPeriod,
 } from "@/lib/native/iapProducts";
 import {
-  CHECKER_MONTHLY_LIMIT,
+  CHECKER_PLAN,
   formatFullDate,
-  formatQuotaDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
 import { cn } from "@/lib/utils";
@@ -92,7 +91,7 @@ export function CheckerPaywall() {
   const ts = useTranslations("checker.subscription");
   const locale = useLocale();
   const router = useRouter();
-  const { subscription, left, limit, loading, refresh } =
+  const { subscription, left, limit, isTrial, unlimited, loading, refresh } =
     useCheckerSubscription();
 
   const [native, setNative] = useState(false);
@@ -175,8 +174,8 @@ export function CheckerPaywall() {
   if (subscription) {
     const planName =
       subscription.period === "yearly" ? ts("planYearly") : ts("planMonthly");
+    // В триале эта дата — начало списаний, в подписке — дата продления.
     const renews = formatFullDate(subscription.current_period_end, locale);
-    const resets = formatQuotaDate(subscription.quota_resets_at, locale);
     const used = limit != null && left != null ? limit - left : 0;
     const progress = limit ? Math.min(100, (used / limit) * 100) : 0;
 
@@ -203,29 +202,51 @@ export function CheckerPaywall() {
             </span>
             <div className="flex flex-col gap-1">
               <span className="text-[17px] font-extrabold text-ck-primary-deep">
-                {ts("activeTitle")}
+                {isTrial ? ts("trialTitle") : ts("activeTitle")}
               </span>
               <span className="text-[12.5px] font-medium leading-[1.45] text-ck-primary-mid">
-                {ts("activeBody", { plan: planName, date: renews, store })}
+                {isTrial
+                  ? ts("trialBody", { plan: planName, date: renews, store })
+                  : ts("activeBody", { plan: planName, date: renews, store })}
               </span>
             </div>
 
+            {/* Квота показывается только в пробном периоде: в оплаченной
+                подписке распознавания не ограничены. */}
             <div className="flex flex-col gap-2 rounded-[20px] bg-ck-surface p-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-ck-ink">
-                  {left ?? 0}
-                </span>
-                <span className="text-[12.5px] font-semibold text-ck-body-soft">
-                  {ts("quotaLine", { limit: limit ?? CHECKER_MONTHLY_LIMIT })}
-                </span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-ck-canvas">
-                <span
-                  className="block h-full rounded-full bg-ck-primary"
-                  style={{ width: `${100 - progress}%` }}
-                />
-              </div>
-              <CkMono>{ts("quotaReset", { date: resets })}</CkMono>
+              {unlimited ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-ck-ink">
+                      ∞
+                    </span>
+                    <span className="text-[12.5px] font-semibold text-ck-body-soft">
+                      {ts("quotaUnlimited")}
+                    </span>
+                  </div>
+                  <CkMono>{ts("quotaUnlimitedNote")}</CkMono>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-ck-ink">
+                      {left ?? 0}
+                    </span>
+                    <span className="text-[12.5px] font-semibold text-ck-body-soft">
+                      {ts("quotaLine", {
+                        limit: limit ?? CHECKER_PLAN.trialIdentifyLimit ?? 0,
+                      })}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-ck-canvas">
+                    <span
+                      className="block h-full rounded-full bg-ck-primary"
+                      style={{ width: `${100 - progress}%` }}
+                    />
+                  </div>
+                  <CkMono>{ts("quotaReset", { date: renews })}</CkMono>
+                </>
+              )}
             </div>
 
             {native && (
@@ -259,11 +280,7 @@ export function CheckerPaywall() {
 
   /* ---------------- 10 · Пейволл ---------------- */
 
-  const features = [
-    t("feature1", { limit: CHECKER_MONTHLY_LIMIT }),
-    t("feature2"),
-    t("feature3"),
-  ];
+  const features = [t("feature1"), t("feature2"), t("feature3")];
 
   return (
     <CkScreen
@@ -346,7 +363,7 @@ export function CheckerPaywall() {
             {t("title")}
           </h1>
           <p className="text-[13.5px] font-medium leading-[1.45] text-ck-body-soft">
-            {t("subtitle", { limit: CHECKER_MONTHLY_LIMIT })}
+            {t("subtitle")}
           </p>
         </div>
 
@@ -381,7 +398,7 @@ export function CheckerPaywall() {
         {/* Карточка плана: 1.5px primary border + плавающий бейдж триала. */}
         <div className="relative mt-2.5 flex flex-col gap-3.5 rounded-[28px] border-[1.5px] border-ck-primary bg-ck-surface p-5">
           <span className="absolute -top-[11px] left-5 rounded-full bg-ck-primary px-3 py-1 text-[10px] font-extrabold tracking-[0.08em] text-white">
-            {t("trialBadge")}
+            {t("trialBadge", { days: CHECKER_PLAN.trialDays })}
           </span>
 
           <div className="flex items-baseline gap-1.5">
@@ -404,10 +421,29 @@ export function CheckerPaywall() {
             ))}
           </div>
 
+          {/* Лимит есть только в пробном периоде — говорим об этом прямо,
+              иначе «без ограничений» выглядит обманом на первом же экране. */}
+          {CHECKER_PLAN.trialIdentifyLimit != null && (
+            <p className="text-[11.5px] font-medium leading-[1.45] text-ck-body-soft">
+              {t("trialNote", {
+                limit: CHECKER_PLAN.trialIdentifyLimit,
+                days: CHECKER_PLAN.trialDays,
+              })}
+            </p>
+          )}
+
           <p className="text-[11.5px] font-medium leading-[1.45] text-ck-muted">
             {period === "yearly"
-              ? t("autoRenewYear", { price, store })
-              : t("autoRenewMonth", { price, store })}
+              ? t("autoRenewYear", {
+                  price,
+                  store,
+                  days: CHECKER_PLAN.trialDays,
+                })
+              : t("autoRenewMonth", {
+                  price,
+                  store,
+                  days: CHECKER_PLAN.trialDays,
+                })}
           </p>
         </div>
 

@@ -1,23 +1,22 @@
 "use client";
 
 /**
- * Состояние подписки Mushroom Checker для UI: сколько распознаваний осталось
- * в этом месяце и когда счётчик обнулится.
+ * Состояние подписки Mushroom Checker для UI.
  *
- * Источник — GET /api/subscription (тот же, что у пейволла). Пока запрос идёт,
- * `loading = true`, и экраны не показывают карточку квоты, чтобы не мигать
- * неверным числом.
+ * Модель: бесплатный пробный период стора (3 дня) с общим лимитом
+ * распознаваний, затем подписка без лимита. Все числа — в одном месте,
+ * FLAVORS.checker.subscriptionPlan (src/flavors/checker/config.ts).
+ *
+ * Источник состояния — GET /api/subscription (тот же, что у пейволла). Пока
+ * запрос идёт, `loading = true`, и экраны не показывают карточку квоты, чтобы
+ * не мигать неверным числом.
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { FLAVORS } from "@/lib/appFlavor";
 
-/**
- * Определений в месяц по подписке. Дублирует TIER_BENEFITS.checker
- * (src/lib/subscription.ts) — тот модуль серверный, в клиентские экраны его
- * не тянем. Значение нужно до загрузки статуса подписки: на пейволле и
- * у пользователей без подписки показываем «25 определений в месяц».
- */
-export const CHECKER_MONTHLY_LIMIT = 25;
+/** Параметры подписки приложения: триал, лимит триала, цены. */
+export const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan!;
 
 export interface CheckerSubscription {
   tier: string;
@@ -26,14 +25,20 @@ export interface CheckerSubscription {
   platform: "ios" | "android" | "web";
   current_period_end: string;
   identify_used: number;
-  identify_limit: number;
+  /** null — распознавания без лимита (оплаченная подписка). */
+  identify_limit: number | null;
   quota_resets_at: string;
+  is_trial: boolean;
 }
 
 export interface CheckerSubscriptionState {
   subscription: CheckerSubscription | null;
   loading: boolean;
-  /** Осталось распознаваний в текущем месяце (null — подписки нет). */
+  /** Идёт бесплатный пробный период. */
+  isTrial: boolean;
+  /** Подписка без лимита распознаваний. */
+  unlimited: boolean;
+  /** Осталось распознаваний (null — подписки нет либо лимита нет). */
   left: number | null;
   limit: number | null;
   refresh: () => Promise<void>;
@@ -66,15 +71,24 @@ export function useCheckerSubscription(): CheckerSubscriptionState {
   }, [refresh]);
 
   const limit = subscription?.identify_limit ?? null;
+  const unlimited = Boolean(subscription) && limit === null;
   const left =
     subscription && limit != null
       ? Math.max(0, limit - subscription.identify_used)
       : null;
 
-  return { subscription, loading, left, limit, refresh };
+  return {
+    subscription,
+    loading,
+    isTrial: Boolean(subscription?.is_trial),
+    unlimited,
+    left,
+    limit,
+    refresh,
+  };
 }
 
-/** «12 August» / «12 августа» — дата обнуления счётчика без года. */
+/** «12 August» / «12 августа» — короткая дата (окончание пробного периода). */
 export function formatQuotaDate(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale === "en" ? "en-GB" : "ru-RU", {
     day: "numeric",

@@ -112,6 +112,9 @@ export async function GET(request: NextRequest) {
               status,
               current_period_start: periodStart.toISOString(),
               current_period_end: periodEnd.toISOString(),
+              // Конверсия триала в оплаченный период снимает лимиты
+              // приложений со своей моделью подписки (Mushroom Checker).
+              is_trial: state.isTrial,
               updated_at: now.toISOString(),
             })
             .eq("id", sub.id);

@@ -1,8 +1,8 @@
 {
-  "name": "Mushroom Checker — определение грибов по фото",
+  "name": "Mushroom Checker — mushroom identification by photo",
   "short_name": "Mushroom Checker",
-  "description": "ИИ-распознавание грибов по фотографии с процентами уверенности и предупреждением об опасных двойниках.",
-  "lang": "ru",
+  "description": "AI mushroom identification from a photo with confidence scores and warnings about dangerous lookalikes.",
+  "lang": "en",
   "dir": "ltr",
   "start_url": "/?source=pwa",
   "scope": "/",
