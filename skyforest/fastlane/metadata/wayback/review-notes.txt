@@ -1,0 +1,30 @@
+WayBack marks the spot where you walked into the forest and shows you the way back to it: an arrow and a distance, calculated on the phone, so they keep working with no signal.
+
+ACCESSING THE APP (a subscription is required from the first launch)
+1. The first screen is "Sign in to start". Tap "Continue with email" and use the demo account - please sign in with email and password, not with Google or Apple:
+   Email: {email}
+   Password: {password}
+2. This demo account already holds an active WayBack entitlement on our side, so the app opens right after sign-in.
+3. If the "Start your free trial" screen appears anyway, tap "Start 3 free days" and confirm the purchase with a Sandbox Apple Account. Sandbox transactions are accepted by our production server for this account only ({email} is on a server-side allowlist), so the purchase completes and the app opens.
+4. "Restore purchases" is on the same screen if the entitlement has to be read again.
+
+WHY THE SUBSCRIPTION SCREEN COMES FIRST
+WayBack has no free tier - the whole app is the subscription, so please expect the paywall before any other screen. A connection is needed once, while the trial is being set up, because the App Store needs the network for it. After that the app is meant to be used with no signal at all: that is the point of the product.
+
+SUBSCRIPTION INFO (guideline 3.1.2)
+- WayBack Premium (Yearly): one year, USD 3.99, starting with a 3-day free trial.
+- The purchase screen shows the plan title, its length and its price, states that it renews automatically unless cancelled at least 24 hours before the period ends, and carries functional links to the Terms of Use (EULA) and the Privacy Policy.
+- Terms of Use (EULA): https://wayback.skyforest.ai/offer
+- Privacy Policy: https://wayback.skyforest.ai/privacy
+- The same links are in the App Description.
+
+WHAT TO TRY AFTER THE APP OPENS
+- Tap START ("I'm entering the forest") to drop the anchor at the current GPS position. If the device has no fix, use "Set entry point on the map" and place the point by hand.
+- The Track screen then shows the direction and the distance back to that point. In the simulator the position can be moved with Features > Location.
+- Offline tab > Download saves a map area. With the area saved, the anchor, the arrow, the compass and the map keep working in Airplane Mode - please try it, this is the main promise of the app.
+- History keeps every finished walk with its track on the map, the distance and the time.
+
+LOCATION
+Location is used only while the app is open, to record the walk and to compute the direction back to the entry point. The binary declares no background location mode, and recording pauses when the app goes to the background.
+
+Contact: support@skyforest.ai
