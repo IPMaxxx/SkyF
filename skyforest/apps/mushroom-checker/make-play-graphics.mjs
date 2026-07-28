@@ -6,9 +6,9 @@
  * - иконка листинга 512×512 (в записи Checker её не было вовсе).
  *
  * Сестринский скрипт — apps/wayback/make-feature-graphic.mjs. Отличия: своя
- * схема (светлая, токены `ck-*` из src/styles/flavors/checker.css), свой
- * исходник иконки (resources/icon.png этого приложения) и второй выход под
- * иконку листинга.
+ * схема (токены `ck-*` из src/styles/flavors/checker.css), свой исходник
+ * иконки (resources/icon.png этого приложения) и второй выход под иконку
+ * листинга.
  *
  * Play обрезает края в некоторых раскладках и накладывает поверх графики
  * название приложения, поэтому текст держится в 112 px от краёв, а название
@@ -39,17 +39,18 @@ const OUT_ICON = join(OUT_DIR, "icon.png");
 const W = 1024;
 const H = 500;
 
-// Токены из src/styles/flavors/checker.css. Схема светлая: картинка в листинге
-// должна показывать то же приложение, которое человек увидит после установки.
-const CANVAS = "#f3f7f1"; // --color-ck-canvas
-const SURFACE = "#ffffff"; // --color-ck-surface
-const BORDER = "#dfe8db"; // --color-ck-border
-const PRIMARY = "#3f9c58"; // --color-ck-primary
-const PRIMARY_LIGHT = "#5fb573"; // --color-ck-primary-light
-const PRIMARY_TINT = "#e7f4e9"; // --color-ck-primary-tint
-const PRIMARY_MID = "#3d6248"; // --color-ck-primary-mid
-const INK = "#132318"; // --color-ck-ink
-const MUTED = "#7d8d80"; // --color-ck-muted
+// Токены тёмной схемы из src/styles/flavors/checker.css. Она основная:
+// картинка в листинге должна показывать то же приложение, которое человек
+// увидит после установки.
+const CANVAS = "#0b120d"; // --ck-canvas
+const SURFACE = "#18241c"; // --ck-surface
+const BORDER = "#2a3a2f"; // --ck-border, разложенный по холсту карточки
+const PRIMARY = "#5fb573"; // --ck-primary
+const PRIMARY_LIGHT = "#7fd48f"; // --ck-primary-light
+const PRIMARY_TINT = "#22422c"; // --ck-primary-tint поверх поверхности
+const PRIMARY_MID = "#b7dcbf"; // --ck-primary-mid
+const INK = "#eaf2ea"; // --ck-ink
+const MUTED = "#a2b4a5"; // --ck-muted
 
 /** Шрифты приложения (--font-ck / --font-ck-mono) с системными фолбэками. */
 const SANS = "Plus Jakarta Sans, Avenir Next, Helvetica Neue, Helvetica, Arial, sans-serif";

@@ -137,6 +137,9 @@ async function capture({ name, viewport }) {
     locale: "en-US",
   });
   await ctx.addInitScript(NATIVE_INIT);
+  // Схему задаём явно: кадры не должны зависеть от того, какая тема сейчас
+  // выбрана по умолчанию.
+  await ctx.addCookies([{ name: "ck-theme", value: "dark", url: ORIGIN }]);
   await ctx.route("**/api/subscription", (r) => r.fulfill({ json: SUBSCRIPTION }));
   await ctx.route("**/api/mushrooms/identify", (r) =>
     r.fulfill({ json: IDENTIFY }),
