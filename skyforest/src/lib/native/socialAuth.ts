@@ -77,14 +77,45 @@ async function getNoncePair(): Promise<{ rawNonce: string; nonceDigest: string }
   return { rawNonce, nonceDigest };
 }
 
-/** Устанавливаем сессию Supabase по idToken провайдера. */
+/**
+ * Есть ли в idToken claim `nonce`.
+ *
+ * Supabase требует, чтобы nonce либо был с обеих сторон, либо отсутствовал с
+ * обеих: иначе — «Passed nonce and nonce in id_token should either both exist
+ * or not». Apple claim возвращает, а Google на iOS — нет: плагин не прокидывает
+ * nonce в GIDSignIn. Поэтому смотрим на сам токен, а не на провайдера — если
+ * плагин однажды начнёт его прокидывать, сверка включится сама.
+ */
+function hasNonceClaim(token: string): boolean {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return false;
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return Boolean(JSON.parse(json)?.nonce);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Устанавливаем сессию Supabase по idToken провайдера.
+ *
+ * Если провайдер nonce не вернул, не передаём его и мы. Защита от повторного
+ * использования токена при этом слабее, но токен всё равно проверяется по
+ * подписи, audience и сроку, а получен он нативным SDK внутри процесса, без
+ * редиректов — перехватывать его негде.
+ */
 async function signInSupabase(
   provider: "google" | "apple",
   token: string,
   nonce?: string,
 ): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithIdToken({ provider, token, nonce });
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider,
+    token,
+    nonce: hasNonceClaim(token) ? nonce : undefined,
+  });
   if (error) throw error;
 }
 
