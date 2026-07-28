@@ -1,64 +1,248 @@
 /* ==========================================================================
-   Mushroom Checker — светлая схема «Soft Product»
+   Mushroom Checker — две схемы: тёмная «как SkyForest» и светлая «Soft Product»
 
    Файл принадлежит приложению Checker: тёмную тему SkyForest и схему WayBack
    он не затрагивает. Включается атрибутом `data-flavor="checker"` на <html>
    (ставится в src/app/layout.tsx по хосту), поэтому действует только на
    поддомене checker.* и в нативной оболочке ai.skyforest.mushroomchecker.
 
+   ТЁМНАЯ СХЕМА — основная. Холст #0b120d и акцент #5fb573 — те же значения,
+   что в globals.css и у WayBack: три приложения выглядят одной семьёй.
+   Светлая включается атрибутом `data-scheme="light"` на том же <html>
+   (выбор пользователя, кука `ck-theme` — см. src/lib/checker/theme.ts).
+
+   Как устроено переключение. Утилиты Tailwind собираются из `@theme inline`,
+   то есть значение токена подставляется в класс как есть. Поэтому токены
+   ссылаются на обычные переменные `--ck-*`, объявленные ниже на <html>:
+   `bg-ck-surface` превращается в `background: var(--ck-surface)` и меняется
+   вместе с атрибутом, без перекомпиляции и без второго набора классов.
+
+   Контраст тёмной схемы замерян, а не подобран на глаз (AA по WCAG: 4.5:1
+   для текста, 3:1 для крупного текста и графики):
+
+     ink / canvas              16.6:1
+     ink / surface             14.1:1
+     ink / field               12.2:1
+     ink-2 / surface           12.6:1
+     body / surface             9.7:1
+     body-soft / surface        8.3:1
+     muted / surface            7.4:1
+     muted-2 / surface          6.2:1
+     muted-2 / field            5.4:1  (placeholder в поле ввода)
+     faint / canvas             6.5:1
+     primary-text / surface     9.0:1  (ссылки и акцентные подписи)
+     primary / surface          6.4:1  (заливка и иконки)
+     on-primary / primary       7.6:1  (подпись на зелёной кнопке)
+     primary-deep / tint        7.9:1  (заголовок на зелёной плашке)
+     primary-mid / tint         8.1:1
+     amber-deep / amber-tint    7.7:1
+     amber-mid / amber-tint     8.9:1
+     on-amber / amber           8.9:1  (подпись на амбровой кнопке)
+     danger / surface           7.1:1
+     danger-deep / danger-tint  7.4:1
+     danger-body / danger-tint  6.9:1
+     on-danger / danger         7.9:1  (подпись на красной кнопке)
+
    Подключается из src/app/globals.css.
    ========================================================================== */
 
-/* Токены с префиксом `ck-` дают готовые утилиты вида `bg-ck-surface`. */
+/* Токены с префиксом `ck-` дают готовые утилиты вида `bg-ck-surface`.
+   Значения — ссылки на переменные схемы, сами значения ниже. */
 @theme inline {
-  --color-ck-primary: #3f9c58;
-  --color-ck-primary-light: #5fb573;
-  --color-ck-primary-tint: #e7f4e9;
-  --color-ck-primary-border: #c3e2c9;
-  --color-ck-primary-deep: #1e4a2b;
-  --color-ck-primary-mid: #3d6248;
-  --color-ck-amber: #c07a20;
-  --color-ck-amber-tint: #fff6ea;
-  --color-ck-amber-border: #f2ddc0;
-  --color-ck-amber-deep: #8a5f14;
-  --color-ck-amber-mid: #6a5a44;
-  --color-ck-danger: #c0392b;
-  --color-ck-danger-tint: #fdeeeb;
-  --color-ck-danger-border: #f3cfc8;
-  --color-ck-danger-deep: #8e2b20;
-  --color-ck-danger-mid: #7c4238;
-  --color-ck-ink: #132318;
-  --color-ck-ink-2: #1e3325;
-  --color-ck-ink-3: #28402f;
-  --color-ck-body: #4a5c50;
-  --color-ck-body-soft: #5f7167;
-  --color-ck-muted: #7d8d80;
-  --color-ck-muted-2: #8b9a91;
-  --color-ck-canvas: #f3f7f1;
-  --color-ck-canvas-2: #f5f9f4;
-  --color-ck-surface: #ffffff;
-  --color-ck-border: #dfe8db;
-  --color-ck-border-2: #e2eade;
-  --color-ck-border-3: #d7e2d3;
-  --color-ck-border-4: #dde6d9;
-  --color-ck-hairline: #eaf0e8;
+  --color-ck-primary: var(--ck-primary);
+  --color-ck-primary-light: var(--ck-primary-light);
+  /* Акцент для текста и ссылок. Отдельно от заливки: мелкая зелёная подпись
+     и зелёная кнопка не могут быть одного тона и обе давать AA. */
+  --color-ck-primary-text: var(--ck-primary-text);
+  --color-ck-primary-tint: var(--ck-primary-tint);
+  --color-ck-primary-border: var(--ck-primary-border);
+  --color-ck-primary-deep: var(--ck-primary-deep);
+  --color-ck-primary-mid: var(--ck-primary-mid);
+  --color-ck-on-primary: var(--ck-on-primary);
+  --color-ck-amber: var(--ck-amber);
+  --color-ck-amber-tint: var(--ck-amber-tint);
+  --color-ck-amber-border: var(--ck-amber-border);
+  --color-ck-amber-deep: var(--ck-amber-deep);
+  --color-ck-amber-mid: var(--ck-amber-mid);
+  --color-ck-on-amber: var(--ck-on-amber);
+  --color-ck-danger: var(--ck-danger);
+  --color-ck-danger-tint: var(--ck-danger-tint);
+  --color-ck-danger-border: var(--ck-danger-border);
+  --color-ck-danger-deep: var(--ck-danger-deep);
+  --color-ck-danger-mid: var(--ck-danger-mid);
+  --color-ck-danger-body: var(--ck-danger-body);
+  --color-ck-danger-soft: var(--ck-danger-soft);
+  --color-ck-on-danger: var(--ck-on-danger);
+  --color-ck-ink: var(--ck-ink);
+  --color-ck-ink-2: var(--ck-ink-2);
+  --color-ck-ink-3: var(--ck-ink-3);
+  --color-ck-body: var(--ck-body);
+  --color-ck-body-soft: var(--ck-body-soft);
+  --color-ck-muted: var(--ck-muted);
+  --color-ck-muted-2: var(--ck-muted-2);
+  --color-ck-faint: var(--ck-faint);
+  --color-ck-canvas: var(--ck-canvas);
+  --color-ck-canvas-2: var(--ck-canvas-2);
+  --color-ck-surface: var(--ck-surface);
+  /* Поля ввода: в тёмной схеме они светлее плитки, иначе поле на карточке
+     не отличить от самой карточки. В светлой совпадают с поверхностью. */
+  --color-ck-field: var(--ck-field);
+  --color-ck-knob: var(--ck-knob);
+  /* Инверсная пара: чёрная кнопка на светлом и белая на тёмном. Кнопка
+     «Продолжить с Apple» (так требует HIG) и активный сегмент пейволла. */
+  --color-ck-contrast: var(--ck-contrast);
+  --color-ck-on-contrast: var(--ck-on-contrast);
+  --color-ck-border: var(--ck-border);
+  --color-ck-border-2: var(--ck-border-2);
+  --color-ck-border-3: var(--ck-border-3);
+  --color-ck-border-4: var(--ck-border-4);
+  --color-ck-hairline: var(--ck-hairline);
   --font-ck: var(--font-jakarta);
   --font-ck-mono: var(--font-jetbrains);
 }
 
+/* --------------------------------------------------------------------------
+   Тёмная схема — значения по умолчанию.
+
+   Без атрибута `data-scheme` приложение тёмное: так первая отрисовка у нового
+   пользователя и у того, кто тему не трогал, идёт сразу в основной схеме.
+   -------------------------------------------------------------------------- */
 html[data-flavor="checker"] {
+  --ck-primary: #5fb573;
+  --ck-primary-light: #7fd48f;
+  --ck-primary-text: #7fd48f;
+  --ck-primary-tint: rgba(95, 181, 115, 0.16);
+  --ck-primary-border: rgba(95, 181, 115, 0.3);
+  --ck-primary-deep: #9ee0aa;
+  --ck-primary-mid: #b7dcbf;
+  --ck-on-primary: #06120a;
+  --ck-amber: #f2b34a;
+  --ck-amber-tint: rgba(242, 179, 74, 0.14);
+  --ck-amber-border: rgba(242, 179, 74, 0.32);
+  --ck-amber-deep: #f7c877;
+  --ck-amber-mid: #dcc7a3;
+  --ck-on-amber: #2a1c05;
+  --ck-danger: #ff8b82;
+  --ck-danger-tint: rgba(255, 139, 130, 0.14);
+  --ck-danger-border: rgba(255, 139, 130, 0.3);
+  --ck-danger-deep: #ffb3ad;
+  --ck-danger-mid: #e5b6b1;
+  --ck-danger-body: #dcb8b3;
+  --ck-danger-soft: #c37b74;
+  --ck-on-danger: #2a0f0d;
+  --ck-ink: #eaf2ea;
+  --ck-ink-2: #dbe7dd;
+  --ck-ink-3: #c9d8cc;
+  --ck-body: #bccdbf;
+  --ck-body-soft: #adbfb0;
+  --ck-muted: #a2b4a5;
+  --ck-muted-2: #93a596;
+  --ck-faint: #8a9c8c;
+  --ck-canvas: #0b120d;
+  --ck-canvas-2: #111a14;
+  --ck-surface: #18241c;
+  --ck-field: #222f26;
+  --ck-knob: #eaf2ea;
+  --ck-contrast: #eaf2ea;
+  --ck-on-contrast: #0b120d;
+  --ck-border: rgba(255, 255, 255, 0.09);
+  --ck-border-2: rgba(255, 255, 255, 0.11);
+  --ck-border-3: rgba(255, 255, 255, 0.16);
+  --ck-border-4: rgba(255, 255, 255, 0.14);
+  --ck-hairline: rgba(255, 255, 255, 0.07);
+
+  /* Значения вне палитры: затемнение под оверлеями, штриховка заглушек фото,
+     свечение под главной кнопкой и верх градиентных экранов. */
+  --ck-scrim: 4, 8, 5;
+  --ck-stripe-a: #16211a;
+  --ck-stripe-b: #1c2a21;
+  --ck-stripe-danger-a: #2a1a18;
+  --ck-stripe-danger-b: #34211f;
+  --ck-glow: rgba(95, 181, 115, 0.45);
+  --ck-lift: rgba(0, 0, 0, 0.55);
+  --ck-shadow: rgba(0, 0, 0, 0.75);
+  --ck-shadow-soft: rgba(0, 0, 0, 0.6);
+  --ck-grad-primary: #142b1c;
+  --ck-grad-amber: #2b2213;
+
+  color-scheme: dark;
+  background: var(--ck-canvas);
+}
+
+/* --------------------------------------------------------------------------
+   Светлая схема — по выбору пользователя (кука `ck-theme=light`).
+
+   Значения те же, что были у схемы «Soft Product» до появления переключателя:
+   светлый вид приложения не менялся.
+   -------------------------------------------------------------------------- */
+html[data-flavor="checker"][data-scheme="light"] {
+  --ck-primary: #3f9c58;
+  --ck-primary-light: #5fb573;
+  --ck-primary-text: #3f9c58;
+  --ck-primary-tint: #e7f4e9;
+  --ck-primary-border: #c3e2c9;
+  --ck-primary-deep: #1e4a2b;
+  --ck-primary-mid: #3d6248;
+  --ck-on-primary: #ffffff;
+  --ck-amber: #c07a20;
+  --ck-amber-tint: #fff6ea;
+  --ck-amber-border: #f2ddc0;
+  --ck-amber-deep: #8a5f14;
+  --ck-amber-mid: #6a5a44;
+  --ck-on-amber: #ffffff;
+  --ck-danger: #c0392b;
+  --ck-danger-tint: #fdeeeb;
+  --ck-danger-border: #f3cfc8;
+  --ck-danger-deep: #8e2b20;
+  --ck-danger-mid: #7c4238;
+  --ck-danger-body: #6a5a56;
+  --ck-danger-soft: #e0a99f;
+  --ck-on-danger: #ffffff;
+  --ck-ink: #132318;
+  --ck-ink-2: #1e3325;
+  --ck-ink-3: #28402f;
+  --ck-body: #4a5c50;
+  --ck-body-soft: #5f7167;
+  --ck-muted: #7d8d80;
+  --ck-muted-2: #8b9a91;
+  --ck-faint: #a8b6ac;
+  --ck-canvas: #f3f7f1;
+  --ck-canvas-2: #f5f9f4;
+  --ck-surface: #ffffff;
+  --ck-field: #ffffff;
+  --ck-knob: #ffffff;
+  --ck-contrast: #132318;
+  --ck-on-contrast: #ffffff;
+  --ck-border: #dfe8db;
+  --ck-border-2: #e2eade;
+  --ck-border-3: #d7e2d3;
+  --ck-border-4: #dde6d9;
+  --ck-hairline: #eaf0e8;
+
+  --ck-scrim: 19, 35, 24;
+  --ck-stripe-a: #e5ebe2;
+  --ck-stripe-b: #eef2eb;
+  --ck-stripe-danger-a: #f0ddd8;
+  --ck-stripe-danger-b: #f8ebe7;
+  --ck-glow: rgba(63, 156, 88, 0.8);
+  --ck-lift: rgba(20, 60, 35, 0.5);
+  --ck-shadow: rgba(19, 35, 24, 0.6);
+  --ck-shadow-soft: rgba(19, 35, 24, 0.4);
+  --ck-grad-primary: #e7f4e9;
+  --ck-grad-amber: #fff6ea;
+
   color-scheme: light;
-  background: var(--color-ck-canvas);
 }
 
 html[data-flavor="checker"] body {
-  background: var(--color-ck-canvas);
-  color: var(--color-ck-ink);
+  background: var(--ck-canvas);
+  color: var(--ck-ink);
   font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
-/* Базовые правила globals.css красят поля под тёмный фон через !important —
-   в светлой схеме их перебивает более высокая специфичность селектора. */
+/* Базовые правила globals.css красят поля под тёмную тему SkyForest через
+   !important — здесь перебиваем их своими токенами. Селектор специфичнее,
+   поэтому работает в обеих схемах. */
 html[data-flavor="checker"] input[type="text"],
 html[data-flavor="checker"] input[type="email"],
 html[data-flavor="checker"] input[type="password"],
@@ -66,27 +250,31 @@ html[data-flavor="checker"] input[type="number"],
 html[data-flavor="checker"] input[type="date"],
 html[data-flavor="checker"] select,
 html[data-flavor="checker"] textarea {
-  background: var(--color-ck-surface) !important;
-  border-color: var(--color-ck-border-4) !important;
-  color: var(--color-ck-ink) !important;
+  background: var(--ck-field) !important;
+  border-color: var(--ck-border-4) !important;
+  color: var(--ck-ink) !important;
 }
 
 html[data-flavor="checker"] input::placeholder,
 html[data-flavor="checker"] textarea::placeholder {
-  color: var(--color-ck-muted-2) !important;
+  color: var(--ck-muted-2) !important;
 }
 
 html[data-flavor="checker"] input:focus,
 html[data-flavor="checker"] textarea:focus {
-  border-color: var(--color-ck-primary-light) !important;
-  box-shadow: 0 0 0 4px rgba(95, 181, 115, 0.15) !important;
+  border-color: var(--ck-primary) !important;
+  box-shadow: 0 0 0 4px var(--ck-primary-tint) !important;
 }
 
 html[data-flavor="checker"] :focus-visible {
-  outline-color: var(--color-ck-primary);
+  outline-color: var(--ck-primary-text);
 }
 
 html[data-flavor="checker"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+html[data-flavor="checker"][data-scheme="light"] ::-webkit-scrollbar-thumb {
   background: rgba(19, 35, 24, 0.18);
 }
 
@@ -115,52 +303,97 @@ html[data-flavor="checker"] ::-webkit-scrollbar-thumb {
 
 .ck-btn-primary {
   height: 58px;
-  background: var(--color-ck-primary);
-  color: #fff;
+  background: var(--ck-primary);
+  color: var(--ck-on-primary);
   font-size: 17px;
-  box-shadow: 0 14px 28px -14px rgba(63, 156, 88, 0.8);
+  box-shadow: 0 14px 28px -14px var(--ck-glow);
 }
 
 .ck-btn-secondary {
   height: 52px;
-  background: var(--color-ck-surface);
-  border: 1px solid var(--color-ck-border-3);
-  color: #26402d;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border-3);
+  color: var(--ck-ink-2);
   font-size: 15px;
   font-weight: 700;
 }
 
+/* Тихая кнопка лежит на поверхности (модалка подтверждения), поэтому на
+   тёмном берёт цвет поля, а не холста: холст на плитке читается провалом. */
 .ck-btn-quiet {
   height: 52px;
-  background: var(--color-ck-canvas);
-  color: var(--color-ck-body);
+  background: var(--ck-field);
+  color: var(--ck-body);
   font-size: 15px;
   font-weight: 700;
 }
 
 .ck-btn-danger {
   height: 56px;
-  background: var(--color-ck-danger);
-  color: #fff;
+  background: var(--ck-danger);
+  color: var(--ck-on-danger);
   font-size: 16.5px;
 }
 
 .ck-card {
-  background: var(--color-ck-surface);
-  border: 1px solid var(--color-ck-border);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
   border-radius: 24px;
 }
 
 .ck-lift {
-  box-shadow: 0 10px 26px -18px rgba(20, 60, 35, 0.5);
+  box-shadow: 0 10px 26px -18px var(--ck-lift);
 }
 
-/* Заглушка фото — диагональная штриховка, поверх неё кладётся реальный <img>. */
+/* Заглушка фото — диагональная штриховка, поверх неё кладётся реальный <img>.
+   В тёмной схеме штриховка тоже тёмная: иначе при загрузке снимка на экране
+   вспыхивает светлый прямоугольник. */
 .ck-photo-stripes {
   background: repeating-linear-gradient(
     135deg,
-    #e5ebe2 0 10px,
-    #eef2eb 10px 20px
+    var(--ck-stripe-a) 0 10px,
+    var(--ck-stripe-b) 10px 20px
+  );
+}
+
+/* Та же заглушка в карточке опасных двойников — на красноватой плашке. */
+.ck-photo-stripes-danger {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ck-stripe-danger-a) 0 6px,
+    var(--ck-stripe-danger-b) 6px 12px
+  );
+}
+
+/* Затемнение под модалкой и нижним листом. Прозрачность задаёт компонент
+   (`--ck-scrim-alpha`), цвет — схема. */
+.ck-scrim {
+  background: rgba(var(--ck-scrim), var(--ck-scrim-alpha, 0.45));
+}
+
+/* Экраны с градиентом: анализ (зелёный сверху) и пейволл (амбровый).
+   Верхний цвет свой у каждой схемы, низ всегда сходится с холстом. */
+.ck-grad-primary {
+  background: linear-gradient(
+    180deg,
+    var(--ck-grad-primary) 0%,
+    var(--ck-canvas) 60%
+  );
+}
+
+.ck-grad-amber {
+  background: linear-gradient(
+    180deg,
+    var(--ck-grad-amber) 0%,
+    var(--ck-canvas) 45%
+  );
+}
+
+.ck-grad-splash {
+  background: linear-gradient(
+    180deg,
+    var(--ck-grad-primary) 0%,
+    var(--ck-canvas) 100%
   );
 }
 

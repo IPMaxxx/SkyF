@@ -26,6 +26,7 @@
 
 # локальные превью-скриншоты (генерируются скриптами, не версионируем)
 .preview-*.png
+/docs/checker-theme
 
 # debug
 npm-debug.log*

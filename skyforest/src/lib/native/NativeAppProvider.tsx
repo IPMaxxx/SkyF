@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { flavorConfig, getClientFlavor } from "@/lib/appFlavor";
 import { isNativeApp, getPlatform } from "./capacitor";
 import { navigateToDeepLink, takeLaunchUrl } from "./deepLinks";
 
@@ -68,14 +69,19 @@ export function NativeAppProvider() {
       // экрана) — здесь этого не делаем, иначе между ними мелькнёт пустой WebView.
 
       // --- Status bar (тёмный фон бренда, светлые иконки) ---
-      try {
-        const { StatusBar, Style } = await import("@capacitor/status-bar");
-        await StatusBar.setStyle({ style: Style.Dark });
-        if (platform === "android") {
-          await StatusBar.setBackgroundColor({ color: "#0f1a12" });
+      // Приложения с переключателем темы (Checker) держат статус-бар сами:
+      // он должен меняться вместе с выбором пользователя, а здесь мы знаем
+      // только про тёмный бренд и перебивали бы этот выбор.
+      if (!flavorConfig(getClientFlavor()).themeSwitch) {
+        try {
+          const { StatusBar, Style } = await import("@capacitor/status-bar");
+          await StatusBar.setStyle({ style: Style.Dark });
+          if (platform === "android") {
+            await StatusBar.setBackgroundColor({ color: "#0f1a12" });
+          }
+        } catch {
+          /* игнорируем */
         }
-      } catch {
-        /* игнорируем */
       }
 
       // --- Deep links (OAuth callback, подтверждение почты, рефералы) ---

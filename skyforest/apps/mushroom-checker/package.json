@@ -5,7 +5,7 @@
   "description": "Нативная Capacitor-оболочка Mushroom Checker (WebView -> checker.skyforest.ai)",
   "scripts": {
     "sync": "npx cap sync",
-    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#0e1710' --iconBackgroundColorDark '#0e1710' --splashBackgroundColor '#F3F7F1' --splashBackgroundColorDark '#F3F7F1'"
+    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#0e1710' --iconBackgroundColorDark '#0e1710' --splashBackgroundColor '#0b120d' --splashBackgroundColorDark '#0b120d'"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",

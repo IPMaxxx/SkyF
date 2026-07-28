@@ -4,7 +4,7 @@
  * Экраны входа/регистрации/восстановления пароля Mushroom Checker.
  *
  * Вся серверная логика (Supabase, 2FA, token_hash flow подтверждения почты)
- * повторяет общие страницы — меняется только разметка на светлую схему.
+ * повторяет общие страницы — своя здесь только разметка на токенах `ck-*`.
  */
 
 import Image from "next/image";
@@ -42,7 +42,7 @@ function BrandMark() {
       alt=""
       width={128}
       height={128}
-      className="h-16 w-16 rounded-[22px] object-cover shadow-[0_16px_30px_-16px_rgba(63,156,88,0.8)]"
+      className="h-16 w-16 rounded-[22px] object-cover shadow-[0_16px_30px_-16px_var(--ck-glow)]"
     />
   );
 }
@@ -124,11 +124,11 @@ export function CheckerLogin() {
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("signInCta")}
           </CkPrimaryButton>
-          <p className="text-center text-[13px] font-medium text-[#6a7a70]">
+          <p className="text-center text-[13px] font-medium text-ck-body-soft">
             {t("noAccount")}{" "}
             <Link
               href={`/register?redirect=${encodeURIComponent(redirect)}`}
-              className="font-extrabold text-ck-primary"
+              className="font-extrabold text-ck-primary-text"
             >
               {t("createAccount")}
             </Link>
@@ -178,7 +178,7 @@ export function CheckerLogin() {
           </CkField>
           <Link
             href="/forgot-password"
-            className="self-end text-[12.5px] font-bold text-ck-primary"
+            className="self-end text-[12.5px] font-bold text-ck-primary-text"
           >
             {t("forgot")}
           </Link>
@@ -280,7 +280,7 @@ export function CheckerRegister() {
           />
           <Link
             href="/login"
-            className="text-center text-[13px] font-extrabold text-[#2f7d4f]"
+            className="text-center text-[13px] font-extrabold text-ck-primary-text"
           >
             {t("signIn")}
           </Link>
@@ -338,7 +338,7 @@ export function CheckerRegister() {
               minLength={6}
               className="pr-16"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#a8b6ac]">
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-ck-faint">
               {t("minSix")}
             </span>
           </div>
@@ -363,8 +363,8 @@ export function CheckerRegister() {
             className={cn(
               "mt-px flex h-5 w-5 flex-none items-center justify-center rounded-md border",
               consent
-                ? "border-ck-primary bg-ck-primary text-white"
-                : "border-ck-border-3 bg-white",
+                ? "border-ck-primary bg-ck-primary text-ck-on-primary"
+                : "border-ck-border-3 bg-ck-field",
             )}
           >
             {consent && <Check className="h-3 w-3" strokeWidth={3.5} />}
@@ -377,7 +377,7 @@ export function CheckerRegister() {
           </span>
         </button>
 
-        <div className="flex gap-4 text-[11.5px] font-bold text-ck-primary">
+        <div className="flex gap-4 text-[11.5px] font-bold text-ck-primary-text">
           <Link href="/offer" target="_blank">
             {tLegal("eula")}
           </Link>
@@ -393,7 +393,7 @@ export function CheckerRegister() {
             title={error}
             action={
               duplicate && (
-                <div className="flex gap-4 text-[12.5px] font-extrabold text-ck-primary">
+                <div className="flex gap-4 text-[12.5px] font-extrabold text-ck-primary-text">
                   <Link href={`/login?redirect=${encodeURIComponent(redirect)}`}>
                     {t("signIn")}
                   </Link>
@@ -449,7 +449,7 @@ export function CheckerForgotPassword() {
 
         {sent ? (
           <div className="flex flex-col items-start gap-2.5 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint p-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ck-primary text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ck-primary text-ck-on-primary">
               <Check className="h-[18px] w-[18px]" strokeWidth={3} />
             </span>
             <span className="text-base font-extrabold text-ck-primary-deep">
@@ -461,7 +461,7 @@ export function CheckerForgotPassword() {
             <button
               type="button"
               onClick={() => setSent(false)}
-              className="text-[13px] font-extrabold text-[#2f7d4f]"
+              className="text-[13px] font-extrabold text-ck-primary-text"
             >
               {t("resend")}
             </button>
@@ -557,7 +557,7 @@ export function CheckerResetPassword() {
             {t("invalidLinkState")}
           </span>
           <div className="flex flex-col items-start gap-2.5 rounded-[24px] border border-ck-danger-border bg-ck-danger-tint p-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ck-danger text-xl font-extrabold text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ck-danger text-xl font-extrabold text-ck-on-danger">
               !
             </span>
             <span className="text-base font-extrabold text-ck-danger-deep">
@@ -568,7 +568,7 @@ export function CheckerResetPassword() {
             </span>
             <Link
               href="/forgot-password"
-              className="flex h-12 w-full items-center justify-center rounded-3xl bg-ck-danger text-[15px] font-extrabold text-white"
+              className="flex h-12 w-full items-center justify-center rounded-3xl bg-ck-danger text-[15px] font-extrabold text-ck-on-danger"
             >
               {t("requestNewLink")}
             </Link>
@@ -609,7 +609,7 @@ export function CheckerResetPassword() {
                 minLength={6}
                 className="pr-16"
               />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#a8b6ac]">
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-ck-faint">
                 {t("minSix")}
               </span>
             </div>
@@ -730,7 +730,7 @@ export function CheckerVerifyMfa() {
     <CkScreen padding="px-6">
       <div className="flex flex-col gap-5 pt-8">
         <div className="flex flex-col items-start gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ck-primary-tint text-ck-primary">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ck-primary-tint text-ck-primary-text">
             <ShieldCheck className="h-6 w-6" strokeWidth={2.2} />
           </span>
           <h1 className="text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] text-ck-ink">
@@ -761,7 +761,7 @@ export function CheckerVerifyMfa() {
                 }
               }}
               disabled={loading}
-              className="h-[58px] w-full rounded-[18px] border border-ck-border-4 bg-ck-surface text-center text-xl font-extrabold text-ck-ink outline-none disabled:opacity-55"
+              className="h-[58px] w-full rounded-[18px] border border-ck-border-4 bg-ck-field text-center text-xl font-extrabold text-ck-ink outline-none disabled:opacity-55"
             />
           ))}
         </div>

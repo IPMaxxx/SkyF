@@ -126,7 +126,7 @@ export function CheckerPaywall() {
   /* Документы — общие страницы SkyForest: внутри WebView с них не выйти,
      поэтому открываем их системным браузером. */
   const legalLinks = (
-    <div className="flex justify-center gap-3 text-[11.5px] font-extrabold text-ck-primary">
+    <div className="flex justify-center gap-3 text-[11.5px] font-extrabold text-ck-primary-text">
       <button
         type="button"
         onClick={() => openCheckerDoc("/offer", locale)}
@@ -206,7 +206,7 @@ export function CheckerPaywall() {
           <CheckerTopBar title={ts("title")} backLabel={ts("back")} />
 
           <div className="flex flex-col gap-3.5 rounded-[28px] border border-ck-primary-border bg-ck-primary-tint p-5">
-            <span className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-ck-primary text-white">
+            <span className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-ck-primary text-ck-on-primary">
               <Check className="h-[18px] w-[18px]" strokeWidth={3} />
             </span>
             <div className="flex flex-col gap-1">
@@ -290,7 +290,7 @@ export function CheckerPaywall() {
 
   return (
     <CkScreen
-      className="bg-[linear-gradient(180deg,#FFF6EA_0%,#F3F7F1_45%)]"
+      className="ck-grad-amber"
       bottom={
         <div className="flex flex-col gap-2.5">
           {native ? (
@@ -312,7 +312,7 @@ export function CheckerPaywall() {
                   type="button"
                   onClick={restore}
                   disabled={restoring}
-                  className="font-extrabold text-ck-primary disabled:opacity-55"
+                  className="font-extrabold text-ck-primary-text disabled:opacity-55"
                 >
                   {restoring ? t("restoring") : t("restore")}
                 </button>
@@ -328,10 +328,10 @@ export function CheckerPaywall() {
                   {ts("webBody")}
                 </span>
                 <div className="flex gap-2.5">
-                  <span className="flex h-10 flex-1 items-center justify-center rounded-2xl bg-ck-ink text-[12.5px] font-bold text-white">
+                  <span className="flex h-10 flex-1 items-center justify-center rounded-2xl bg-ck-contrast text-[12.5px] font-bold text-ck-on-contrast">
                     {ts("appStore")}
                   </span>
-                  <span className="flex h-10 flex-1 items-center justify-center rounded-2xl bg-ck-ink text-[12.5px] font-bold text-white">
+                  <span className="flex h-10 flex-1 items-center justify-center rounded-2xl bg-ck-contrast text-[12.5px] font-bold text-ck-on-contrast">
                     {ts("googlePlay")}
                   </span>
                 </div>
@@ -371,13 +371,13 @@ export function CheckerPaywall() {
                 className={cn(
                   "flex h-[42px] flex-1 items-center justify-center gap-1.5 rounded-full text-sm transition-colors",
                   active
-                    ? "bg-ck-ink font-extrabold text-white"
+                    ? "bg-ck-contrast font-extrabold text-ck-on-contrast"
                     : "font-bold text-ck-muted",
                 )}
               >
                 {p === "monthly" ? t("monthly") : t("yearly")}
                 {p === "yearly" && discount !== null && (
-                  <i className="rounded-full bg-ck-primary-light px-1.5 py-0.5 text-[10px] font-extrabold not-italic text-[#0B2113]">
+                  <i className="rounded-full bg-ck-primary-light px-1.5 py-0.5 text-[10px] font-extrabold not-italic text-ck-on-primary">
                     {t("yearlyBadge", { percent: discount })}
                   </i>
                 )}
@@ -388,7 +388,7 @@ export function CheckerPaywall() {
 
         {/* Карточка плана: 1.5px primary border + плавающий бейдж триала. */}
         <div className="relative mt-2.5 flex flex-col gap-3.5 rounded-[28px] border-[1.5px] border-ck-primary bg-ck-surface p-5">
-          <span className="absolute -top-[11px] left-5 rounded-full bg-ck-primary px-3 py-1 text-[10px] font-extrabold tracking-[0.08em] text-white">
+          <span className="absolute -top-[11px] left-5 rounded-full bg-ck-primary px-3 py-1 text-[10px] font-extrabold tracking-[0.08em] text-ck-on-primary">
             {t("trialBadge", { days: CHECKER_PLAN.trialDays })}
           </span>
 
