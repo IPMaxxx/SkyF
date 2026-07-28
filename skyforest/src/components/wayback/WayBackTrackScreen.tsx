@@ -48,9 +48,28 @@ const WayBackPicker = dynamic(
   { ssr: false },
 );
 
+/**
+ * Карта «где я сейчас» на главной. Скелет повторяет её размеры один в один
+ * (плитка 10 + карта 220 + подпись 34), иначе экран дёрнется при загрузке.
+ */
+const WayBackHomeMap = dynamic(
+  () =>
+    import("@/components/wayback/WayBackHomeMap").then((m) => m.WayBackHomeMap),
+  { ssr: false, loading: () => <HomeMapSkeleton /> },
+);
+
 function MapSkeleton() {
   return (
     <div className="wb-map-stripes h-[220px] w-full animate-pulse rounded-[20px]" />
+  );
+}
+
+function HomeMapSkeleton() {
+  return (
+    <div className="wb-tile p-2.5">
+      <MapSkeleton />
+      <div className="min-h-[34px] pt-2.5" />
+    </div>
   );
 }
 
@@ -301,6 +320,10 @@ function Home({
           )}
         </span>
       </button>
+
+      {/* «Где я сейчас» — сразу под главным действием: карту открывают
+          глазами, до всякого нажатия. */}
+      <WayBackHomeMap known={c.current} />
 
       <WbRowTile label={t("pickOnMap")} onClick={() => c.setPicking(true)} />
 
