@@ -73,6 +73,20 @@ export function useWaybackAccount(): WaybackAccountState {
 
   useEffect(() => {
     void refresh();
+
+    // Вход и выход должны менять картинку сразу на всех экранах. Меню и главный
+    // экран держат состояние в React и переживают router.refresh() (страница
+    // трека — клиентская), поэтому без подписки после «Выйти» они так и
+    // остаются «вошедшими» до полной перезагрузки. Клиент Supabase в браузере —
+    // синглтон, так что событие получают все, кто подписан.
+    const supabase = createClient();
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+      // Колбэк выполняется под блокировкой auth-клиента: вызов getUser()
+      // прямо здесь повесил бы сам выход. Уходим в следующий тик.
+      setTimeout(() => void refresh(), 0);
+    });
+    return () => data.subscription.unsubscribe();
   }, [refresh]);
 
   const trialDaysLeft = (() => {

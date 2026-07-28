@@ -26,6 +26,7 @@ import {
   setLockEnabled,
 } from "@/lib/native/biometricLock";
 import { countLocalTracks } from "@/lib/trackHistory";
+import { waybackSignOut } from "@/lib/wayback/signOut";
 import {
   formatWaybackDate,
   initialsFrom,
@@ -67,6 +68,7 @@ export function WayBackAccount({
   const [lockEnabled, setLockEnabledState] = useState(false);
   const [lockBusy, setLockBusy] = useState(false);
   const [localCount, setLocalCount] = useState<number | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const native = isNativeApp();
   const store = native
@@ -118,16 +120,24 @@ export function WayBackAccount({
   };
 
   const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/dashboard/track");
-    router.refresh();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await waybackSignOut();
+      router.push("/dashboard/track");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
     <WbScreen
       bottom={
-        <WbQuietButton onClick={logout}>{t("logout")}</WbQuietButton>
+        <WbQuietButton onClick={logout} disabled={loggingOut}>
+          {loggingOut && <Loader2 className="h-4 w-4 animate-spin" />}
+          {t("logout")}
+        </WbQuietButton>
       }
     >
       <WbTopBar title={t("title")} onBack={() => router.back()} />

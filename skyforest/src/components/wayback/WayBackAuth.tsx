@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { Check, Loader2 } from "lucide-react";
 import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
+import { waybackSignOut } from "@/lib/wayback/signOut";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
@@ -588,8 +589,7 @@ export function WayBackVerifyMfa() {
   };
 
   const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await waybackSignOut();
     router.push("/login");
     router.refresh();
   };
