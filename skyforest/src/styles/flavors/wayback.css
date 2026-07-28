@@ -515,22 +515,35 @@ html[data-flavor="wayback"] .leaflet-marker-icon svg {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
 }
 
-/* Кнопки поверх карты похода приходят из общего компонента TrackMap: он
-   принадлежит SkyForest, и белые кружки в его вёрстке зашиты классами
-   Tailwind. Файл трогать нельзя, поэтому перекрашиваем их здесь — в границах
-   плитки WayBack (класс wb-map-frame ставит WayBackTrackScreen). Если разметка
-   TrackMap изменится, правило просто перестанет применяться: сломать оно
-   ничего не может. */
-.wb-map-frame [class*="bg-white"] {
+/* Кнопки поверх карты приходят из общего компонента TrackMap: он принадлежит
+   SkyForest, и белые кружки в его вёрстке зашиты классами Tailwind. Файл
+   трогать нельзя, поэтому перекрашиваем их здесь.
+
+   Границей служит сам контейнер карты, а не класс на обёртке экрана. Так
+   правило действует на КАЖДОЙ карте WayBack по построению: контролы TrackMap
+   рисуются внутри MapContainer, то есть внутри .leaflet-container, и новый
+   экран получает тёмные кнопки просто потому, что он экран WayBack. Пока
+   границей был класс `wb-map-frame`, его нужно было не забыть проставить, и
+   карта в истории походов осталась со светлыми кнопками именно поэтому.
+
+   Если разметка TrackMap изменится, правило просто перестанет применяться:
+   сломать оно ничего не может. */
+html[data-flavor="wayback"] .leaflet-container [class*="bg-white"] {
   background: rgba(11, 18, 13, 0.88) !important;
   color: var(--color-wb-ink) !important;
 }
 
-.wb-map-frame [class*="bg-white"] button:not([aria-pressed="true"]) {
+html[data-flavor="wayback"]
+  .leaflet-container
+  [class*="bg-white"]
+  button:not([aria-pressed="true"]) {
   color: var(--color-wb-ink-2);
 }
 
-.wb-map-frame [class*="bg-white"] button[aria-pressed="true"] {
+html[data-flavor="wayback"]
+  .leaflet-container
+  [class*="bg-white"]
+  button[aria-pressed="true"] {
   background: var(--color-wb-primary);
   color: var(--color-wb-on-primary);
 }

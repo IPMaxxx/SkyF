@@ -562,9 +562,10 @@ function ActiveHike({
         </WbTile>
       )}
 
-      {/* wb-map-frame перекрашивает белые контролы общего TrackMap: сам он
-          принадлежит SkyForest, править его нельзя (см. flavors.mdc). */}
-      <WbTile tone="tint" className="wb-map-frame overflow-hidden p-2.5">
+      {/* Белые контролы общего TrackMap (его правка запрещена, см. flavors.mdc)
+          перекрашивает правило wayback.css по .leaflet-container — обёртке
+          класс для этого больше не нужен. */}
+      <WbTile tone="tint" className="overflow-hidden p-2.5">
         <TrackMap
           anchor={c.track.anchor}
           points={c.track.points}
