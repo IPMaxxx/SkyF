@@ -1,0 +1,215 @@
+/* ==========================================================================
+   WayBack — светлая схема «Widget Board»
+
+   Файл принадлежит приложению WayBack: тёмную тему SkyForest и схему Checker
+   он не затрагивает. Включается атрибутом `data-flavor="wayback"` на <html>
+   (ставится в src/app/layout.tsx по хосту), поэтому действует только на
+   поддомене wayback.* и в нативной оболочке ai.skyforest.wayback.
+
+   Правило системы: контент живёт в белых плитках 26px на холсте #eef0ec,
+   действия — зелёные #2f6b3f, подписи к данным — моно капсом.
+
+   Подключается из src/app/globals.css.
+   ========================================================================== */
+
+/* Токены с префиксом `wb-` дают готовые утилиты вида `bg-wb-surface`. */
+@theme inline {
+  --color-wb-primary: #2f6b3f;
+  --color-wb-primary-deep: #26582f;
+  --color-wb-primary-soft: #cdeed5;
+  --color-wb-primary-tint: #eaf1ea;
+  --color-wb-primary-tint-2: #e3ebe2;
+  --color-wb-on-primary: #f2f7f2;
+  --color-wb-canvas: #eef0ec;
+  --color-wb-surface: #ffffff;
+  --color-wb-surface-2: #f4f6f3;
+  --color-wb-surface-3: #eef2ec;
+  --color-wb-ink: #141a15;
+  --color-wb-ink-2: #253027;
+  --color-wb-body: #414a42;
+  --color-wb-body-soft: #4f5b4c;
+  --color-wb-muted: #5d675f;
+  --color-wb-muted-2: #7d867e;
+  --color-wb-muted-3: #97a098;
+  --color-wb-border: #dcdfd8;
+  --color-wb-border-2: #e3ebe2;
+  --color-wb-border-3: #d9e2d2;
+  --color-wb-hairline: #e9ede8;
+  --color-wb-danger: #a83b3b;
+  --color-wb-danger-tint: #fbeceb;
+  --color-wb-danger-ink: #8d5150;
+  --color-wb-amber-tint: #f6ecdc;
+  --color-wb-amber-border: #f6e3b8;
+  --color-wb-amber-ink: #7d6435;
+  --font-wb-mono: var(--font-plex-mono);
+}
+
+html[data-flavor="wayback"] {
+  color-scheme: light;
+  background: var(--color-wb-canvas);
+}
+
+html[data-flavor="wayback"] body {
+  background: var(--color-wb-canvas);
+  color: var(--color-wb-ink);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+/* Базовые правила globals.css красят поля под тёмный фон через !important —
+   в светлой схеме их перебивает более высокая специфичность селектора. */
+html[data-flavor="wayback"] input[type="text"],
+html[data-flavor="wayback"] input[type="email"],
+html[data-flavor="wayback"] input[type="password"],
+html[data-flavor="wayback"] input[type="number"],
+html[data-flavor="wayback"] input[type="date"],
+html[data-flavor="wayback"] select,
+html[data-flavor="wayback"] textarea {
+  background: var(--color-wb-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--color-wb-ink) !important;
+}
+
+html[data-flavor="wayback"] input::placeholder,
+html[data-flavor="wayback"] textarea::placeholder {
+  color: var(--color-wb-muted-3) !important;
+}
+
+html[data-flavor="wayback"] input:focus,
+html[data-flavor="wayback"] textarea:focus {
+  border-color: var(--color-wb-primary) !important;
+  box-shadow: 0 0 0 3px rgba(47, 107, 63, 0.16) !important;
+}
+
+html[data-flavor="wayback"] :focus-visible {
+  outline-color: var(--color-wb-primary);
+}
+
+html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
+  background: rgba(20, 26, 21, 0.18);
+}
+
+/* Плитка — базовый носитель контента. 26px радиус во всей системе. */
+.wb-tile {
+  background: var(--color-wb-surface);
+  border-radius: 26px;
+}
+
+.wb-tile-tint {
+  background: var(--color-wb-primary-tint);
+  border-radius: 26px;
+}
+
+.wb-tile-quiet {
+  background: var(--color-wb-surface-3);
+  border-radius: 26px;
+}
+
+.wb-tile-danger {
+  background: var(--color-wb-danger-tint);
+  border-radius: 26px;
+}
+
+/* Моно-подписи к данным: 11px, капс, разрядка. Только микро-лейблы. */
+.wb-mono {
+  font-family: var(--font-wb-mono), ui-monospace, monospace;
+}
+
+.wb-label {
+  font-family: var(--font-wb-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-wb-muted-2);
+}
+
+/* Кнопки. Высоты по HIG: 58 primary / 56 compact / 50 quiet — не уменьшать,
+   их жмут в лесу и в перчатках. */
+.wb-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 18px;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+.wb-btn:disabled {
+  opacity: 0.55;
+}
+
+.wb-btn-primary {
+  height: 58px;
+  background: var(--color-wb-primary);
+  color: var(--color-wb-on-primary);
+  font-weight: 800;
+  font-size: 17px;
+}
+.wb-btn-primary:hover:not(:disabled) {
+  background: var(--color-wb-primary-deep);
+}
+
+.wb-btn-quiet {
+  height: 50px;
+  background: var(--color-wb-surface);
+  color: #3a453c;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.wb-btn-soft {
+  height: 52px;
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-ink-2);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Мягкая опасная — основная для «Я вышел из леса»: заметная, но не кричит. */
+.wb-btn-danger-soft {
+  height: 62px;
+  border-radius: 22px;
+  background: var(--color-wb-danger-tint);
+  color: var(--color-wb-danger);
+  font-weight: 800;
+  font-size: 17px;
+}
+
+/* Сплошная опасная — только в подтверждении необратимого действия. */
+.wb-btn-danger {
+  height: 64px;
+  border-radius: 20px;
+  background: var(--color-wb-danger);
+  color: #fdf4f3;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* Сегментные переключатели: радиус/детализация, месяц/год, слои, EN/RU. */
+.wb-seg {
+  height: 44px;
+  border-radius: 999px;
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-body);
+  font-weight: 700;
+  font-size: 14px;
+  border: 0;
+  transition: background-color 0.15s ease;
+}
+.wb-seg[aria-pressed="true"],
+.wb-seg[data-active="true"] {
+  background: var(--color-wb-primary);
+  color: var(--color-wb-on-primary);
+}
+
+/* Заглушка карты/фото — та же штриховка, что в макете. */
+.wb-map-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    #e0e8dd 0 10px,
+    #e7eee4 10px 20px
+  );
+}

@@ -6,8 +6,10 @@ import { stripLocalePrefix } from "./lib/stripLocalePath";
 import {
   flavorFromHost,
   flavorConfig,
-  isPathAllowed,
+  internalRewrite,
   isAnonymousAllowed,
+  isInternalPath,
+  isPathAllowed,
 } from "./lib/appFlavor";
 
 const PROTECTED_PATHS = ["/dashboard", "/payment", "/account"];
@@ -32,9 +34,29 @@ export async function middleware(request: NextRequest) {
   const flavorCfg = flavorConfig(flavor);
   const flavorPathname = stripLocalePrefix(rawPathname);
 
+  // Сегменты вида /ck/* — внутренние: их отдаём только через rewrite ниже,
+  // по прямому URL (на любом хосте) они не должны открываться.
+  if (isInternalPath(flavorPathname)) {
+    return NextResponse.redirect(
+      new URL((isEn ? "/en" : "") + flavorCfg.homePath, request.url),
+    );
+  }
+
+  // Флейвор с собственным деревом роутов (Mushroom Checker → /ck/*): путь
+  // подменяется в самом конце, после проверок авторизации и MFA, иначе они
+  // бы применялись к внутреннему пути и переставали работать.
+  const rewriteTo = internalRewrite(
+    flavor,
+    flavorPathname === "" ? "/" : flavorPathname,
+  );
+  const rewriteUrl = rewriteTo ? request.nextUrl.clone() : null;
+  if (rewriteUrl && rewriteTo) {
+    rewriteUrl.pathname = `${isEn ? "/en" : "/ru"}${rewriteTo}`;
+  }
+
   if (flavor !== "skyforest") {
     // Корень поддомена — простая посадочная (rewrite: URL остаётся "/").
-    if (flavorPathname === "/" || flavorPathname === "") {
+    if (!rewriteUrl && (flavorPathname === "/" || flavorPathname === "")) {
       return NextResponse.rewrite(
         new URL(`${isEn ? "/en" : "/ru"}/landing/${flavor}`, request.url),
       );
@@ -47,10 +69,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  let response = NextResponse.next({ request });
-  intlResponse.headers.forEach((value, key) => {
-    response.headers.set(key, value);
-  });
+  const makeResponse = () => {
+    const res = rewriteUrl
+      ? NextResponse.rewrite(rewriteUrl, { request })
+      : NextResponse.next({ request });
+    intlResponse.headers.forEach((value, key) => {
+      // Свой rewrite важнее внутреннего rewrite next-intl: путь уже с локалью.
+      if (rewriteUrl && key === "x-middleware-rewrite") return;
+      res.headers.set(key, value);
+    });
+    return res;
+  };
+
+  let response = makeResponse();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,10 +95,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          response = NextResponse.next({ request });
-          intlResponse.headers.forEach((value, key) => {
-            response.headers.set(key, value);
-          });
+          response = makeResponse();
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );

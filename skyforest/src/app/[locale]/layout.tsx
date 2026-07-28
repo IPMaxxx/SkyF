@@ -106,6 +106,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const flavor = flavorFromHost((await headers()).get("host"));
   const isFlavored = flavor !== "skyforest";
   const jsonLd = isFlavored ? null : getSiteJsonLd(locale as "ru" | "en");
+  // Mushroom Checker монтирует свой светлый splash в src/app/[locale]/ck/layout.
+  const isChecker = flavor === "checker";
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -119,7 +121,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           )}
           <SkipLink />
           <NativeAppProvider />
-          <NativeSplash />
+          {!isChecker && <NativeSplash />}
           <UpdatePrompt />
           <BiometricLockGate />
           {children}

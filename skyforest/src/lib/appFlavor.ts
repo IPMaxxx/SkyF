@@ -9,98 +9,23 @@
  *
  * Флейвор определяется ПО ХОСТУ ЗАПРОСА (никаких отдельных сборок/деплоев):
  * один Next-инстанс обслуживает все три домена. Middleware ограничивает
- * набор маршрутов, layout подставляет название/манифест/иконки, навигация
- * (AppHeader/NativeTabBar) обрезается через useAppFlavor().
+ * набор маршрутов и подменяет путь на внутренние сегменты флейвора
+ * (`internalRewrites`), layout подставляет название/манифест/иконки.
+ *
+ * Здесь только общие функции. Настройки каждого приложения — в его каталоге
+ * src/flavors/<id>/config.ts, сборка — в src/flavors/registry.ts.
  */
 
-export type AppFlavor = "skyforest" | "checker" | "wayback";
+import { FLAVORS } from "../flavors/registry";
+import type { AppFlavor, FlavorConfig } from "../flavors/types";
 
-export interface FlavorConfig {
-  id: AppFlavor;
-  /** Публичное имя приложения (заголовки, манифест, header). */
-  name: string;
-  /** Домашняя страница кабинета — сюда уводим с чужих маршрутов. */
-  homePath: string;
-  /** Пути, разрешённые на поддомене (префиксы после отрезания локали). null = всё. */
-  allowedPaths: string[] | null;
-  /**
-   * Защищённые пути, доступные БЕЗ логина в этом флейворе
-   * (wayback: трек должен работать анонимно — история хранится в localStorage).
-   */
-  anonymousPaths: string[];
-  /** Пункты навигации кабинета (href из AppHeader.NAV / NativeTabBar). null = все. */
-  navHrefs: string[] | null;
-  /** Показывать ли баланс токенов/оплату в шапке. */
-  showTokens: boolean;
-  /** PWA-манифест и favicon этого флейвора. */
-  manifestPath: string;
-  faviconPath: string;
-  /** Логотип для splash и экранов входа (квадратный, ≥512px). */
-  logoPath: string;
-  /** id нативного приложения (Capacitor appId). */
-  nativeAppId: string;
-}
+export { FLAVORS };
+export type { AppFlavor, FlavorConfig };
 
-const COMMON_ALLOWED = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-mfa",
-  "/account",
-  "/privacy",
-  "/delete-account",
-  "/landing",
-];
-
-export const FLAVORS: Record<AppFlavor, FlavorConfig> = {
-  skyforest: {
-    id: "skyforest",
-    name: "SkyForest",
-    homePath: "/dashboard",
-    allowedPaths: null,
-    anonymousPaths: [],
-    navHrefs: null,
-    showTokens: true,
-    manifestPath: "/manifest.webmanifest",
-    faviconPath: "/favicon.png",
-    logoPath: "/images/logo-square.png",
-    nativeAppId: "ai.skyforest.app",
-  },
-  checker: {
-    id: "checker",
-    name: "Mushroom Checker",
-    homePath: "/dashboard/identify",
-    allowedPaths: [
-      ...COMMON_ALLOWED,
-      "/dashboard/identify",
-      "/payment",
-      "/offer",
-    ],
-    anonymousPaths: [],
-    navHrefs: ["/dashboard/identify"],
-    // Токенов в Checker нет — монетизация только подпиской (/payment).
-    showTokens: false,
-    manifestPath: "/manifest-checker.webmanifest",
-    faviconPath: "/icons/checker-192.png",
-    logoPath: "/icons/checker-512.png",
-    nativeAppId: "ai.skyforest.mushroomchecker",
-  },
-  wayback: {
-    id: "wayback",
-    name: "WayBack",
-    homePath: "/dashboard/track",
-    // /payment и /offer нужны для пейволла подписки (требует логин).
-    allowedPaths: [...COMMON_ALLOWED, "/dashboard/track", "/payment", "/offer"],
-    anonymousPaths: ["/dashboard/track"],
-    navHrefs: ["/dashboard/track"],
-    showTokens: false,
-    manifestPath: "/manifest-wayback.webmanifest",
-    faviconPath: "/icons/wayback-192.png",
-    logoPath: "/icons/wayback-512.png",
-    nativeAppId: "ai.skyforest.wayback",
-  },
-};
+/** Внутренние сегменты всех флейворов — их нельзя открыть по прямому URL. */
+const INTERNAL_SEGMENTS = Object.values(FLAVORS)
+  .map((cfg) => cfg.internalSegment)
+  .filter((seg): seg is string => Boolean(seg));
 
 /** Флейвор по хосту: checker.* / wayback.* → соответствующий, иначе skyforest. */
 export function flavorFromHost(host: string | null | undefined): AppFlavor {
@@ -122,6 +47,24 @@ export function isPathAllowed(flavor: AppFlavor, pathname: string): boolean {
   return cfg.allowedPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+}
+
+/**
+ * Внутренний путь флейвора (`/ck/...`), пришедший как публичный URL. Такие
+ * запросы уводим на домашнюю: сегменты предназначены только для rewrite.
+ */
+export function isInternalPath(pathname: string): boolean {
+  return INTERNAL_SEGMENTS.some(
+    (seg) => pathname === seg || pathname.startsWith(`${seg}/`),
+  );
+}
+
+/** Куда переписать публичный путь внутри этого флейвора (или undefined). */
+export function internalRewrite(
+  flavor: AppFlavor,
+  pathname: string,
+): string | undefined {
+  return FLAVORS[flavor].internalRewrites[pathname];
 }
 
 /** Доступен ли защищённый путь анонимно в данном флейворе. */

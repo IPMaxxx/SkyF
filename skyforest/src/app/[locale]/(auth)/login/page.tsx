@@ -8,23 +8,18 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
-import { CheckerLogin } from "@/components/checker/CheckerAuth";
 import { WayBackLogin } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { useAppFlavor } from "@/lib/useAppFlavor";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
+// Mushroom Checker сюда не попадает: middleware переписывает /login хоста
+// checker.* на собственный экран в src/app/[locale]/ck/login.
 export default function LoginPage() {
   const flavor = useAppFlavor();
   return (
     <Suspense>
-      {flavor === "checker" ? (
-        <CheckerLogin />
-      ) : flavor === "wayback" ? (
-        <WayBackLogin />
-      ) : (
-        <LoginForm />
-      )}
+      {flavor === "wayback" ? <WayBackLogin /> : <LoginForm />}
     </Suspense>
   );
 }

@@ -95,9 +95,8 @@ export default {
     proF4: "Pattern match forecast — up to 8 per month",
     proF5: "Free marketplace listings",
     proF6: "+100 bonus tokens every month",
-    // Mushroom Checker / WayBack flavors (single subscription, no tokens)
-    checkerSubtitle:
-      "Full access to AI mushroom identification: 25 identifications per month with confidence scores",
+    // WayBack flavor (single subscription, no tokens). Mushroom Checker has
+    // its own paywall copy in checker.en.ts.
     waybackSubtitle:
       "Full access to WayBack: offline maps, region downloads and finding your way back without signal",
     checkerF1: "25 mushroom identifications per month",

@@ -54,17 +54,11 @@ export default async function RootLayout({
       ? cookieLocale
       : routing.defaultLocale;
 
-  // Флейвор по хосту: на checker./wayback. — свой манифест, иконки и имя PWA.
+  // Флейвор по хосту: на checker./wayback. — свои манифест, иконки, имя PWA и
+  // цвета чрома. Значения берём из конфига приложения (src/flavors/<id>),
+  // шрифт выбирает его собственный CSS по атрибуту data-flavor.
   const headerStore = await headers();
   const flavor = flavorConfig(flavorFromHost(headerStore.get("host")));
-  // Checker и WayBack — светлые схемы: статус-бар должен быть с тёмным текстом.
-  const isLightFlavor = flavor.id === "checker" || flavor.id === "wayback";
-  const themeColor =
-    flavor.id === "checker"
-      ? "#f3f7f1"
-      : flavor.id === "wayback"
-        ? "#eef0ec"
-        : "#0b120d";
 
   return (
     <html
@@ -113,13 +107,13 @@ export default async function RootLayout({
           content="This site provides structured information for AI assistants via /llms.txt and /llms-full.txt. RSS feed available at /feed.xml"
         />
         <link rel="manifest" href={flavor.manifestPath} />
-        <meta name="theme-color" content={themeColor} />
+        <meta name="theme-color" content={flavor.themeColor} />
         <meta name="application-name" content={flavor.name} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta
           name="apple-mobile-web-app-status-bar-style"
-          content={isLightFlavor ? "default" : "black-translucent"}
+          content={flavor.statusBarStyle}
         />
         <meta name="apple-mobile-web-app-title" content={flavor.name} />
         <link rel="apple-touch-icon" href={flavor.faviconPath} />

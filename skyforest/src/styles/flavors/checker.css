@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Mushroom Checker — светлая схема «Soft Product»
+
+   Файл принадлежит приложению Checker: тёмную тему SkyForest и схему WayBack
+   он не затрагивает. Включается атрибутом `data-flavor="checker"` на <html>
+   (ставится в src/app/layout.tsx по хосту), поэтому действует только на
+   поддомене checker.* и в нативной оболочке ai.skyforest.mushroomchecker.
+
+   Подключается из src/app/globals.css.
+   ========================================================================== */
+
+/* Токены с префиксом `ck-` дают готовые утилиты вида `bg-ck-surface`. */
+@theme inline {
+  --color-ck-primary: #3f9c58;
+  --color-ck-primary-light: #5fb573;
+  --color-ck-primary-tint: #e7f4e9;
+  --color-ck-primary-border: #c3e2c9;
+  --color-ck-primary-deep: #1e4a2b;
+  --color-ck-primary-mid: #3d6248;
+  --color-ck-amber: #c07a20;
+  --color-ck-amber-tint: #fff6ea;
+  --color-ck-amber-border: #f2ddc0;
+  --color-ck-amber-deep: #8a5f14;
+  --color-ck-amber-mid: #6a5a44;
+  --color-ck-danger: #c0392b;
+  --color-ck-danger-tint: #fdeeeb;
+  --color-ck-danger-border: #f3cfc8;
+  --color-ck-danger-deep: #8e2b20;
+  --color-ck-danger-mid: #7c4238;
+  --color-ck-ink: #132318;
+  --color-ck-ink-2: #1e3325;
+  --color-ck-ink-3: #28402f;
+  --color-ck-body: #4a5c50;
+  --color-ck-body-soft: #5f7167;
+  --color-ck-muted: #7d8d80;
+  --color-ck-muted-2: #8b9a91;
+  --color-ck-canvas: #f3f7f1;
+  --color-ck-canvas-2: #f5f9f4;
+  --color-ck-surface: #ffffff;
+  --color-ck-border: #dfe8db;
+  --color-ck-border-2: #e2eade;
+  --color-ck-border-3: #d7e2d3;
+  --color-ck-border-4: #dde6d9;
+  --color-ck-hairline: #eaf0e8;
+  --font-ck: var(--font-jakarta);
+  --font-ck-mono: var(--font-jetbrains);
+}
+
+html[data-flavor="checker"] {
+  color-scheme: light;
+  background: var(--color-ck-canvas);
+}
+
+html[data-flavor="checker"] body {
+  background: var(--color-ck-canvas);
+  color: var(--color-ck-ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+/* Базовые правила globals.css красят поля под тёмный фон через !important —
+   в светлой схеме их перебивает более высокая специфичность селектора. */
+html[data-flavor="checker"] input[type="text"],
+html[data-flavor="checker"] input[type="email"],
+html[data-flavor="checker"] input[type="password"],
+html[data-flavor="checker"] input[type="number"],
+html[data-flavor="checker"] input[type="date"],
+html[data-flavor="checker"] select,
+html[data-flavor="checker"] textarea {
+  background: var(--color-ck-surface) !important;
+  border-color: var(--color-ck-border-4) !important;
+  color: var(--color-ck-ink) !important;
+}
+
+html[data-flavor="checker"] input::placeholder,
+html[data-flavor="checker"] textarea::placeholder {
+  color: var(--color-ck-muted-2) !important;
+}
+
+html[data-flavor="checker"] input:focus,
+html[data-flavor="checker"] textarea:focus {
+  border-color: var(--color-ck-primary-light) !important;
+  box-shadow: 0 0 0 4px rgba(95, 181, 115, 0.15) !important;
+}
+
+html[data-flavor="checker"] :focus-visible {
+  outline-color: var(--color-ck-primary);
+}
+
+html[data-flavor="checker"] ::-webkit-scrollbar-thumb {
+  background: rgba(19, 35, 24, 0.18);
+}
+
+/* Мелкие подписи-«моно»: 10–11px, разрядка, uppercase. Только микро-лейблы. */
+.ck-mono {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+/* Кнопки: 58 primary / 52 secondary — трогать высоты нельзя (HIG). */
+.ck-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-weight: 800;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+.ck-btn:disabled {
+  opacity: 0.55;
+}
+
+.ck-btn-primary {
+  height: 58px;
+  background: var(--color-ck-primary);
+  color: #fff;
+  font-size: 17px;
+  box-shadow: 0 14px 28px -14px rgba(63, 156, 88, 0.8);
+}
+
+.ck-btn-secondary {
+  height: 52px;
+  background: var(--color-ck-surface);
+  border: 1px solid var(--color-ck-border-3);
+  color: #26402d;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-btn-quiet {
+  height: 52px;
+  background: var(--color-ck-canvas);
+  color: var(--color-ck-body);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ck-btn-danger {
+  height: 56px;
+  background: var(--color-ck-danger);
+  color: #fff;
+  font-size: 16.5px;
+}
+
+.ck-card {
+  background: var(--color-ck-surface);
+  border: 1px solid var(--color-ck-border);
+  border-radius: 24px;
+}
+
+.ck-lift {
+  box-shadow: 0 10px 26px -18px rgba(20, 60, 35, 0.5);
+}
+
+/* Заглушка фото — диагональная штриховка, поверх неё кладётся реальный <img>. */
+.ck-photo-stripes {
+  background: repeating-linear-gradient(
+    135deg,
+    #e5ebe2 0 10px,
+    #eef2eb 10px 20px
+  );
+}
+
+@keyframes ck-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.ck-step-in {
+  animation: ck-step-in 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-step-in {
+    animation: none !important;
+  }
+}

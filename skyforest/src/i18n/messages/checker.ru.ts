@@ -1,4 +1,27 @@
 /** Mushroom Checker — «Soft Product» redesign (русская версия). */
+
+/**
+ * Тексты про задачу приложения для общих мест (splash, экран блокировки,
+ * метаданные, документы). Попадают в словарь как `flavor.checker.*` —
+ * см. src/lib/useFlavorBrand.ts и src/i18n/messages/ru.ts.
+ */
+export const checkerBrand = {
+  tagline: "Проверьте находку",
+  metaDescription:
+    "Mushroom Checker определяет гриб по фотографии: вид с процентом уверенности, опасные двойники и чеклист самопроверки.",
+  authSubtitle: "Войдите, чтобы определять грибы по фотографии.",
+  accountSubtitle: "Профиль, подписка и настройки аккаунта.",
+  accountDeleteHint:
+    "Удаление аккаунта необратимо: профиль и история распознаваний будут удалены. Подписку нужно отменить отдельно в App Store или Google Play.",
+  lockBody: "Разблокируйте через Face ID, чтобы открыть Mushroom Checker.",
+  deletedItems: [
+    "Профиль (имя и адрес электронной почты)",
+    "Отправленные на распознавание фотографии и их результаты",
+    "Токены push-уведомлений для ваших устройств",
+    "Записи о подписке на нашей стороне",
+  ],
+} as const;
+
 export default {
   menu: {
     brandShort: "Checker",
