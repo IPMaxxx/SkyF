@@ -1,4 +1,6 @@
-WayBack remembers where you walked into the forest and shows you the way back to that spot. No signal needed, no account needed.
+WayBack remembers where you walked into the forest and shows you the way back to that spot. Once the trip is prepared, it works with no signal.
+
+WayBack is a subscription app. It opens with a 3-day free trial, then USD 3.99 per year. You sign in, start the trial in the App Store, and the whole app is yours - there is no cut-down free mode and nothing is held back for a higher tier.
 
 Before you step off the road, tap "I'm entering the forest". The app drops an anchor at your GPS position and starts recording your walk. From then on the screen shows the two things that matter: the direction to your entry point and how far away it is. Both are calculated on the phone, so they keep working with no mobile data and no coverage.
 
@@ -18,15 +20,15 @@ MAPS THAT WORK OFFLINE
 - Open the app with no connection at all and a built-in offline screen takes over: the anchor, the arrow, the compass and the saved map still work.
 
 YOUR WALKS
-History keeps every finished walk with its track on the map, the distance covered and the time spent in the forest. Walks stay on the device. Sign in only if you want to keep them when you change phones.
+History keeps every finished walk with its track on the map, the distance covered and the time spent in the forest. Walks belong to your account, so they are still there on your next phone.
 
 WHAT TO EXPECT
-Recording runs while the app is open. When the app goes to the background or the screen turns off, recording pauses and picks up again when you come back - stretches with no recording are drawn as a dashed line on the map. WayBack is a simple aid for finding your way back, not a replacement for a paper map, a compass, or telling somebody where you are going.
+- Recording runs while the app is open. When the app goes to the background or the screen turns off, recording pauses and picks up again when you come back - stretches with no recording are drawn as a dashed line on the map.
+- The trial is set up once while you still have a connection, because the App Store needs the network for it. After that WayBack works in the forest with no signal.
+- WayBack is a simple aid for finding your way back, not a replacement for a paper map, a compass, or telling somebody where you are going.
 
-WAYBACK PREMIUM
-The arrow home is free, with no account and no time limit. Premium adds unlimited offline map areas, satellite imagery at maximum detail, and history synced across phones.
-
-- WayBack Premium (Yearly): one year, USD 3.99, with a 3-day free trial.
+SUBSCRIPTION
+- WayBack Premium (Yearly): one year, USD 3.99, starting with a 3-day free trial.
 - The trial is free. After it ends the subscription renews automatically at USD 3.99 per year unless you cancel at least 24 hours before the current period ends.
 - Payment is charged to your Apple Account. You can manage or cancel the subscription in your device's subscription settings at any time.
 

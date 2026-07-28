@@ -248,9 +248,10 @@ try {
       contactEmail: "support@skyforest.ai",
       contactWebsite: "https://wayback.skyforest.ai",
     });
-    // Release notes в Play живут не в листинге, а у релиза в треке. Пишем их
-    // тем релизам, у которых текста ещё нет: при повышении релиза до
-    // production Play переносит заметки вместе с ним.
+    // Release notes в Play живут не в листинге, а у релиза в треке. Текст из
+    // файла перезаписывает то, что лежит у релиза: устаревшие заметки — такое
+    // же расхождение с приложением, как устаревшее описание. При повышении
+    // релиза до production Play переносит заметки вместе с ним.
     const tracks = await play("GET", `/edits/${edit.id}/tracks`);
     for (const track of tracks.tracks || []) {
       const releases = track.releases || [];
@@ -258,11 +259,15 @@ try {
       let changed = false;
       const next = releases.map((rel) => {
         const notes = rel.releaseNotes || [];
-        if (notes.some((n) => n.language === LOCALE)) return rel;
+        const mine = notes.find((n) => n.language === LOCALE);
+        if (mine?.text === TEXTS.whatsNew.value) return rel;
         changed = true;
         return {
           ...rel,
-          releaseNotes: [...notes, { language: LOCALE, text: TEXTS.whatsNew.value }],
+          releaseNotes: [
+            ...notes.filter((n) => n.language !== LOCALE),
+            { language: LOCALE, text: TEXTS.whatsNew.value },
+          ],
         };
       });
       if (!changed) continue;
