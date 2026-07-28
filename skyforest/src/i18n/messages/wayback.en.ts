@@ -7,15 +7,25 @@
  * тексты читают на ходу, в лесу, одной рукой.
  */
 export default {
+  /** Нижнее меню: четыре пункта, подписи должны быть короткими. */
+  tabs: {
+    label: "Main menu",
+    home: "Track",
+    offline: "Offline",
+    history: "History",
+    more: "More",
+  },
+
   menu: {
-    open: "Open menu",
-    close: "Close menu",
-    track: "Track",
-    trackCurrent: "current section",
+    close: "Close",
+    moreTitle: "More",
     subscription: "Subscription",
     account: "My account",
-    offlineMap: "Offline map",
-    areaCount: "{count, plural, =0 {no areas} one {# area} other {# areas}}",
+    otherApps: "our other apps",
+    skyforestName: "SkyForest",
+    skyforestHint: "Mushroom spots, forecast and maps",
+    checkerName: "Mushroom Checker",
+    checkerHint: "Identify a mushroom from a photo",
     language: "language",
     units: "units",
     unitsKm: "km",
@@ -29,7 +39,8 @@ export default {
   },
 
   home: {
-    start: "start",
+    /** Слово на главной кнопке. Капс задаёт CSS (.wb-start-word). */
+    start: "Start",
     startButton: "I'm entering the forest",
     startingButton: "Getting your location…",
     pickOnMap: "Set entry point on the map",

@@ -3,8 +3,9 @@
  * Сборка всей графики WayBack из одного исходника — assets/icon.png.
  *
  * Порядок такой:
- *   1. из иконки рисуются assets/splash.png и splash-dark.png — светлый холст
- *      «Widget Board» с плиткой логотипа и подписью, как в WayBackSplash;
+ *   1. из иконки рисуются assets/splash.png и splash-dark.png — тёмный холст
+ *      (общая схема с SkyForest) с плиткой логотипа и подписью, как в
+ *      WayBackSplash;
  *   2. веб-логотипы public/icons/wayback-{192,512}.png тоже берутся отсюда,
  *      чтобы манифест, сплэш в вебе и иконка приложения не разъезжались;
  *   3. дальше @capacitor/assets раскладывает иконки и сплэши по нативным
@@ -26,8 +27,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SKY_ROOT = join(HERE, "..", "..");
 const ICON = join(HERE, "assets", "icon.png");
 
-const CANVAS = "#eef0ec"; // --color-wb-canvas
-const INK = "#141a15"; // --color-wb-ink, он же фон иконки
+const CANVAS = "#0b120d"; // --color-wb-canvas, холст сплэша
+const INK = "#eaf2ea"; // --color-wb-ink, подпись «WayBack» на сплэше
+const ICON_BG = "#141a15"; // фон нативной иконки — она остаётся как есть
 const SPLASH_SIDE = 2732;
 
 if (!existsSync(ICON)) {
@@ -77,8 +79,8 @@ async function splash(side) {
     .toBuffer();
 }
 
-// 1. Сплэши-исходники. Тёмный вариант тоже светлый: в вебе сплэш всегда светлый,
-// иначе на запуске в тёмной теме мелькнёт чужой фон.
+// 1. Сплэши-исходники. Светлый вариант тоже тёмный: схема у приложения одна,
+// иначе на запуске в светлой теме мелькнёт чужой фон.
 const body = await splash(SPLASH_SIDE);
 for (const name of ["splash.png", "splash-dark.png"]) {
   await sharp(body).toFile(join(HERE, "assets", name));
@@ -102,9 +104,9 @@ execFileSync(
     "@capacitor/assets",
     "generate",
     "--iconBackgroundColor",
-    INK,
+    ICON_BG,
     "--iconBackgroundColorDark",
-    INK,
+    ICON_BG,
     "--splashBackgroundColor",
     CANVAS,
     "--splashBackgroundColorDark",

@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Строительные блоки светлой схемы WayBack («Widget Board»).
+ * Строительные блоки тёмной схемы WayBack («Widget Board»).
  *
- * Правило системы одно: контент живёт в белых плитках radius 26 на холсте
- * #eef0ec, действия — зелёные #2f6b3f, подписи к данным — моно капсом.
+ * Правило системы одно: контент живёт в плитках radius 26 на холсте #0b120d,
+ * действия — зелёные #5fb573, подписи к данным — моно капсом.
  * Размеры кнопок (58/56/52/50) из дизайна: их жмут в лесу и в перчатках,
- * уменьшать нельзя. Палитра — токены `--color-wb-*` в src/app/globals.css.
+ * уменьшать нельзя. Палитра и замеры контраста — токены `--color-wb-*` в
+ * src/styles/flavors/wayback.css.
  *
  * Компоненты используются только во флейворе `wayback`, поэтому тёмная тема
  * SkyForest и светлая схема Checker ими не затрагиваются.
@@ -371,7 +372,12 @@ export function WbInput({
 /* Оверлеи                                                             */
 /* ------------------------------------------------------------------ */
 
-/** Модалка подтверждения: плитка 26 у нижнего края, scrim .45. */
+/**
+ * Модалка подтверждения: плитка 26 у нижнего края, scrim .62.
+ *
+ * z-index выше карт: у Leaflet свои слои до 700, а контролы — 1000, и без
+ * этого карта похода перекрывала подтверждение выхода из леса.
+ */
 export function WbModal({
   open,
   onClose,
@@ -385,14 +391,14 @@ export function WbModal({
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
+    <div className="fixed inset-0 z-[1300] flex flex-col justify-end px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
       <button
         type="button"
         aria-label={label}
         onClick={onClose}
-        className="absolute inset-0 bg-[rgba(20,26,21,0.45)]"
+        className="absolute inset-0 bg-[rgba(3,7,4,0.62)]"
       />
-      <div className="relative z-10 mx-auto w-full max-w-[480px] rounded-[26px] bg-wb-surface px-6 py-[26px] shadow-[0_30px_60px_-24px_rgba(20,26,21,0.6)]">
+      <div className="relative z-10 mx-auto w-full max-w-[480px] rounded-[26px] border border-wb-border bg-wb-surface px-6 py-[26px] shadow-[0_30px_60px_-24px_rgba(0,0,0,0.75)]">
         {children}
       </div>
     </div>

@@ -5,8 +5,8 @@
  *
  * Три состояния на одном маршруте: похода нет, поход идёт, подтверждение
  * выхода. Офлайн-карта и история — отдельные экраны (в дизайне это не блоки
- * на главной), переключаются через ?view= — так работает системная кнопка
- * «назад» и в браузере, и в нативной оболочке.
+ * на главной), переключаются нижним меню и через history.state — так работает
+ * системная кнопка «назад» и в браузере, и в нативной оболочке.
  *
  * Кнопка старта намеренно самая крупная на экране: её жмут на опушке, на
  * ходу и в перчатках.
@@ -14,7 +14,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { Loader2, Menu } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useUnits } from "@/lib/units";
 import { listRegions } from "@/lib/offline/tileStore";
@@ -35,6 +35,7 @@ import {
   WbTile,
 } from "@/components/wayback/primitives";
 import { WayBackMenu } from "@/components/wayback/WayBackMenu";
+import { WayBackTabBar } from "@/components/wayback/WayBackTabBar";
 import { WayBackOfflineScreen } from "@/components/wayback/WayBackOfflineScreen";
 import { WayBackHistoryScreen } from "@/components/wayback/WayBackHistoryScreen";
 
@@ -106,6 +107,8 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
     zoom: number;
   } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  /** Офлайн-экран ушёл в полноэкранный выбор области — нижнее меню прячем. */
+  const [areaFullscreen, setAreaFullscreen] = useState(false);
   const [regionCount, setRegionCount] = useState(0);
   const [historyCount, setHistoryCount] = useState(0);
   const { signedIn, loading: accountLoading } = useWaybackAccount();
@@ -120,14 +123,18 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   }, [hasActiveTrack]);
 
   // Системная кнопка «назад» должна закрывать подэкран, а не выкидывать из
-  // приложения: подэкраны кладём в history.state.
+  // приложения: подэкраны кладём в history.state. Переход между подэкранами
+  // нижним меню запись заменяет, а не добавляет, — иначе «назад» пришлось бы
+  // жать столько раз, сколько вкладок человек пролистал.
   useEffect(() => {
     if (view === "home") return;
-    window.history.pushState({ wbView: view }, "");
+    if (window.history.state?.wbView)
+      window.history.replaceState({ wbView: view }, "");
+    else window.history.pushState({ wbView: view }, "");
     // Подэкран мог положить свою запись поверх (выбор области на карте) —
     // тогда «назад» закрывает её, а этот экран остаётся.
     const onPop = () => {
-      if (window.history.state?.wbView) return;
+      if (window.history.state?.wbArea) return;
       setView("home");
     };
     window.addEventListener("popstate", onPop);
@@ -137,6 +144,14 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   const goHome = () => {
     if (window.history.state?.wbView) window.history.back();
     else setView("home");
+  };
+
+  /** Нижнее меню: вкладка «поход» возвращает назад по истории, а не поверх. */
+  const selectTab = (tab: View) => {
+    setMenuOpen(false);
+    if (tab === view) return;
+    if (tab === "home") goHome();
+    else setView(tab);
   };
 
   /** `area` — открыть офлайн-карту сразу на выборе области с этим видом. */
@@ -167,19 +182,16 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
     );
   }
 
-  if (view === "offline") {
-    return (
+  const screen =
+    view === "offline" ? (
       <WayBackOfflineScreen
         center={c.track?.anchor ?? c.current}
         areaView={areaView}
         onBack={goHome}
         onRegionsChange={setRegionCount}
+        onFullscreenChange={setAreaFullscreen}
       />
-    );
-  }
-
-  if (view === "history") {
-    return (
+    ) : view === "history" ? (
       <WayBackHistoryScreen
         onBack={goHome}
         onStart={() => {
@@ -188,28 +200,12 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
         }}
         onCountChange={setHistoryCount}
       />
-    );
-  }
-
-  const menuButton = (
-    <button
-      type="button"
-      onClick={() => setMenuOpen(true)}
-      aria-label={t("menu.open")}
-      className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-wb-surface text-wb-ink"
-    >
-      <Menu className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden="true" />
-    </button>
-  );
-
-  return (
-    <>
-      <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(24px+env(safe-area-inset-bottom))]">
-        <div className="flex min-h-[52px] items-center justify-between gap-3 pt-[calc(8px+env(safe-area-inset-top))] pb-3">
+    ) : (
+      <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
+        <div className="flex min-h-[52px] items-center gap-3 pt-[calc(8px+env(safe-area-inset-top))] pb-3">
           <h1 className="truncate text-[21px] font-extrabold tracking-[-0.02em] text-wb-ink">
             {c.track ? t("active.title") : "WayBack"}
           </h1>
-          {menuButton}
         </div>
 
         {c.track ? (
@@ -231,13 +227,24 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
           />
         )}
       </div>
+    );
 
-      <WayBackMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        offlineAreaCount={regionCount}
-        onOpenOfflineMap={() => openOffline()}
-      />
+  return (
+    <>
+      {screen}
+
+      {/* Нижнее меню. На полноэкранной карте выбора области его нет: там свои
+          кнопки у нижнего края, и панель их бы перекрыла. */}
+      {!areaFullscreen && (
+        <WayBackTabBar
+          active={view}
+          onSelect={selectTab}
+          moreOpen={menuOpen}
+          onMore={() => setMenuOpen((v) => !v)}
+        />
+      )}
+
+      <WayBackMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Подтверждение выхода — необратимо останавливает стрелку. */}
       <WbModal
@@ -312,32 +319,35 @@ function Home({
 
   return (
     <div className="flex flex-col gap-2.5">
-      {/* Главное действие: занимает верх экрана целиком. */}
+      {/* Главное действие: занимает верх экрана целиком. Крупно — слово
+          действия («START»), подписью — что именно оно делает: с расстояния
+          вытянутой руки читается сначала слово, а не фраза. */}
       <button
         type="button"
         onClick={() => void c.handleStart()}
         disabled={c.starting}
-        className="flex items-center gap-4 rounded-[26px] bg-wb-primary px-6 py-6 text-left text-wb-on-primary disabled:opacity-70"
+        className="wb-start"
       >
-        <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="wb-mono text-[11px] uppercase tracking-[0.14em] opacity-75">
-            {t("start")}
-          </span>
-          <span className="text-[27px] font-extrabold leading-[1.15] tracking-[-0.02em]">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="wb-start-word">{t("start")}</span>
+          <span className="wb-start-sub">
             {c.starting ? t("startingButton") : t("startButton")}
           </span>
         </span>
-        <span className="flex h-[62px] w-[62px] flex-none items-center justify-center rounded-full bg-[rgba(255,255,255,0.18)]">
+        <span className="wb-start-badge">
           {c.starting ? (
-            <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           ) : (
-            <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
-              <path
-                d="M12 3 L20 20 L12 15.5 L4 20 Z"
-                fill="currentColor"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <>
+              <span className="wb-start-ring" aria-hidden="true" />
+              <svg viewBox="0 0 24 24" className="h-9 w-9" aria-hidden="true">
+                <path
+                  d="M12 3 L20 20 L12 15.5 L4 20 Z"
+                  fill="currentColor"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </>
           )}
         </span>
       </button>
@@ -348,26 +358,8 @@ function Home({
 
       <WbRowTile label={t("pickOnMap")} onClick={() => c.setPicking(true)} />
 
-      <WbTile className="flex flex-col gap-3.5 px-5 py-[18px]">
-        <h2 className="text-[17px] font-extrabold text-wb-ink">
-          {t("howTitle")}
-        </h2>
-        <ol className="flex flex-col gap-3">
-          {[t("how1"), t("how2"), t("how3")].map((step, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="wb-mono flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] bg-wb-primary-tint text-[12px] font-semibold text-wb-primary">
-                {i + 1}
-              </span>
-              <span className="text-[14.5px] font-medium leading-[1.45] text-wb-body">
-                {step}
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="wb-mono text-[12.5px] text-wb-muted-2">
-          {t("localOnly")}
-        </p>
-      </WbTile>
+      {/* «Как это работает» переехало в панель «ещё» нижнего меню: его читают
+          один раз, а место рядом с главным действием стоит дорого. */}
 
       {/* Офлайн-карта и история — входы в отдельные экраны. */}
       <div className="grid grid-cols-2 gap-2.5">
@@ -406,7 +398,7 @@ function Home({
             <span className="text-[14px] font-bold text-wb-ink">
               {t("signInTitle")}
             </span>
-            <span className="text-[12.5px] font-medium text-[#62705f]">
+            <span className="text-[12.5px] font-medium text-wb-body">
               {t("signInBody")}
             </span>
           </span>
@@ -570,14 +562,16 @@ function ActiveHike({
         </WbTile>
       )}
 
-      <WbTile tone="tint" className="overflow-hidden p-2.5">
+      {/* wb-map-frame перекрашивает белые контролы общего TrackMap: сам он
+          принадлежит SkyForest, править его нельзя (см. flavors.mdc). */}
+      <WbTile tone="tint" className="wb-map-frame overflow-hidden p-2.5">
         <TrackMap
           anchor={c.track.anchor}
           points={c.track.points}
           current={c.current}
           course={c.course}
         />
-        <p className="wb-mono px-2 pt-2.5 text-[11.5px] leading-[1.5] text-[#4d5c4a]">
+        <p className="wb-mono px-2 pt-2.5 text-[11.5px] leading-[1.5] text-wb-body">
           {t("gapHint")}
         </p>
       </WbTile>

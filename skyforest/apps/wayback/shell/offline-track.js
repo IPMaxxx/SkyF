@@ -471,16 +471,18 @@
     },
   });
 
-  // Зелёный точки входа — тот же #2f6b3f, что у действий в вебе; синий «вы
-  // здесь» оставлен: это привычная конвенция карт, а не брендовый цвет.
+  // Зелёный точки входа — тот же #5fb573, что у действий в тёмной схеме; синий
+  // «вы здесь» оставлен: это привычная конвенция карт, а не брендовый цвет.
+  // Кольцо маркеров — цвет холста #0b120d: на светлых растровых тайлах он даёт
+  // чёткий край (15.9:1), а на тёмной заглушке карты не светится заплаткой.
   var anchorIcon = L.divIcon({
     className: "",
-    html: '<div style="width:30px;height:30px;background:#2f6b3f;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(20,26,21,.3)"></div>',
+    html: '<div style="width:30px;height:30px;background:#5fb573;border:3px solid #0b120d;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.55)"></div>',
     iconSize: [30, 30], iconAnchor: [15, 15],
   });
   var currentIcon = L.divIcon({
     className: "",
-    html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(20,26,21,.35)"></div>',
+    html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #0b120d;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.55)"></div>',
     iconSize: [20, 20], iconAnchor: [10, 10],
   });
 
@@ -549,7 +551,7 @@
     else pathLine.setLatLngs(pathLatLngs());
 
     var rl = [[current.lat, current.lng], [track.anchor.lat, track.anchor.lng]];
-    if (!returnLine) returnLine = L.polyline(rl, { color: "#2f6b3f", weight: 4, opacity: 0.9, dashArray: "8 10" }).addTo(map);
+    if (!returnLine) returnLine = L.polyline(rl, { color: "#5fb573", weight: 4, opacity: 0.9, dashArray: "8 10" }).addTo(map);
     else returnLine.setLatLngs(rl);
 
     var dist = haversineM(current, track.anchor);

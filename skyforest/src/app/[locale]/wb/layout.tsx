@@ -31,16 +31,17 @@ export default function WayBackLayout({
         {children}
       </main>
       <TrackRecorder />
-      {/* Светлые тосты: тёмные из кабинета SkyForest на холсте #eef0ec слепые. */}
+      {/* Тосты в тёмной схеме WayBack: плитка #18241c с волосяной границей,
+          как у остального контента. Светлые тосты на холсте #0b120d слепят. */}
       <Toaster
         position="top-center"
-        theme="light"
+        theme="dark"
         richColors
         toastOptions={{
           style: {
-            background: "#ffffff",
-            border: "1px solid #dcdfd8",
-            color: "#141a15",
+            background: "#18241c",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#eaf2ea",
             borderRadius: "18px",
           },
         }}

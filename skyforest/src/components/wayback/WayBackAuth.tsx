@@ -728,7 +728,7 @@ export function WayBackResetPassword() {
           /* Ссылка из письма протухла — самый частый вход на этот экран. */
           <>
             <ErrorTile title={t("linkExpiredTitle")}>
-              <p className="text-[13.5px] font-medium leading-[1.5] text-[#8d5150]">
+              <p className="text-[13.5px] font-medium leading-[1.5] text-wb-danger-ink">
                 {t("linkExpiredBody")}
               </p>
             </ErrorTile>

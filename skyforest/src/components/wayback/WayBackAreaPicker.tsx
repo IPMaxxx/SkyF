@@ -483,7 +483,7 @@ export function WayBackAreaPicker({ center, zoom, onClose, onSaved }: Props) {
                 </span>
               </div>
               <div
-                className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.25)]"
+                className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(6,18,10,0.22)]"
                 role="progressbar"
                 aria-valuenow={pct}
                 aria-valuemin={0}
@@ -509,7 +509,7 @@ export function WayBackAreaPicker({ center, zoom, onClose, onSaved }: Props) {
                 <button
                   type="button"
                   onClick={() => abortRef.current?.abort()}
-                  className="h-9 flex-none rounded-full bg-[rgba(255,255,255,0.22)] px-4 text-[13px] font-bold text-wb-on-primary"
+                  className="h-9 flex-none rounded-full bg-[rgba(6,18,10,0.16)] px-4 text-[13px] font-bold text-wb-on-primary"
                 >
                   {t("cancel")}
                 </button>

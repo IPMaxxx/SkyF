@@ -29,8 +29,10 @@ export const waybackFlavor: FlavorConfig = {
   faviconPath: "/icons/wayback-192.png",
   logoPath: "/icons/wayback-512.png",
   nativeAppId: "ai.skyforest.wayback",
-  themeColor: "#eef0ec",
-  statusBarStyle: "default",
+  // Тёмная схема, общая с SkyForest: холст #0b120d. При «default» iOS рисует
+  // в статус-баре чёрный текст — на тёмном холсте его не видно.
+  themeColor: "#0b120d",
+  statusBarStyle: "black-translucent",
   internalSegment: "/wb",
   internalRewrites: {
     "/": "/wb/landing",

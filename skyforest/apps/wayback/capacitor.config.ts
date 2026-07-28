@@ -8,8 +8,9 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * автономный офлайн-экран из своей оболочки shell/ (webDir www собирается
  * скриптом sync-shell.mjs).
  *
- * Цвета — светлый холст схемы «Widget Board» (#eef0ec): и фон вебвью, и сплэш,
- * иначе на запуске мелькает тёмный экран прежнего оформления.
+ * Цвета — тёмный холст (#0b120d), общий с SkyForest: и фон вебвью, и сплэш.
+ * Значения должны совпадать с холстом сайта, иначе на запуске и при
+ * прокрутке за край мелькает полоса чужого фона.
  */
 const serverUrl = process.env.CAP_SERVER_URL || "https://wayback.skyforest.ai";
 
@@ -17,7 +18,7 @@ const config: CapacitorConfig = {
   appId: "ai.skyforest.wayback",
   appName: "WayBack",
   webDir: "www",
-  backgroundColor: "#eef0ec",
+  backgroundColor: "#0b120d",
   server: {
     url: serverUrl,
     cleartext: false,
@@ -38,7 +39,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#eef0ec",
+      backgroundColor: "#0b120d",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashImmersive: true,

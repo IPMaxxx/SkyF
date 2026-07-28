@@ -6,8 +6,9 @@ import { Link } from "@/i18n/navigation";
  * Посадочная WayBack: middleware переписывает "/" поддомена
  * wayback.skyforest.ai на этот путь (URL остаётся корнем).
  *
- * Тёмная, в отличие от светлых экранов приложения: это витрина для браузера,
- * а не экран, который открывают в лесу.
+ * Цвета — токены тёмной схемы WayBack (canvas #0b120d, акцент #5fb573), те же,
+ * что на экранах приложения: витрина и приложение должны выглядеть одним
+ * продуктом.
  */
 export default async function WaybackLanding({
   params,
@@ -32,21 +33,23 @@ export default async function WaybackLanding({
       };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0e1710] px-6 text-center text-white">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-wb-canvas px-6 text-center text-wb-ink">
       <Image
         src="/icons/wayback-192.png"
         alt=""
         width={96}
         height={96}
-        className="mb-6 rounded-3xl shadow-[0_8px_40px_rgba(16,185,129,0.35)]"
+        className="mb-6 rounded-3xl shadow-[0_8px_40px_rgba(95,181,115,0.35)]"
         priority
       />
       <h1 className="font-heading text-4xl font-bold tracking-tight">WayBack</h1>
-      <p className="mt-3 max-w-md text-lg text-emerald-200/90">{t.tagline}</p>
-      <p className="mt-4 max-w-md text-sm leading-relaxed text-white/60">{t.text}</p>
+      <p className="mt-3 max-w-md text-lg text-wb-primary">{t.tagline}</p>
+      <p className="mt-4 max-w-md text-sm leading-relaxed text-wb-body">
+        {t.text}
+      </p>
       <Link
         href="/dashboard/track"
-        className="mt-8 rounded-2xl bg-[#10b981] px-8 py-4 text-base font-bold text-[#04140f] transition-transform hover:scale-[1.02] active:scale-95"
+        className="mt-8 rounded-2xl bg-wb-primary px-8 py-4 text-base font-bold text-wb-on-primary transition-transform hover:scale-[1.02] active:scale-95"
       >
         {t.cta}
       </Link>
@@ -60,7 +63,7 @@ export default async function WaybackLanding({
           <li key={link.href}>
             <Link
               href={link.href}
-              className="text-xs text-white/45 underline-offset-4 hover:text-white/70 hover:underline"
+              className="text-xs text-wb-muted-2 underline-offset-4 hover:text-wb-ink-2 hover:underline"
             >
               {link.label}
             </Link>
@@ -69,7 +72,7 @@ export default async function WaybackLanding({
       </ul>
       <a
         href="https://skyforest.ai"
-        className="mt-4 text-xs text-white/35 underline-offset-4 hover:text-white/60 hover:underline"
+        className="mt-4 text-xs text-wb-muted-3 underline-offset-4 hover:text-wb-ink-2 hover:underline"
       >
         {t.full}
       </a>

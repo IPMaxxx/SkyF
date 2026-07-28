@@ -75,12 +75,15 @@ export function WayBackOfflineScreen({
   areaView,
   onBack,
   onRegionsChange,
+  onFullscreenChange,
 }: {
   center?: { lat: number; lng: number } | null;
   /** Экран открыт кнопкой на карте главной — сразу показываем выбор области. */
   areaView?: { center: Coords; zoom: number } | null;
   onBack: () => void;
   onRegionsChange?: (count: number) => void;
+  /** Выбор области занимает весь экран — родитель прячет нижнее меню. */
+  onFullscreenChange?: (fullscreen: boolean) => void;
 }) {
   const t = useTranslations("wayback.offline");
 
@@ -126,6 +129,13 @@ export function WayBackOfflineScreen({
     if (window.history.state?.wbArea) window.history.back();
     else setAreaOpen(false);
   };
+
+  // Нижнее меню прячется на полноэкранной карте и возвращается при закрытии —
+  // в том числе если экран размонтировали, пока карта была открыта.
+  useEffect(() => {
+    onFullscreenChange?.(areaOpen);
+    return () => onFullscreenChange?.(false);
+  }, [areaOpen, onFullscreenChange]);
 
   const refreshRegions = useCallback(() => {
     void listRegions().then((list) => {
@@ -237,7 +247,7 @@ export function WayBackOfflineScreen({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(24px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
       <WbTopBar title={t("title")} onBack={onBack} />
 
       <div className="flex flex-col gap-2.5">
@@ -283,7 +293,7 @@ export function WayBackOfflineScreen({
               </span>
             </div>
             <div
-              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.25)]"
+              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(6,18,10,0.22)]"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}
@@ -304,7 +314,7 @@ export function WayBackOfflineScreen({
               <button
                 type="button"
                 onClick={() => abortRef.current?.abort()}
-                className="h-9 flex-none rounded-full bg-[rgba(255,255,255,0.22)] px-4 text-[13px] font-bold text-wb-on-primary"
+                className="h-9 flex-none rounded-full bg-[rgba(6,18,10,0.16)] px-4 text-[13px] font-bold text-wb-on-primary"
               >
                 {t("cancel")}
               </button>

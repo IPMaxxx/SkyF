@@ -5,16 +5,25 @@
  * их читают на ходу, в лесу, одной рукой.
  */
 export default {
+  /** Нижнее меню: четыре пункта, подписи должны быть короткими. */
+  tabs: {
+    label: "Главное меню",
+    home: "Поход",
+    offline: "Офлайн",
+    history: "История",
+    more: "Ещё",
+  },
+
   menu: {
-    open: "Открыть меню",
-    close: "Закрыть меню",
-    track: "Поход",
-    trackCurrent: "текущий раздел",
+    close: "Закрыть",
+    moreTitle: "Ещё",
     subscription: "Подписка",
     account: "Аккаунт",
-    offlineMap: "Офлайн-карта",
-    areaCount:
-      "{count, plural, =0 {нет участков} one {# участок} few {# участка} other {# участков}}",
+    otherApps: "наши другие приложения",
+    skyforestName: "SkyForest",
+    skyforestHint: "Грибные места, прогноз и карты",
+    checkerName: "Mushroom Checker",
+    checkerHint: "Определение гриба по фото",
     language: "язык",
     units: "единицы",
     unitsKm: "км",
@@ -29,7 +38,8 @@ export default {
   },
 
   home: {
-    start: "старт",
+    /** Слово на главной кнопке — английское во всех локалях, это знак действия. */
+    start: "Start",
     startButton: "Я вхожу в лес",
     startingButton: "Определяем геопозицию…",
     pickOnMap: "Отметить вход на карте",
