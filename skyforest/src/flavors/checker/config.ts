@@ -10,6 +10,8 @@ import { COMMON_ALLOWED_PATHS, type FlavorConfig } from "../types";
 export const checkerFlavor: FlavorConfig = {
   id: "checker",
   name: "Mushroom Checker",
+  // Приложение международное: основной язык английский, русский — по выбору.
+  defaultLocale: "en",
   homePath: "/dashboard/identify",
   allowedPaths: [
     ...COMMON_ALLOWED_PATHS,
