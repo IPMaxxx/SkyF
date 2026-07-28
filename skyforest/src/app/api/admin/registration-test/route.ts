@@ -345,8 +345,9 @@ export async function POST(request: NextRequest) {
           data: { full_name: "Reg Test SMTP" },
           // Без redirect_to Supabase подставит в письмо Site URL проекта — а он
           // один на три домена. Тест должен проверять ту же ссылку, что придёт
-          // живому пользователю этого хоста.
-          emailRedirectTo: `${new URL(request.url).origin}/auth/confirm`,
+          // живому пользователю этого хоста. `next` обязателен: шаблон письма
+          // дописывает token_hash к этому адресу через «&».
+          emailRedirectTo: `${new URL(request.url).origin}/auth/confirm?next=/dashboard`,
         },
       });
       if (error) {
