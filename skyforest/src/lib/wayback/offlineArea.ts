@@ -5,10 +5,9 @@
  * место касанием и приближением, а мы считаем, что именно скачается — область по
  * рамке на экране, диапазон зумов и честный объём трафика.
  *
- * Про объём. Средние веса тайлов замерены на реальных тайлах зумов 11–16, а не
- * взяты по памяти: тропы 25.9 КБ, спутник 16.6 КБ. Прежние значения (14 и 25 КБ)
- * недооценивали загрузку троп почти вдвое, а человек качает карту в лесу на
- * мобильном интернете — обманутое ожидание тут дороже лишней цифры на экране.
+ * Про объём. Средние веса тайлов замерены на реальных тайлах и лежат в общем
+ * lib/offline/tileWeights — там же их берёт экран офлайн-карт SkyForest, чтобы
+ * два продукта не могли разойтись в оценке одной и той же загрузки.
  *
  * Про пропуск уже скачанного. Перекрытие с сохранёнными областями считается по
  * индексу регионов (чистая математика, без обращений к диску), поэтому оценка
@@ -31,11 +30,7 @@ import {
   type TileCoord,
   type TileSource,
 } from "@/lib/offline/tileStore";
-
-/** Средний вес тайла троп (Thunderforest Outdoors, PNG) — замер по 45 тайлам. */
-export const AVG_OUTDOOR_TILE_BYTES = Math.round(25.9 * 1024);
-/** Средний вес спутникового тайла (Esri World Imagery, JPEG) — тот же замер. */
-export const AVG_SATELLITE_TILE_BYTES = Math.round(16.6 * 1024);
+import { avgTileBytes } from "@/lib/offline/tileWeights";
 
 /** Обзорные зумы качаем всегда: без них офлайн-карта не даёт отдалиться. */
 export const AREA_OVERVIEW_ZOOM = 9;
@@ -63,11 +58,6 @@ export const AREA_HARD_LIMIT_BYTES = 800 * 1024 * 1024;
 
 /** Оба слоя области: карта похода умеет и тропы, и спутник. */
 export const AREA_SOURCES: TileSource[] = [OUTDOOR_SOURCE, SATELLITE_SOURCE];
-
-const AVG_BYTES_BY_SOURCE: Record<string, number> = {
-  [OUTDOOR_SOURCE.id]: AVG_OUTDOOR_TILE_BYTES,
-  [SATELLITE_SOURCE.id]: AVG_SATELLITE_TILE_BYTES,
-};
 
 /** Выше этого числа тайлов перекрытие не считаем — иначе подвиснет интерфейс. */
 const OVERLAP_TILE_BUDGET = 200_000;
@@ -154,7 +144,7 @@ export function estimateArea(
   let totalBytes = 0;
 
   for (const source of AREA_SOURCES) {
-    const avg = AVG_BYTES_BY_SOURCE[source.id] ?? AVG_OUTDOOR_TILE_BYTES;
+    const avg = avgTileBytes(source.id);
     // Прерванные области покрытыми не считаем: в них скачаны не все тайлы, а
     // обещать «уже сохранено» там, где будет белое поле, нельзя.
     const saved = regions.filter(

@@ -32,8 +32,8 @@ import {
 import {
   AVG_OUTDOOR_TILE_BYTES,
   AVG_SATELLITE_TILE_BYTES,
-  formatBytes,
-} from "@/lib/wayback/offlineArea";
+} from "@/lib/offline/tileWeights";
+import { formatBytes } from "@/lib/wayback/offlineArea";
 import type { Coords } from "@/lib/native/geolocation";
 import {
   WbLabel,
