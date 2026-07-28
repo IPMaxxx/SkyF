@@ -21,6 +21,7 @@ import { listRegions } from "@/lib/offline/tileStore";
 import { loadTrackHistory } from "@/lib/trackHistory";
 import { useWaybackAccount } from "@/lib/wayback/useWaybackAccount";
 import type { TrackController } from "@/lib/track/useTrackController";
+import type { Coords } from "@/lib/native/geolocation";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -99,6 +100,11 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   const units = useUnits();
 
   const [view, setView] = useState<View>("home");
+  /** Вид карты, с которым открыть выбор области: приходит с карты главной. */
+  const [areaView, setAreaView] = useState<{
+    center: Coords;
+    zoom: number;
+  } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [regionCount, setRegionCount] = useState(0);
   const [historyCount, setHistoryCount] = useState(0);
@@ -118,7 +124,12 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   useEffect(() => {
     if (view === "home") return;
     window.history.pushState({ wbView: view }, "");
-    const onPop = () => setView("home");
+    // Подэкран мог положить свою запись поверх (выбор области на карте) —
+    // тогда «назад» закрывает её, а этот экран остаётся.
+    const onPop = () => {
+      if (window.history.state?.wbView) return;
+      setView("home");
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [view]);
@@ -126,6 +137,12 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   const goHome = () => {
     if (window.history.state?.wbView) window.history.back();
     else setView("home");
+  };
+
+  /** `area` — открыть офлайн-карту сразу на выборе области с этим видом. */
+  const openOffline = (area?: { center: Coords; zoom: number }) => {
+    setAreaView(area ?? null);
+    setView("offline");
   };
 
   if (!c.mounted) {
@@ -154,6 +171,7 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
     return (
       <WayBackOfflineScreen
         center={c.track?.anchor ?? c.current}
+        areaView={areaView}
         onBack={goHome}
         onRegionsChange={setRegionCount}
       />
@@ -198,7 +216,7 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
           <ActiveHike
             c={c}
             regionCount={regionCount}
-            onOpenOffline={() => setView("offline")}
+            onOpenOffline={() => openOffline()}
           />
         ) : (
           <Home
@@ -207,7 +225,8 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
             accountLoading={accountLoading}
             regionCount={regionCount}
             historyCount={historyCount}
-            onOpenOffline={() => setView("offline")}
+            onOpenOffline={() => openOffline()}
+            onSaveArea={openOffline}
             onOpenHistory={() => setView("history")}
           />
         )}
@@ -217,7 +236,7 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         offlineAreaCount={regionCount}
-        onOpenOfflineMap={() => setView("offline")}
+        onOpenOfflineMap={() => openOffline()}
       />
 
       {/* Подтверждение выхода — необратимо останавливает стрелку. */}
@@ -277,6 +296,7 @@ function Home({
   regionCount,
   historyCount,
   onOpenOffline,
+  onSaveArea,
   onOpenHistory,
 }: {
   c: TrackController;
@@ -285,6 +305,7 @@ function Home({
   regionCount: number;
   historyCount: number;
   onOpenOffline: () => void;
+  onSaveArea: (view: { center: Coords; zoom: number }) => void;
   onOpenHistory: () => void;
 }) {
   const t = useTranslations("wayback.home");
@@ -323,7 +344,7 @@ function Home({
 
       {/* «Где я сейчас» — сразу под главным действием: карту открывают
           глазами, до всякого нажатия. */}
-      <WayBackHomeMap known={c.current} />
+      <WayBackHomeMap known={c.current} onSaveArea={onSaveArea} />
 
       <WbRowTile label={t("pickOnMap")} onClick={() => c.setPicking(true)} />
 

@@ -44,6 +44,7 @@ export default {
     mapDenied: "location is off — allow it in settings",
     mapNoFix: "no position yet — tap the target to retry",
     mapLocate: "Show my location",
+    mapSaveArea: "Save this area for offline use",
     offlineMap: "Offline map",
     offlineMapNone: "no areas yet",
     offlineMapDownload: "Download",
@@ -112,10 +113,53 @@ export default {
     cancel: "Cancel",
   },
 
+  /**
+   * Предсохранение карты по виду на экране: касание задаёт место, зум — охват
+   * и детализацию. Второй вход рядом с «радиус × детализация» ниже.
+   */
+  area: {
+    title: "Pick an area to save",
+    hint: "tap the map to move the frame · zoom to change the area",
+    hintLocked: "area locked while downloading",
+    selection: "selected area",
+    size: "{width} × {height} km · zoom {minZoom}–{maxZoom}",
+    measuring: "measuring the area…",
+    estimate: "≈ {tiles} tiles · {size} to download",
+    layers: "trails + satellite layers",
+    reused:
+      "{count, plural, one {# tile already saved — not downloaded again} other {# tiles already saved — not downloaded again}}",
+    alreadySaved: "This area is already saved. Move the frame or zoom out.",
+    large:
+      "{size} is a lot on mobile data — better on Wi-Fi. One step closer makes the area 4× smaller.",
+    tooLarge:
+      "{size} is too much for one download. Zoom in to shrink the area first.",
+    save: "Save this area",
+    close: "Done",
+    cancel: "Cancel",
+    downloading: "Saving area…",
+    progress: "{done} / {total}",
+    progressSize: "{done} of {size} · keep the app open",
+    progressReused:
+      "{count, plural, one {# tile taken from storage} other {# tiles taken from storage}}",
+    savedToast: "Area saved for offline use",
+    partialToast: "Saved with {failed} tiles skipped (network)",
+    stoppedToast: "Stopped — {size} kept in storage",
+    stoppedEmptyToast: "Download stopped",
+    errorToast: "Could not save the area. Please try again.",
+    locateError: "Could not get your location",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    locate: "Use my location",
+    regionName: "{size} · z{minZoom}–{maxZoom} · {date}",
+    regionPartial: "{size} · z{minZoom}–{maxZoom} · {date} · stopped",
+  },
+
   offline: {
     title: "Offline map",
     intro:
       "Download tiles around your location so the map still draws with no signal.",
+    pickOnMap: "Pick an area on the map",
+    pickOnMapHint: "tap the place, zoom for detail",
     centre: "centre · {coords}",
     noCentre: "centre not set yet",
     useLocation: "Use my location",

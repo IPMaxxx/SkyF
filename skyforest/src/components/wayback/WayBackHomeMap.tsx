@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Loader2, LocateFixed, LocateOff } from "lucide-react";
+import { Loader2, LocateFixed, LocateOff, DownloadCloud } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { OfflineTileLayer } from "@/components/app/OfflineTileLayer";
 import { OUTDOOR_SOURCE } from "@/lib/offline/tileStore";
@@ -51,7 +51,14 @@ function MapRef({ onReady }: { onReady: (map: L.Map) => void }) {
   return null;
 }
 
-export function WayBackHomeMap({ known }: { known?: Coords | null }) {
+export function WayBackHomeMap({
+  known,
+  onSaveArea,
+}: {
+  known?: Coords | null;
+  /** Предсохранить карту: отдаём наружу вид, который человек видит сейчас. */
+  onSaveArea?: (view: { center: Coords; zoom: number }) => void;
+}) {
   const t = useTranslations("wayback.home");
   const { position, lastKnown, status, locate } = useHomePosition(known ?? null);
 
@@ -127,28 +134,60 @@ export function WayBackHomeMap({ known }: { known?: Coords | null }) {
           )}
         </MapContainer>
 
-        {/* Кнопка геолокации — своя, в системе плиток, а не контрол Leaflet.
-            Лежит вне MapContainer, поэтому нажатие не уходит в карту. */}
-        <button
-          type="button"
-          onClick={() => void handleLocate()}
-          disabled={locating}
-          aria-label={t("mapLocate")}
-          title={t("mapLocate")}
-          className="absolute bottom-3 right-3 z-[500] flex h-[46px] w-[46px] items-center justify-center rounded-full bg-wb-surface text-wb-primary shadow-[0_6px_16px_-6px_rgba(20,26,21,0.45)] disabled:opacity-60"
-        >
-          {locating ? (
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-          ) : status === "denied" ? (
-            <LocateOff
-              className="h-5 w-5 text-wb-muted-2"
-              strokeWidth={2.5}
-              aria-hidden="true"
-            />
-          ) : (
-            <LocateFixed className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+        {/* Кнопки карты — свои, в системе плиток, а не контролы Leaflet.
+            Лежат вне MapContainer, поэтому нажатие не уходит в карту. */}
+        <div className="absolute bottom-3 right-3 z-[500] flex items-center gap-2">
+          {onSaveArea && (
+            <button
+              type="button"
+              onClick={() => {
+                const map = mapRef.current;
+                const c = map?.getCenter();
+                onSaveArea(
+                  c
+                    ? { center: { lat: c.lat, lng: c.lng }, zoom: map!.getZoom() }
+                    : {
+                        center: position ?? lastKnown ?? FALLBACK_VIEW.center,
+                        zoom: FIX_ZOOM,
+                      },
+                );
+              }}
+              aria-label={t("mapSaveArea")}
+              title={t("mapSaveArea")}
+              className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-wb-surface text-wb-primary shadow-[0_6px_16px_-6px_rgba(20,26,21,0.45)]"
+            >
+              <DownloadCloud
+                className="h-5 w-5"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </button>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={() => void handleLocate()}
+            disabled={locating}
+            aria-label={t("mapLocate")}
+            title={t("mapLocate")}
+            className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-wb-surface text-wb-primary shadow-[0_6px_16px_-6px_rgba(20,26,21,0.45)] disabled:opacity-60"
+          >
+            {locating ? (
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            ) : status === "denied" ? (
+              <LocateOff
+                className="h-5 w-5 text-wb-muted-2"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            ) : (
+              <LocateFixed
+                className="h-5 w-5"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Подпись фиксированной высоты: смена состояния не двигает плитку. */}
