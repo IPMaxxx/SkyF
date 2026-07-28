@@ -21,8 +21,6 @@ import {
 import { useTokens } from "@/lib/TokenContext";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { TokenConfirmModal } from "@/components/app/TokenConfirmModal";
-import { CheckerIdentify } from "@/components/checker/CheckerIdentify";
-import { useAppFlavor } from "@/lib/useAppFlavor";
 import { capturePhoto, pickPhotoFromGallery } from "@/lib/capturePhoto";
 import { toast } from "sonner";
 import type { IdentifyResponse } from "@/app/api/mushrooms/identify/route";
@@ -33,14 +31,9 @@ function formatPct(prob: number): string {
   return `${Math.round(prob * 100)}%`;
 }
 
+// Mushroom Checker сюда не попадает: middleware переписывает
+// /dashboard/identify хоста checker.* на свой экран в src/app/[locale]/ck.
 export default function IdentifyPage() {
-  // Mushroom Checker — полностью свой экран (светлая схема, подписка вместо
-  // токенов). SkyForest и WayBack продолжают рендерить разметку ниже.
-  if (useAppFlavor() === "checker") return <CheckerIdentify />;
-  return <SkyForestIdentifyPage />;
-}
-
-function SkyForestIdentifyPage() {
   const t = useTranslations("identify");
   const locale = useLocale();
   const { balance, refresh: refreshTokens } = useTokens();

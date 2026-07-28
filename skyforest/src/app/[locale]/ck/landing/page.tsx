@@ -29,7 +29,7 @@ export default async function CheckerLanding({
       };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0c150f] px-6 text-center text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0c150f] px-6 text-center text-white">
       <Image
         src="/icons/checker-192.png"
         alt=""
@@ -70,6 +70,6 @@ export default async function CheckerLanding({
       >
         {t.full}
       </a>
-    </main>
+    </div>
   );
 }

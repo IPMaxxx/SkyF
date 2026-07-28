@@ -5,6 +5,29 @@
  * (`identify.*`, `auth.*`, `account.*`) продолжают обслуживать SkyForest и
  * WayBack без изменений.
  */
+
+/**
+ * Тексты про задачу приложения для общих мест (splash, экран блокировки,
+ * метаданные, документы). Попадают в словарь как `flavor.checker.*` —
+ * см. src/lib/useFlavorBrand.ts и src/i18n/messages/en.ts.
+ */
+export const checkerBrand = {
+  tagline: "Check your find",
+  metaDescription:
+    "Mushroom Checker identifies mushrooms from a photo: the species with a confidence score, dangerous lookalikes and a self-check list.",
+  authSubtitle: "Sign in to identify mushrooms from a photo.",
+  accountSubtitle: "Profile, subscription and account settings.",
+  accountDeleteHint:
+    "Deleting your account is irreversible: your profile and identification history will be removed. A store subscription has to be cancelled separately in App Store or Google Play.",
+  lockBody: "Unlock with Face ID to open Mushroom Checker.",
+  deletedItems: [
+    "Profile (name and email address)",
+    "Photos you sent for identification and their results",
+    "Push notification tokens of your devices",
+    "Subscription records kept on our side",
+  ],
+} as const;
+
 export default {
   menu: {
     brandShort: "Checker",

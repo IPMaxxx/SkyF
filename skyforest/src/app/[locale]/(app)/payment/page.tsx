@@ -46,12 +46,12 @@ import {
 } from "@/lib/native/iapProducts";
 import { useAppFlavor } from "@/lib/useAppFlavor";
 import { FLAVORS } from "@/lib/appFlavor";
-import { CheckerPaywall } from "@/components/checker/CheckerPaywall";
 import { WayBackPaywall } from "@/components/wayback/WayBackPaywall";
 
+// WayBack: токенов нет, страница — пейволл/управление подпиской в своей
+// светлой схеме. Mushroom Checker сюда не попадает: middleware переписывает
+// /payment хоста checker.* на свой экран в src/app/[locale]/ck/payment.
 export default function PaymentPage() {
-  // Mushroom Checker и WayBack: токенов нет, страница — пейволл/управление
-  // подпиской в собственной светлой схеме.
   const flavor = useAppFlavor();
   return (
     <Suspense
@@ -61,13 +61,7 @@ export default function PaymentPage() {
         </div>
       }
     >
-      {flavor === "checker" ? (
-        <CheckerPaywall />
-      ) : flavor === "wayback" ? (
-        <WayBackPaywall />
-      ) : (
-        <PaymentContent />
-      )}
+      {flavor === "wayback" ? <WayBackPaywall /> : <PaymentContent />}
     </Suspense>
   );
 }
@@ -399,9 +393,7 @@ function PaymentContent() {
           {isFlavored ? ts("title") : t("pageTitle")}
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          {isFlavored
-            ? ts(flavor === "checker" ? "checkerSubtitle" : "waybackSubtitle")
-            : t("pageSubtitle")}
+          {isFlavored ? ts("waybackSubtitle") : t("pageSubtitle")}
         </p>
       </div>
 

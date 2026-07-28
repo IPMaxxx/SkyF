@@ -7,7 +7,7 @@ import forestSearch from "./forestSearch.ru";
 import marketplace from "./marketplace.ru";
 import identify from "./identify.ru";
 import track from "./track.ru";
-import checker from "./checker.ru";
+import checker, { checkerBrand } from "./checker.ru";
 import wayback from "./wayback.ru";
 
 export default {
@@ -107,24 +107,10 @@ export default {
       "Ниже — юридический документ оператора для {app}. Реквизиты и юрисдикция общие с другими сервисами оператора.",
   },
   // Тексты про задачу приложения для флейворов на поддоменах (см.
-  // src/lib/useFlavorBrand.ts). В SkyForest не используются.
+  // src/lib/useFlavorBrand.ts). В SkyForest не используются. Копия Checker
+  // живёт в его словаре — checker.ru.ts.
   flavor: {
-    checker: {
-      tagline: "Проверьте находку",
-      metaDescription:
-        "Mushroom Checker определяет гриб по фотографии: вид с процентом уверенности, опасные двойники и чеклист самопроверки.",
-      authSubtitle: "Войдите, чтобы определять грибы по фотографии.",
-      accountSubtitle: "Профиль, подписка и настройки аккаунта.",
-      accountDeleteHint:
-        "Удаление аккаунта необратимо: профиль и история распознаваний будут удалены. Подписку нужно отменить отдельно в App Store или Google Play.",
-      lockBody: "Разблокируйте через Face ID, чтобы открыть Mushroom Checker.",
-      deletedItems: [
-        "Профиль (имя и адрес электронной почты)",
-        "Отправленные на распознавание фотографии и их результаты",
-        "Токены push-уведомлений для ваших устройств",
-        "Записи о подписке на нашей стороне",
-      ],
-    },
+    checker: checkerBrand,
     wayback: {
       tagline: "Всегда найдёте дорогу назад",
       metaDescription:

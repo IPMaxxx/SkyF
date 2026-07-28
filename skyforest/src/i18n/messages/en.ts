@@ -7,7 +7,7 @@ import forestSearch from "./forestSearch.en";
 import marketplace from "./marketplace.en";
 import identify from "./identify.en";
 import track from "./track.en";
-import checker from "./checker.en";
+import checker, { checkerBrand } from "./checker.en";
 import wayback from "./wayback.en";
 
 export default {
@@ -107,24 +107,10 @@ export default {
       "The document below is the operator’s legal document for {app}. Requisites and jurisdiction are shared with the operator’s other services.",
   },
   // Тексты про задачу приложения для флейворов на поддоменах (см.
-  // src/lib/useFlavorBrand.ts). В SkyForest не используются.
+  // src/lib/useFlavorBrand.ts). В SkyForest не используются. Копия Checker
+  // живёт в его словаре — checker.en.ts.
   flavor: {
-    checker: {
-      tagline: "Check your find",
-      metaDescription:
-        "Mushroom Checker identifies mushrooms from a photo: the species with a confidence score, dangerous lookalikes and a self-check list.",
-      authSubtitle: "Sign in to identify mushrooms from a photo.",
-      accountSubtitle: "Profile, subscription and account settings.",
-      accountDeleteHint:
-        "Deleting your account is irreversible: your profile and identification history will be removed. A store subscription has to be cancelled separately in App Store or Google Play.",
-      lockBody: "Unlock with Face ID to open Mushroom Checker.",
-      deletedItems: [
-        "Profile (name and email address)",
-        "Photos you sent for identification and their results",
-        "Push notification tokens of your devices",
-        "Subscription records kept on our side",
-      ],
-    },
+    checker: checkerBrand,
     wayback: {
       tagline: "Always find your way back",
       metaDescription:

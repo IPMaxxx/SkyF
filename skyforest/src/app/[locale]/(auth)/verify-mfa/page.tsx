@@ -6,11 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 import { ShieldCheck, Loader2, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
-import { CheckerVerifyMfa } from "@/components/checker/CheckerAuth";
-import { useAppFlavor } from "@/lib/useAppFlavor";
 
+// Mushroom Checker сюда не попадает: middleware переписывает /verify-mfa хоста
+// checker.* на собственный экран в src/app/[locale]/ck/verify-mfa.
 export default function VerifyMfaPage() {
-  if (useAppFlavor() === "checker") return <CheckerVerifyMfa />;
   return <VerifyMfaForm />;
 }
 

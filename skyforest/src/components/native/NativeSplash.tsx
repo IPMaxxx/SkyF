@@ -1,114 +1,33 @@
 "use client";
 
 /**
- * Единый брендовый splash для нативной оболочки.
+ * Брендовый splash нативной оболочки SkyForest и WayBack.
  *
- * Плавная последовательность запуска без морганий:
- *  1. Нативный splash (Capacitor) — тот же логотип на тёмном фоне — висит с
- *     холодного старта и не прячется автоматически (launchAutoHide: false),
- *     перекрывая загрузку боевого сайта.
- *  2. Когда этот оверлей отрисовал логотип, мы прячем нативный splash с
- *     затуханием — переход бесшовный (одинаковый логотип и фон, без «белой»
- *     вспышки пустого WebView).
- *  3. Оверлей держится ещё немного (пока идёт редирект на /dashboard или
- *     /login) и плавно затухает, открывая готовый экран.
+ * Тайминги и скрытие нативного splash Capacitor — в useSplashSequence.
+ * У Mushroom Checker светлая схема и своя разметка: он монтирует
+ * flavors/checker/CheckerSplash из своего layout (src/app/[locale]/ck).
  */
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsNative } from "@/lib/native/useIsNative";
-import { useAppFlavor } from "@/lib/useAppFlavor";
+import { useSplashSequence } from "@/lib/native/useSplashSequence";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
-
-let shownOnce = false;
-
-const VISIBLE_MS = 1300;
-const FADE_MS = 500;
-/** Подстраховка: продолжаем, даже если логотип не загрузился (нет сети/кеша). */
-const SAFETY_MS = 3000;
 
 export function NativeSplash() {
   const isNative = useIsNative();
   const t = useTranslations("common");
-  // Логотип и тег-лайн своего приложения (Mushroom Checker / WayBack), чтобы
-  // флейвор не открывался «чужим» брендом SkyForest.
+  // Логотип и тег-лайн своего приложения, чтобы флейвор не открывался
+  // «чужим» брендом SkyForest.
   const brand = useFlavorBrand();
-  const isChecker = useAppFlavor() === "checker";
-  const [gone, setGone] = useState(shownOnce);
-  const [ready, setReady] = useState(false);
-  const [fading, setFading] = useState(false);
+  const { visible, fading, fadeMs, markReady } = useSplashSequence(isNative);
 
-  useEffect(() => {
-    if (!isNative || shownOnce) return;
-    shownOnce = true;
-    const safety = setTimeout(() => setReady(true), SAFETY_MS);
-    return () => clearTimeout(safety);
-  }, [isNative]);
-
-  // Как только логотип отрисован — прячем нативный splash и запускаем таймеры
-  // затухания брендового оверлея.
-  useEffect(() => {
-    if (!ready) return;
-    import("@capacitor/splash-screen")
-      .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 250 }))
-      .catch(() => {});
-    const fadeTimer = setTimeout(() => setFading(true), VISIBLE_MS);
-    const goneTimer = setTimeout(() => setGone(true), VISIBLE_MS + FADE_MS);
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(goneTimer);
-    };
-  }, [ready]);
-
-  if (!isNative || gone) return null;
-
-  // Mushroom Checker — светлая схема: зелёный→canvas градиент, 104px плитка
-  // логотипа, три точки и мono-подпись внизу (экран 01 дизайна).
-  if (isChecker) {
-    return (
-      <div
-        aria-hidden="true"
-        className="font-ck fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-5 bg-[linear-gradient(180deg,#E7F4E9_0%,#F3F7F1_100%)] transition-opacity ease-out"
-        style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms` }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={brand.logoPath}
-          alt=""
-          onLoad={() => setReady(true)}
-          onError={() => setReady(true)}
-          className="animate-sf-float rounded-[32px] object-cover shadow-[0_22px_40px_-18px_rgba(63,156,88,0.8)]"
-          style={{ height: 104, width: 104 }}
-        />
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-[21px] font-extrabold tracking-[-0.02em] text-ck-ink">
-            {brand.name}
-          </p>
-          <p className="text-[13.5px] font-medium text-ck-body-soft">
-            {brand.text("tagline")}
-          </p>
-        </div>
-        <div className="flex gap-1.5">
-          {["#3F9C58", "#9ECFA9", "#CFE4D3"].map((color, i) => (
-            <span
-              key={color}
-              className="h-[7px] w-[7px] animate-sf-pulse-dot rounded-full"
-              style={{ background: color, animationDelay: `${i * 0.2}s` }}
-            />
-          ))}
-        </div>
-        <p className="ck-mono absolute bottom-10 text-[10px] tracking-[0.14em] text-ck-muted-2">
-          BY SKYFOREST
-        </p>
-      </div>
-    );
-  }
+  if (!visible) return null;
 
   return (
     <div
       aria-hidden="true"
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-6 bg-[#0e1710] transition-opacity ease-out"
-      style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms` }}
+      style={{ opacity: fading ? 0 : 1, transitionDuration: `${fadeMs}ms` }}
     >
       <div
         className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_12%,#16281c_0%,#0c150f_55%,#070d09_100%)]"
@@ -119,8 +38,8 @@ export function NativeSplash() {
       <img
         src={brand.logoPath}
         alt=""
-        onLoad={() => setReady(true)}
-        onError={() => setReady(true)}
+        onLoad={markReady}
+        onError={markReady}
         className="relative h-40 w-40 animate-sf-float rounded-[28px] object-contain shadow-[0_0_60px_-8px_rgba(95,181,115,0.5)]"
       />
       {brand.isFlavored && (
