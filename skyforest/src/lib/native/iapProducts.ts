@@ -58,8 +58,9 @@ export function tokensForProduct(productId: string): number | null {
 export type SubscriptionTier = "forager" | "pro" | "checker" | "wayback";
 export type SubscriptionPeriod = "monthly" | "yearly";
 
-/** Цены Checker живут в конфиге приложения, а не двумя строками здесь. */
+/** Цены флейворов живут в конфигах приложений, а не строками здесь. */
 const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan;
+const WAYBACK_PLAN = FLAVORS.wayback.subscriptionPlan;
 
 function usd(amount: number | undefined): string {
   return amount == null ? "" : `$${amount.toFixed(2)}`;
@@ -123,20 +124,14 @@ export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
     fallbackPrice: usd(CHECKER_PLAN?.priceYearlyUsd),
     bundleId: CHECKER_BUNDLE_ID,
   },
-  // ---- WayBack: единственная подписка месяц/год, триал 7 дней,
+  // ---- WayBack: ЕДИНСТВЕННЫЙ товар — годовая подписка с триалом 7 дней,
   // без токенов (подписка = полный доступ к приложению, тир "wayback").
-  {
-    productId: "ai.skyforest.wayback.sub.monthly",
-    tier: "wayback",
-    period: "monthly",
-    fallbackPrice: "$2.99",
-    bundleId: WAYBACK_BUNDLE_ID,
-  },
+  // Месячного товара нет намеренно: см. FLAVORS.wayback.subscriptionPlan.
   {
     productId: "ai.skyforest.wayback.sub.yearly",
     tier: "wayback",
     period: "yearly",
-    fallbackPrice: "$19.99",
+    fallbackPrice: usd(WAYBACK_PLAN?.priceYearlyUsd),
     bundleId: WAYBACK_BUNDLE_ID,
   },
 ];

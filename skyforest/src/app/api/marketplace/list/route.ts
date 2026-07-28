@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSeason } from "@/lib/supabase/types";
 import { getActiveSubscription } from "@/lib/subscription";
+import { getServerFlavor } from "@/lib/serverFlavor";
 
 const LISTING_FEE = 10;
 
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Подписка Pro: размещение на маркетплейсе бесплатно.
-  const sub = await getActiveSubscription(user.id);
+  const sub = await getActiveSubscription(user.id, await getServerFlavor());
   const freeListing = sub?.benefits.freeMarketplaceList === true;
 
   // Check balance for listing fee

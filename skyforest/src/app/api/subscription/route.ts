@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getServerFlavor } from "@/lib/serverFlavor";
 import {
   currentMonthlySliceStart,
   getActiveSubscription,
   identifyLimitFor,
 } from "@/lib/subscription";
 
-/** Текущая подписка пользователя для UI (/payment). */
+/**
+ * Текущая подписка пользователя для UI (/payment).
+ *
+ * Отдаётся подписка ТОЛЬКО того приложения, с домена которого пришёл запрос:
+ * учётная запись у всех трёх продуктов общая, и без этого фильтра подписка
+ * Mushroom Checker открывала бы платное в WayBack.
+ */
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -16,7 +23,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sub = await getActiveSubscription(user.id);
+  const sub = await getActiveSubscription(user.id, await getServerFlavor());
   if (!sub) return NextResponse.json({ subscription: null });
 
   // Счётчик распознаваний обнуляется на границе месячного слайса, а не в

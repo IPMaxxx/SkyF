@@ -104,18 +104,35 @@ export interface ActiveSubscription {
   benefits: TierBenefits;
 }
 
-/** Тиры, которые принадлежат отдельным приложениям со своей моделью подписки. */
-const TIER_FLAVOR: Partial<Record<SubscriptionTier, AppFlavor>> = {
+/**
+ * Приложение, которому принадлежит тир, — единственная привязка права
+ * к продукту.
+ *
+ * Отдельной колонки приложения в user_subscriptions нет и не нужно: чек
+ * стора сам привязан к bundle id, verify-subscription сверяет его с
+ * SubscriptionProduct.bundleId, а bundle id однозначно задаёт тир товара.
+ * Значит tier — уже надёжный признак «где куплено», и достаточно не
+ * отдавать приложению права чужих тиров.
+ */
+const TIER_FLAVOR: Record<SubscriptionTier, AppFlavor> = {
+  forager: "skyforest",
+  pro: "skyforest",
   checker: "checker",
   wayback: "wayback",
 };
+
+const ALL_TIERS = Object.keys(TIER_FLAVOR) as SubscriptionTier[];
+
+/** Тиры, дающие права в этом приложении. Чужие права здесь не действуют. */
+function tiersForFlavor(flavor: AppFlavor): SubscriptionTier[] {
+  return ALL_TIERS.filter((tier) => TIER_FLAVOR[tier] === flavor);
+}
 
 /** Модель подписки приложения этого тира (или undefined — тир SkyForest). */
 export function planForTier(
   tier: SubscriptionTier,
 ): FlavorSubscriptionPlan | undefined {
-  const flavor = TIER_FLAVOR[tier];
-  return flavor ? FLAVORS[flavor].subscriptionPlan : undefined;
+  return FLAVORS[TIER_FLAVOR[tier]].subscriptionPlan;
 }
 
 /**
@@ -171,11 +188,16 @@ function toActive(row: SubscriptionRow): ActiveSubscription {
 }
 
 /**
- * Активная подписка пользователя (или null). При нескольких активных
- * (переходный кейс апгрейда) возвращается pro.
+ * Активная подписка пользователя В ДАННОМ ПРИЛОЖЕНИИ (или null). При
+ * нескольких активных (переходный кейс апгрейда) возвращается pro.
+ *
+ * `flavor` обязателен: у пользователя одна учётная запись на все три
+ * продукта, и без фильтра по тиру подписка, купленная в Mushroom Checker,
+ * открывала бы платное в WayBack (и наоборот).
  */
 export async function getActiveSubscription(
   userId: string,
+  flavor: AppFlavor,
 ): Promise<ActiveSubscription | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -184,6 +206,7 @@ export async function getActiveSubscription(
       "id, user_id, platform, product_id, tier, period, status, current_period_start, current_period_end, identify_used, forecast_used, is_trial",
     )
     .eq("user_id", userId)
+    .in("tier", tiersForFlavor(flavor))
     .in("status", ["active", "grace", "canceled"])
     .gt("current_period_end", new Date().toISOString());
 

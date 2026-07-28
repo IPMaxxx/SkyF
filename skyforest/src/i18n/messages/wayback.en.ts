@@ -212,17 +212,14 @@ export default {
 
   paywall: {
     title: "WayBack Premium",
-    monthly: "Monthly",
+    // Тариф один — годовой. Ключей месячного периода здесь нет намеренно.
     yearly: "Yearly",
-    yearlyDiscount: "Yearly · −50%",
     trialBadge: "7-day trial",
-    perMonth: "/ month",
     perYear: "/ year",
     f1: "Unlimited offline map areas",
     f2: "Full walk history, synced across phones",
     f3: "Satellite layer and maximum detail",
     cta: "Start 7 free days",
-    ctaNoTrial: "Subscribe",
     renewNote:
       "Then {price}{period}. Renews automatically, cancel any time in the {store}.",
     freeTitle: "The arrow home stays free, forever",
@@ -236,7 +233,6 @@ export default {
     activeBadge: "Active",
     activeTitle: "Premium until {date}",
     activeMeta: "{plan} · renews automatically · {price}",
-    planMonthly: "Monthly plan",
     planYearly: "Yearly plan",
     manage: "Manage subscription",
     unlockedTitle: "What's unlocked",

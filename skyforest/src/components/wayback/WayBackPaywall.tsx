@@ -11,6 +11,9 @@
  *
  * Покупка возможна только в нативной оболочке; на вебе показываем карточку
  * «оформите в приложении».
+ *
+ * Тариф ровно один — годовой (FLAVORS.wayback.subscriptionPlan). Выбора
+ * периода на экране нет намеренно: месячного товара в сторах не существует.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -29,13 +32,11 @@ import {
 import {
   subscriptionProductsForBundle,
   WAYBACK_BUNDLE_ID,
-  type SubscriptionPeriod,
 } from "@/lib/native/iapProducts";
 import {
   formatWaybackDate,
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
-import { cn } from "@/lib/utils";
 import {
   WbLabel,
   WbPrimaryButton,
@@ -44,7 +45,8 @@ import {
   WbTopBar,
 } from "@/components/wayback/primitives";
 
-const CATALOG = subscriptionProductsForBundle(WAYBACK_BUNDLE_ID);
+/** Единственный товар приложения — годовая подписка. */
+const PRODUCT = subscriptionProductsForBundle(WAYBACK_BUNDLE_ID)[0];
 
 function FeatureRow({ children }: { children: React.ReactNode }) {
   return (
@@ -64,7 +66,6 @@ export function WayBackPaywall() {
   const { subscription, loading, refresh } = useWaybackAccount();
 
   const [native, setNative] = useState(false);
-  const [period, setPeriod] = useState<SubscriptionPeriod>("yearly");
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -94,15 +95,15 @@ export function WayBackPaywall() {
     ? storeName()
     : `${t("storeApple")} / ${t("storeGoogle")}`;
 
-  const product = CATALOG.find((p) => p.period === period)!;
-  const price = prices[product.productId] || product.fallbackPrice;
+  // Реальная цена приезжает из стора; до этого показываем цену из конфига.
+  const price = prices[PRODUCT.productId] || PRODUCT.fallbackPrice;
 
   const subscribe = async () => {
     if (purchasing) return;
     setPurchasing(true);
     setError("");
     try {
-      const r = await purchaseSubscription(product.productId, locale);
+      const r = await purchaseSubscription(PRODUCT.productId, locale);
       if (r.ok) await refresh();
       else setError(r.error || t("cta"));
     } finally {
@@ -140,15 +141,7 @@ export function WayBackPaywall() {
   /* ---------------- Активная подписка ---------------- */
 
   if (subscription) {
-    const planName =
-      subscription.period === "yearly" ? t("planYearly") : t("planMonthly");
     const renews = formatWaybackDate(subscription.current_period_end, locale);
-    const activePrice =
-      prices[
-        CATALOG.find((p) => p.period === subscription.period)?.productId ?? ""
-      ] ||
-      CATALOG.find((p) => p.period === subscription.period)?.fallbackPrice ||
-      "";
 
     return (
       <WbScreen>
@@ -163,7 +156,7 @@ export function WayBackPaywall() {
               {t("activeTitle", { date: renews })}
             </span>
             <span className="wb-mono text-[12.5px] text-wb-muted">
-              {t("activeMeta", { plan: planName, price: activePrice })}
+              {t("activeMeta", { plan: t("planYearly"), price })}
             </span>
             {native && (
               <button
@@ -233,11 +226,7 @@ export function WayBackPaywall() {
               {t("cta")}
             </WbPrimaryButton>
             <p className="text-center text-[12px] font-medium leading-[1.45] text-wb-muted">
-              {t("renewNote", {
-                price,
-                period: period === "yearly" ? t("perYear") : t("perMonth"),
-                store,
-              })}{" "}
+              {t("renewNote", { price, period: t("perYear"), store })}{" "}
               <button
                 type="button"
                 onClick={restore}
@@ -260,46 +249,20 @@ export function WayBackPaywall() {
       <WbTopBar title={t("title")} onBack={() => router.back()} />
 
       <div className="flex flex-col gap-2.5">
-        {/* Период: две плитки вместо пилюли — попасть пальцем в лесу проще. */}
-        <div className="grid grid-cols-2 gap-2">
-          {(["monthly", "yearly"] as const).map((p) => {
-            const active = period === p;
-            const item = CATALOG.find((c) => c.period === p)!;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                aria-pressed={active}
-                className={cn(
-                  "flex flex-col gap-1 rounded-[22px] px-4 py-[14px] text-left transition-colors",
-                  active
-                    ? "bg-wb-primary text-wb-on-primary"
-                    : "bg-wb-surface text-wb-ink",
-                )}
-              >
-                <span
-                  className={cn(
-                    "wb-mono text-[10.5px] tracking-[0.14em] uppercase",
-                    active ? "text-wb-primary-soft" : "text-wb-muted-2",
-                  )}
-                >
-                  {p === "monthly" ? t("monthly") : t("yearlyDiscount")}
-                </span>
-                <span className="text-[22px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-                  {prices[item.productId] || item.fallbackPrice}
-                </span>
-                <span
-                  className={cn(
-                    "text-[12.5px] font-semibold",
-                    active ? "text-wb-primary-soft" : "text-wb-muted",
-                  )}
-                >
-                  {p === "monthly" ? t("perMonth") : t("perYear")}
-                </span>
-              </button>
-            );
-          })}
+        {/* Тариф один, поэтому это не переключатель, а цена: крупная цифра
+            и период, без выбора, который нечего выбирать. */}
+        <div className="flex items-end justify-between gap-3 rounded-[22px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
+          <div className="flex flex-col gap-1">
+            <span className="wb-mono text-[10.5px] tracking-[0.14em] text-wb-primary-soft uppercase">
+              {t("yearly")}
+            </span>
+            <span className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">
+              {price}
+            </span>
+          </div>
+          <span className="pb-1 text-[13px] font-semibold text-wb-primary-soft">
+            {t("perYear")}
+          </span>
         </div>
 
         <WbTile className="flex flex-col gap-3 px-5 py-[18px]">

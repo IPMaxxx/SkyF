@@ -72,7 +72,11 @@ export async function GET(request: NextRequest) {
   const isFreeMonitor = async (userId: string, acId: string): Promise<boolean> => {
     if (!freeMonitorCache.has(userId)) {
       const ids = new Set<string>();
-      const sub = await getActiveSubscription(userId).catch(() => null);
+      // Автомониторы — функция основного SkyForest, и у крона нет хоста
+      // запроса, поэтому приложение указывается явно.
+      const sub = await getActiveSubscription(userId, "skyforest").catch(
+        () => null,
+      );
       if (sub && sub.benefits.freeMonitors > 0) {
         const { data: firstMonitors } = await supabase
           .from("auto_compares")

@@ -22,8 +22,12 @@ export interface FlavorSubscriptionPlan {
   trialIdentifyLimit: number | null;
   /** Распознаваний в месяц в оплаченной подписке; null — без лимита. */
   identifyLimit: number | null;
-  /** Цены подписки в USD — одинаковые в сторах и на сайте. */
-  priceMonthlyUsd: number;
+  /**
+   * Цены подписки в USD — одинаковые в сторах и на сайте. Месячная цена
+   * необязательна: приложение может продавать только годовую подписку
+   * (WayBack), и тогда месячного товара в сторах просто нет.
+   */
+  priceMonthlyUsd?: number;
   priceYearlyUsd: number;
 }
 
