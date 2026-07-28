@@ -12,7 +12,7 @@
  * это сломает главное преимущество продукта.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -124,11 +124,11 @@ export function WayBackLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (searchParams.get("error") === "auth_failed") {
-      setError(tAuth("authFailed"));
-    }
-  }, [searchParams, tAuth]);
+  // Провалившийся OAuth возвращает сюда ?error=auth_failed. Это начальное
+  // состояние экрана, а не событие, поэтому читаем параметр при рендере:
+  // собственная ошибка формы, если она появится, важнее и перекрывает его.
+  const shown =
+    error || (searchParams.get("error") === "auth_failed" ? tAuth("authFailed") : "");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,7 +239,7 @@ export function WayBackLogin() {
           </form>
         </WbTile>
 
-        {error && <ErrorTile title={error} />}
+        {shown && <ErrorTile title={shown} />}
       </div>
     </Screen>
   );
@@ -495,6 +495,157 @@ export function WayBackForgotPassword() {
             </form>
           </WbTile>
         )}
+
+        {error && <ErrorTile title={error} />}
+      </div>
+    </Screen>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Второй фактор при входе                                             */
+/* ------------------------------------------------------------------ */
+
+export function WayBackVerifyMfa() {
+  const router = useRouter();
+  const tAuth = useTranslations("auth");
+
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [factorId, setFactorId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.mfa.listFactors();
+      const totp = data?.totp?.[0];
+      if (!totp) {
+        router.replace(HOME);
+        return;
+      }
+      setFactorId(totp.id);
+      inputsRef.current[0]?.focus();
+    };
+    void init();
+  }, [router]);
+
+  const verify = async (otp: string) => {
+    if (!factorId || loading) return;
+    setLoading(true);
+    setError("");
+
+    const supabase = createClient();
+    const { data: challenge, error: challengeErr } =
+      await supabase.auth.mfa.challenge({ factorId });
+
+    if (challengeErr || !challenge) {
+      setError(tAuth("mfaError"));
+      setLoading(false);
+      return;
+    }
+
+    const { error: verifyErr } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code: otp,
+    });
+
+    if (verifyErr) {
+      setError(tAuth("mfaInvalid"));
+      setCode(["", "", "", "", "", ""]);
+      inputsRef.current[0]?.focus();
+      setLoading(false);
+      return;
+    }
+
+    router.push(HOME);
+    router.refresh();
+  };
+
+  const onChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const next = [...code];
+    next[index] = value.slice(-1);
+    setCode(next);
+    if (value && index < 5) inputsRef.current[index + 1]?.focus();
+    if (next.every((d) => d !== "")) void verify(next.join(""));
+  };
+
+  const onPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (!pasted) return;
+    const next = [...code];
+    for (let i = 0; i < 6; i++) next[i] = pasted[i] || "";
+    setCode(next);
+    if (pasted.length === 6) void verify(pasted);
+    else inputsRef.current[pasted.length]?.focus();
+  };
+
+  const logout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  return (
+    <Screen
+      bottom={
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full text-center text-[13.5px] font-bold text-wb-muted"
+        >
+          {tAuth("mfaLogoutOther")}
+        </button>
+      }
+    >
+      <WbTopBar title={tAuth("mfaCheckTitle")} />
+      <p className="pb-4 text-[14.5px] font-medium leading-[1.5] text-wb-body">
+        {tAuth("mfaCodeSubtitle")}
+      </p>
+
+      <div className="flex flex-col gap-2.5">
+        <WbTile className="flex flex-col gap-3 px-4 py-4">
+          <div className="flex justify-between gap-1.5" onPaste={onPaste}>
+            {code.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputsRef.current[i] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={1}
+                value={digit}
+                disabled={loading}
+                onChange={(e) => onChange(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Backspace" && !code[i] && i > 0) {
+                    inputsRef.current[i - 1]?.focus();
+                  }
+                }}
+                className="wb-mono h-[58px] w-full rounded-[16px] bg-wb-surface-2 text-center text-[22px] font-bold text-wb-ink outline-none disabled:opacity-55"
+              />
+            ))}
+          </div>
+          {loading && (
+            <span className="flex items-center justify-center gap-2 text-[13px] font-semibold text-wb-muted">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              {tAuth("mfaChecking")}
+            </span>
+          )}
+          <p className="text-[12.5px] font-medium leading-[1.45] text-wb-muted">
+            {tAuth("mfaAppHelp")}
+          </p>
+        </WbTile>
 
         {error && <ErrorTile title={error} />}
       </div>

@@ -7,15 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
-import { WayBackForgotPassword } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
-import { useAppFlavor } from "@/lib/useAppFlavor";
 
-// Mushroom Checker сюда не попадает: middleware переписывает /forgot-password
-// хоста checker.* на собственный экран в src/app/[locale]/ck.
+// Mushroom Checker и WayBack сюда не попадают: middleware переписывает
+// /forgot-password их поддоменов на собственные экраны в
+// src/app/[locale]/{ck,wb}.
 export default function ForgotPasswordPage() {
-  const flavor = useAppFlavor();
-  if (flavor === "wayback") return <WayBackForgotPassword />;
   return <ForgotPasswordForm />;
 }
 

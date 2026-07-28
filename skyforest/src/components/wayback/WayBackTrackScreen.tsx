@@ -77,7 +77,6 @@ type View = "home" | "offline" | "history";
 
 export function WayBackTrackScreen({ c }: { c: TrackController }) {
   const t = useTranslations("wayback");
-  const locale = useLocale();
   const units = useUnits();
 
   const [view, setView] = useState<View>("home");
@@ -87,11 +86,13 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
   const { signedIn, loading: accountLoading } = useWaybackAccount();
 
   // Счётчики для плиток на главной. Читаются с устройства, поэтому только
-  // после монтирования.
+  // после монтирования. Пересчитываем при завершении похода — тогда в истории
+  // появляется запись.
+  const hasActiveTrack = c.track !== null;
   useEffect(() => {
     void listRegions().then((list) => setRegionCount(list.length));
     void loadTrackHistory().then((list) => setHistoryCount(list.length));
-  }, [c.track === null]);
+  }, [hasActiveTrack]);
 
   // Системная кнопка «назад» должна закрывать подэкран, а не выкидывать из
   // приложения: подэкраны кладём в history.state.
