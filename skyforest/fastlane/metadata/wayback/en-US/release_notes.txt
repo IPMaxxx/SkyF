@@ -1,0 +1,1 @@
+First release of WayBack. Mark your entry point at the forest edge, follow the arrow and the distance back to it, save map areas for offline use, and keep a history of your walks. Tracking works without an account.
