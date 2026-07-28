@@ -1,0 +1,1 @@
+mushroom,fungi,identify,forage,species,toxic,lookalike,mycology,scanner,wild,cap,gills
