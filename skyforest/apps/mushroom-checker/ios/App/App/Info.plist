@@ -55,5 +55,26 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!--
+	  Google Sign-In возвращается в приложение по обратной схеме iOS-клиента
+	  OAuth. Клиент привязан к bundle id, поэтому у Mushroom Checker он свой,
+	  отдельный от ai.skyforest.app: значение ниже — «iOS URL scheme» клиента
+	  ai.skyforest.mushroomchecker из Google Cloud Console, и оно же (в прямом
+	  порядке) должно лежать в NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_CHECKER.
+
+	  Sign in with Apple схемы не требует (системный лист), но требует
+	  entitlement com.apple.developer.applesignin — см. App/App.entitlements.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.REPLACE_WITH_CHECKER_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

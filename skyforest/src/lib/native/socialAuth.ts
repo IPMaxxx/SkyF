@@ -10,18 +10,33 @@
  * Клиентские ID берём из публичных env-переменных (см. отчёт / .env.local):
  *   - NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID  — Web OAuth client (нужен на всех платформах,
  *     именно его audience проверяет Supabase-провайдер Google);
- *   - NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID  — iOS OAuth client (из GoogleService-Info.plist);
+ *   - NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID  — iOS OAuth client оболочки SkyForest;
  *   - NEXT_PUBLIC_APPLE_SERVICES_ID     — Apple Services ID (нужен только для Apple на Android).
+ *
+ * iOS-клиент Google привязан к bundle id, поэтому у каждой нативной оболочки он
+ * свой: у флейворов — NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_{CHECKER,WAYBACK}.
+ * Обратная схема того же клиента должна лежать в CFBundleURLTypes оболочки.
  *
  * Плагин подгружается динамически, чтобы нативный код не попадал в серверный/веб-бандл.
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { getClientFlavor, type AppFlavor } from "@/lib/appFlavor";
 import { getPlatform } from "./capacitor";
 
 const GOOGLE_WEB_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const GOOGLE_IOS_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 const APPLE_SERVICES_ID = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
+
+/** iOS OAuth client Google — свой на каждый bundle id нативной оболочки. */
+const GOOGLE_IOS_CLIENT_ID_BY_FLAVOR: Record<AppFlavor, string | undefined> = {
+  skyforest: process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  checker: process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_CHECKER,
+  wayback: process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_WAYBACK,
+};
+
+function googleIosClientId(): string | undefined {
+  return GOOGLE_IOS_CLIENT_ID_BY_FLAVOR[getClientFlavor()];
+}
 
 /** Пользователь закрыл системный лист входа — это не ошибка, показывать нечего. */
 export class SocialSignInCancelled extends Error {
@@ -81,17 +96,21 @@ export async function nativeGoogleSignIn(): Promise<void> {
   if (!GOOGLE_WEB_CLIENT_ID) {
     throw new Error("NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID is not configured");
   }
-  const { SocialLogin } = await import("@capgo/capacitor-social-login");
   const platform = getPlatform();
+  const iosClientId = googleIosClientId();
+  if (platform === "ios" && !iosClientId) {
+    // Без iOS-клиента плагин ушёл бы с web-клиентом и Google ответил бы
+    // «Custom scheme URIs are not allowed for Web client type».
+    throw new Error("Google iOS client id is not configured for this app");
+  }
+  const { SocialLogin } = await import("@capgo/capacitor-social-login");
   const { rawNonce, nonceDigest } = await getNoncePair();
 
   try {
     await SocialLogin.initialize({
       google: {
         webClientId: GOOGLE_WEB_CLIENT_ID,
-        ...(platform === "ios" && GOOGLE_IOS_CLIENT_ID
-          ? { iOSClientId: GOOGLE_IOS_CLIENT_ID }
-          : {}),
+        ...(platform === "ios" && iosClientId ? { iOSClientId: iosClientId } : {}),
         mode: "online", // нужен idToken
       },
     });
