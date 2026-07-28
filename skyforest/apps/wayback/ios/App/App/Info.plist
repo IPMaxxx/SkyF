@@ -84,7 +84,7 @@
 			<string>google-signin</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>REPLACE_WITH_WAYBACK_IOS_REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.1052243839791-3hort2d3mgueuc32jkkmdbo000iev3i9</string>
 			</array>
 		</dict>
 	</array>
