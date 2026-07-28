@@ -23,11 +23,18 @@
 // и удаляется вручную.
 //
 // Скрипт идемпотентен. Запуск из каталога skyforest:
-//   node fastlane/wayback-trial-3d.mjs [--apply]
+//   node fastlane/wayback-trial-3d.mjs [--apply] [--play-only]
+//
+// `--play-only` оставляет App Store Connect нетронутым: пока версия на ревью,
+// заметку для ревьюера правят руками под конкретную подачу, и перезаписывать её
+// заготовкой из этого файла нельзя.
 import { readFileSync } from 'node:fs';
 import { createSign } from 'node:crypto';
 
 const APPLY = process.argv.includes('--apply');
+const PLAY_ONLY = process.argv.includes('--play-only');
+/** Почему запись пропущена — чтобы в выводе не было «запустите с --apply», когда --apply уже стоит. */
+const SKIP = PLAY_ONLY ? '--play-only: App Store не трогаю' : 'запуск без --apply';
 
 const KEY_ID = 'TRS8NZAGX5';
 const ISSUER_ID = '31303d35-0acc-4d1a-89d4-872e31f2b28f';
@@ -45,16 +52,30 @@ const PLAY_PRODUCT = 'ai.skyforest.wayback.sub.yearly';
 const PLAY_BASE_PLAN = 'yearly';
 const PLAY_OFFER = 'free-trial-7d';
 const PLAY_TRIAL = 'P3D';
+// `benefits` — до четырёх пунктов по 40 символов, Play показывает их в карточке
+// подписки и при восстановлении покупки.
 const PLAY_LISTINGS = [
   {
     languageCode: 'en-US',
     title: 'Premium Yearly',
     description: 'Offline areas, satellite imagery and sync across devices. 3-day free trial.',
+    benefits: [
+      'Way back to your forest entry point',
+      'Works with no signal, fully offline',
+      'Offline maps: trails and satellite',
+      'History of every walk, synced',
+    ],
   },
   {
     languageCode: 'ru-RU',
     title: 'Премиум (год)',
     description: 'Офлайн-области, спутниковые снимки и синхронизация. 3 дня бесплатно.',
+    benefits: [
+      'Дорога назад к точке входа в лес',
+      'Работает без сети и без сигнала',
+      'Офлайн-карты: тропы и спутник',
+      'История прогулок с синхронизацией',
+    ],
   },
 ];
 
@@ -151,10 +172,10 @@ const missing = territories.filter((t) => !covered.has(t));
 
 if (!stale.length && !missing.length) {
   console.log(`уже FREE_TRIAL ${DURATION} на всех ${territories.length} территориях — менять нечего`);
-} else if (!APPLY) {
+} else if (!APPLY || PLAY_ONLY) {
   console.log(
     `нужно удалить ${stale.length} записей и создать ${missing.length} новых (${DURATION})\n` +
-      '(запуск без --apply: ничего не изменено)',
+      `(${SKIP}: ничего не изменено)`,
   );
 } else {
   if (stale.length) {
@@ -197,8 +218,8 @@ const sub = await asc('GET', `/v1/subscriptions/${ASC_SUB_ID}`);
 const note = sub.json.data?.attributes?.reviewNote;
 if (note === ASC_REVIEW_NOTE) {
   console.log('review note уже актуальна');
-} else if (!APPLY) {
-  console.log(`review note требует правки: "${String(note).slice(0, 90)}"`);
+} else if (!APPLY || PLAY_ONLY) {
+  console.log(`review note требует правки (${SKIP}): "${String(note).slice(0, 90)}"`);
 } else {
   const patched = await asc('PATCH', `/v1/subscriptions/${ASC_SUB_ID}`, {
     data: {
@@ -308,7 +329,8 @@ if (!curSub.ok) {
 } else {
   const staleListings = PLAY_LISTINGS.some((l) => {
     const cur = (curSub.json.listings || []).find((c) => c.languageCode === l.languageCode);
-    return !cur || cur.title !== l.title || cur.description !== l.description;
+    if (!cur || cur.title !== l.title || cur.description !== l.description) return true;
+    return (cur.benefits || []).join('\n') !== l.benefits.join('\n');
   });
   if (!staleListings) {
     console.log('листинги уже актуальны');
@@ -324,6 +346,7 @@ if (!curSub.ok) {
     if (patched.ok) {
       for (const l of patched.json.listings || []) {
         console.log(`  листинг ${l.languageCode}: "${l.description}"`);
+        for (const b of l.benefits || []) console.log(`    · ${b}`);
       }
     } else {
       console.error(

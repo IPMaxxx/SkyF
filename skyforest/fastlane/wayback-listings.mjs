@@ -7,6 +7,11 @@
  * Запуск из каталога skyforest:
  *   node fastlane/wayback-listings.mjs            — показать, что в сторах сейчас
  *   node fastlane/wayback-listings.mjs --apply    — записать и перечитать
+ *   … --apply --play-only                         — только Google Play
+ *
+ * `--play-only` нужен, когда версия в App Store уже ушла на ревью: в состоянии
+ * WAITING_FOR_REVIEW Apple отвечает на PATCH локализации 409 STATE_ERROR, и
+ * из-за этого не должна стоять работа по Play.
  *
  * Аутентификация та же, что в соседних скриптах: для ASC — JWT ES256 с
  * `aud: appstoreconnect-v1` (App Store Server API здесь не при чём, он отвечает
@@ -21,6 +26,7 @@ import { readFileSync } from "node:fs";
 import { createSign } from "node:crypto";
 
 const APPLY = process.argv.includes("--apply");
+const PLAY_ONLY = process.argv.includes("--play-only");
 
 const HERE = new URL("./", import.meta.url);
 const META = new URL("./metadata/wayback/", HERE);
@@ -133,7 +139,10 @@ for (const k of ["description", "keywords", "promotionalText", "whatsNew"]) {
 console.log(`  supportUrl: ${verLoc.attributes.supportUrl ?? "(пусто)"}`);
 console.log(`  marketingUrl: ${verLoc.attributes.marketingUrl ?? "(пусто)"}`);
 
-if (APPLY) {
+if (APPLY && PLAY_ONLY) {
+  console.log("  (--play-only: в App Store ничего не пишу)");
+}
+if (APPLY && !PLAY_ONLY) {
   await asc("PATCH", `/v1/appInfoLocalizations/${infoLoc.id}`, {
     data: {
       type: "appInfoLocalizations",
@@ -303,24 +312,26 @@ const cmp = (label, got, want) => {
   console.log(`${ok ? "OK  " : "РАЗЪЕХАЛОСЬ "} ${label}: ${ok ? `${[...String(got ?? "")].length} симв.` : `в сторе ${JSON.stringify(String(got ?? "").slice(0, 80))}`}`);
 };
 
-const infoLoc2 = await asc("GET", `/v1/appInfoLocalizations/${infoLoc.id}`);
-cmp("ASC subtitle", infoLoc2.data.attributes.subtitle, TEXTS.subtitle.value);
-cmp("ASC privacyPolicyUrl", infoLoc2.data.attributes.privacyPolicyUrl, TEXTS.privacyPolicyUrl.value);
+if (!PLAY_ONLY) {
+  const infoLoc2 = await asc("GET", `/v1/appInfoLocalizations/${infoLoc.id}`);
+  cmp("ASC subtitle", infoLoc2.data.attributes.subtitle, TEXTS.subtitle.value);
+  cmp("ASC privacyPolicyUrl", infoLoc2.data.attributes.privacyPolicyUrl, TEXTS.privacyPolicyUrl.value);
 
-const verLoc2 = await asc("GET", `/v1/appStoreVersionLocalizations/${verLoc.id}`);
-const a = verLoc2.data.attributes;
-cmp("ASC description", a.description, TEXTS.description.value);
-cmp("ASC keywords", a.keywords, TEXTS.keywords.value);
-cmp("ASC promotionalText", a.promotionalText, TEXTS.promotionalText.value);
-if (a.whatsNew) {
-  cmp("ASC whatsNew", a.whatsNew, TEXTS.whatsNew.value);
-} else {
-  // У первой версии в App Store раздела «What's New» нет: API отвечает 409
-  // STATE_ERROR «Attribute 'whatsNew' cannot be edited at this time».
-  console.log("     ASC whatsNew: недоступно у первой версии — так и должно быть");
+  const verLoc2 = await asc("GET", `/v1/appStoreVersionLocalizations/${verLoc.id}`);
+  const a = verLoc2.data.attributes;
+  cmp("ASC description", a.description, TEXTS.description.value);
+  cmp("ASC keywords", a.keywords, TEXTS.keywords.value);
+  cmp("ASC promotionalText", a.promotionalText, TEXTS.promotionalText.value);
+  if (a.whatsNew) {
+    cmp("ASC whatsNew", a.whatsNew, TEXTS.whatsNew.value);
+  } else {
+    // У первой версии в App Store раздела «What's New» нет: API отвечает 409
+    // STATE_ERROR «Attribute 'whatsNew' cannot be edited at this time».
+    console.log("     ASC whatsNew: недоступно у первой версии — так и должно быть");
+  }
+  cmp("ASC supportUrl", a.supportUrl, TEXTS.supportUrl.value);
+  cmp("ASC marketingUrl", a.marketingUrl, TEXTS.marketingUrl.value);
 }
-cmp("ASC supportUrl", a.supportUrl, TEXTS.supportUrl.value);
-cmp("ASC marketingUrl", a.marketingUrl, TEXTS.marketingUrl.value);
 
 const check = await play("POST", "/edits", {});
 try {
