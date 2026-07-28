@@ -118,13 +118,8 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=3600" },
         ],
       },
-      {
-        source: "/.well-known/apple-app-site-association",
-        headers: [
-          { key: "Content-Type", value: "application/json" },
-          { key: "Cache-Control", value: "public, max-age=3600" },
-        ],
-      },
+      // Заголовки /.well-known/* задают сами роуты (src/app/.well-known/*):
+      // содержимое зависит от хоста, статикой такой файл не отдать.
     ];
   },
 };

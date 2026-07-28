@@ -1,5 +1,6 @@
 import { Toaster } from "sonner";
 import { TrackRecorder } from "@/components/app/TrackRecorder";
+import { DeepLinkListener } from "@/lib/native/DeepLinkListener";
 import { WayBackSplash } from "@/flavors/wayback/WayBackSplash";
 
 /**
@@ -16,7 +17,9 @@ import { WayBackSplash } from "@/flavors/wayback/WayBackSplash";
  * Провайдеры токенов и данных кабинета SkyForest не подключены: в WayBack нет
  * ни токенов, ни маркетплейса. А вот TrackRecorder обязателен — он пишет точки
  * пути, пока приложение в фоне, и без него стрелка домой перестанет обновляться
- * (раньше он приходил из layout группы `(app)`).
+ * (раньше он приходил из layout группы `(app)`). По той же причине здесь стоит
+ * DeepLinkListener: ссылку из письма (universal link на /auth/confirm) в
+ * SkyForest ловит NativeAppProvider, которого в этом дереве нет.
  */
 export default function WayBackLayout({
   children,
@@ -27,6 +30,7 @@ export default function WayBackLayout({
     <div className="flex min-h-screen flex-col bg-wb-canvas">
       {/* Прячет нативный splash Capacitor — обязателен на всех экранах. */}
       <WayBackSplash />
+      <DeepLinkListener />
       <main id="main-content" className="flex-1" tabIndex={-1}>
         {children}
       </main>
