@@ -3,7 +3,7 @@
  * Feature graphic для листинга WayBack в Google Play — 1024×500.
  *
  * Собирается из того же исходника, что и вся графика приложения
- * (assets/icon.png), в схеме «Widget Board»: светлый холст, зелёный акцент,
+ * (assets/icon.png), в схеме приложения: тёмный холст, зелёный акцент,
  * моноширинные заголовки капсом. Рядом лежит make-assets.mjs — он делает
  * иконки и сплэши, здесь ровно тот же подход и та же зависимость (sharp).
  *
@@ -37,11 +37,14 @@ const OUT = join(
 const W = 1024;
 const H = 500;
 
-// Токены из src/styles/flavors/wayback.css.
-const CANVAS = "#eef0ec"; // --color-wb-canvas
-const INK = "#141a15"; // --color-wb-ink
-const PRIMARY = "#2f6b3f"; // --color-wb-primary
-const PRIMARY_LIFT = "#3f7d51"; // круг внутри зелёной плитки, как в приложении
+// Токены из src/styles/flavors/wayback.css. Схема тёмная: картинка в листинге
+// должна показывать то же приложение, которое человек увидит после установки.
+const CANVAS = "#0b120d"; // --color-wb-canvas
+const INK = "#eaf2ea"; // --color-wb-ink
+const PRIMARY = "#5fb573"; // --color-wb-primary
+const ON_PRIMARY = "#06120a"; // --color-wb-on-primary: стрелка на зелёном
+const PRIMARY_SOFT = "#0e3a1d"; // --color-wb-primary-soft: подпись на зелёном
+const PRIMARY_LIFT = "#6fce7f"; // круг внутри зелёной плитки, как в приложении
 
 /** Моноширинный — как --font-wb-mono в приложении, с системными фолбэками. */
 const MONO = "IBM Plex Mono, Menlo, DejaVu Sans Mono, monospace";
@@ -82,10 +85,10 @@ const layout = `
            L ${DISC.cx + 50} ${DISC.cy + 52}
            L ${DISC.cx} ${DISC.cy + 26}
            L ${DISC.cx - 50} ${DISC.cy + 52} Z"
-        fill="${CANVAS}"/>
+        fill="${ON_PRIMARY}"/>
   <text x="${DISC.cx}" y="392" text-anchor="middle"
         font-family="${MONO}" font-weight="500" font-size="18"
-        letter-spacing="2.4" fill="#cfdcd2">TO THE ENTRY POINT</text>
+        letter-spacing="2.4" fill="${PRIMARY_SOFT}">TO THE ENTRY POINT</text>
 
   <text x="${TILE_X + TILE + 28}" y="138"
         font-family="${MONO}" font-weight="700" font-size="34"
