@@ -26,7 +26,7 @@ Recording runs while the app is open. When the app goes to the background or the
 WAYBACK PREMIUM
 The arrow home is free, with no account and no time limit. Premium adds unlimited offline map areas, satellite imagery at maximum detail, and history synced across phones.
 
-- WayBack Premium (Yearly): one year, USD 3.99, with a 7-day free trial.
+- WayBack Premium (Yearly): one year, USD 3.99, with a 3-day free trial.
 - The trial is free. After it ends the subscription renews automatically at USD 3.99 per year unless you cancel at least 24 hours before the current period ends.
 - Payment is charged to your Apple Account. You can manage or cancel the subscription in your device's subscription settings at any time.
 

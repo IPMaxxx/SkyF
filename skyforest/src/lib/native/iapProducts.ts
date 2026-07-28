@@ -124,7 +124,7 @@ export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
     fallbackPrice: usd(CHECKER_PLAN?.priceYearlyUsd),
     bundleId: CHECKER_BUNDLE_ID,
   },
-  // ---- WayBack: ЕДИНСТВЕННЫЙ товар — годовая подписка с триалом 7 дней,
+  // ---- WayBack: ЕДИНСТВЕННЫЙ товар — годовая подписка с триалом 3 дня,
   // без токенов (подписка = полный доступ к приложению, тир "wayback").
   // Месячного товара нет намеренно: см. FLAVORS.wayback.subscriptionPlan.
   {

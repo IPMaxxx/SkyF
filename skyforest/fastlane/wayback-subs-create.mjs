@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 // Годовая подписка WayBack в App Store Connect: группа → продукт →
 // локализации → цена 3.99 USD (USA, остальные территории Apple считает сама)
-// → бесплатный триал 7 дней.
+// → бесплатный триал 3 дня.
 //
 // Скрипт идемпотентен: существующие сущности не пересоздаются, цена и оффер
 // ставятся только если фактическое значение отличается от целевого.
+//
+// Длительность триала правит fastlane/wayback-trial-3d.mjs: `duration` у
+// готового оффера иммутабельна, и сменить её можно только удалив записи.
 //
 // Запуск из каталога skyforest: node fastlane/wayback-subs-create.mjs
 import { readFileSync } from 'node:fs';
@@ -41,7 +44,7 @@ const SUB_LOCALIZATIONS = [
 ];
 
 const REVIEW_NOTE =
-  'Unlocks offline area downloads, satellite imagery and cross-device sync. 7-day free trial, then yearly billing.';
+  'Unlocks offline area downloads, satellite imagery and cross-device sync. 3-day free trial, then yearly billing.';
 
 function b64url(input) {
   return Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -304,26 +307,44 @@ if (!basePoint) {
   for (const f of failures) console.error(`  ОШИБКА цены ${f.territory}: HTTP ${f.status} ${f.body}`);
 }
 
-// 6. Бесплатный триал 7 дней. Оффер создаётся глобально (без territory);
-// в ответе Apple разворачивает его в запись на каждую территорию.
+// 6. Бесплатный триал 3 дня — здесь только отчёт о состоянии.
+//
+// Заводит и меняет оффер отдельный скрипт wayback-trial-3d.mjs, и вот почему
+// не тут: Apple требует relationships.territory при создании (то есть запись на
+// каждую из 175 территорий) и запрещает менять `duration` у готовой записи —
+// её приходится удалять. Держать этот обход в двух скриптах — верный способ им
+// разойтись. Перечисляем постранично и БЕЗ filter[territory]: с фильтром в
+// ответе одна запись, и легко решить, что триал заведён только для США.
 console.log('\n=== introductory offer ===');
-const offers = await api('GET', `/v1/subscriptions/${sub.id}/introductoryOffers?filter[territory]=${PRICE_TERRITORY}&limit=10`);
-const trial = (offers.json.data || []).find(
-  (o) => o.attributes.offerMode === 'FREE_TRIAL' && o.attributes.duration === 'ONE_WEEK',
-);
-if (trial) {
-  const a = trial.attributes;
-  console.log(`  триал уже есть: ${a.offerMode} ${a.duration} x${a.numberOfPeriods}, старт ${a.startDate}`);
+const introOffers = [];
+let offerCursor = null;
+for (let page = 0; page < 10; page += 1) {
+  const res = await api(
+    'GET',
+    `/v1/subscriptions/${sub.id}/introductoryOffers?limit=200` +
+      (offerCursor ? `&cursor=${offerCursor}` : ''),
+  );
+  if (!res.ok) {
+    fail('получение вводных офферов', res);
+    break;
+  }
+  introOffers.push(...(res.json.data || []));
+  offerCursor = res.json.meta?.paging?.nextCursor;
+  if (!offerCursor) break;
+}
+if (!introOffers.length) {
+  console.log('  триала нет — запустите node fastlane/wayback-trial-3d.mjs --apply');
 } else {
-  const res = await api('POST', '/v1/subscriptionIntroductoryOffers', {
-    data: {
-      type: 'subscriptionIntroductoryOffers',
-      attributes: { offerMode: 'FREE_TRIAL', duration: 'ONE_WEEK', numberOfPeriods: 1 },
-      relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
-    },
-  });
-  if (res.ok) console.log('  создан бесплатный триал 7 дней');
-  else fail('создание триала', res);
+  const kinds = new Map();
+  for (const o of introOffers) {
+    const a = o.attributes;
+    const key = `${a.offerMode} ${a.duration} x${a.numberOfPeriods}`;
+    kinds.set(key, (kinds.get(key) || 0) + 1);
+  }
+  for (const [kind, n] of kinds) console.log(`  триал: ${kind} на ${n} территориях`);
+  if (kinds.size !== 1 || !kinds.has('FREE_TRIAL THREE_DAYS x1')) {
+    console.log('  ВНИМАНИЕ: ожидался FREE_TRIAL THREE_DAYS x1 — запустите wayback-trial-3d.mjs --apply');
+  }
 }
 
 console.log('\nГотово.');

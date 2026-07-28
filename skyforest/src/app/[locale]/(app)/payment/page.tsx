@@ -94,8 +94,8 @@ function PaymentContent() {
   const isFlavored = flavor !== "skyforest";
   // Каталог подписок текущего приложения (skyforest → Forager/Pro).
   const subCatalog = subscriptionProductsForBundle(FLAVORS[flavor].nativeAppId);
-  // Длительность триала берём из конфига приложения: у Mushroom Checker она
-  // своя (3 дня), у остальных — стандартные 7 дней продуктов в сторах.
+  // Длительность триала берём из конфига приложения: у Mushroom Checker и
+  // WayBack она своя (3 дня), у подписок SkyForest — стандартные 7 дней.
   const trialDays = FLAVORS[flavor].subscriptionPlan?.trialDays ?? 7;
   // Название стора по платформе (на iOS нельзя упоминать Google Play).
   // До гидрации native=false → нейтральное «App Store / Google Play».

@@ -5,7 +5,7 @@
 // Google Play: продукты, базовые планы, цена в US, офферы, листинги.
 //
 // У приложения должен быть ровно один активный товар —
-// ai.skyforest.wayback.sub.yearly за 3.99 USD с триалом 7 дней.
+// ai.skyforest.wayback.sub.yearly за 3.99 USD с триалом 3 дня.
 //
 // Запуск из каталога skyforest: node fastlane/wayback-subs-status.mjs
 import { readFileSync } from 'node:fs';

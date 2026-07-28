@@ -6,10 +6,12 @@
  * Серверная логика (Supabase, 2FA, подтверждение почты) повторяет общие
  * страницы — меняется только разметка на светлую схему «Widget Board».
  *
- * Ключевое отличие флейвора: вход **не обязателен**. Трек работает анонимно,
- * поэтому экран озаглавлен «Sign in to sync», помечен как optional и
- * позволяет уйти назад к треку в один тап. Давить на регистрацию нельзя —
- * это сломает главное преимущество продукта.
+ * Обязательность входа зависит от оболочки, и подписи это учитывают. На сайте
+ * трек работает анонимно — там вход помечен как optional и уйти назад можно в
+ * один тап. В нативном приложении подписка обязательна с первого запуска
+ * (WayBackStartGate), а она привязана к учётной записи, поэтому там тот же
+ * экран честно помечен как required: обещать «не обязательно» и не пускать
+ * дальше — худший из вариантов.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +21,7 @@ import { useTranslations } from "next-intl";
 import { Check, Loader2 } from "lucide-react";
 import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
+import { useIsNative } from "@/lib/native/useIsNative";
 import { waybackSignOut } from "@/lib/wayback/signOut";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -118,6 +121,8 @@ export function WayBackLogin() {
   const redirect = searchParams.get("redirect") || HOME;
   const t = useTranslations("wayback.auth");
   const tAuth = useTranslations("auth");
+  // В приложении вход обязателен (см. заголовок файла), на сайте — нет.
+  const native = useIsNative();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -174,12 +179,12 @@ export function WayBackLogin() {
     >
       <WbTopBar
         title={t("signInTitle")}
-        eyebrow={t("optional")}
+        eyebrow={native ? t("required") : t("optional")}
         onBack={() => router.push(HOME)}
-        backLabel={t("optional")}
+        backLabel={native ? t("required") : t("optional")}
       />
       <p className="pb-4 text-[14.5px] font-medium leading-[1.5] text-wb-body">
-        {t("signInBody")}
+        {native ? t("signInBodyRequired") : t("signInBody")}
       </p>
 
       <div className="flex flex-col gap-2.5">

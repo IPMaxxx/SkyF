@@ -228,9 +228,14 @@ export default {
 
   auth: {
     optional: "optional",
+    /* В приложении вход обязателен (подписка привязана к учётной записи),
+       на сайте трек по-прежнему открыт — отсюда две пары подписей. */
+    required: "required",
     signInTitle: "Sign in to sync",
     signInBody:
       "Tracking works without an account. Sign in for the subscription and to keep history across phones.",
+    signInBodyRequired:
+      "Your subscription is tied to this account — that is how it follows you to a new phone.",
     google: "Continue with Google",
     apple: "Continue with Apple",
     orWithEmail: "or with email",
@@ -265,21 +270,33 @@ export default {
     haveAccount: "Already have an account?",
   },
 
+  /**
+   * Длительность пробного периода нигде не записана числом: `{days}` приходит
+   * из FLAVORS.wayback.subscriptionPlan.trialDays, который обязан совпадать со
+   * сторами. Так «3 дня» не могут разойтись с App Store Connect и Google Play.
+   */
   paywall: {
     title: "WayBack Premium",
     // Тариф один — годовой. Ключей месячного периода здесь нет намеренно.
     yearly: "Yearly",
-    trialBadge: "7-day trial",
+    trialBadge: "{days, plural, one {# day free} other {# days free}}",
     perYear: "/ year",
     f1: "Unlimited offline map areas",
     f2: "Full walk history, synced across phones",
     f3: "Satellite layer and maximum detail",
-    cta: "Start 7 free days",
+    cta: "{days, plural, one {Start # free day} other {Start # free days}}",
     renewNote:
       "Then {price}{period}. Renews automatically, cancel any time in the {store}.",
-    freeTitle: "The arrow home stays free, forever",
-    freeBody:
-      "Premium adds offline areas, sync and satellite. Basic tracking never asks for money or an account.",
+    /* Полное раскрытие условий — требование обоих сторов на экране покупки. */
+    termsTitle: "Before you subscribe",
+    termsTrial:
+      "{days, plural, one {# day free} other {# days free}}, then {price} per year.",
+    termsRenew:
+      "The subscription renews automatically every year until you cancel it.",
+    termsCancel:
+      "Cancel any time in the {store}, at least 24 hours before the period ends.",
+    termsAccount:
+      "Payment is charged to your {store} account. The subscription is tied to it.",
     terms: "Terms of Use (EULA)",
     privacy: "Privacy Policy",
     restore: "Restore",
@@ -300,6 +317,32 @@ export default {
       "Billing runs through the {store}. Cancelling keeps Premium until the end of the paid period.",
     storeApple: "App Store",
     storeGoogle: "Google Play",
+  },
+
+  /**
+   * Стартовый гейт нативной оболочки: вход → пробный период → приложение.
+   * Экран объясняет, почему шаг обязателен, и всегда оставляет выход — иначе
+   * человек застревает в тупике, а ревьюер стора отклоняет приложение.
+   */
+  gate: {
+    eyebrow: "getting started",
+    authTitle: "Sign in to start",
+    authBody:
+      "WayBack Premium is tied to your account: that is how the trial survives a new phone and how “Restore purchases” finds it again.",
+    authEmail: "Continue with email",
+    subTitle: "Start your free trial",
+    subBody:
+      "{days, plural, one {# day free, then the yearly plan} other {# days free, then the yearly plan}}. You can cancel before it ends and pay nothing.",
+    signedInAs: "signed in as {email}",
+    switchAccount: "Use another account",
+    offlineTitle: "No connection",
+    offlineBody:
+      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works in the forest with no signal.",
+    offlineRestore: "Already subscribed? Restore purchases",
+    retry: "Try again",
+    checking: "Checking your subscription…",
+    nothingRestored:
+      "No subscription found in this {store} account. Check that you are signed in with the account that paid for it.",
   },
 
   account: {

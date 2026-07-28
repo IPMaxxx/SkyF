@@ -11,12 +11,21 @@
  * поэтому поведение продуктов не расходится. Стрелка возврата работает по
  * курсу GPS, затем по компасу, а без них — текстом со стороной света и
  * пунктиром на карте.
+ *
+ * Единственный экран приложения, поэтому обязательный гейт подписки стоит
+ * именно здесь: история и офлайн-карта — это виды внутри WayBackTrackScreen, и
+ * одна обёртка закрывает их все. В браузере гейт пропускает без изменений.
  */
 
 import { useTrackController } from "@/lib/track/useTrackController";
+import { WayBackStartGate } from "@/components/wayback/WayBackStartGate";
 import { WayBackTrackScreen } from "@/components/wayback/WayBackTrackScreen";
 
 export default function WayBackTrackPage() {
   const controller = useTrackController();
-  return <WayBackTrackScreen c={controller} />;
+  return (
+    <WayBackStartGate>
+      <WayBackTrackScreen c={controller} />
+    </WayBackStartGate>
+  );
 }

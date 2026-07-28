@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Создание подписок Mushroom Checker / WayBack в Google Play с базовым
-// планом (месяц/год) и бесплатным триалом (Checker — 3 дня, WayBack — 7).
+// планом (месяц/год) и бесплатным триалом 3 дня.
 //
 // Для каждого продукта: pricing:convertRegionPrices (региональные цены из
 // USD) → subscriptions.create → basePlans:activate → offers.create
@@ -111,24 +111,29 @@ const PRODUCTS = [
     basePlanId: 'yearly',
     billingPeriod: 'P1Y',
     usd: 3.99,
+    // Идентификатор оффера остался с «7d» в имени: Play не умеет
+    // переименовывать офферы, а второй оффер рядом с активным — это два
+    // предложения на базовом плане и лотерея, какое достанется покупателю.
+    // Пользователю идентификатор нигде не видно, длительность фазы — P3D.
+    offerId: 'free-trial-7d',
+    trialDuration: 'P3D',
     listings: [
       {
         languageCode: 'en-US',
         title: 'Premium Yearly',
-        description: 'Offline areas, satellite imagery and sync across devices. 7-day free trial.',
+        description: 'Offline areas, satellite imagery and sync across devices. 3-day free trial.',
       },
       {
         languageCode: 'ru-RU',
         title: 'Премиум (год)',
-        description: 'Офлайн-области, спутниковые снимки и синхронизация. 7 дней бесплатно.',
+        description: 'Офлайн-области, спутниковые снимки и синхронизация. 3 дня бесплатно.',
       },
     ],
   },
 ];
 
-// Триал по умолчанию — 7 дней; у продуктов Checker он свой (3 дня).
-const DEFAULT_OFFER_ID = 'free-trial-7d';
-const DEFAULT_TRIAL_DURATION = 'P7D';
+const DEFAULT_OFFER_ID = 'free-trial-3d';
+const DEFAULT_TRIAL_DURATION = 'P3D';
 
 for (const p of PRODUCTS) {
   console.log(`\n=== ${p.productId} ===`);
