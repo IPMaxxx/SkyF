@@ -12,12 +12,13 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Check, Loader2, ShieldCheck } from "lucide-react";
+import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { authRedirectUrl } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/client";
 import { BRAND } from "@/lib/brand";
 import { FLAVORS } from "@/lib/appFlavor";
 import { cn } from "@/lib/utils";
+import { CheckerBackButton } from "@/components/checker/CheckerTopBar";
 import {
   CheckerAuthDivider,
   CheckerSocialButtons,
@@ -46,14 +47,17 @@ function BrandMark() {
   );
 }
 
-function BackBar({ href, label }: { href: string; label: string }) {
+/**
+ * Возврат на предыдущий экран входа. Если истории нет (нативная оболочка
+ * открыла этот экран первым), уводим на `fallback` — иначе кнопка молча
+ * ничего не делает.
+ */
+function BackBar({ fallback, label }: { fallback: string; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-3 pt-1.5">
-      <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-ck-border-4 bg-ck-surface text-[#41594a]">
-        <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
-      </span>
+    <div className="flex items-center gap-3 pt-1.5">
+      <CheckerBackButton fallback={fallback} label={label} />
       <span className="text-sm font-bold text-ck-ink-3">{label}</span>
-    </Link>
+    </div>
   );
 }
 
@@ -266,7 +270,7 @@ export function CheckerRegister() {
   if (sent) {
     return (
       <CkScreen padding="px-6">
-        <BackBar href="/login" label={t("signIn")} />
+        <BackBar fallback="/login" label={t("signIn")} />
         <div className="flex flex-col gap-5 pt-6">
           <CkStatusCard
             variant="success"
@@ -300,7 +304,7 @@ export function CheckerRegister() {
         </div>
       }
     >
-      <BackBar href="/login" label={t("backToSignIn")} />
+      <BackBar fallback="/login" label={t("backToSignIn")} />
 
       <div className="flex flex-col gap-4 pt-5">
         <h1 className="text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-ck-ink">
@@ -431,7 +435,7 @@ export function CheckerForgotPassword() {
 
   return (
     <CkScreen padding="px-6">
-      <BackBar href="/login" label={t("signIn")} />
+      <BackBar fallback="/login" label={t("signIn")} />
 
       <div className="flex flex-col gap-5 pt-6">
         <div className="flex flex-col gap-2.5">
@@ -547,6 +551,7 @@ export function CheckerResetPassword() {
   if (sessionReady === false) {
     return (
       <CkScreen padding="px-6">
+        <BackBar fallback="/login" label={t("signIn")} />
         <div className="flex flex-col gap-3 pt-6">
           <span className="ck-mono text-[10px] tracking-[0.14em] text-ck-muted-2">
             {t("invalidLinkState")}
@@ -575,6 +580,7 @@ export function CheckerResetPassword() {
 
   return (
     <CkScreen padding="px-6">
+      <BackBar fallback="/login" label={t("signIn")} />
       <div className="flex flex-col gap-5 pt-6">
         <h1 className="text-[28px] font-extrabold leading-[1.08] tracking-[-0.03em] text-ck-ink">
           {t("resetTitle")}

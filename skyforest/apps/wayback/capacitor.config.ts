@@ -5,8 +5,11 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *
  * WebView загружает wayback.skyforest.ai (тот же Next-инстанс; middleware по
  * хосту оставляет track + auth, трек работает и анонимно). Без сети —
- * автономный офлайн-экран mobile/shell/offline-track.html (webDir www —
- * копия общего ядра, см. sync-shell.mjs), как в основном приложении.
+ * автономный офлайн-экран из своей оболочки shell/ (webDir www собирается
+ * скриптом sync-shell.mjs).
+ *
+ * Цвета — светлый холст схемы «Widget Board» (#eef0ec): и фон вебвью, и сплэш,
+ * иначе на запуске мелькает тёмный экран прежнего оформления.
  */
 const serverUrl = process.env.CAP_SERVER_URL || "https://wayback.skyforest.ai";
 
@@ -14,7 +17,7 @@ const config: CapacitorConfig = {
   appId: "ai.skyforest.wayback",
   appName: "WayBack",
   webDir: "www",
-  backgroundColor: "#0e1710",
+  backgroundColor: "#eef0ec",
   server: {
     url: serverUrl,
     cleartext: false,
@@ -35,7 +38,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#0e1710",
+      backgroundColor: "#eef0ec",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashImmersive: true,

@@ -9,12 +9,12 @@
  * работает без входа, и меню не должно намекать на обратное.
  */
 
-import { useEffect } from "react";
-import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { createClient } from "@/lib/supabase/client";
+import { waybackSignOut } from "@/lib/wayback/signOut";
 import { setUnitSystem, useUnitSystem } from "@/lib/units";
 import {
   initialsFrom,
@@ -40,6 +40,7 @@ export function WayBackMenu({
   const pathname = usePathname();
   const unitSystem = useUnitSystem();
   const { email, signedIn, subscription, trialDaysLeft } = useWaybackAccount();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -52,12 +53,20 @@ export function WayBackMenu({
 
   if (!open) return null;
 
+  // Меню открыто поверх экрана трека, то есть уже на /dashboard/track: переход
+  // туда же ничего не перерисовал бы. Состояние аккаунта на всех экранах меняет
+  // подписка в useWaybackAccount, здесь остаётся закрыть меню и обновить то,
+  // что посчитал сервер.
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    onClose();
-    router.push("/dashboard/track");
-    router.refresh();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await waybackSignOut();
+      onClose();
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const switchLocale = (next: string) => {
@@ -214,8 +223,12 @@ export function WayBackMenu({
             <button
               type="button"
               onClick={handleLogout}
-              className="wb-tile-danger py-[18px] text-[16px] font-extrabold text-wb-danger"
+              disabled={loggingOut}
+              className="wb-tile-danger flex items-center justify-center gap-2 py-[18px] text-[16px] font-extrabold text-wb-danger disabled:opacity-55"
             >
+              {loggingOut && (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              )}
               {t("logout")}
             </button>
           )}

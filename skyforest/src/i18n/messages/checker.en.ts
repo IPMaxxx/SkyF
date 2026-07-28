@@ -29,15 +29,30 @@ export const checkerBrand = {
 } as const;
 
 export default {
+  /** Нижнее меню: две вкладки и кнопка панели «Ещё». */
+  nav: {
+    tabBar: "Main navigation",
+    identify: "Identify",
+    account: "Account",
+    more: "More",
+    openMore: "Open more",
+    back: "Back",
+  },
+
+  /** Панель «Ещё» — то, что не поместилось во вкладки. */
   menu: {
     brandShort: "Mushroom Checker",
-    open: "Open menu",
-    close: "Close menu",
-    identify: "Identify mushroom",
+    close: "Close",
+    moreTitle: "More",
     subscription: "Subscription",
-    account: "My account",
     premiumPill: "PREMIUM",
     language: "Language",
+    support: "Support",
+    otherApps: "OTHER SKYFOREST APPS",
+    waybackName: "WayBack",
+    waybackHint: "Find your way back to where you started",
+    skyforestName: "SkyForest",
+    skyforestHint: "Forest map, mushroom forecast and more",
     logout: "Log out",
   },
 

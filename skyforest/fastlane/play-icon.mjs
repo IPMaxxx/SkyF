@@ -2,10 +2,12 @@
 // Обновить иконку store listing в Google Play (512x512 PNG).
 // Использование: node play-icon.mjs <путь-к-png>          — показать текущие иконки
 //                node play-icon.mjs <путь-к-png> --apply  — загрузить и закоммитить
+// Пакет по умолчанию — основное приложение; для флейворов задаётся через
+// PLAY_PKG, например PLAY_PKG=ai.skyforest.wayback node play-icon.mjs ...
 import { readFileSync } from 'node:fs';
 import { createSign } from 'node:crypto';
 
-const PKG = 'ai.skyforest.app';
+const PKG = process.env.PLAY_PKG || 'ai.skyforest.app';
 const sa = JSON.parse(readFileSync(new URL('./play-service-account.json', import.meta.url), 'utf8'));
 const b64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
 

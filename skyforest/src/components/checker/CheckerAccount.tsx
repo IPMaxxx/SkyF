@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isNativeApp, storeName } from "@/lib/native/capacitor";
 import {
@@ -27,6 +27,8 @@ import {
   formatFullDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
+import { openCheckerDoc } from "@/lib/checker/externalLinks";
+import { CheckerTopBar } from "@/components/checker/CheckerTopBar";
 import {
   CkDangerButton,
   CkInput,
@@ -136,20 +138,8 @@ export function CheckerAccount({
         </button>
       }
     >
-      <div className="flex flex-col gap-3.5 pt-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label={t("back")}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-ck-border-4 bg-ck-surface text-[#41594a]"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-          <h1 className="text-[19px] font-extrabold tracking-[-0.02em] text-ck-ink">
-            {t("title")}
-          </h1>
-        </div>
+      <div className="flex flex-col gap-3.5">
+        <CheckerTopBar title={t("title")} backLabel={t("back")} />
 
         {/* Профиль */}
         <div className="flex items-center gap-3.5 rounded-[26px] border border-ck-border bg-ck-surface p-[18px]">
@@ -251,11 +241,11 @@ export function CheckerAccount({
           <CkListRow
             first
             label={t("eula")}
-            onClick={() => router.push("/offer")}
+            onClick={() => openCheckerDoc("/offer", locale)}
           />
           <CkListRow
             label={t("privacy")}
-            onClick={() => router.push("/privacy")}
+            onClick={() => openCheckerDoc("/privacy", locale)}
           />
           <CkListRow
             danger

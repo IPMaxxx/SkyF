@@ -10,9 +10,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, Check, Crown, Loader2, X } from "lucide-react";
+import { Check, Crown, Loader2 } from "lucide-react";
 import { isNativeApp, storeName } from "@/lib/native/capacitor";
 import {
   getSubscriptionPrices,
@@ -32,7 +31,9 @@ import {
   formatFullDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
+import { openCheckerDoc } from "@/lib/checker/externalLinks";
 import { cn } from "@/lib/utils";
+import { CheckerTopBar } from "@/components/checker/CheckerTopBar";
 import {
   CkFeatureRow,
   CkMono,
@@ -90,7 +91,6 @@ export function CheckerPaywall() {
   const t = useTranslations("checker.paywall");
   const ts = useTranslations("checker.subscription");
   const locale = useLocale();
-  const router = useRouter();
   const { subscription, left, limit, isTrial, unlimited, loading, refresh } =
     useCheckerSubscription();
 
@@ -122,6 +122,27 @@ export function CheckerPaywall() {
   }, [native]);
 
   const store = native ? storeName() : "App Store / Google Play";
+
+  /* Документы — общие страницы SkyForest: внутри WebView с них не выйти,
+     поэтому открываем их системным браузером. */
+  const legalLinks = (
+    <div className="flex justify-center gap-3 text-[11.5px] font-extrabold text-ck-primary">
+      <button
+        type="button"
+        onClick={() => openCheckerDoc("/offer", locale)}
+        className="flex min-h-[44px] items-center px-2"
+      >
+        {t("eula")}
+      </button>
+      <button
+        type="button"
+        onClick={() => openCheckerDoc("/privacy", locale)}
+        className="flex min-h-[44px] items-center px-2"
+      >
+        {t("privacy")}
+      </button>
+    </div>
+  );
 
   const product = CATALOG.find((p) => p.period === period)!;
   const monthly = CATALOG.find((p) => p.period === "monthly")!;
@@ -181,20 +202,8 @@ export function CheckerPaywall() {
 
     return (
       <CkScreen>
-        <div className="flex flex-col gap-4 pt-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              aria-label={ts("back")}
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-ck-border-4 bg-ck-surface text-[#41594a]"
-            >
-              <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
-            </button>
-            <h1 className="text-[19px] font-extrabold tracking-[-0.02em] text-ck-ink">
-              {ts("title")}
-            </h1>
-          </div>
+        <div className="flex flex-col gap-4">
+          <CheckerTopBar title={ts("title")} backLabel={ts("back")} />
 
           <div className="flex flex-col gap-3.5 rounded-[28px] border border-ck-primary-border bg-ck-primary-tint p-5">
             <span className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-ck-primary text-white">
@@ -269,10 +278,7 @@ export function CheckerPaywall() {
             />
           )}
 
-          <div className="flex justify-center gap-4 text-[11.5px] font-bold text-ck-primary">
-            <Link href="/offer">{t("eula")}</Link>
-            <Link href="/privacy">{t("privacy")}</Link>
-          </div>
+          {legalLinks}
         </div>
       </CkScreen>
     );
@@ -299,10 +305,7 @@ export function CheckerPaywall() {
                   t("cta")
                 )}
               </CkPrimaryButton>
-              <div className="flex justify-center gap-4 text-[11.5px] font-extrabold text-ck-primary">
-                <Link href="/offer">{t("eula")}</Link>
-                <Link href="/privacy">{t("privacy")}</Link>
-              </div>
+              {legalLinks}
               <p className="text-center text-[10.5px] font-medium text-ck-muted">
                 {t("billed", { store })}{" "}
                 <button
@@ -333,26 +336,14 @@ export function CheckerPaywall() {
                   </span>
                 </div>
               </div>
-              <div className="flex justify-center gap-4 text-[11.5px] font-extrabold text-ck-primary">
-                <Link href="/offer">{t("eula")}</Link>
-                <Link href="/privacy">{t("privacy")}</Link>
-              </div>
+              {legalLinks}
             </>
           )}
         </div>
       }
     >
-      <div className="flex flex-col gap-4 pt-3">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label={t("close")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-ck-surface text-ck-muted"
-          >
-            <X className="h-4 w-4" strokeWidth={2.4} />
-          </button>
-        </div>
+      <div className="flex flex-col gap-4">
+        <CheckerTopBar backLabel={ts("back")} />
 
         <div className="flex flex-col gap-2.5">
           {/* На амбровом градиенте плитка без рамки сливается с фоном. */}

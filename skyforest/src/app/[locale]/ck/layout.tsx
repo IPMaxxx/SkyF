@@ -1,3 +1,4 @@
+import { CheckerHistoryTracker } from "@/components/checker/CheckerHistoryTracker";
 import { CheckerSplash } from "@/flavors/checker/CheckerSplash";
 
 /**
@@ -18,6 +19,8 @@ export default function CheckerLayout({
     <div className="flex min-h-screen flex-col bg-ck-canvas">
       {/* Прячет нативный splash Capacitor — обязателен на всех экранах. */}
       <CheckerSplash />
+      {/* Считает переходы, чтобы кнопки «назад» знали, есть ли куда вернуться. */}
+      <CheckerHistoryTracker />
       <main id="main-content" className="flex-1" tabIndex={-1}>
         {children}
       </main>
