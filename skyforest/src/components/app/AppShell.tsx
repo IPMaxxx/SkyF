@@ -9,7 +9,7 @@ import { useIsNative } from "@/lib/native/useIsNative";
 import { useAppFlavor } from "@/lib/useAppFlavor";
 
 /**
- * Layout-оболочка кабинета `(app)` для SkyForest и WayBack.
+ * Layout-оболочка кабинета `(app)` SkyForest.
  *
  * Ветвление web/native через `useIsNative()`:
  *  - web (default, без изменений) — видео-фон + AppHeader + Footer;
@@ -17,27 +17,14 @@ import { useAppFlavor } from "@/lib/useAppFlavor";
  *    таб-баром и отступом <main> под таб-бар и safe-area.
  *
  * До гидрации и в браузере `useIsNative()` = false, поэтому веб-версия
- * рендерится идентично прежнему layout. У Mushroom Checker своя оболочка —
- * src/app/[locale]/ck/layout.tsx.
+ * рендерится идентично прежнему layout. У Mushroom Checker и WayBack свои
+ * оболочки — src/app/[locale]/{ck,wb}/layout.tsx.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const isNative = useIsNative();
   const flavor = useAppFlavor();
   // Во флейворах футер и реферальная механика SkyForest не нужны.
   const isFlavored = flavor !== "skyforest";
-
-  // WayBack — светлая схема «Widget Board»: холст без фонового изображения
-  // (важно для читаемости на солнце и для батареи), общей шапки нет —
-  // каждый экран рисует свою верхнюю панель, они слишком разные.
-  if (flavor === "wayback") {
-    return (
-      <div className="flex min-h-screen flex-col bg-wb-canvas">
-        <main id="main-content" className="flex-1" tabIndex={-1}>
-          {children}
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="relative flex min-h-screen flex-col">

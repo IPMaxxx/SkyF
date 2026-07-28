@@ -14,8 +14,17 @@ const CHECKER_FILES = [
   "src/i18n/messages/checker.*.ts",
 ];
 
-/** Мосты, которым импорт кода Checker разрешён: реестр и агрегаторы словарей. */
-const CHECKER_BRIDGES = [
+/** Код, принадлежащий WayBack (см. .cursor/rules/flavors.mdc). */
+const WAYBACK_FILES = [
+  "src/app/**/wb/**/*.{ts,tsx}",
+  "src/components/wayback/**/*.{ts,tsx}",
+  "src/lib/wayback/**/*.{ts,tsx}",
+  "src/flavors/wayback/**/*.{ts,tsx}",
+  "src/i18n/messages/wayback.*.ts",
+];
+
+/** Мосты, которым импорт кода приложений разрешён: реестр и агрегаторы словарей. */
+const BRIDGES = [
   "src/flavors/registry.ts",
   "src/i18n/messages/en.ts",
   "src/i18n/messages/ru.ts",
@@ -49,9 +58,34 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // То же для WayBack. Исключение — TrackRecorder: он не рисует интерфейс, а
+  // пишет точки пути в фоне, и нужен обоим трекерам (подключён в wb/layout).
+  {
+    files: WAYBACK_FILES,
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/components/checker",
+                "@/components/checker/*",
+                "@/lib/checker/*",
+                "@/flavors/checker/*",
+                "@/components/marketing/*",
+              ],
+              message:
+                "WayBack не должен зависеть от интерфейса SkyForest и Mushroom Checker. Общий код выносите в src/lib или src/components/native.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: [...CHECKER_FILES, ...CHECKER_BRIDGES],
+    ignores: [...CHECKER_FILES, ...WAYBACK_FILES, ...BRIDGES],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -66,6 +100,16 @@ const eslintConfig = defineConfig([
               ],
               message:
                 "Экраны Mushroom Checker подключаются только из его дерева роутов src/app/[locale]/ck — иначе изменения Checker снова начнут задевать SkyForest и WayBack.",
+            },
+            {
+              group: [
+                "@/components/wayback",
+                "@/components/wayback/*",
+                "@/lib/wayback/*",
+                "@/flavors/wayback/*",
+              ],
+              message:
+                "Экраны WayBack подключаются только из его дерева роутов src/app/[locale]/wb — иначе изменения WayBack снова начнут задевать SkyForest и Mushroom Checker.",
             },
           ],
         },

@@ -46,13 +46,11 @@ import {
 } from "@/lib/native/iapProducts";
 import { useAppFlavor } from "@/lib/useAppFlavor";
 import { FLAVORS } from "@/lib/appFlavor";
-import { WayBackPaywall } from "@/components/wayback/WayBackPaywall";
 
-// WayBack: токенов нет, страница — пейволл/управление подпиской в своей
-// светлой схеме. Mushroom Checker сюда не попадает: middleware переписывает
-// /payment хоста checker.* на свой экран в src/app/[locale]/ck/payment.
+// Mushroom Checker и WayBack сюда не попадают: middleware переписывает
+// /payment их поддоменов на собственные пейволлы в
+// src/app/[locale]/{ck,wb}/payment.
 export default function PaymentPage() {
-  const flavor = useAppFlavor();
   return (
     <Suspense
       fallback={
@@ -61,7 +59,7 @@ export default function PaymentPage() {
         </div>
       }
     >
-      {flavor === "wayback" ? <WayBackPaywall /> : <PaymentContent />}
+      <PaymentContent />
     </Suspense>
   );
 }

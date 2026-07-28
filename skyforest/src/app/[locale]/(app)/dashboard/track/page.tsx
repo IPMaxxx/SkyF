@@ -10,20 +10,15 @@
  * света и пунктиром на карте. Активный поход живёт в localStorage; по кнопке
  * «Я вышел» сохраняется в историю (Supabase, fallback — localStorage).
  *
- * Вёрстки две и они не пересекаются: тёмный экран кабинета SkyForest и
- * светлый редизайн WayBack («Widget Board»). Поведение у них общее — вся
- * логика в useTrackController.
+ * WayBack сюда не попадает: middleware переписывает /dashboard/track его
+ * поддомена на собственный экран в src/app/[locale]/wb/track. Логика у экранов
+ * общая — она вся в useTrackController, — а вёрстка своя у каждого.
  */
 
 import { useTrackController } from "@/lib/track/useTrackController";
-import { useAppFlavor } from "@/lib/useAppFlavor";
 import { ClassicTrackScreen } from "@/components/app/ClassicTrackScreen";
-import { WayBackTrackScreen } from "@/components/wayback/WayBackTrackScreen";
 
 export default function TrackPage() {
   const controller = useTrackController();
-  const flavor = useAppFlavor();
-
-  if (flavor === "wayback") return <WayBackTrackScreen c={controller} />;
   return <ClassicTrackScreen c={controller} />;
 }

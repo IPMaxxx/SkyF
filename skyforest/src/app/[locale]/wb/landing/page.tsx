@@ -4,7 +4,10 @@ import { Link } from "@/i18n/navigation";
 
 /**
  * Посадочная WayBack: middleware переписывает "/" поддомена
- * wayback.skyforest.ai на эту страницу (URL остаётся корнем).
+ * wayback.skyforest.ai на этот путь (URL остаётся корнем).
+ *
+ * Тёмная, в отличие от светлых экранов приложения: это витрина для браузера,
+ * а не экран, который открывают в лесу.
  */
 export default async function WaybackLanding({
   params,

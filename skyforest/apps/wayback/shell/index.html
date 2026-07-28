@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+    <meta name="theme-color" content="#eef0ec" />
+    <title>WayBack</title>
+    <style>
+      /* Светлая схема «Widget Board» (src/styles/flavors/wayback.css).
+         Шрифты системные: экран показывается как раз тогда, когда сети нет. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #eef0ec;
+        color: #141a15;
+        font-family: -apple-system, Roboto, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 18px;
+        text-align: center;
+        padding: 24px;
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 3px solid #dce6dc;
+        border-top-color: #2f6b3f;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      p {
+        margin: 0;
+        max-width: 300px;
+        font-size: 14.5px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #414a42;
+      }
+      .actions {
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        max-width: 330px;
+      }
+      .actions.show { display: flex; }
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .btn-primary {
+        height: 58px;
+        border-radius: 18px;
+        background: #2f6b3f;
+        color: #f2f7f2;
+        font-size: 17px;
+        font-weight: 800;
+      }
+      .btn-ghost {
+        height: 50px;
+        border-radius: 18px;
+        background: #ffffff;
+        color: #3a453c;
+        font-size: 15px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Это резервная оболочка. В штатном режиме WebView открывает
+      https://wayback.skyforest.ai (см. server.url в capacitor.config.ts —
+      домен подставляет sync-shell.mjs). Экран показывается только если боевой
+      сервер недоступен — тогда предлагаем автономный офлайн-экран Track.
+    -->
+    <div class="wrap">
+      <div class="spinner" id="spinner"></div>
+      <p id="msg">Loading WayBack…</p>
+      <div class="actions" id="actions">
+        <a class="btn btn-primary" href="./offline-track.html" id="btnOffline">Open offline map</a>
+        <a class="btn btn-ghost" href="https://skyforest.ai/dashboard/track" id="btnRetry">Retry connection</a>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // Нативный splash не прячется автоматически — прячем его здесь.
+        var cap = window.Capacitor;
+        if (cap && cap.Plugins && cap.Plugins.SplashScreen) {
+          cap.Plugins.SplashScreen.hide({ fadeOutDuration: 250 }).catch(function () {});
+        }
+        var ru = String(navigator.language || "").toLowerCase().indexOf("ru") === 0;
+        // Небольшая пауза: даём шанс WebView перейти на боевой сайт; если через
+        // 3 секунды всё ещё здесь — сервер недоступен, показываем офлайн-опции.
+        setTimeout(function () {
+          document.getElementById("spinner").style.display = "none";
+          document.getElementById("msg").textContent = ru
+            ? "Нет связи с сервером. Доступен офлайн-режим:"
+            : "Can't reach the server. Offline mode is available:";
+          document.getElementById("btnOffline").textContent = ru ? "Открыть офлайн-карту" : "Open offline map";
+          document.getElementById("btnRetry").textContent = ru ? "Повторить подключение" : "Retry connection";
+          document.getElementById("actions").classList.add("show");
+        }, 3000);
+      })();
+    </script>
+  </body>
+</html>

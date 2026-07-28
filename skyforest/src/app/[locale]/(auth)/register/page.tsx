@@ -10,18 +10,16 @@ import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { AuthBrandMark } from "@/components/auth/AuthBrandMark";
-import { WayBackRegister } from "@/components/wayback/WayBackAuth";
 import { useIsNative } from "@/lib/native/useIsNative";
-import { useAppFlavor } from "@/lib/useAppFlavor";
 import { useFlavorBrand } from "@/lib/useFlavorBrand";
 
-// Mushroom Checker сюда не попадает: middleware переписывает /register хоста
-// checker.* на собственный экран в src/app/[locale]/ck/register.
+// Mushroom Checker и WayBack сюда не попадают: middleware переписывает
+// /register их поддоменов на собственные экраны в
+// src/app/[locale]/{ck,wb}/register.
 export default function RegisterPage() {
-  const flavor = useAppFlavor();
   return (
     <Suspense>
-      {flavor === "wayback" ? <WayBackRegister /> : <RegisterForm />}
+      <RegisterForm />
     </Suspense>
   );
 }

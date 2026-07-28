@@ -23,9 +23,17 @@ alwaysApply: true
 - `src/i18n/messages/checker.{en,ru}.ts` — вся копия, включая `checkerBrand`
 - `apps/mushroom-checker/**` — нативная оболочка, иконки, версии
 
-**WayBack**: `src/components/wayback/**`, `src/flavors/wayback/**`,
-`src/styles/flavors/wayback.css`, `src/i18n/messages/wayback.{en,ru}.ts`,
-`apps/wayback/**`.
+**WayBack** — правки только здесь:
+
+- `src/app/[locale]/wb/**` — все экраны и их layout
+- `src/components/wayback/**`, `src/lib/wayback/**`
+- `src/flavors/wayback/**` — конфиг приложения, splash
+- `src/styles/flavors/wayback.css` — токены `wb-*` и утилиты `.wb-*`
+- `src/i18n/messages/wayback.{en,ru}.ts` — вся копия
+- `apps/wayback/**` — нативная оболочка, иконки, версии
+- `apps/wayback/shell/**` — свои страницы офлайн-ядра. Тайлы `basemap` и
+  Leaflet берутся из общего `mobile/shell` (дизайна в них нет), их собирает
+  `apps/wayback/sync-shell.mjs`
 
 **Общее** (менять только по явной необходимости): `src/middleware.ts`,
 `src/app/layout.tsx`, `src/app/[locale]/layout.tsx`, `src/app/globals.css`,
@@ -34,27 +42,34 @@ alwaysApply: true
 
 ## Правила
 
-1. Экраны Checker живут в собственном дереве роутов. Публичные URL не меняются:
-   middleware переписывает `/login` → `/ck/login`, `/dashboard/identify` →
-   `/ck/identify` и т.д. по таблице `internalRewrites` в
-   `src/flavors/checker/config.ts`. Новый экран = новая запись в таблице плюс
-   страница в `src/app/[locale]/ck/`.
+1. Экраны Checker и WayBack живут в собственных деревьях роутов. Публичные URL
+   не меняются: middleware переписывает `/login` → `/ck/login`,
+   `/dashboard/identify` → `/ck/identify`, `/dashboard/track` → `/wb/track`
+   и т.д. по таблице `internalRewrites` в `src/flavors/<id>/config.ts`.
+   Новый экран = новая запись в таблице плюс страница в
+   `src/app/[locale]/{ck,wb}/`.
 2. Общие страницы (`(auth)/*`, `(app)/payment`, `(app)/account`,
-   `(app)/dashboard/*`) не должны импортировать `Checker*`-компоненты. Это
-   проверяет ESLint (`no-restricted-imports` в `eslint.config.mjs`).
-3. Checker не импортирует интерфейс других продуктов
-   (`components/app/*`, `components/wayback/*`). Общее — только `src/lib/**`
-   и `src/components/native/**`.
-4. Стили Checker — только в `src/styles/flavors/checker.css`. В `globals.css`
-   лежит база и тёмная тема SkyForest.
-5. Копия Checker — только в `checker.{en,ru}.ts`. В `en.ts`/`ru.ts` блок
+   `(app)/dashboard/*`) не должны импортировать `Checker*`- и
+   `WayBack*`-компоненты. Это проверяет ESLint (`no-restricted-imports`
+   в `eslint.config.mjs`).
+3. Приложение не импортирует интерфейс других продуктов (`components/app/*`,
+   и интерфейс соседнего флейвора). Общее — только `src/lib/**` и
+   `src/components/native/**`. Исключение — `components/app/TrackRecorder`:
+   он не рисует интерфейс, а пишет точки пути в фоне, и нужен обоим трекерам.
+4. Стили — только в `src/styles/flavors/<id>.css`. В `globals.css` лежит база
+   и тёмная тема SkyForest.
+5. Копия приложения — только в `<id>.{en,ru}.ts`. В `en.ts`/`ru.ts` блок
    `flavor.checker` подставляется экспортом `checkerBrand`, руками его там не
    расписывать.
 6. `src/flavors/registry.ts` и `src/i18n/messages/{en,ru}.ts` — единственные
    мосты, которым разрешено импортировать файлы конкретного приложения.
 7. `SplashScreen.hide()` вызывается только из splash-оверлея
-   (`useSplashSequence`). Если у экрана Checker нет `CheckerSplash` в дереве
-   layout, нативное приложение навсегда останется на splash-экране.
+   (`useSplashSequence`). Если у экрана нет `CheckerSplash` / `WayBackSplash`
+   в дереве layout, нативное приложение навсегда останется на splash-экране.
+8. Дерево `wb/*` лежит вне группы `(app)`, поэтому провайдеры из её layout
+   туда не попадают. Что нужно WayBack — подключено в `wb/layout.tsx`
+   (`TrackRecorder`, светлый `Toaster`); токенов и данных кабинета SkyForest
+   в этом приложении нет.
 
 **Если задача по одному приложению требует правки общего файла — остановиться
 и спросить пользователя.** Именно так редизайн Checker однажды затащил в один

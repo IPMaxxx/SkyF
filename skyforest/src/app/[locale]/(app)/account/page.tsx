@@ -20,7 +20,6 @@ import { EditProfileName } from "@/components/app/EditProfileName";
 import { EditContactLink } from "@/components/app/EditContactLink";
 import { DeleteAccount } from "@/components/app/DeleteAccount";
 import { MushroomBotCard } from "@/components/app/MushroomBotCard";
-import { WayBackAccount } from "@/components/wayback/WayBackAccount";
 import { NativeOnly, WebOnly } from "@/components/native/NativeOnly";
 import { BiometricLockSetting } from "@/components/native/BiometricLockSetting";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -39,10 +38,9 @@ export default async function AccountPage({ params }: Props) {
   setRequestLocale(locale);
   const t = await getTranslations("account");
 
-  // Во флейворе WayBack на экране остаются только относящиеся к приложению
-  // разделы: профиль, безопасность, подписка, документы и удаление аккаунта.
-  // Токены, реферальные и маркетплейс-сущности SkyForest скрыты — их в этом
-  // продукте нет.
+  // Mushroom Checker и WayBack сюда не попадают: middleware переписывает
+  // /account их поддоменов на собственные экраны в
+  // src/app/[locale]/{ck,wb}/account. Флейвор всё ещё нужен для подписей.
   const flavor = await getServerFlavor();
   const isFlavored = flavor !== "skyforest";
   const tFlavor = isFlavored
@@ -84,18 +82,6 @@ export default async function AccountPage({ params }: Props) {
   const profile = profileRes.data;
   const tokenBalance = tokenRes?.[0].data ?? null;
   const transactions = tokenRes?.[1].data ?? [];
-
-  // WayBack — собственный экран аккаунта в светлой схеме. Mushroom Checker
-  // сюда не попадает: middleware переписывает /account хоста checker.* на свой
-  // экран в src/app/[locale]/ck/account.
-  if (flavor === "wayback") {
-    return (
-      <WayBackAccount
-        email={profile?.email || userEmail!}
-        initialName={profile?.full_name || null}
-      />
-    );
-  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">

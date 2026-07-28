@@ -56,7 +56,6 @@ export function WayBackAccount({
   initialName: string | null;
 }) {
   const t = useTranslations("wayback.account");
-  const td = useTranslations("wayback.deleteAccount");
   const tp = useTranslations("wayback.paywall");
   const locale = useLocale();
   const router = useRouter();
@@ -252,23 +251,26 @@ export function WayBackAccount({
         </WbDangerSoftButton>
       </div>
 
-      <PasswordSheet
-        open={sheet === "password"}
-        onClose={() => setSheet(null)}
-      />
-      <TwoFactorSheet
-        open={sheet === "twofa"}
-        enabled={twoFa}
-        onClose={() => setSheet(null)}
-        onChanged={refreshTwoFa}
-      />
-      <DeleteSheet
-        open={sheet === "delete"}
-        email={email}
-        store={store}
-        onClose={() => setSheet(null)}
-        onScheduled={logout}
-      />
+      {/* Листы монтируются только открытыми: состояние формы обнуляется
+          размонтированием, без сбрасывающих эффектов. */}
+      {sheet === "password" && (
+        <PasswordSheet onClose={() => setSheet(null)} />
+      )}
+      {sheet === "twofa" && (
+        <TwoFactorSheet
+          enabled={twoFa}
+          onClose={() => setSheet(null)}
+          onChanged={refreshTwoFa}
+        />
+      )}
+      {sheet === "delete" && (
+        <DeleteSheet
+          email={email}
+          store={store}
+          onClose={() => setSheet(null)}
+          onScheduled={logout}
+        />
+      )}
     </WbScreen>
   );
 }
@@ -277,13 +279,7 @@ export function WayBackAccount({
 /* Смена пароля                                                        */
 /* ------------------------------------------------------------------ */
 
-function PasswordSheet({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function PasswordSheet({ onClose }: { onClose: () => void }) {
   const t = useTranslations("wayback.account");
   const ta = useTranslations("wayback.auth");
   const tp = useTranslations("account.pw");
@@ -292,15 +288,6 @@ function PasswordSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setPassword("");
-      setRepeat("");
-      setError("");
-      setDone(false);
-    }
-  }, [open]);
 
   const save = async () => {
     if (password.length < 6) {
@@ -324,7 +311,7 @@ function PasswordSheet({
   };
 
   return (
-    <WbModal open={open} onClose={onClose} label={t("close")}>
+    <WbModal open onClose={onClose} label={t("close")}>
       <div className="flex flex-col gap-3">
         <span className="text-[20px] font-extrabold tracking-[-0.02em] text-wb-ink">
           {t("password")}
@@ -373,12 +360,10 @@ function PasswordSheet({
 /* ------------------------------------------------------------------ */
 
 function TwoFactorSheet({
-  open,
   enabled,
   onClose,
   onChanged,
 }: {
-  open: boolean;
   enabled: boolean;
   onClose: () => void;
   onChanged: () => Promise<void>;
@@ -391,16 +376,6 @@ function TwoFactorSheet({
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!open) {
-      setQr(null);
-      setSecret(null);
-      setFactorId(null);
-      setCode("");
-      setError("");
-    }
-  }, [open]);
 
   const enroll = async () => {
     setBusy(true);
@@ -470,7 +445,7 @@ function TwoFactorSheet({
   };
 
   return (
-    <WbModal open={open} onClose={onClose} label={t("close")}>
+    <WbModal open onClose={onClose} label={t("close")}>
       <div className="flex flex-col gap-3">
         <span className="text-[20px] font-extrabold tracking-[-0.02em] text-wb-ink">
           {t("twoFactor")}
@@ -555,13 +530,11 @@ function TwoFactorSheet({
 /* ------------------------------------------------------------------ */
 
 function DeleteSheet({
-  open,
   email,
   store,
   onClose,
   onScheduled,
 }: {
-  open: boolean;
   email: string;
   store: string;
   onClose: () => void;
@@ -572,13 +545,6 @@ function DeleteSheet({
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!open) {
-      setConfirm("");
-      setError("");
-    }
-  }, [open]);
 
   const submit = async () => {
     if (confirm.trim().toLowerCase() !== email.toLowerCase()) {
@@ -607,7 +573,7 @@ function DeleteSheet({
   };
 
   return (
-    <WbModal open={open} onClose={onClose} label={ta("close")}>
+    <WbModal open onClose={onClose} label={ta("close")}>
       <div className="flex flex-col gap-3">
         <span className="text-[22px] font-extrabold leading-[1.1] tracking-[-0.03em] text-wb-ink">
           {t("title")}
