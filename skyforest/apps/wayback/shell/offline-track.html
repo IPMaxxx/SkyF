@@ -1,241 +1,380 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
-    <title>SkyForest — офлайн</title>
+    <meta name="theme-color" content="#eef0ec" />
+    <title>WayBack — offline</title>
     <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
     <style>
+      /* Светлая схема «Widget Board» — те же токены, что в
+         src/styles/flavors/wayback.css. Дублируются намеренно: офлайн-ядро не
+         зависит от Next-сборки и должно открываться без сети.
+
+         Шрифты только системные: Manrope и IBM Plex Mono тянутся из сети,
+         а этот экран нужен именно там, где сети нет. */
       :root {
-        --bg: #0f1a12;
-        --panel: rgba(255, 255, 255, 0.06);
-        --border: rgba(255, 255, 255, 0.12);
-        --text: #e8f0ea;
-        --muted: rgba(232, 240, 234, 0.65);
-        --primary: #62a863;
-        --emerald: #10b981;
+        --primary: #2f6b3f;
+        --primary-deep: #26582f;
+        --on-primary: #f2f7f2;
+        --canvas: #eef0ec;
+        --surface: #ffffff;
+        --surface-2: #f4f6f3;
+        --ink: #141a15;
+        --ink-2: #253027;
+        --body: #414a42;
+        --muted: #5d675f;
+        --muted-2: #7d867e;
+        --border: #dcdfd8;
+        --danger: #a83b3b;
+        --danger-tint: #fbeceb;
+        --amber-tint: #f6ecdc;
+        --amber-border: #f6e3b8;
+        --amber-ink: #7d6435;
+        --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
       }
       * { box-sizing: border-box; }
       html, body {
         margin: 0;
         height: 100%;
-        background: var(--bg);
-        color: var(--text);
+        background: var(--canvas);
+        color: var(--ink);
         font-family: -apple-system, Roboto, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
       #app {
         display: flex;
         flex-direction: column;
         height: 100%;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
+        gap: 10px;
+        padding: env(safe-area-inset-top) 14px
+          calc(env(safe-area-inset-bottom) + 4px);
       }
+
+      /* Моно капсом — подписи к данным, как в вебе (.wb-label). */
+      .label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted-2);
+      }
+
       header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 12px 16px;
+        padding: 14px 4px 0;
       }
-      header h1 { font-size: 15px; margin: 0; font-weight: 700; }
-      header .badge {
-        font-size: 14px;
+      header h1 {
+        margin: 0;
+        font-size: 21px;
         font-weight: 800;
-        letter-spacing: 0.1em;
+        letter-spacing: -0.02em;
+      }
+      header .badge {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: #fbbf24;
-        border: 1px solid rgba(251, 191, 36, 0.45);
-        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-ink);
+        background: var(--amber-tint);
+        border: 1px solid var(--amber-border);
         border-radius: 999px;
-        padding: 5px 12px;
+        padding: 6px 11px;
         white-space: nowrap;
       }
       .offline-note {
-        margin: -6px 16px 10px;
-        font-size: 12px;
-        color: rgba(251, 191, 36, 0.9);
+        margin: 0 4px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.45;
+        color: var(--body);
+      }
+
+      /* Плитка — базовый носитель контента, радиус 26 во всей системе. */
+      .card {
+        background: var(--surface);
+        border-radius: 26px;
+        padding: 16px 18px;
       }
       .stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        padding: 0 16px 12px;
       }
-      .card {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 12px 14px;
+      .card .value {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-top: 6px;
       }
-      .card .label { font-size: 11px; color: var(--muted); }
-      .card .value { font-size: 22px; font-weight: 800; margin-top: 2px; }
       .card .value.accent { color: var(--primary); }
+
       .compass {
         display: flex;
         align-items: center;
-        gap: 14px;
-        margin: 0 16px 12px;
-        padding: 14px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
+        gap: 16px;
+        background: var(--surface);
+        border-radius: 26px;
+        padding: 16px 18px;
       }
       .dial {
-        width: 84px; height: 84px; flex: 0 0 84px;
+        width: 88px;
+        height: 88px;
+        flex: 0 0 88px;
         border-radius: 50%;
-        border: 2px solid rgba(98, 168, 99, 0.3);
-        background: rgba(98, 168, 99, 0.06);
-        display: flex; align-items: center; justify-content: center;
+        background: #eaf1ea;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .arrow { transition: transform 0.3s ease-out; }
       .compass .info { min-width: 0; }
-      .compass .dir { font-size: 14px; font-weight: 600; }
-      .compass .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+      .compass .dir {
+        font-size: 15.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+      .compass .hint {
+        font-size: 12.5px;
+        font-weight: 500;
+        line-height: 1.45;
+        color: var(--muted);
+        margin-top: 5px;
+      }
       #enableCompass {
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--emerald);
-        background: rgba(16, 185, 129, 0.15);
+        margin-top: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink-2);
+        background: var(--surface-2);
         border: none;
-        border-radius: 10px;
-        padding: 8px 12px;
+        border-radius: 14px;
+        padding: 10px 14px;
         cursor: pointer;
       }
-      #mapWrap { position: relative; flex: 1 1 auto; min-height: 0; }
-      #map { width: 100%; height: 100%; background: #0b130d; }
+
+      /* Карта — такая же плитка, поэтому скругление режем по контейнеру. */
+      #mapWrap {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        border-radius: 26px;
+        overflow: hidden;
+        background: #e7eee4;
+      }
+      #map { width: 100%; height: 100%; background: #e7eee4; }
+      .leaflet-container {
+        background: #e7eee4;
+        font-family: -apple-system, Roboto, system-ui, sans-serif;
+      }
+      /* Стандартный zoom-контрол Leaflet квадратный с рамкой — приводим к
+         скруглениям системы, иначе выбивается из плиток. */
+      .leaflet-control-zoom {
+        border: none !important;
+        border-radius: 16px !important;
+        overflow: hidden;
+        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.3);
+      }
+      .leaflet-control-zoom a {
+        width: 38px;
+        height: 38px;
+        line-height: 38px;
+        background: var(--surface);
+        color: var(--ink-2);
+        border: none !important;
+        font-size: 19px;
+        font-weight: 600;
+      }
+      .leaflet-control-zoom a:hover { background: var(--surface-2); }
+      .leaflet-control-zoom a:first-child {
+        border-bottom: 1px solid var(--border) !important;
+      }
+
       #locateBtn {
         position: absolute;
         right: 12px;
-        bottom: 14px;
+        bottom: 12px;
         z-index: 1000;
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background: #fff;
-        color: #374151;
+        background: var(--surface);
+        color: var(--ink-2);
         border: none;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.35);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
       }
-      #locateBtn:disabled { opacity: 0.6; }
+      #locateBtn:disabled { opacity: 0.55; }
+
+      /* Сегментный переключатель слоёв — как .wb-seg в вебе. */
       #layerSwitch {
         position: absolute;
         right: 12px;
         top: 12px;
         z-index: 1000;
         display: flex;
-        padding: 2px;
+        padding: 3px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        background: var(--surface);
+        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.3);
       }
       #layerSwitch button {
         border: none;
         background: transparent;
-        color: #374151;
-        font-size: 12px;
+        font-family: inherit;
+        color: var(--body);
+        font-size: 13px;
         font-weight: 700;
-        padding: 7px 12px;
+        padding: 8px 14px;
         border-radius: 999px;
         cursor: pointer;
+        transition: background-color 0.15s ease;
       }
       #layerSwitch button[aria-pressed="true"] {
         background: var(--primary);
-        color: #0b130d;
+        color: var(--on-primary);
       }
-      .start-pane { padding: 0 16px 12px; }
-      .start-pane p { color: var(--muted); font-size: 13px; margin: 0; }
-      .actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px 16px;
+
+      .start-pane {
+        background: var(--surface);
+        border-radius: 26px;
+        padding: 16px 18px;
       }
+      .start-pane p {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: var(--body);
+      }
+
+      .actions { display: flex; flex-direction: column; gap: 8px; }
+
+      /* Высоты кнопок как в вебе: их жмут в лесу и в перчатках. */
       .btn {
-        background: var(--primary);
-        color: #0b130d;
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
         border: none;
-        border-radius: 14px;
-        padding: 13px 20px;
-        font-size: 15px;
-        font-weight: 700;
         cursor: pointer;
+        transition: opacity 0.15s ease, background-color 0.15s ease;
       }
-      .btn:disabled { opacity: 0.7; }
+      .btn:disabled { opacity: 0.55; }
+      .btn.primary {
+        height: 58px;
+        border-radius: 18px;
+        background: var(--primary);
+        color: var(--on-primary);
+        font-size: 17px;
+        font-weight: 800;
+      }
       .btn.danger {
-        background: rgba(239, 68, 68, 0.14);
-        color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        height: 62px;
+        border-radius: 22px;
+        background: var(--danger-tint);
+        color: var(--danger);
+        font-size: 17px;
+        font-weight: 800;
       }
       .btn.ghost {
-        background: transparent;
-        color: var(--muted);
-        border: 1px solid var(--border);
-        font-weight: 600;
-        font-size: 13px;
-        padding: 10px 20px;
+        height: 50px;
+        border-radius: 18px;
+        background: var(--surface);
+        color: #3a453c;
+        font-size: 15px;
+        font-weight: 700;
       }
+
       .hidden { display: none !important; }
-      .leaflet-container { background: #0b130d; }
     </style>
   </head>
   <body>
     <div id="app">
       <header>
-        <h1 id="t-title">Возврат к точке входа</h1>
-        <span class="badge" id="t-offline">ОФЛАЙН</span>
+        <h1 id="t-title">Return to entry point</h1>
+        <span class="badge" id="t-offline">Offline</span>
       </header>
-      <p class="offline-note" id="t-offlineNote">Вы сейчас офлайн — всё работает без интернета.</p>
+      <p class="offline-note" id="t-offlineNote">
+        You are currently offline — everything works without internet.
+      </p>
 
       <!-- Активный поход: статистика + компас -->
       <div id="active" class="hidden">
         <div class="stats">
           <div class="card">
-            <div class="label" id="t-distance">До входа</div>
+            <div class="label" id="t-distance">To entry point</div>
             <div class="value accent" id="distance">—</div>
           </div>
           <div class="card">
-            <div class="label" id="t-duration">В лесу</div>
+            <div class="label" id="t-duration">In forest</div>
             <div class="value" id="duration">0:00</div>
           </div>
         </div>
 
-        <div class="compass">
+        <div class="compass" style="margin-top: 10px">
           <div class="dial">
             <div class="arrow" id="arrow">
               <svg viewBox="0 0 24 24" width="52" height="52" aria-hidden="true">
-                <path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#8fd18f" stroke="#8fd18f" stroke-width="1" stroke-linejoin="round" />
+                <path
+                  d="M12 2 L20 20 L12 15.5 L4 20 Z"
+                  fill="#2f6b3f"
+                  stroke="#2f6b3f"
+                  stroke-width="1"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </div>
           <div class="info">
-            <div class="dir" id="dir">Определяем направление…</div>
-            <div class="hint" id="hint">Пройдите несколько шагов — направление определится по GPS.</div>
-            <button id="enableCompass" class="hidden">Включить компас</button>
+            <div class="dir" id="dir">Determining your location…</div>
+            <div class="hint" id="hint">
+              Walk a few steps — we'll detect your direction from GPS.
+            </div>
+            <button id="enableCompass" class="hidden">Enable compass</button>
           </div>
         </div>
       </div>
 
       <!-- Похода нет: подсказка -->
       <div id="startPane" class="start-pane hidden">
-        <p id="t-startPrompt">Отметьте точку входа в лес — покажем направление и расстояние обратно. Работает без интернета.</p>
+        <p id="t-startPrompt">
+          Pick the start point on the map you need to get back to: tap the map
+          or use your location. The arrow will show the direction.
+        </p>
       </div>
 
       <!-- Карта видна всегда; тап по ней ставит стартовую точку -->
       <div id="mapWrap">
         <div id="map"></div>
         <div id="layerSwitch">
-          <button id="layerTrails" aria-pressed="true">Тропы</button>
-          <button id="layerSatellite" aria-pressed="false">Спутник</button>
+          <button id="layerTrails" aria-pressed="true">Trails</button>
+          <button id="layerSatellite" aria-pressed="false">Satellite</button>
         </div>
-        <button id="locateBtn" aria-label="Моё местоположение" title="Моё местоположение">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <button id="locateBtn" aria-label="My location" title="My location">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <circle cx="12" cy="12" r="7" />
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
@@ -244,9 +383,9 @@
       </div>
 
       <div class="actions">
-        <button class="btn hidden" id="startBtn" disabled>Way Back</button>
-        <button class="btn danger hidden" id="finishBtn">Я вышел из леса</button>
-        <button class="btn ghost" id="openApp">Открыть приложение</button>
+        <button class="btn primary hidden" id="startBtn" disabled>Way Back</button>
+        <button class="btn danger hidden" id="finishBtn">I'm out of the forest</button>
+        <button class="btn ghost" id="openApp">Open the app</button>
       </div>
     </div>
 

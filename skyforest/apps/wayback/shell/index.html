@@ -6,15 +6,19 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
-    <title>SkyForest</title>
+    <meta name="theme-color" content="#eef0ec" />
+    <title>WayBack</title>
     <style>
+      /* Светлая схема «Widget Board» (src/styles/flavors/wayback.css).
+         Шрифты системные: экран показывается как раз тогда, когда сети нет. */
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #0f1a12;
-        color: #e8f0ea;
+        background: #eef0ec;
+        color: #141a15;
         font-family: -apple-system, Roboto, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
       .wrap {
         display: flex;
@@ -22,15 +26,15 @@
         align-items: center;
         justify-content: center;
         height: 100%;
-        gap: 16px;
+        gap: 18px;
         text-align: center;
         padding: 24px;
       }
       .spinner {
         width: 42px;
         height: 42px;
-        border: 3px solid rgba(98, 168, 99, 0.25);
-        border-top-color: #62a863;
+        border: 3px solid #dce6dc;
+        border-top-color: #2f6b3f;
         border-radius: 50%;
         animation: spin 0.9s linear infinite;
       }
@@ -40,44 +44,57 @@
         }
       }
       p {
-        opacity: 0.7;
-        font-size: 15px;
+        margin: 0;
+        max-width: 300px;
+        font-size: 14.5px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #414a42;
       }
       .actions {
         display: none;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         width: 100%;
-        max-width: 320px;
+        max-width: 330px;
       }
       .actions.show { display: flex; }
       .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border: none;
-        border-radius: 14px;
-        padding: 13px 20px;
-        font-size: 15px;
-        font-weight: 700;
         cursor: pointer;
         text-decoration: none;
-        text-align: center;
       }
-      .btn-primary { background: #62a863; color: #0b130d; }
+      .btn-primary {
+        height: 58px;
+        border-radius: 18px;
+        background: #2f6b3f;
+        color: #f2f7f2;
+        font-size: 17px;
+        font-weight: 800;
+      }
       .btn-ghost {
-        background: transparent;
-        color: #e8f0ea;
-        border: 1px solid rgba(232, 240, 234, 0.25);
+        height: 50px;
+        border-radius: 18px;
+        background: #ffffff;
+        color: #3a453c;
+        font-size: 15px;
+        font-weight: 700;
       }
     </style>
   </head>
   <body>
     <!--
-      Это резервная оболочка. В штатном режиме WebView открывает https://skyforest.ai
-      (см. server.url в capacitor.config.ts). Экран показывается только если
-      боевой сервер недоступен — тогда предлагаем автономный офлайн-экран Track.
+      Это резервная оболочка. В штатном режиме WebView открывает
+      https://wayback.skyforest.ai (см. server.url в capacitor.config.ts —
+      домен подставляет sync-shell.mjs). Экран показывается только если боевой
+      сервер недоступен — тогда предлагаем автономный офлайн-экран Track.
     -->
     <div class="wrap">
       <div class="spinner" id="spinner"></div>
-      <p id="msg">Loading SkyForest…</p>
+      <p id="msg">Loading WayBack…</p>
       <div class="actions" id="actions">
         <a class="btn btn-primary" href="./offline-track.html" id="btnOffline">Open offline map</a>
         <a class="btn btn-ghost" href="https://skyforest.ai/dashboard/track" id="btnRetry">Retry connection</a>

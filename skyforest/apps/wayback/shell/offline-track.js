@@ -471,14 +471,16 @@
     },
   });
 
+  // Зелёный точки входа — тот же #2f6b3f, что у действий в вебе; синий «вы
+  // здесь» оставлен: это привычная конвенция карт, а не брендовый цвет.
   var anchorIcon = L.divIcon({
     className: "",
-    html: '<div style="width:30px;height:30px;background:#10b981;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',
+    html: '<div style="width:30px;height:30px;background:#2f6b3f;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(20,26,21,.3)"></div>',
     iconSize: [30, 30], iconAnchor: [15, 15],
   });
   var currentIcon = L.divIcon({
     className: "",
-    html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>',
+    html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(20,26,21,.35)"></div>',
     iconSize: [20, 20], iconAnchor: [10, 10],
   });
 
@@ -541,11 +543,13 @@
     if (!currentMarker) currentMarker = L.marker([current.lat, current.lng], { icon: currentIcon }).addTo(map);
     else currentMarker.setLatLng([current.lat, current.lng]);
 
-    if (!pathLine) pathLine = L.polyline(pathLatLngs(), { color: "#166534", weight: 4, opacity: 0.9 }).addTo(map);
+    // Пройденный путь — синий, как маркер «вы здесь»; пунктир напрямую к
+    // точке входа — зелёный, как её маркер.
+    if (!pathLine) pathLine = L.polyline(pathLatLngs(), { color: "#3b82f6", weight: 5, opacity: 0.95, lineCap: "round" }).addTo(map);
     else pathLine.setLatLngs(pathLatLngs());
 
     var rl = [[current.lat, current.lng], [track.anchor.lat, track.anchor.lng]];
-    if (!returnLine) returnLine = L.polyline(rl, { color: "#10b981", weight: 4, opacity: 0.9, dashArray: "8 10" }).addTo(map);
+    if (!returnLine) returnLine = L.polyline(rl, { color: "#2f6b3f", weight: 4, opacity: 0.9, dashArray: "8 10" }).addTo(map);
     else returnLine.setLatLngs(rl);
 
     var dist = haversineM(current, track.anchor);
