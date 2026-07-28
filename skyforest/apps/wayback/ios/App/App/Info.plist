@@ -24,6 +24,26 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!--
+	  Без этого ключа билд повисает в TestFlight со статусом Missing Compliance:
+	  Apple ждёт ответа про экспортное шифрование. Своей криптографии в
+	  приложении нет — только HTTPS, это исключение.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!--
+	  Purpose strings обязательны: без них iOS убивает процесс при первом
+	  запросе, а загрузку отклоняют с ITMS-90683.
+
+	  Локация — «when in use», а не «always»: watchPosition останавливается,
+	  когда приложение уходит в фон (см. syncTrackWatch в TrackRecorder),
+	  фоновой записи трека нет.
+	-->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>WayBack uses your location to mark the point where you entered the forest and to show the direction and distance back to it.</string>
+	<!-- Стрелка возврата работает по компасу телефона, когда курса GPS ещё нет. -->
+	<key>NSMotionUsageDescription</key>
+	<string>WayBack uses the compass to point the arrow toward your entry point while you are standing still.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -47,5 +67,26 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!--
+	  Google Sign-In возвращается в приложение по обратной схеме iOS-клиента
+	  OAuth. Клиент привязан к bundle id, поэтому у WayBack он свой, отдельный
+	  от ai.skyforest.app и от Checker: значение ниже — «iOS URL scheme» клиента
+	  ai.skyforest.wayback из Google Cloud Console, и оно же (в прямом порядке)
+	  должно лежать в NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_WAYBACK.
+
+	  Sign in with Apple схемы не требует (системный лист), но требует
+	  entitlement com.apple.developer.applesignin — см. App/App.entitlements.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>REPLACE_WITH_WAYBACK_IOS_REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
