@@ -70,6 +70,22 @@ alwaysApply: true
    туда не попадают. Что нужно WayBack — подключено в `wb/layout.tsx`
    (`TrackRecorder`, светлый `Toaster`); токенов и данных кабинета SkyForest
    в этом приложении нет.
+9. Нативный соц-вход у каждой оболочки свой, потому что привязан к bundle id.
+   Чтобы он заработал в новом приложении, нужны четыре вещи, и три из них не в
+   коде:
+   - `@capgo/capacitor-social-login` в `apps/<id>/package.json`, иначе плагин
+     отвечает UNIMPLEMENTED: JS приезжает с сайта, а нативной части в бинарнике
+     нет;
+   - `App.entitlements` с `com.apple.developer.applesignin` плюс
+     `CODE_SIGN_ENTITLEMENTS` в обоих конфигах `project.pbxproj`;
+   - свой iOS-клиент Google (обратная схема — в `CFBundleURLTypes`, прямое
+     значение — в `NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID_<ID>` в проекте Vercel
+     `skyforest-ai`, он обслуживает домены `.ai`);
+   - **аудитории в Supabase → Authentication → Providers.** В id_token на iOS
+     `aud` равен iOS-клиенту (Google) и bundle id (Apple), и Supabase сверяет
+     его со своим списком Client IDs. Пока значения не добавлены, вход падает с
+     `Unacceptable audience in id_token`. Из кода это не лечится, и API-ключей
+     проекта для настройки провайдеров недостаточно — нужен дашборд.
 
 **Если задача по одному приложению требует правки общего файла — остановиться
 и спросить пользователя.** Именно так редизайн Checker однажды затащил в один
