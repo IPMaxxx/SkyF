@@ -1,20 +1,16 @@
+import { flavorFromHost } from "@/lib/appFlavor";
+import { resolveAuthNext } from "@/lib/appOrigin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-
-const ALLOWED_REDIRECTS = ["/dashboard", "/payment", "/account", "/reset-password"];
-
-function sanitizeRedirect(redirect: string): string {
-  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
-    return "/dashboard";
-  }
-  const isAllowed = ALLOWED_REDIRECTS.some((p) => redirect.startsWith(p));
-  return isAllowed ? redirect : "/dashboard";
-}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const redirect = sanitizeRedirect(searchParams.get("redirect") || "/dashboard");
+  // Домашний экран у каждого приложения свой: /dashboard есть только у SkyForest.
+  const redirect = resolveAuthNext(
+    searchParams.get("redirect"),
+    flavorFromHost(request.headers.get("host")),
+  );
 
   if (code) {
     const supabase = await createClient();
