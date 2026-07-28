@@ -2,29 +2,41 @@
 /**
  * Скриншоты WayBack для App Store и Google Play (английская локаль).
  *
- * Снимаем боевой wayback.skyforest.ai в дизайне «Widget Board». Аккаунт не
- * нужен: поход и офлайн-карта работают анонимно, поэтому состояние устройства
- * подкладываем в localStorage — активный поход (sf_active_track), история
- * походов (sf_track_history) и скачанные области (sf_tile_regions). Так кадры
+ * Снимаем боевой wayback.skyforest.ai в тёмной схеме: холст #0b120d, плитка
+ * START, нижнее меню, карта на главной, предсохранение области касанием.
+ *
+ * Съёмка идёт под учётной записью с активным правом на приложение (строка
+ * `user_subscriptions` с `tier=wayback`), и это обязательное условие, а не
+ * удобство. В нативной оболочке на старте стоит гейт «вход → пробный период»,
+ * поэтому пользователь приложения всегда вошедший и с подпиской: анонимные
+ * кадры показывали бы приглашение «Sign in to sync your walks», которого он
+ * никогда не увидит. Гейт живёт только в нативной оболочке (см.
+ * useWaybackGate), в браузере он пропускает без проверки — вход нужен именно
+ * ради достоверности кадров.
+ *
+ * Состояние устройства подкладываем в localStorage — история походов
+ * (sf_track_history), скачанные области (sf_tile_regions), последняя позиция
+ * (sf_last_position) и активный поход (sf_active_track). Так кадры
  * детерминированные, а на карте есть настоящий пройденный путь, а не пустота.
  *
  * Место — Nuuksio National Park (Espoo, Finland): узнаваемый лес с тропами и
  * подписями латиницей. Локация вне ЕАЭС и без кириллицы — требование сторов
  * к англоязычному листингу.
  *
- * Порядок съёмки отличается от нумерации кадров: история и ручной выбор точки
- * входа живут на главной без активного похода, поэтому поход подкладывается
- * последним.
+ * Порядок съёмки не совпадает с нумерацией кадров: активный поход подкладывается
+ * последним, потому что он подменяет главный экран, а история и офлайн-карта
+ * нужны без него.
  *
- * Последние две точки пути не подкладываются, а «проходятся» через
- * setGeolocation: watchPosition должен увидеть смещение, иначе курс движения
- * (course over ground) не считается и вместо стрелки возврата экран показывает
+ * Хвост пути не подкладывается, а «проходится» через setGeolocation: у похода
+ * работает watchPosition, и курс движения (course over ground) считается только
+ * по реальному смещению. Без него вместо стрелки возврата экран показывает
  * подсказку «пройдите пару шагов».
  *
  * Размеры: Apple требует 1290×2796 (6.9″), Google Play не принимает сторону
  * длиннее двойной короткой — для него отдельный проход 1290×2580.
  *
- * Запуск: node scripts/capture-wayback-store-shots.mjs [origin]
+ * Запуск: WB_SHOTS_EMAIL=… WB_SHOTS_PASSWORD=… \
+ *         node scripts/capture-wayback-store-shots.mjs [origin]
  * Выход:  docs/store-shots/wayback/{apple,play}/*.png
  */
 import { chromium } from "playwright";
@@ -35,6 +47,15 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "docs/store-shots/wayback");
 const ORIGIN = process.argv[2] || "https://wayback.skyforest.ai";
+
+const EMAIL = process.env.WB_SHOTS_EMAIL;
+const PASSWORD = process.env.WB_SHOTS_PASSWORD;
+if (!EMAIL || !PASSWORD) {
+  console.error(
+    "Нужна учётка с правом на приложение: WB_SHOTS_EMAIL и WB_SHOTS_PASSWORD.",
+  );
+  process.exit(1);
+}
 
 /** Apple: 6.9″. Play: сторона не длиннее двойной короткой. */
 const TARGETS = [
@@ -67,8 +88,13 @@ const WAYPOINTS = [
 
 /** Шаг записи точки — столько же, сколько даёт watchPosition на ходу. */
 const POINT_INTERVAL_MS = 90_000;
-/** Прогулочный темп по лесу: связывает длину пути и время на кадрах. */
-const PACE_KMH = 1.8;
+/**
+ * Темп «по лесу с корзиной»: он связывает длину пути и время на кадрах. Цифра
+ * низкая намеренно — так походы в истории длятся больше часа и подпись читается
+ * как «1 h 5 m · 1.19 km», а не как «65 m · 1.19 km», где метры спорят с
+ * минутами.
+ */
+const PACE_KMH = 1.1;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -132,13 +158,19 @@ function activeTrack(now) {
 }
 
 /**
- * Прошлые походы для плитки «History»: без них главный экран показывает
- * «no walks yet» и выглядит как свежая установка.
+ * Прошлые походы для плитки «History» и экрана истории: без них главный экран
+ * показывает «no walks yet» и выглядит как свежая установка.
  *
  * Путь — «туда и обратно» со сдвигом обратной ветки: так люди и ходят, а на
  * карте получается замкнутая петля вместо линии, дважды нарисованной по себе.
  * Длину и время считаем от самих точек — иначе подпись под кадром спорит с
  * нарисованным маршрутом.
+ *
+ * Походов шесть, и это тоже про кадр: с раскрытой картой первого список уходит
+ * за нижний край, и подсказка «Sign in to keep them if you change phones» в
+ * кадр не попадает. Для вошедшего пользователя (а в приложении он всегда
+ * вошедший) она читалась бы как противоречие, хотя относится к походам,
+ * записанным до входа.
  */
 function savedHistory(now) {
   const day = 24 * 60 * 60_000;
@@ -146,6 +178,9 @@ function savedHistory(now) {
     { ago: 2 * day, from: 0, to: 14, sideways: 250 },
     { ago: 5 * day, from: 3, to: 22, sideways: 70 },
     { ago: 9 * day, from: 0, to: 27, sideways: 290 },
+    { ago: 14 * day, from: 6, to: 25, sideways: 110 },
+    { ago: 21 * day, from: 1, to: 18, sideways: 300 },
+    { ago: 26 * day, from: 8, to: 27, sideways: 200 },
   ].map(({ ago, from, to, sideways }, i) => {
     const out = TRAIL.slice(from, to);
     const home = out
@@ -175,7 +210,11 @@ function savedHistory(now) {
   });
 }
 
-/** Скачанные офлайн-области — плитка «Offline map» и экран менеджера карт. */
+/**
+ * Скачанные офлайн-области: плитка «Offline map» на главной и список на экране
+ * менеджера карт. Обе стоят на прошлых походах в том же лесу — так, как их и
+ * качают перед поездкой.
+ */
 function savedRegions(now) {
   const date = (ts) =>
     new Date(ts).toLocaleDateString("en-US", { day: "numeric", month: "short" });
@@ -221,6 +260,36 @@ function savedRegions(now) {
   ];
 }
 
+/**
+ * Ждём, пока карта дорисуется. Тайлы Thunderforest приезжают неровно, и кадр,
+ * снятый по таймеру, ловит серые прогалины.
+ *
+ * Условие — не «все тайлы загружены», а «число загруженных перестало расти»:
+ * Leaflet держит в DOM и снятые с показа тайлы, часть из них так и остаётся
+ * незагруженной, и ожидание полного комплекта упирается в таймаут на каждом
+ * кадре.
+ */
+async function waitForTiles(page, { settle = 1200 } = {}) {
+  const loaded = () =>
+    page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll("img.leaflet-tile")).filter(
+          (t) => t.complete && t.naturalWidth > 0,
+        ).length,
+    );
+
+  let previous = -1;
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const count = await loaded();
+    if (count > 0 && count === previous) break;
+    previous = count;
+    await sleep(1200);
+  }
+  if (previous <= 0) console.warn("    тайлы не загрузились — снимаем как есть");
+  await sleep(settle);
+}
+
 async function capture({ name, viewport }) {
   const dir = join(OUT, name);
   mkdirSync(dir, { recursive: true });
@@ -234,6 +303,9 @@ async function capture({ name, viewport }) {
     timezoneId: "Europe/Helsinki",
     geolocation: { latitude: TRAIL.at(-3).lat, longitude: TRAIL.at(-3).lng },
     permissions: ["geolocation"],
+    // Кольцо внимания у плитки START и пульсация точки «я здесь» на статичном
+    // кадре выглядят как артефакт отрисовки, а не как анимация.
+    reducedMotion: "reduce",
   });
 
   // История и офлайн-области нужны на всех кадрах, активный поход — не на всех,
@@ -249,56 +321,69 @@ async function capture({ name, viewport }) {
 
   const page = await ctx.newPage();
   const shot = async (file) => {
-    await page.screenshot({ path: join(dir, file) });
+    await page.screenshot({ path: join(dir, file), animations: "disabled" });
     console.log(`  ${name}/${file}`);
   };
 
-  /* ---- 1. Главный экран: похода нет ---- */
-  await page.goto(`${ORIGIN}/dashboard/track`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "I'm entering the forest" }).waitFor();
-  await sleep(1200);
+  /* ---- Вход: кадры показывают приложение, а в нём человек всегда вошёл ---- */
+  // networkidle и пауза — не перестраховка: по клику до гидратации форма уходит
+  // обычным GET-запросом, и страница входа просто перезагружается.
+  await page.goto(`${ORIGIN}/login`, { waitUntil: "networkidle" });
+  await sleep(2000);
+  await page.getByPlaceholder("you@example.com").fill(EMAIL);
+  await page.getByPlaceholder("••••••••").fill(PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+  /* ---- 1. Главный экран: START, карта «где я», нижнее меню ---- */
+  await page.getByRole("button", { name: /Start/ }).waitFor({ timeout: 30_000 });
+  await waitForTiles(page);
+  // Приглашение войти исчезает только после ответа /api/subscription: снимаем
+  // кадр, когда его на экране точно нет.
+  await page
+    .getByText("Sign in to sync your walks")
+    .waitFor({ state: "detached", timeout: 20_000 })
+    .catch(() => {});
   await shot("01-home.png");
 
-  /* ---- 2. Ручная постановка точки входа ---- */
-  await page.getByRole("button", { name: "Set entry point on the map" }).click();
-  await page.getByRole("button", { name: "I entered here" }).waitFor();
-  // Тайлы Thunderforest на полном экране грузятся заметно дольше плитки.
-  await sleep(6000);
-  await page.mouse.click(viewport.width / 2, viewport.height * 0.46);
-  await sleep(1500);
-  await shot("02-entry-point.png");
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  /* ---- 4. Предсохранение области касанием ---- */
+  await page.getByRole("button", { name: "Save this area for offline use" }).click();
+  await page.getByText("Pick an area to save").waitFor({ timeout: 30_000 });
+  await waitForTiles(page, { settle: 2500 });
+  await shot("04-save-area.png");
 
-  /* ---- 4. История походов, первый раскрыт вместе с картой ---- */
-  await page.getByRole("button", { name: /History/ }).click();
+  /* ---- 5. Менеджер офлайн-карт ---- */
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("heading", { name: "Downloaded areas" }).waitFor();
+  // Без центра экран показывает пустое «centre not set yet» и одну кнопку:
+  // радиус, детализация и честная оценка объёма появляются только с ним.
+  await page.getByRole("button", { name: "Use my location" }).first().click();
+  await page.getByText("area radius").first().waitFor({ timeout: 30_000 });
+  await sleep(1200);
+  await shot("05-offline-map.png");
+
+  /* ---- 3. История походов, первый раскрыт вместе с картой ---- */
+  // Точное совпадение: «History» есть и в нижнем меню, и на плитке главной.
+  await page.getByRole("button", { name: "History", exact: true }).click();
   const firstWalk = page.locator("button").filter({ hasText: /^Track / }).first();
   await firstWalk.click();
-  await sleep(6000);
-  await shot("04-history.png");
-  await page.getByRole("button", { name: "Back" }).click();
+  await waitForTiles(page, { settle: 2000 });
+  await shot("03-history.png");
 
-  /* ---- 3, 5. Активный поход: стрелка возврата и офлайн-карта ---- */
+  /* ---- 2. Активный поход: стрелка возврата и пройденный путь ---- */
   await page.evaluate((track) => {
     localStorage.setItem("sf_active_track", JSON.stringify(track));
   }, activeTrack(now));
-  await page.goto(`${ORIGIN}/dashboard/track`, { waitUntil: "networkidle" });
+  await page.goto(`${ORIGIN}/dashboard/track`, { waitUntil: "domcontentloaded" });
 
   // Хвост пути проходим по-настоящему: watchPosition считает по нему курс
   // движения, и стрелка возврата получает точку отсчёта.
   for (const p of WALKED) {
     await ctx.setGeolocation({ latitude: p.lat, longitude: p.lng });
-    await sleep(2500);
+    await sleep(3000);
   }
-  await page.getByText("Entry point:").waitFor({ timeout: 30_000 });
-  await sleep(7000);
-  await shot("03-way-back.png");
-
-  /* ---- 5. Менеджер офлайн-карт ---- */
-  await page.getByRole("button", { name: "Manage" }).click();
-  await page.getByRole("heading", { name: "Downloaded areas" }).waitFor();
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await sleep(1500);
-  await shot("05-offline-map.png");
+  await page.getByText("Entry point:").waitFor({ timeout: 45_000 });
+  await waitForTiles(page, { settle: 2000 });
+  await shot("02-way-back.png");
 
   await browser.close();
 }
