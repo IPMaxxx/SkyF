@@ -23,15 +23,30 @@ export const checkerBrand = {
 } as const;
 
 export default {
+  /** Нижнее меню: две вкладки и кнопка панели «Ещё». */
+  nav: {
+    tabBar: "Основная навигация",
+    identify: "Распознать",
+    account: "Аккаунт",
+    more: "Ещё",
+    openMore: "Открыть меню «Ещё»",
+    back: "Назад",
+  },
+
+  /** Панель «Ещё» — то, что не поместилось во вкладки. */
   menu: {
     brandShort: "Mushroom Checker",
-    open: "Открыть меню",
-    close: "Закрыть меню",
-    identify: "Определить гриб",
+    close: "Закрыть",
+    moreTitle: "Ещё",
     subscription: "Подписка",
-    account: "Мой аккаунт",
     premiumPill: "PREMIUM",
     language: "Язык",
+    support: "Поддержка",
+    otherApps: "ДРУГИЕ ПРИЛОЖЕНИЯ SKYFOREST",
+    waybackName: "WayBack",
+    waybackHint: "Возвращает к точке, откуда вы вошли в лес",
+    skyforestName: "SkyForest",
+    skyforestHint: "Карта леса, прогноз грибов и не только",
     logout: "Выйти",
   },
 

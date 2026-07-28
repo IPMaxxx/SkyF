@@ -10,7 +10,7 @@
  */
 
 import { Check, ChevronRight } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** Escape закрывает оверлей — на вебе к этому привыкли, в WebView не мешает. */
@@ -33,10 +33,10 @@ function useEscape(open: boolean, onClose: () => void) {
  * Экран во всю высоту: контент скроллится, нижний блок кнопок «прилипает»
  * к краю с отступом под safe-area (в дизайне — 34px).
  *
- * `--ck-chrome` и `--ck-safe-top` выставляет оболочка (AppShell): когда сверху
- * есть шапка Checker, её высоту нужно вычесть из 100dvh, а safe-area отступ
- * уже добавлен шапкой. Без оболочки (auth-экраны) переменных нет и работают
- * значения по умолчанию.
+ * `--ck-chrome`, `--ck-safe-top` и `--ck-screen-pb` выставляют оболочки
+ * (`ck/(app)/layout.tsx` и `identify/layout.tsx`): из 100dvh вычитается всё,
+ * что занято шапкой и нижним меню, а safe-area отступы держат они же. Без
+ * оболочки (экраны входа) переменных нет и работают значения по умолчанию.
  */
 export function CkScreen({
   children,
@@ -67,7 +67,7 @@ export function CkScreen({
       {bottom && (
         <div
           className={cn(
-            "pt-4 pb-[calc(34px+env(safe-area-inset-bottom))]",
+            "pt-4 pb-[var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))]",
             padding,
           )}
         >
@@ -440,7 +440,16 @@ export function CkModal({
   );
 }
 
-/** Нижний лист: radius 32 сверху, ручка 44×4, scrim задаётся параметром. */
+/** Насколько нужно потянуть лист вниз, чтобы он закрылся. */
+const SHEET_CLOSE_DISTANCE = 70;
+
+/**
+ * Нижний лист: radius 32 сверху, ручка 44×4, scrim задаётся параметром.
+ *
+ * Закрывается тапом по фону, Escape и свайпом вниз за ручку. Свайп повешен
+ * только на область ручки: если слушать весь лист, жест перехватывал бы
+ * прокрутку и поля ввода внутри.
+ */
 export function CkSheet({
   open,
   onClose,
@@ -455,7 +464,30 @@ export function CkSheet({
   scrim?: number;
 }) {
   useEscape(open, onClose);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const startY = useRef<number | null>(null);
+  const [drag, setDrag] = useState(0);
+
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+  }, [open]);
+
   if (!open) return null;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+    setDrag(Math.max(0, e.touches[0].clientY - startY.current));
+  };
+  const onTouchEnd = () => {
+    startY.current = null;
+    const closing = drag > SHEET_CLOSE_DISTANCE;
+    setDrag(0);
+    if (closing) onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col justify-end">
       <button
@@ -466,11 +498,21 @@ export function CkSheet({
         style={{ background: `rgba(19,35,24,${scrim})` }}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className="font-ck relative z-10 mx-auto w-full max-w-[520px] rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_rgba(19,35,24,0.4)]"
+        tabIndex={-1}
+        style={{ transform: drag ? `translateY(${drag}px)` : undefined }}
+        className="font-ck relative z-10 mx-auto w-full max-w-[520px] rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_rgba(19,35,24,0.4)] outline-none"
       >
-        <i className="mx-auto mb-2.5 block h-1 w-11 rounded-sm bg-ck-border-4" />
+        <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          className="-mx-5 -mt-3.5 px-5 pb-2.5 pt-3.5"
+        >
+          <i className="mx-auto block h-1 w-11 rounded-sm bg-ck-border-4" />
+        </div>
         {children}
       </div>
     </div>
