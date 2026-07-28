@@ -9,6 +9,8 @@
 import { createServerClient } from "@supabase/ssr";
 import type { SubscriptionTier, SubscriptionPeriod } from "@/lib/native/iapProducts";
 import type { TOKEN_COSTS } from "@/lib/tokens";
+import { FLAVORS, type AppFlavor } from "@/lib/appFlavor";
+import type { FlavorSubscriptionPlan } from "@/flavors/types";
 
 export type TokenAction = keyof typeof TOKEN_COSTS;
 
@@ -63,10 +65,12 @@ export const TIER_BENEFITS: Record<SubscriptionTier, TierBenefits> = {
   },
   // Подписка приложения Mushroom Checker: только распознавание грибов,
   // без токенов (никаких бонус-пулов — в флейворах токены не используются).
+  // Лимиты берутся не отсюда, а из FLAVORS.checker.subscriptionPlan:
+  // в оплаченной подписке их нет, в триале — общий лимит на весь период.
   checker: {
     unlimitedActions: [],
     freeMonitors: 0,
-    identifyPerMonth: 25,
+    identifyPerMonth: 0,
     forecastPerMonth: 0,
     monthlyBonusTokens: 0,
     freeMarketplaceList: false,
@@ -95,7 +99,34 @@ export interface ActiveSubscription {
   currentPeriodEnd: string;
   identifyUsed: number;
   forecastUsed: number;
+  /** Идёт бесплатный пробный период стора (introductory offer). */
+  isTrial: boolean;
   benefits: TierBenefits;
+}
+
+/** Тиры, которые принадлежат отдельным приложениям со своей моделью подписки. */
+const TIER_FLAVOR: Partial<Record<SubscriptionTier, AppFlavor>> = {
+  checker: "checker",
+  wayback: "wayback",
+};
+
+/** Модель подписки приложения этого тира (или undefined — тир SkyForest). */
+export function planForTier(
+  tier: SubscriptionTier,
+): FlavorSubscriptionPlan | undefined {
+  const flavor = TIER_FLAVOR[tier];
+  return flavor ? FLAVORS[flavor].subscriptionPlan : undefined;
+}
+
+/**
+ * Сколько определений грибов включено в подписку: число или null — без
+ * лимита. У приложений со своей моделью (Checker) лимит есть только на
+ * бесплатном триале, в оплаченной подписке ограничений нет.
+ */
+export function identifyLimitFor(sub: ActiveSubscription): number | null {
+  const plan = planForTier(sub.tier);
+  if (plan) return sub.isTrial ? plan.trialIdentifyLimit : plan.identifyLimit;
+  return sub.benefits.identifyPerMonth;
 }
 
 export function getSupabaseAdmin() {
@@ -118,6 +149,7 @@ interface SubscriptionRow {
   current_period_end: string;
   identify_used: number;
   forecast_used: number;
+  is_trial: boolean | null;
 }
 
 function toActive(row: SubscriptionRow): ActiveSubscription {
@@ -133,6 +165,7 @@ function toActive(row: SubscriptionRow): ActiveSubscription {
     currentPeriodEnd: row.current_period_end,
     identifyUsed: row.identify_used,
     forecastUsed: row.forecast_used,
+    isTrial: row.is_trial ?? false,
     benefits: TIER_BENEFITS[row.tier],
   };
 }
@@ -148,7 +181,7 @@ export async function getActiveSubscription(
   const { data, error } = await supabase
     .from("user_subscriptions")
     .select(
-      "id, user_id, platform, product_id, tier, period, status, current_period_start, current_period_end, identify_used, forecast_used",
+      "id, user_id, platform, product_id, tier, period, status, current_period_start, current_period_end, identify_used, forecast_used, is_trial",
     )
     .eq("user_id", userId)
     .in("status", ["active", "grace", "canceled"])
@@ -172,15 +205,17 @@ export function isUnlimitedAction(
  * Пытается израсходовать единицу месячного лимита подписки
  * ('identify' | 'forecast'). true — действие покрыто подпиской,
  * false — лимит исчерпан (или недоступен для тира) — оплата токенами.
+ *
+ * Лимит null (подписка без ограничений) — сразу true: счётчик не ведём,
+ * иначе на экране появлялось бы бессмысленное «осталось N».
  */
 export async function consumeSubscriptionQuota(
   sub: ActiveSubscription,
   kind: "identify" | "forecast",
 ): Promise<boolean> {
   const limit =
-    kind === "identify"
-      ? sub.benefits.identifyPerMonth
-      : sub.benefits.forecastPerMonth;
+    kind === "identify" ? identifyLimitFor(sub) : sub.benefits.forecastPerMonth;
+  if (limit === null) return true;
   if (limit <= 0) return false;
 
   const supabase = getSupabaseAdmin();

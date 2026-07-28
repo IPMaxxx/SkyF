@@ -4,15 +4,17 @@
  * Шапка Mushroom Checker: логотип-марка + название слева, кнопка меню справа.
  *
  * Меню — нижний лист (а не выпадающая панель): «Подписка» и «Аккаунт» должны
- * открываться в один тап, это вся навигация приложения.
+ * открываться в один тап, это вся навигация приложения. Там же переключатель
+ * языка: основной язык приложения английский, русский — по выбору.
  */
 
 import Image from "next/image";
 import { useState } from "react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { FLAVORS } from "@/lib/appFlavor";
+import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { CkSheet } from "@/components/checker/primitives";
 
@@ -22,9 +24,12 @@ const MENU_ITEMS = [
   { href: "/account", key: "account", tint: "bg-ck-border" },
 ] as const;
 
+const LOCALE_LABELS: Record<string, string> = { en: "EN", ru: "RU" };
+
 export function CheckerHeader() {
   const t = useTranslations("checker.menu");
   const pathname = usePathname();
+  const locale = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -112,6 +117,41 @@ export function CheckerHeader() {
               </Link>
             );
           })}
+
+          <div className="mx-4 my-2 h-px bg-ck-hairline" />
+
+          {/* Язык. Выбор запоминаем в куке NEXT_LOCALE руками: у локали по
+              умолчанию нет префикса в URL, так что по одному адресу middleware
+              не отличил бы «выбрал этот язык» от «языка не выбирал» и снова
+              показал бы основной язык приложения (английский). */}
+          <div className="flex items-center gap-3.5 px-4 py-2.5">
+            <span className="flex-1 text-[16px] font-bold text-ck-ink-2">
+              {t("language")}
+            </span>
+            <div className="flex gap-1 rounded-full bg-ck-canvas p-1">
+              {routing.locales.map((loc) => (
+                <Link
+                  key={loc}
+                  href={pathname}
+                  locale={loc}
+                  scroll={false}
+                  onClick={() => {
+                    document.cookie = `NEXT_LOCALE=${loc}; path=/; max-age=31536000; samesite=lax`;
+                    setOpen(false);
+                  }}
+                  aria-current={loc === locale ? "true" : undefined}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-[13px] font-extrabold",
+                    loc === locale
+                      ? "bg-ck-primary text-white"
+                      : "text-ck-muted",
+                  )}
+                >
+                  {LOCALE_LABELS[loc]}
+                </Link>
+              ))}
+            </div>
+          </div>
 
           <div className="mx-4 my-2 h-px bg-ck-hairline" />
 

@@ -187,6 +187,9 @@ export async function POST(req: NextRequest) {
       status: state.status,
       current_period_start: periodStart.toISOString(),
       current_period_end: periodEnd.toISOString(),
+      // Триал определяет лимиты приложений со своей моделью подписки
+      // (Mushroom Checker): в оплаченном периоде ограничений нет.
+      is_trial: state.isTrial,
       updated_at: new Date().toISOString(),
     };
 
@@ -222,14 +225,17 @@ export async function POST(req: NextRequest) {
       isTrial: state.isTrial,
     });
 
-    if (granted === "granted") {
-      // На триале last_bonus_grant_at не фиксируем: cron ежедневно
-      // перепроверяет подписку и после конверсии в оплаченный период
-      // дозачисляет полный пул (у него свой payment_id без ":trial").
+    // Счётчики лимитов обнуляются только с началом оплаченного периода.
+    // На триале их трогать нельзя: verify вызывается и при восстановлении
+    // покупки, иначе лимит триала сбрасывался бы по кнопке «Восстановить».
+    // last_bonus_grant_at на триале тоже не фиксируем — после конверсии
+    // в оплаченный период крон дозачислит полный пул (у него свой
+    // payment_id без ":trial").
+    if (granted === "granted" && !state.isTrial) {
       await admin
         .from("user_subscriptions")
         .update({
-          ...(state.isTrial ? {} : { last_bonus_grant_at: new Date().toISOString() }),
+          last_bonus_grant_at: new Date().toISOString(),
           identify_used: 0,
           forecast_used: 0,
         })

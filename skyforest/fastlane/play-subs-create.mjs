@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Создание подписок Mushroom Checker / WayBack в Google Play с базовым
-// планом (месяц/год) и бесплатным триалом 7 дней.
+// планом (месяц/год) и бесплатным триалом (Checker — 3 дня, WayBack — 7).
 //
 // Для каждого продукта: pricing:convertRegionPrices (региональные цены из
 // USD) → subscriptions.create → basePlans:activate → offers.create
-// (фаза FREE P7D) → offers:activate. Скрипт идемпотентен: существующие
-// продукты/офферы пропускаются.
+// (фаза FREE, длительность из продукта) → offers:activate. Скрипт
+// идемпотентен: существующие продукты/офферы пропускаются.
 //
 // Запуск: node fastlane/play-subs-create.mjs
 import { readFileSync } from 'node:fs';
@@ -66,10 +66,12 @@ const PRODUCTS = [
     productId: 'ai.skyforest.mushroomchecker.sub.monthly',
     basePlanId: 'monthly',
     billingPeriod: 'P1M',
-    usd: 4.99,
+    usd: 2,
+    offerId: 'free-trial-3d',
+    trialDuration: 'P3D',
     listings: [
-      { languageCode: 'en-US', title: 'Premium Monthly', description: '25 AI mushroom identifications per month with confidence scores.' },
-      { languageCode: 'ru-RU', title: 'Премиум (месяц)', description: '25 ИИ-определений грибов в месяц с процентами уверенности.' },
+      { languageCode: 'en-US', title: 'Premium Monthly', description: 'Unlimited AI mushroom identifications. 3-day free trial.' },
+      { languageCode: 'ru-RU', title: 'Премиум (месяц)', description: 'Неограниченные ИИ-определения грибов. 3 дня бесплатно.' },
     ],
   },
   {
@@ -77,10 +79,12 @@ const PRODUCTS = [
     productId: 'ai.skyforest.mushroomchecker.sub.yearly',
     basePlanId: 'yearly',
     billingPeriod: 'P1Y',
-    usd: 29.99,
+    usd: 14.99,
+    offerId: 'free-trial-3d',
+    trialDuration: 'P3D',
     listings: [
-      { languageCode: 'en-US', title: 'Premium Yearly', description: '25 AI mushroom identifications per month with confidence scores.' },
-      { languageCode: 'ru-RU', title: 'Премиум (год)', description: '25 ИИ-определений грибов в месяц с процентами уверенности.' },
+      { languageCode: 'en-US', title: 'Premium Yearly', description: 'Unlimited AI mushroom identifications. 3-day free trial.' },
+      { languageCode: 'ru-RU', title: 'Премиум (год)', description: 'Неограниченные ИИ-определения грибов. 3 дня бесплатно.' },
     ],
   },
   {
@@ -107,10 +111,14 @@ const PRODUCTS = [
   },
 ];
 
-const OFFER_ID = 'free-trial-7d';
+// Триал по умолчанию — 7 дней; у продуктов Checker он свой (3 дня).
+const DEFAULT_OFFER_ID = 'free-trial-7d';
+const DEFAULT_TRIAL_DURATION = 'P7D';
 
 for (const p of PRODUCTS) {
   console.log(`\n=== ${p.productId} ===`);
+  const OFFER_ID = p.offerId ?? DEFAULT_OFFER_ID;
+  const TRIAL_DURATION = p.trialDuration ?? DEFAULT_TRIAL_DURATION;
 
   // 0. Уже существует?
   const existing = await api('GET', `/applications/${p.pkg}/subscriptions/${p.productId}`);
@@ -185,7 +193,7 @@ for (const p of PRODUCTS) {
     console.log('base plan already active');
   }
 
-  // 4. Оффер: бесплатный триал 7 дней для новых подписчиков.
+  // 4. Оффер: бесплатный триал для новых подписчиков.
   const offers = await api('GET', `/applications/${p.pkg}/subscriptions/${p.productId}/basePlans/${p.basePlanId}/offers`);
   let offer = (offers.json.subscriptionOffers || []).find((o) => o.offerId === OFFER_ID);
   if (!offer) {
@@ -206,7 +214,7 @@ for (const p of PRODUCTS) {
       phases: [
         {
           recurrenceCount: 1,
-          duration: 'P7D',
+          duration: TRIAL_DURATION,
           regionalConfigs: bp.regionalConfigs.map((r) => ({ regionCode: r.regionCode, free: {} })),
           otherRegionsConfig: { free: {} },
         },

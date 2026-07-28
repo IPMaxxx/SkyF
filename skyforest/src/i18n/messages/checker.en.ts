@@ -30,22 +30,26 @@ export const checkerBrand = {
 
 export default {
   menu: {
-    brandShort: "Checker",
+    brandShort: "Mushroom Checker",
     open: "Open menu",
     close: "Close menu",
     identify: "Identify mushroom",
     subscription: "Subscription",
     account: "My account",
     premiumPill: "PREMIUM",
+    language: "Language",
     logout: "Log out",
   },
 
   home: {
     titleLine1: "Mushroom?",
     titleLine2: "Let's check.",
-    quotaLeft: "identifications left this month, out of {limit}",
+    quotaUnlimited: "Unlimited identifications",
+    quotaUnlimitedNote: "PREMIUM",
+    quotaTrialLeft: "identifications left in your free trial, out of {limit}",
+    quotaTrialEnded: "Trial identifications used up — subscribe to continue",
     quotaNoSub:
-      "identifications left — subscribe to get {limit} every month",
+      "{days, plural, one {day} other {days}} free — tap to start your trial",
     photoCaption: "MUSHROOM PHOTO",
     tipCap: "Cap from above",
     tipStem: "Whole stem",
@@ -62,7 +66,9 @@ export default {
     lighting: "Good lighting detected",
     beforeTitle: "Before you send",
     beforeBody:
-      "One identification will be used from your monthly allowance — only if we return a result.",
+      "One identification will be used from your trial allowance — only if we return a result.",
+    beforeBodyUnlimited:
+      "Your subscription has no limits — identify as many finds as you like.",
     identify: "Identify",
     counter: "· {used} of {limit}",
     retake: "Retake",
@@ -72,7 +78,7 @@ export default {
     title: "Identify this mushroom?",
     body: "We only count the identification if the analysis returns a result. Errors and “not a mushroom” are free.",
     thisScan: "This scan",
-    leftThisMonth: "Left this month",
+    leftInTrial: "Left in trial",
     afterScan: "After scan",
     cta: "Identify",
     cancel: "Cancel",
@@ -120,10 +126,12 @@ export default {
     noResultTitle: "No confident match",
     noResultBody:
       "Nothing was counted. Shoot in daylight, in focus, with the cap from above and the gills from below.",
-    limitTitle: "Monthly limit reached",
+    limitTitle: "Trial limit reached",
     limitBody:
-      "You've used all {limit} identifications. The counter resets on {date}.",
-    limitBodyNoDate: "You've used all {limit} identifications for this month.",
+      "You've used all {limit} identifications of the free trial. A subscription removes the limit.",
+    noSubTitle: "Subscription required",
+    noSubBody:
+      "Start a {days}-day free trial to identify mushrooms — {limit} identifications are included.",
     limitCta: "See subscription options",
     timeoutTitle: "Analysis took too long",
     timeoutBody: "Connection timed out after 35 seconds. Nothing was counted.",
@@ -138,29 +146,37 @@ export default {
     genericTitle: "Something went wrong",
     genericBody: "Nothing was counted. Please try again in a moment.",
     captureTitle: "Could not get the photo",
-    captureBody:
-      "Check camera and photo library permissions in Settings, then try again.",
+    captureBody: "Try again, or pick a photo from the gallery instead.",
+    cameraDeniedTitle: "Camera access is off",
+    cameraDeniedBody:
+      "Allow the camera for Mushroom Checker in Settings › Privacy › Camera, then take the photo again.",
+    photosDeniedTitle: "Photo library access is off",
+    photosDeniedBody:
+      "Allow photos for Mushroom Checker in Settings › Privacy › Photos, then pick the photo again.",
+    captureDetail: "Details: {reason}",
   },
 
   paywall: {
     close: "Close",
-    title: "Checker Premium",
+    title: "Mushroom Checker Premium",
     subtitle:
-      "{limit} identifications a month, full species data and lookalike warnings.",
+      "Unlimited identifications, full species data and lookalike warnings.",
     monthly: "Monthly",
     yearly: "Yearly",
     yearlyBadge: "−{percent}%",
-    trialBadge: "7-DAY FREE TRIAL",
+    trialBadge: "{days}-DAY FREE TRIAL",
     perYear: "/ year",
     perMonth: "/ month",
     perMonthHint: "· {price} per month",
-    feature1: "{limit} identifications every month",
+    feature1: "Unlimited identifications",
     feature2: "Dangerous lookalikes & toxicity notes",
     feature3: "Full taxonomy and habitat data",
+    trialNote:
+      "The free trial covers {limit} identifications over {days} days. After it starts billing, identifications are unlimited.",
     autoRenewYear:
-      "7 days free, then auto-renews at {price}/year. Cancel anytime in the {store}.",
+      "{days} days free, then auto-renews at {price}/year. Cancel anytime in the {store}.",
     autoRenewMonth:
-      "7 days free, then auto-renews at {price}/month. Cancel anytime in the {store}.",
+      "{days} days free, then auto-renews at {price}/month. Cancel anytime in the {store}.",
     cta: "Start free trial",
     ctaBusy: "Opening the {store}…",
     eula: "Terms of Use (EULA)",
@@ -177,10 +193,15 @@ export default {
     back: "Back",
     activeTitle: "Premium is active",
     activeBody: "{plan} plan · renews {date}. Managed through your {store} account.",
+    trialTitle: "Free trial is active",
+    trialBody:
+      "{plan} plan · billing starts {date}. Managed through your {store} account.",
     planMonthly: "Monthly",
     planYearly: "Yearly",
-    quotaLine: "of {limit} identifications left",
-    quotaReset: "resets on {date}",
+    quotaUnlimited: "Unlimited identifications",
+    quotaUnlimitedNote: "no monthly limit",
+    quotaLine: "of {limit} trial identifications left",
+    quotaReset: "trial ends {date}",
     manage: "Manage subscription",
     canceledTitle: "State · canceled",
     canceledBody:
@@ -196,11 +217,13 @@ export default {
     title: "My account",
     back: "Back",
     premiumPlan: "Premium · {plan}",
+    trialPlan: "Free trial · {plan}",
     premiumMonthly: "Monthly",
     premiumYearly: "Yearly",
-    idsLeft: "{left} of {limit} identifications left this month",
+    idsUnlimited: "Unlimited identifications",
+    idsTrialLeft: "{left} of {limit} trial identifications left",
     noSubscription: "No active subscription",
-    noSubscriptionHint: "Subscribe to identify mushrooms",
+    noSubscriptionHint: "Start a {days}-day free trial",
     manage: "Manage",
     subscribe: "Subscribe",
     displayName: "Display name",

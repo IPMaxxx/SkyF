@@ -26,19 +26,36 @@ export async function middleware(request: NextRequest) {
   }
 
   const rawPathname = request.nextUrl.pathname;
-  const isEn = rawPathname === "/en" || rawPathname.startsWith("/en/");
-  request.cookies.set("NEXT_LOCALE", isEn ? "en" : "ru");
 
   // Флейвор по хосту: checker./wayback. — урезанные приложения на поддоменах.
   const flavor = flavorFromHost(request.headers.get("host"));
   const flavorCfg = flavorConfig(flavor);
   const flavorPathname = stripLocalePrefix(rawPathname);
 
+  // Локаль запроса. Префикс в URL решает; какая локаль идёт без префикса,
+  // зависит от сборки (`routing.defaultLocale`). У приложений с собственным
+  // деревом роутов основной язык свой (Checker и WayBack — английский), и он
+  // не должен зависеть от того, вместе с каким сайтом их задеплоили; явный
+  // выбор пользователя (кука переключателя языка) важнее дефолта.
+  const urlLocale = routing.locales.find(
+    (loc) => rawPathname === `/${loc}` || rawPathname.startsWith(`/${loc}/`),
+  );
+  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+  const locale =
+    urlLocale ??
+    (flavor === "skyforest"
+      ? routing.defaultLocale
+      : (routing.locales.find((loc) => loc === cookieLocale) ??
+        flavorCfg.defaultLocale));
+  // Публичные URL остаются без префикса для локали по умолчанию (as-needed).
+  const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;
+  request.cookies.set("NEXT_LOCALE", locale);
+
   // Сегменты вида /ck/* — внутренние: их отдаём только через rewrite ниже,
   // по прямому URL (на любом хосте) они не должны открываться.
   if (isInternalPath(flavorPathname)) {
     return NextResponse.redirect(
-      new URL((isEn ? "/en" : "") + flavorCfg.homePath, request.url),
+      new URL(localePrefix + flavorCfg.homePath, request.url),
     );
   }
 
@@ -51,20 +68,21 @@ export async function middleware(request: NextRequest) {
   );
   const rewriteUrl = rewriteTo ? request.nextUrl.clone() : null;
   if (rewriteUrl && rewriteTo) {
-    rewriteUrl.pathname = `${isEn ? "/en" : "/ru"}${rewriteTo}`;
+    rewriteUrl.pathname = `/${locale}${rewriteTo}`;
   }
 
   if (flavor !== "skyforest") {
     // Корень поддомена — простая посадочная (rewrite: URL остаётся "/").
     if (!rewriteUrl && (flavorPathname === "/" || flavorPathname === "")) {
       return NextResponse.rewrite(
-        new URL(`${isEn ? "/en" : "/ru"}/landing/${flavor}`, request.url),
+        new URL(`/${locale}/landing/${flavor}`, request.url),
+        { request },
       );
     }
     // Чужие маршруты (погода, маркетплейс, блог...) → домашняя флейвора.
     if (!isPathAllowed(flavor, flavorPathname)) {
       return NextResponse.redirect(
-        new URL((isEn ? "/en" : "") + flavorCfg.homePath, request.url),
+        new URL(localePrefix + flavorCfg.homePath, request.url),
       );
     }
   }
@@ -76,7 +94,15 @@ export async function middleware(request: NextRequest) {
     intlResponse.headers.forEach((value, key) => {
       // Свой rewrite важнее внутреннего rewrite next-intl: путь уже с локалью.
       if (rewriteUrl && key === "x-middleware-rewrite") return;
+      // Куку локали ставим сами: next-intl выводит её из URL и на флейворе с
+      // другим основным языком записал бы не то, что показано на экране.
+      if (key === "set-cookie") return;
       res.headers.set(key, value);
+    });
+    res.cookies.set("NEXT_LOCALE", locale, {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
     });
     return res;
   };
@@ -115,14 +141,14 @@ export async function middleware(request: NextRequest) {
   const isMfaPage = pathname === "/verify-mfa";
 
   if (isProtected && !user) {
-    const loginUrl = new URL(isEn ? "/en/login" : "/login", request.url);
+    const loginUrl = new URL(`${localePrefix}/login`, request.url);
     loginUrl.searchParams.set("redirect", rawPathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (pathname === "/login" && user) {
     return NextResponse.redirect(
-      new URL((isEn ? "/en" : "") + flavorCfg.homePath, request.url)
+      new URL(localePrefix + flavorCfg.homePath, request.url)
     );
   }
 
@@ -135,13 +161,13 @@ export async function middleware(request: NextRequest) {
 
     if (nextLevel === "aal2" && currentLevel === "aal1" && !isMfaPage) {
       return NextResponse.redirect(
-        new URL(isEn ? "/en/verify-mfa" : "/verify-mfa", request.url)
+        new URL(`${localePrefix}/verify-mfa`, request.url)
       );
     }
 
     if (isMfaPage && currentLevel === "aal2") {
       return NextResponse.redirect(
-        new URL((isEn ? "/en" : "") + flavorCfg.homePath, request.url)
+        new URL(localePrefix + flavorCfg.homePath, request.url)
       );
     }
   }

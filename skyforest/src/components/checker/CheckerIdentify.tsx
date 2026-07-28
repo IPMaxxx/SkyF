@@ -12,20 +12,23 @@
  *  - дисклеймер на экране результата (требование App Review).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, Camera, Check, Share2 } from "lucide-react";
-import { capturePhoto, pickPhotoFromGallery } from "@/lib/capturePhoto";
 import {
-  CHECKER_MONTHLY_LIMIT,
+  CaptureError,
+  capturePhoto,
+  pickPhotoFromGallery,
+} from "@/lib/capturePhoto";
+import {
+  CHECKER_PLAN,
   formatQuotaDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
 import { cn } from "@/lib/utils";
 import type { IdentifyResponse } from "@/app/api/mushrooms/identify/route";
 import {
-  CkFeatureRow,
   CkModal,
   CkMono,
   CkPrimaryButton,
@@ -44,6 +47,8 @@ interface CheckerError {
   variant: CkStatusVariant;
   title: string;
   body: string;
+  /** Техническая причина от плагина камеры — мелкой строкой под текстом. */
+  detail?: string;
   action?: "subscription" | "retry";
 }
 
@@ -67,6 +72,8 @@ export function CheckerIdentify() {
     subscription,
     left,
     limit,
+    isTrial,
+    unlimited,
     loading: subLoading,
     refresh: refreshSub,
   } = useCheckerSubscription();
@@ -98,9 +105,12 @@ export function CheckerIdentify() {
   >;
   const checklist = tIdentify.raw("checklist") as string[];
 
-  const resetDate = subscription
-    ? formatQuotaDate(subscription.quota_resets_at, locale)
-    : null;
+  // Дата окончания пробного периода: в оплаченной подписке лимита нет,
+  // поэтому и обнулять нечего.
+  const trialEndsDate =
+    subscription && isTrial
+      ? formatQuotaDate(subscription.current_period_end, locale)
+      : null;
 
   const setCaptured = (f: File | null) => {
     if (!f) return;
@@ -112,25 +122,54 @@ export function CheckerIdentify() {
     setError(null);
   };
 
-  const captureError = (): CheckerError => ({
-    variant: "error",
-    title: t("errors.captureTitle"),
-    body: t("errors.captureBody"),
-  });
+  /**
+   * Три разные причины неудачи различаются явно: закрытый доступ к камере,
+   * закрытый доступ к галерее и сбой плагина (его сообщение показываем
+   * мелкой строкой — без него ошибку невозможно диагностировать в нативе).
+   */
+  const captureError = (err: unknown): CheckerError => {
+    if (err instanceof CaptureError && err.reason === "camera_denied") {
+      return {
+        variant: "warn",
+        title: t("errors.cameraDeniedTitle"),
+        body: t("errors.cameraDeniedBody"),
+      };
+    }
+    if (err instanceof CaptureError && err.reason === "photos_denied") {
+      return {
+        variant: "warn",
+        title: t("errors.photosDeniedTitle"),
+        body: t("errors.photosDeniedBody"),
+      };
+    }
+    return {
+      variant: "error",
+      title: t("errors.captureTitle"),
+      body: t("errors.captureBody"),
+      detail: t("errors.captureDetail", {
+        reason:
+          err instanceof CaptureError
+            ? err.detail
+            : err instanceof Error
+              ? err.message
+              : String(err),
+      }),
+    };
+  };
 
   const handleTakePhoto = async () => {
     try {
       setCaptured(await capturePhoto());
-    } catch {
-      setError(captureError());
+    } catch (err) {
+      setError(captureError(err));
     }
   };
 
   const handleGallery = async () => {
     try {
       setCaptured(await pickPhotoFromGallery());
-    } catch {
-      setError(captureError());
+    } catch (err) {
+      setError(captureError(err));
     }
   };
 
@@ -146,20 +185,27 @@ export function CheckerIdentify() {
 
   const mapError = useCallback(
     (status: number, code?: string): CheckerError => {
+      // 402 приходит и когда исчерпан лимит триала, и когда подписки нет
+      // вовсе (в Checker распознавание без подписки не оплачивается ничем).
       if (status === 402) {
-        return {
-          variant: "warn",
-          title: t("errors.limitTitle"),
-          body: resetDate
-            ? t("errors.limitBody", {
-                limit: limit ?? CHECKER_MONTHLY_LIMIT,
-                date: resetDate,
-              })
-            : t("errors.limitBodyNoDate", {
-                limit: limit ?? CHECKER_MONTHLY_LIMIT,
+        return isTrial
+          ? {
+              variant: "warn",
+              title: t("errors.limitTitle"),
+              body: t("errors.limitBody", {
+                limit: limit ?? CHECKER_PLAN.trialIdentifyLimit ?? 0,
               }),
-          action: "subscription",
-        };
+              action: "subscription",
+            }
+          : {
+              variant: "warn",
+              title: t("errors.noSubTitle"),
+              body: t("errors.noSubBody", {
+                days: CHECKER_PLAN.trialDays,
+                limit: CHECKER_PLAN.trialIdentifyLimit ?? 0,
+              }),
+              action: "subscription",
+            };
       }
       if (status === 413) {
         return {
@@ -203,7 +249,7 @@ export function CheckerIdentify() {
         action: "retry",
       };
     },
-    [limit, resetDate, t],
+    [isTrial, limit, t],
   );
 
   const runIdentify = async () => {
@@ -285,7 +331,7 @@ export function CheckerIdentify() {
   );
 
   const errorCard = error && (
-    <div className="ck-step-in">
+    <div className="ck-step-in flex flex-col gap-1.5">
       <CkStatusCard
         variant={error.variant}
         icon={error.action === "subscription" ? "◑" : "!"}
@@ -293,6 +339,11 @@ export function CheckerIdentify() {
         body={error.body}
         action={errorAction || undefined}
       />
+      {error.detail && (
+        <span className="px-1 text-[10.5px] font-medium leading-[1.35] text-ck-muted-2">
+          {error.detail}
+        </span>
+      )}
     </div>
   );
 
@@ -642,8 +693,8 @@ export function CheckerIdentify() {
   /* ---------------- Превью выбранного фото ---------------- */
 
   if (previewUrl) {
-    // Порядковый номер этого определения в месяце; при исчерпанном лимите
-    // считать нечего — кнопка блокируется, ведём на подписку.
+    // Счётчик есть только в пробном периоде: в подписке лимита нет.
+    // При исчерпанном лимите кнопка блокируется, ведём на подписку.
     const exhausted = left != null && left <= 0;
     const used =
       limit != null && left != null && !exhausted ? limit - left + 1 : null;
@@ -692,16 +743,9 @@ export function CheckerIdentify() {
                 variant="warn"
                 icon="◑"
                 title={t("errors.limitTitle")}
-                body={
-                  resetDate
-                    ? t("errors.limitBody", {
-                        limit: limit ?? CHECKER_MONTHLY_LIMIT,
-                        date: resetDate,
-                      })
-                    : t("errors.limitBodyNoDate", {
-                        limit: limit ?? CHECKER_MONTHLY_LIMIT,
-                      })
-                }
+                body={t("errors.limitBody", {
+                  limit: limit ?? CHECKER_PLAN.trialIdentifyLimit ?? 0,
+                })}
                 action={
                   <button
                     type="button"
@@ -720,7 +764,9 @@ export function CheckerIdentify() {
                   {t("preview.beforeTitle")}
                 </span>
                 <span className="text-[12.5px] font-medium leading-[1.45] text-ck-body-soft">
-                  {t("preview.beforeBody")}
+                  {unlimited
+                    ? t("preview.beforeBodyUnlimited")
+                    : t("preview.beforeBody")}
                 </span>
               </div>
             )}
@@ -750,7 +796,7 @@ export function CheckerIdentify() {
                 {[
                   { label: t("confirm.thisScan"), value: "1", accent: false },
                   {
-                    label: t("confirm.leftThisMonth"),
+                    label: t("confirm.leftInTrial"),
                     value: String(left),
                     accent: false,
                   },
@@ -830,33 +876,57 @@ export function CheckerIdentify() {
           <span className="text-ck-primary">{t("home.titleLine2")}</span>
         </h1>
 
+        {/* Карточка состояния подписки. Три состояния: оплаченная подписка
+            (лимита нет), пробный период (счётчик от лимита триала) и
+            отсутствие подписки (приглашение начать пробный период). */}
         {!subLoading &&
-          (subscription ? (
-            <div className="flex items-center gap-3 rounded-[24px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3.5">
-              <span className="text-[26px] font-extrabold leading-none text-ck-amber">
-                {left ?? 0}
+          (unlimited ? (
+            <div className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5">
+              <span className="text-[26px] font-extrabold leading-none text-ck-primary">
+                ∞
               </span>
               <div className="flex flex-col gap-0.5">
-                <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
-                  {t("home.quotaLeft", { limit: limit ?? CHECKER_MONTHLY_LIMIT })}
+                <span className="text-[12.5px] font-medium leading-[1.35] text-ck-primary-mid">
+                  {t("home.quotaUnlimited")}
                 </span>
-                {resetDate && (
-                  <CkMono className="text-ck-amber-mid">
-                    {tSub("quotaReset", { date: resetDate })}
-                  </CkMono>
-                )}
+                <CkMono className="text-ck-primary-mid">
+                  {t("home.quotaUnlimitedNote")}
+                </CkMono>
               </div>
             </div>
-          ) : (
+          ) : subscription ? (
             <Link
               href="/payment"
               className="flex items-center gap-3 rounded-[24px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3.5"
             >
               <span className="text-[26px] font-extrabold leading-none text-ck-amber">
-                0
+                {left ?? 0}
               </span>
-              <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
-                {t("home.quotaNoSub", { limit: CHECKER_MONTHLY_LIMIT })}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
+                  {left === 0
+                    ? t("home.quotaTrialEnded")
+                    : t("home.quotaTrialLeft", {
+                        limit: limit ?? CHECKER_PLAN.trialIdentifyLimit ?? 0,
+                      })}
+                </span>
+                {trialEndsDate && (
+                  <CkMono className="text-ck-amber-mid">
+                    {tSub("quotaReset", { date: trialEndsDate })}
+                  </CkMono>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <Link
+              href="/payment"
+              className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5"
+            >
+              <span className="text-[26px] font-extrabold leading-none text-ck-primary">
+                {CHECKER_PLAN.trialDays}
+              </span>
+              <span className="text-[12.5px] font-medium leading-[1.35] text-ck-primary-mid">
+                {t("home.quotaNoSub", { days: CHECKER_PLAN.trialDays })}
               </span>
             </Link>
           ))}
@@ -892,25 +962,5 @@ export function CheckerIdentify() {
         </div>
       </div>
     </CkScreen>
-  );
-}
-
-/** Пейволл переиспользует список фич — экспортируем, чтобы не дублировать. */
-export function CheckerFeatureList({ limit }: { limit: number }) {
-  const t = useTranslations("checker.paywall");
-  const items = useMemo(
-    () => [
-      t("feature1", { limit }),
-      t("feature2"),
-      t("feature3"),
-    ],
-    [limit, t],
-  );
-  return (
-    <div className="flex flex-col gap-2.5">
-      {items.map((item) => (
-        <CkFeatureRow key={item}>{item}</CkFeatureRow>
-      ))}
-    </div>
   );
 }

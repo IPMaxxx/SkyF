@@ -1,4 +1,3 @@
-import { defaultLocale } from "../../i18n/brand-locale";
 import { COMMON_ALLOWED_PATHS, type FlavorConfig } from "../types";
 
 /**
@@ -11,7 +10,10 @@ import { COMMON_ALLOWED_PATHS, type FlavorConfig } from "../types";
 export const waybackFlavor: FlavorConfig = {
   id: "wayback",
   name: "WayBack",
-  defaultLocale,
+  // Приложение международное: основной язык английский, русский — по выбору.
+  // Язык сайта (brand-locale) здесь не годится — деплой общий с skyforest.by,
+  // и WayBack на нём отдавал бы русский всем.
+  defaultLocale: "en",
   homePath: "/dashboard/track",
   // /payment и /offer нужны для пейволла подписки (требует логин).
   allowedPaths: [
