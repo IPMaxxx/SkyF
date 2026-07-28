@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { TOKEN_COSTS } from "@/lib/tokens";
+import { getServerFlavor } from "@/lib/serverFlavor";
 import {
   getActiveSubscription,
   isUnlimitedAction,
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
   // Подписка (Forager/Pro): включённые действия не списывают токены;
   // лимитируемые (identify, compare_forecast) считаются по счётчику,
   // после исчерпания лимита — оплата токенами как обычно.
-  const sub = await getActiveSubscription(user.id);
+  const sub = await getActiveSubscription(user.id, await getServerFlavor());
   if (sub) {
     let covered = false;
     if (isUnlimitedAction(sub, action)) {

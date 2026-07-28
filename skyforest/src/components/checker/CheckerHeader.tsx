@@ -32,7 +32,7 @@ export function CheckerHeader() {
           height={72}
           className="h-9 w-9 rounded-full object-cover"
         />
-        <span className="text-[18px] font-extrabold tracking-[-0.02em] text-[#16291d]">
+        <span className="text-[18px] font-extrabold tracking-[-0.02em] text-ck-ink">
           {t("brandShort")}
         </span>
       </Link>

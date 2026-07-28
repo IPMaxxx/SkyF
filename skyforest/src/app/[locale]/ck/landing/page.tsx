@@ -29,21 +29,21 @@ export default async function CheckerLanding({
       };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0c150f] px-6 text-center text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-ck-canvas px-6 text-center text-ck-ink">
       <Image
         src="/icons/checker-192.png"
         alt=""
         width={96}
         height={96}
-        className="mb-6 rounded-3xl shadow-[0_8px_40px_rgba(98,168,99,0.35)]"
+        className="mb-6 rounded-3xl shadow-[0_8px_40px_var(--ck-glow)]"
         priority
       />
       <h1 className="font-heading text-4xl font-bold tracking-tight">Mushroom Checker</h1>
-      <p className="mt-3 max-w-md text-lg text-emerald-200/90">{t.tagline}</p>
-      <p className="mt-4 max-w-md text-sm leading-relaxed text-white/60">{t.text}</p>
+      <p className="mt-3 max-w-md text-lg text-ck-primary-text">{t.tagline}</p>
+      <p className="mt-4 max-w-md text-sm leading-relaxed text-ck-body">{t.text}</p>
       <Link
         href="/dashboard/identify"
-        className="mt-8 rounded-2xl bg-[#62a863] px-8 py-4 text-base font-bold text-[#0b130d] transition-transform hover:scale-[1.02] active:scale-95"
+        className="mt-8 rounded-2xl bg-ck-primary px-8 py-4 text-base font-bold text-ck-on-primary transition-transform hover:scale-[1.02] active:scale-95"
       >
         {t.cta}
       </Link>
@@ -57,7 +57,7 @@ export default async function CheckerLanding({
           <li key={link.href}>
             <Link
               href={link.href}
-              className="text-xs text-white/45 underline-offset-4 hover:text-white/70 hover:underline"
+              className="text-xs text-ck-muted underline-offset-4 hover:text-ck-ink-3 hover:underline"
             >
               {link.label}
             </Link>
@@ -66,7 +66,7 @@ export default async function CheckerLanding({
       </ul>
       <a
         href="https://skyforest.ai"
-        className="mt-4 text-xs text-white/35 underline-offset-4 hover:text-white/60 hover:underline"
+        className="mt-4 text-xs text-ck-faint underline-offset-4 hover:text-ck-muted hover:underline"
       >
         {t.full}
       </a>

@@ -104,18 +104,35 @@ export interface ActiveSubscription {
   benefits: TierBenefits;
 }
 
-/** Тиры, которые принадлежат отдельным приложениям со своей моделью подписки. */
-const TIER_FLAVOR: Partial<Record<SubscriptionTier, AppFlavor>> = {
+/**
+ * Приложение, которому принадлежит тир, — единственная привязка права
+ * к продукту.
+ *
+ * Отдельной колонки приложения в user_subscriptions нет и не нужно: чек
+ * стора сам привязан к bundle id, verify-subscription сверяет его с
+ * SubscriptionProduct.bundleId, а bundle id однозначно задаёт тир товара.
+ * Значит tier — уже надёжный признак «где куплено», и достаточно не
+ * отдавать приложению права чужих тиров.
+ */
+const TIER_FLAVOR: Record<SubscriptionTier, AppFlavor> = {
+  forager: "skyforest",
+  pro: "skyforest",
   checker: "checker",
   wayback: "wayback",
 };
+
+const ALL_TIERS = Object.keys(TIER_FLAVOR) as SubscriptionTier[];
+
+/** Тиры, дающие права в этом приложении. Чужие права здесь не действуют. */
+function tiersForFlavor(flavor: AppFlavor): SubscriptionTier[] {
+  return ALL_TIERS.filter((tier) => TIER_FLAVOR[tier] === flavor);
+}
 
 /** Модель подписки приложения этого тира (или undefined — тир SkyForest). */
 export function planForTier(
   tier: SubscriptionTier,
 ): FlavorSubscriptionPlan | undefined {
-  const flavor = TIER_FLAVOR[tier];
-  return flavor ? FLAVORS[flavor].subscriptionPlan : undefined;
+  return FLAVORS[TIER_FLAVOR[tier]].subscriptionPlan;
 }
 
 /**
@@ -171,11 +188,16 @@ function toActive(row: SubscriptionRow): ActiveSubscription {
 }
 
 /**
- * Активная подписка пользователя (или null). При нескольких активных
- * (переходный кейс апгрейда) возвращается pro.
+ * Активная подписка пользователя В ДАННОМ ПРИЛОЖЕНИИ (или null). При
+ * нескольких активных (переходный кейс апгрейда) возвращается pro.
+ *
+ * `flavor` обязателен: у пользователя одна учётная запись на все три
+ * продукта, и без фильтра по тиру подписка, купленная в Mushroom Checker,
+ * открывала бы платное в WayBack (и наоборот).
  */
 export async function getActiveSubscription(
   userId: string,
+  flavor: AppFlavor,
 ): Promise<ActiveSubscription | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -184,6 +206,7 @@ export async function getActiveSubscription(
       "id, user_id, platform, product_id, tier, period, status, current_period_start, current_period_end, identify_used, forecast_used, is_trial",
     )
     .eq("user_id", userId)
+    .in("tier", tiersForFlavor(flavor))
     .in("status", ["active", "grace", "canceled"])
     .gt("current_period_end", new Date().toISOString());
 
@@ -208,6 +231,19 @@ export function isUnlimitedAction(
  *
  * Лимит null (подписка без ограничений) — сразу true: счётчик не ведём,
  * иначе на экране появлялось бы бессмысленное «осталось N».
+ *
+ * Расход относится ТОЛЬКО к строке этой подписки (sub.id), то есть к тому
+ * приложению, в котором действие произошло. Прежняя RPC
+ * use_subscription_quota искала строку по одному user_id, а учётная запись
+ * у трёх продуктов общая: у пользователя с подписками в двух приложениях
+ * под условие попадали обе строки — и вместо расхода RPC падала с
+ * «query returned more than one row», то есть включённое в подписку
+ * распознавание уходило в оплату токенами. Когда подходящая строка
+ * оставалась одна, расход списывался с чужого приложения.
+ *
+ * Инкремент атомарный, «сравни и запиши»: условие на прежнее значение
+ * счётчика не даёт двум одновременным запросам выйти за лимит (в data-api
+ * нет `used = used + 1`), проигравший гонку перечитывает счётчик.
  */
 export async function consumeSubscriptionQuota(
   sub: ActiveSubscription,
@@ -218,17 +254,40 @@ export async function consumeSubscriptionQuota(
   if (limit === null) return true;
   if (limit <= 0) return false;
 
+  const column = kind === "identify" ? "identify_used" : "forecast_used";
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.rpc("use_subscription_quota", {
-    p_user_id: sub.userId,
-    p_kind: kind,
-    p_limit: limit,
-  });
-  if (error) {
-    console.error("use_subscription_quota error:", error);
-    return false;
+  let used = kind === "identify" ? sub.identifyUsed : sub.forecastUsed;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (used >= limit) return false;
+    // 'canceled' (автопродление выключено) сохраняет права до конца периода.
+    const { data, error } = await supabase
+      .from("user_subscriptions")
+      .update({ [column]: used + 1, updated_at: new Date().toISOString() })
+      .eq("id", sub.id)
+      .eq(column, used)
+      .in("status", ["active", "grace", "canceled"])
+      .gt("current_period_end", new Date().toISOString())
+      .select("id");
+    if (error) {
+      console.error("consumeSubscriptionQuota error:", error);
+      return false;
+    }
+    if (data && data.length > 0) return true;
+
+    // Ни одной строки: счётчик изменил конкурентный запрос, либо период
+    // закрылся между чтением подписки и списанием.
+    const { data: fresh } = await supabase
+      .from("user_subscriptions")
+      .select(column)
+      .eq("id", sub.id)
+      .in("status", ["active", "grace", "canceled"])
+      .gt("current_period_end", new Date().toISOString())
+      .maybeSingle();
+    if (!fresh) return false;
+    used = (fresh as Record<string, number>)[column];
   }
-  return (data as { success?: boolean })?.success === true;
+  return false;
 }
 
 /**

@@ -53,7 +53,7 @@ export function CheckerTabBar() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   itemClass,
-                  active ? "text-ck-primary" : "text-ck-muted",
+                  active ? "text-ck-primary-text" : "text-ck-muted",
                 )}
               >
                 <Icon
@@ -81,7 +81,7 @@ export function CheckerTabBar() {
             className={cn(
               itemClass,
               moreOpen || MORE_PATHS.includes(pathname)
-                ? "text-ck-primary"
+                ? "text-ck-primary-text"
                 : "text-ck-muted",
             )}
           >

@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Соц-вход в схеме WayBack «Widget Board»: Google — светлая кнопка на
- * поверхности #f4f6f3, Apple — тёмная (#141a15). Логика идентична общему
+ * Соц-вход в тёмной схеме WayBack: Google — на поверхности плитки, Apple —
+ * светлая кнопка с тёмной подписью (белый вариант кнопки Apple, HIG требует
+ * контраста с фоном, а фон здесь тёмный). Логика идентична общему
  * SocialLoginButtons: в нативе — SDK → idToken → Supabase, в вебе — OAuth
  * с редиректом.
  */
@@ -131,7 +132,7 @@ export function WayBackSocialButtons({ redirect }: { redirect: string }) {
           type="button"
           onClick={() => handle("apple")}
           disabled={busy !== null}
-          className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-wb-ink text-[15px] font-bold text-white disabled:opacity-55"
+          className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-wb-ink text-[15px] font-bold text-wb-canvas disabled:opacity-55"
         >
           {busy === "apple" ? (
             <Loader2 className="h-4 w-4 animate-spin" />

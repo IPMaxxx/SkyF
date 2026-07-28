@@ -6,17 +6,19 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
-    <meta name="theme-color" content="#eef0ec" />
+    <meta name="theme-color" content="#0b120d" />
+    <meta name="color-scheme" content="dark" />
     <title>WayBack</title>
     <style>
-      /* Светлая схема «Widget Board» (src/styles/flavors/wayback.css).
+      /* Тёмная схема — та же, что у SkyForest (src/styles/flavors/wayback.css).
          Шрифты системные: экран показывается как раз тогда, когда сети нет. */
+      :root { color-scheme: dark; }
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #eef0ec;
-        color: #141a15;
+        background: #0b120d;
+        color: #eaf2ea;
         font-family: -apple-system, Roboto, system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
@@ -33,8 +35,8 @@
       .spinner {
         width: 42px;
         height: 42px;
-        border: 3px solid #dce6dc;
-        border-top-color: #2f6b3f;
+        border: 3px solid rgba(255, 255, 255, 0.14);
+        border-top-color: #5fb573;
         border-radius: 50%;
         animation: spin 0.9s linear infinite;
       }
@@ -49,7 +51,7 @@
         font-size: 14.5px;
         font-weight: 500;
         line-height: 1.5;
-        color: #414a42;
+        color: #bccdbf;
       }
       .actions {
         display: none;
@@ -70,16 +72,18 @@
       .btn-primary {
         height: 58px;
         border-radius: 18px;
-        background: #2f6b3f;
-        color: #f2f7f2;
+        background: #5fb573;
+        color: #06120a;
         font-size: 17px;
         font-weight: 800;
       }
       .btn-ghost {
         height: 50px;
         border-radius: 18px;
-        background: #ffffff;
-        color: #3a453c;
+        /* Тихая кнопка отличается от холста слабо (1.36:1) — очерчиваем край. */
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: #222f26;
+        color: #dbe7dd;
         font-size: 15px;
         font-weight: 700;
       }

@@ -1,20 +1,30 @@
 "use client";
 
 /**
- * Меню WayBack — полноэкранная панель на холсте, а не выпадающий список.
+ * Панель «Ещё» нижнего меню WayBack.
  *
- * Разделов всего один (трек), поэтому меню — это в первую очередь аккаунт,
- * подписка и переключатели языка/единиц. В анонимном режиме вместо карточки
- * аккаунта показывается приглашение войти, а «Выйти» не рендерится: трек
- * работает без входа, и меню не должно намекать на обратное.
+ * Раньше это было полноэкранное меню из бургера в шапке. Теперь навигация
+ * внизу (WayBackTabBar), а сюда собрано всё редкое: аккаунт, подписка, «как
+ * это работает» (переехало с главного экрана — на нём оно занимало место
+ * рядом с главным действием, хотя читают его один раз), язык, единицы, ссылки
+ * на соседние приложения и выход.
+ *
+ * В анонимном режиме вместо карточки аккаунта показывается приглашение войти,
+ * а «Выйти» не рендерится: трек работает без входа, и меню не должно намекать
+ * на обратное.
  */
 
 import { useEffect, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { waybackSignOut } from "@/lib/wayback/signOut";
+import {
+  CHECKER_SITE,
+  openExternal,
+  skyforestLink,
+} from "@/lib/wayback/externalLinks";
 import { setUnitSystem, useUnitSystem } from "@/lib/units";
 import {
   initialsFrom,
@@ -26,21 +36,19 @@ import { WbLabel } from "@/components/wayback/primitives";
 export function WayBackMenu({
   open,
   onClose,
-  offlineAreaCount,
-  onOpenOfflineMap,
 }: {
   open: boolean;
   onClose: () => void;
-  offlineAreaCount: number;
-  onOpenOfflineMap: () => void;
 }) {
   const t = useTranslations("wayback.menu");
+  const tHow = useTranslations("wayback.home");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const unitSystem = useUnitSystem();
   const { email, signedIn, subscription, trialDaysLeft } = useWaybackAccount();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -53,9 +61,9 @@ export function WayBackMenu({
 
   if (!open) return null;
 
-  // Меню открыто поверх экрана трека, то есть уже на /dashboard/track: переход
+  // Панель открыта поверх экрана трека, то есть уже на /dashboard/track: переход
   // туда же ничего не перерисовал бы. Состояние аккаунта на всех экранах меняет
-  // подписка в useWaybackAccount, здесь остаётся закрыть меню и обновить то,
+  // подписка в useWaybackAccount, здесь остаётся закрыть панель и обновить то,
   // что посчитал сервер.
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -81,23 +89,38 @@ export function WayBackMenu({
     : null;
 
   return (
-    <div className="fixed inset-0 z-[90] overflow-y-auto bg-wb-canvas">
-      <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(24px+env(safe-area-inset-bottom))]">
-        <div className="flex min-h-[52px] items-center justify-between pt-[calc(8px+env(safe-area-inset-top))] pb-3">
-          <span className="text-[21px] font-extrabold tracking-[-0.02em] text-wb-ink">
-            WayBack
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("close")}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-wb-primary text-wb-on-primary"
-          >
-            <X className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden="true" />
-          </button>
-        </div>
+    <>
+      <button
+        type="button"
+        aria-label={t("close")}
+        onClick={onClose}
+        className="fixed inset-0 z-[1180] bg-[rgba(3,7,4,0.6)]"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("moreTitle")}
+        className="wb-sheet"
+      >
+        <div className="mx-auto flex w-full max-w-[520px] flex-col gap-2.5 px-4 pt-4 pb-[calc(80px+env(safe-area-inset-bottom))]">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[19px] font-extrabold tracking-[-0.02em] text-wb-ink">
+              {t("moreTitle")}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("close")}
+              className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full text-wb-muted"
+            >
+              <X
+                className="h-[18px] w-[18px]"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
 
-        <div className="flex flex-col gap-2.5">
           {/* Аккаунт: карточка для вошедших, приглашение — для анонимных. */}
           {signedIn ? (
             <div className="wb-tile flex items-center gap-3.5 px-4 py-4">
@@ -135,38 +158,49 @@ export function WayBackMenu({
             </Link>
           )}
 
-          {/* Текущий раздел — единственный в приложении. */}
-          <div className="flex items-center gap-3 rounded-[26px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-[17px] font-extrabold">{t("track")}</span>
-              <span className="wb-mono text-[12px] opacity-80">
-                {t("trackCurrent")}
-              </span>
-            </span>
-            <span
-              className="h-1.5 w-1.5 flex-none rounded-full bg-wb-on-primary"
-              aria-hidden="true"
-            />
-          </div>
-
           <MenuRow href="/payment" label={t("subscription")} onClose={onClose} />
           <MenuRow href="/account" label={t("account")} onClose={onClose} />
 
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onOpenOfflineMap();
-            }}
-            className="wb-tile flex items-center gap-3 px-5 py-[18px] text-left"
-          >
-            <span className="flex-1 text-[16px] font-bold text-wb-ink">
-              {t("offlineMap")}
-            </span>
-            <span className="wb-mono text-[12px] text-wb-muted-2">
-              {t("areaCount", { count: offlineAreaCount })}
-            </span>
-          </button>
+          {/* «Как это работает» — читают один раз, поэтому свёрнуто. */}
+          <div className="wb-tile overflow-hidden">
+            <button
+              type="button"
+              aria-expanded={howOpen}
+              onClick={() => setHowOpen((v) => !v)}
+              className="flex w-full items-center gap-3 px-5 py-[18px] text-left"
+            >
+              <span className="flex-1 text-[16px] font-bold text-wb-ink">
+                {tHow("howTitle")}
+              </span>
+              <ChevronDown
+                className={cn(
+                  "h-[18px] w-[18px] flex-none text-wb-primary transition-transform",
+                  howOpen && "rotate-180",
+                )}
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </button>
+            {howOpen && (
+              <div className="flex flex-col gap-3 px-5 pb-[18px]">
+                <ol className="flex flex-col gap-3">
+                  {[tHow("how1"), tHow("how2"), tHow("how3")].map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                      <span className="wb-mono flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] bg-wb-primary-tint text-[12px] font-semibold text-wb-primary">
+                        {i + 1}
+                      </span>
+                      <span className="text-[14.5px] font-medium leading-[1.45] text-wb-body">
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="wb-mono text-[12.5px] text-wb-muted-2">
+                  {tHow("localOnly")}
+                </p>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div className="wb-tile flex flex-col gap-2 px-4 py-4">
@@ -219,12 +253,32 @@ export function WayBackMenu({
             </div>
           </div>
 
+          {/* Соседние приложения. Открываются снаружи: в нативной оболочке —
+              системным браузером, иначе чужой сайт подменил бы приложение. */}
+          <WbLabel className="mt-1 px-1">{t("otherApps")}</WbLabel>
+          <ExternalAppRow
+            label={t("skyforestName")}
+            hint={t("skyforestHint")}
+            onClick={() => {
+              onClose();
+              void openExternal(skyforestLink());
+            }}
+          />
+          <ExternalAppRow
+            label={t("checkerName")}
+            hint={t("checkerHint")}
+            onClick={() => {
+              onClose();
+              void openExternal(CHECKER_SITE);
+            }}
+          />
+
           {signedIn && (
             <button
               type="button"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="wb-tile-danger flex items-center justify-center gap-2 py-[18px] text-[16px] font-extrabold text-wb-danger disabled:opacity-55"
+              className="wb-tile-danger mt-1 flex items-center justify-center gap-2 py-[18px] text-[16px] font-extrabold text-wb-danger disabled:opacity-55"
             >
               {loggingOut && (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -238,7 +292,7 @@ export function WayBackMenu({
           </span>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -262,5 +316,34 @@ function MenuRow({
         →
       </span>
     </Link>
+  );
+}
+
+function ExternalAppRow({
+  label,
+  hint,
+  onClick,
+}: {
+  label: string;
+  hint: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="wb-tile flex items-center gap-3 px-5 py-4 text-left"
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-[15.5px] font-bold text-wb-ink">{label}</span>
+        <span className="text-[12.5px] font-medium text-wb-muted-2">
+          {hint}
+        </span>
+      </span>
+      <ExternalLink
+        className="h-[17px] w-[17px] flex-none text-wb-muted-2"
+        aria-hidden="true"
+      />
+    </button>
   );
 }

@@ -56,6 +56,11 @@ export interface DownloadedRegion {
   /** Центр и радиус (км) — чтобы показать зону на карте по клику. */
   center?: { lat: number; lng: number };
   radiusKm?: number;
+  /**
+   * Загрузку прервали: тайлы в bbox лежат не все. Запись нужна, чтобы скачанное
+   * можно было увидеть и удалить, но считать такую область покрытой нельзя.
+   */
+  partial?: boolean;
 }
 
 export interface DownloadProgress {
@@ -239,6 +244,37 @@ async function deleteTile(sourceId: string, coord: TileCoord) {
   } catch {
     /* уже удалён/не существует — игнорируем */
   }
+}
+
+/**
+ * Есть ли тайл в локальном хранилище. Нужно тем, кто качает область поверх уже
+ * скачанной: перекрытие не должно оплачиваться трафиком второй раз.
+ */
+export async function hasTile(sourceId: string, coord: TileCoord): Promise<boolean> {
+  try {
+    if (isNativeApp()) {
+      const { Filesystem, Directory } = await import("@capacitor/filesystem");
+      await Filesystem.stat({ path: tilePath(sourceId, coord), directory: Directory.Data });
+      return true;
+    }
+    if (typeof caches === "undefined") return false;
+    const cache = await caches.open(CACHE_NAME);
+    return Boolean(await cache.match(webCacheUrl(sourceId, coord)));
+  } catch {
+    return false;
+  }
+}
+
+/** Кладёт тайл в хранилище платформы (файл в Data / запись в Cache Storage). */
+export async function putTile(sourceId: string, coord: TileCoord, blob: Blob): Promise<void> {
+  if (isNativeApp()) await writeTileNative(sourceId, coord, await blobToBase64(blob));
+  else await writeTileWeb(sourceId, coord, blob);
+}
+
+/** Добавляет запись региона в индекс (или обновляет существующую по id). */
+export async function saveRegion(region: DownloadedRegion): Promise<void> {
+  const regions = await listRegions();
+  await writeRegions([region, ...regions.filter((r) => r.id !== region.id)]);
 }
 
 export interface ResolveOptions {

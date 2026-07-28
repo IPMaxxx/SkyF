@@ -12,6 +12,7 @@ import { dangerousLookalikes } from "@/lib/mushroom/lookalikes";
 import { habitatFor, type Habitat } from "@/lib/mushroom/habitat";
 import { stripJpegExif } from "@/lib/mushroom/exif";
 import { getActiveSubscription, consumeSubscriptionQuota } from "@/lib/subscription";
+import { getServerFlavor } from "@/lib/serverFlavor";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -178,8 +179,10 @@ export async function POST(request: NextRequest) {
   const bestInfo = infoByName[best.scientific_name];
 
   // Подписка: включённые определения (8/мес Forager, 25/мес Pro)
-  // расходуют месячный счётчик и не списывают токены.
-  const sub = await getActiveSubscription(user.id);
+  // расходуют месячный счётчик и не списывают токены. Роут обслуживает и
+  // SkyForest, и Mushroom Checker, поэтому подписка берётся по домену
+  // запроса: подписка соседнего приложения права здесь не даёт.
+  const sub = await getActiveSubscription(user.id, await getServerFlavor());
   const coveredBySub = sub ? await consumeSubscriptionQuota(sub, "identify") : false;
 
   // Списание токенов ТОЛЬКО при успехе (после получения результата).

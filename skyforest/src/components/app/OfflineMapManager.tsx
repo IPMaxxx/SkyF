@@ -27,12 +27,12 @@ import {
   type DownloadProgress,
   type DownloadedRegion,
 } from "@/lib/offline/tileStore";
+import {
+  AVG_OUTDOOR_TILE_BYTES,
+  AVG_SATELLITE_TILE_BYTES,
+} from "@/lib/offline/tileWeights";
 
 const DOWNLOAD_MIN_ZOOM = 9;
-/** Средний вес тайла троп (PNG) для оценки размера до загрузки. */
-const AVG_TILE_BYTES = 14 * 1024;
-/** Средний вес спутникового тайла (JPEG Esri) — заметно тяжелее. */
-const AVG_SAT_TILE_BYTES = 25 * 1024;
 
 const RADIUS_OPTIONS = [10, 25, 50] as const;
 
@@ -117,7 +117,9 @@ export function OfflineMapManager({ center }: Props) {
       )
     : 0;
   const estimateTiles = tilesPerLayer * 2;
-  const estimateSize = formatBytes(tilesPerLayer * (AVG_TILE_BYTES + AVG_SAT_TILE_BYTES));
+  const estimateSize = formatBytes(
+    tilesPerLayer * (AVG_OUTDOOR_TILE_BYTES + AVG_SATELLITE_TILE_BYTES),
+  );
 
   const useMyLocation = async () => {
     setLocating(true);

@@ -3,9 +3,10 @@
 /**
  * Splash WayBack в нативной оболочке.
  *
- * Светлая схема «Widget Board»: холст #eef0ec, белая плитка логотипа 104px
- * с радиусом 26 (как у остальных плиток), моно-подпись внизу. Тайминги и
- * скрытие нативного splash — в общем хуке useSplashSequence.
+ * Тёмная схема: холст #0b120d — тот же цвет, что у нативного splash в
+ * apps/wayback/capacitor.config.ts, иначе на запуске мелькает стык. Плитка
+ * логотипа 104px с радиусом 26 (как у остальных плиток), моно-подпись внизу.
+ * Тайминги и скрытие нативного splash — в общем хуке useSplashSequence.
  *
  * Компонент обязателен в layout дерева `wb/*`: `SplashScreen.hide()`
  * вызывается только отсюда, и без него нативное приложение навсегда
@@ -17,7 +18,7 @@ import { FLAVORS } from "@/lib/appFlavor";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { useSplashSequence } from "@/lib/native/useSplashSequence";
 
-const DOTS = ["#2f6b3f", "#8fbf9c", "#cdeed5"];
+const DOTS = ["#5fb573", "#7fd48f", "#9ee0aa"];
 
 export function WayBackSplash() {
   const isNative = useIsNative();
@@ -38,7 +39,7 @@ export function WayBackSplash() {
         alt=""
         onLoad={markReady}
         onError={markReady}
-        className="animate-sf-float rounded-[26px] object-cover shadow-[0_22px_40px_-18px_rgba(47,107,63,0.55)]"
+        className="animate-sf-float rounded-[26px] object-cover shadow-[0_22px_40px_-18px_rgba(95,181,115,0.5)]"
         style={{ height: 104, width: 104 }}
       />
       <div className="flex flex-col items-center gap-2 px-8 text-center">

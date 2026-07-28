@@ -18,6 +18,21 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- App links: ссылка подтверждения почты из письма открывается в
+                 приложении, а не в браузере — иначе сессия ставится в Chrome,
+                 а в приложении человек остаётся невошедшим. Забираем только
+                 /auth/*: остальной сайт (оферта, политика) должен по-прежнему
+                 открываться браузером. Проверку подписи Google берёт из
+                 https://wayback.skyforest.ai/.well-known/assetlinks.json —
+                 там отпечаток ключа Play App Signing. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="wayback.skyforest.ai" android:pathPrefix="/auth/confirm" />
+                <data android:scheme="https" android:host="wayback.skyforest.ai" android:pathPrefix="/auth/callback" />
+            </intent-filter>
         </activity>
 
         <provider

@@ -7,15 +7,25 @@
  * тексты читают на ходу, в лесу, одной рукой.
  */
 export default {
+  /** Нижнее меню: четыре пункта, подписи должны быть короткими. */
+  tabs: {
+    label: "Main menu",
+    home: "Track",
+    offline: "Offline",
+    history: "History",
+    more: "More",
+  },
+
   menu: {
-    open: "Open menu",
-    close: "Close menu",
-    track: "Track",
-    trackCurrent: "current section",
+    close: "Close",
+    moreTitle: "More",
     subscription: "Subscription",
     account: "My account",
-    offlineMap: "Offline map",
-    areaCount: "{count, plural, =0 {no areas} one {# area} other {# areas}}",
+    otherApps: "our other apps",
+    skyforestName: "SkyForest",
+    skyforestHint: "Mushroom spots, forecast and maps",
+    checkerName: "Mushroom Checker",
+    checkerHint: "Identify a mushroom from a photo",
     language: "language",
     units: "units",
     unitsKm: "km",
@@ -29,7 +39,8 @@ export default {
   },
 
   home: {
-    start: "start",
+    /** Слово на главной кнопке. Капс задаёт CSS (.wb-start-word). */
+    start: "Start",
     startButton: "I'm entering the forest",
     startingButton: "Getting your location…",
     pickOnMap: "Set entry point on the map",
@@ -38,6 +49,13 @@ export default {
     how2: "A point every couple of minutes — battery-friendly",
     how3: "Arrow and distance lead you back — no internet needed",
     localOnly: "Data stays on this device only.",
+    mapLocating: "finding your position…",
+    mapHere: "you are here · {coords}",
+    mapLastKnown: "last known area · tap the target to locate",
+    mapDenied: "location is off — allow it in settings",
+    mapNoFix: "no position yet — tap the target to retry",
+    mapLocate: "Show my location",
+    mapSaveArea: "Save this area for offline use",
     offlineMap: "Offline map",
     offlineMapNone: "no areas yet",
     offlineMapDownload: "Download",
@@ -106,10 +124,53 @@ export default {
     cancel: "Cancel",
   },
 
+  /**
+   * Предсохранение карты по виду на экране: касание задаёт место, зум — охват
+   * и детализацию. Второй вход рядом с «радиус × детализация» ниже.
+   */
+  area: {
+    title: "Pick an area to save",
+    hint: "tap the map to move the frame · zoom to change the area",
+    hintLocked: "area locked while downloading",
+    selection: "selected area",
+    size: "{width} × {height} km · zoom {minZoom}–{maxZoom}",
+    measuring: "measuring the area…",
+    estimate: "≈ {tiles} tiles · {size} to download",
+    layers: "trails + satellite layers",
+    reused:
+      "{count, plural, one {# tile already saved — not downloaded again} other {# tiles already saved — not downloaded again}}",
+    alreadySaved: "This area is already saved. Move the frame or zoom out.",
+    large:
+      "{size} is a lot on mobile data — better on Wi-Fi. One step closer makes the area 4× smaller.",
+    tooLarge:
+      "{size} is too much for one download. Zoom in to shrink the area first.",
+    save: "Save this area",
+    close: "Done",
+    cancel: "Cancel",
+    downloading: "Saving area…",
+    progress: "{done} / {total}",
+    progressSize: "{done} of {size} · keep the app open",
+    progressReused:
+      "{count, plural, one {# tile taken from storage} other {# tiles taken from storage}}",
+    savedToast: "Area saved for offline use",
+    partialToast: "Saved with {failed} tiles skipped (network)",
+    stoppedToast: "Stopped — {size} kept in storage",
+    stoppedEmptyToast: "Download stopped",
+    errorToast: "Could not save the area. Please try again.",
+    locateError: "Could not get your location",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    locate: "Use my location",
+    regionName: "{size} · z{minZoom}–{maxZoom} · {date}",
+    regionPartial: "{size} · z{minZoom}–{maxZoom} · {date} · stopped",
+  },
+
   offline: {
     title: "Offline map",
     intro:
       "Download tiles around your location so the map still draws with no signal.",
+    pickOnMap: "Pick an area on the map",
+    pickOnMapHint: "tap the place, zoom for detail",
     centre: "centre · {coords}",
     noCentre: "centre not set yet",
     useLocation: "Use my location",
@@ -167,9 +228,14 @@ export default {
 
   auth: {
     optional: "optional",
+    /* В приложении вход обязателен (подписка привязана к учётной записи),
+       на сайте трек по-прежнему открыт — отсюда две пары подписей. */
+    required: "required",
     signInTitle: "Sign in to sync",
     signInBody:
       "Tracking works without an account. Sign in for the subscription and to keep history across phones.",
+    signInBodyRequired:
+      "Your subscription is tied to this account — that is how it follows you to a new phone.",
     google: "Continue with Google",
     apple: "Continue with Apple",
     orWithEmail: "or with email",
@@ -204,24 +270,33 @@ export default {
     haveAccount: "Already have an account?",
   },
 
+  /**
+   * Длительность пробного периода нигде не записана числом: `{days}` приходит
+   * из FLAVORS.wayback.subscriptionPlan.trialDays, который обязан совпадать со
+   * сторами. Так «3 дня» не могут разойтись с App Store Connect и Google Play.
+   */
   paywall: {
     title: "WayBack Premium",
-    monthly: "Monthly",
+    // Тариф один — годовой. Ключей месячного периода здесь нет намеренно.
     yearly: "Yearly",
-    yearlyDiscount: "Yearly · −50%",
-    trialBadge: "7-day trial",
-    perMonth: "/ month",
+    trialBadge: "{days, plural, one {# day free} other {# days free}}",
     perYear: "/ year",
     f1: "Unlimited offline map areas",
     f2: "Full walk history, synced across phones",
     f3: "Satellite layer and maximum detail",
-    cta: "Start 7 free days",
-    ctaNoTrial: "Subscribe",
+    cta: "{days, plural, one {Start # free day} other {Start # free days}}",
     renewNote:
       "Then {price}{period}. Renews automatically, cancel any time in the {store}.",
-    freeTitle: "The arrow home stays free, forever",
-    freeBody:
-      "Premium adds offline areas, sync and satellite. Basic tracking never asks for money or an account.",
+    /* Полное раскрытие условий — требование обоих сторов на экране покупки. */
+    termsTitle: "Before you subscribe",
+    termsTrial:
+      "{days, plural, one {# day free} other {# days free}}, then {price} per year.",
+    termsRenew:
+      "The subscription renews automatically every year until you cancel it.",
+    termsCancel:
+      "Cancel any time in the {store}, at least 24 hours before the period ends.",
+    termsAccount:
+      "Payment is charged to your {store} account. The subscription is tied to it.",
     terms: "Terms of Use (EULA)",
     privacy: "Privacy Policy",
     restore: "Restore",
@@ -230,7 +305,6 @@ export default {
     activeBadge: "Active",
     activeTitle: "Premium until {date}",
     activeMeta: "{plan} · renews automatically · {price}",
-    planMonthly: "Monthly plan",
     planYearly: "Yearly plan",
     manage: "Manage subscription",
     unlockedTitle: "What's unlocked",
@@ -243,6 +317,32 @@ export default {
       "Billing runs through the {store}. Cancelling keeps Premium until the end of the paid period.",
     storeApple: "App Store",
     storeGoogle: "Google Play",
+  },
+
+  /**
+   * Стартовый гейт нативной оболочки: вход → пробный период → приложение.
+   * Экран объясняет, почему шаг обязателен, и всегда оставляет выход — иначе
+   * человек застревает в тупике, а ревьюер стора отклоняет приложение.
+   */
+  gate: {
+    eyebrow: "getting started",
+    authTitle: "Sign in to start",
+    authBody:
+      "WayBack Premium is tied to your account: that is how the trial survives a new phone and how “Restore purchases” finds it again.",
+    authEmail: "Continue with email",
+    subTitle: "Start your free trial",
+    subBody:
+      "{days, plural, one {# day free, then the yearly plan} other {# days free, then the yearly plan}}. You can cancel before it ends and pay nothing.",
+    signedInAs: "signed in as {email}",
+    switchAccount: "Use another account",
+    offlineTitle: "No connection",
+    offlineBody:
+      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works in the forest with no signal.",
+    offlineRestore: "Already subscribed? Restore purchases",
+    retry: "Try again",
+    checking: "Checking your subscription…",
+    nothingRestored:
+      "No subscription found in this {store} account. Check that you are signed in with the account that paid for it.",
   },
 
   account: {

@@ -27,8 +27,25 @@ export const checkerFlavor: FlavorConfig = {
   faviconPath: "/icons/checker-192.png",
   logoPath: "/icons/checker-512.png",
   nativeAppId: "ai.skyforest.mushroomchecker",
-  themeColor: "#f3f7f1",
-  statusBarStyle: "default",
+  // Тема по умолчанию — тёмная, общая с SkyForest и WayBack (холст #0b120d).
+  // «default» в статус-баре iOS означает тёмный текст, на тёмном холсте его
+  // не видно, поэтому здесь «black-translucent».
+  themeColor: "#0b120d",
+  statusBarStyle: "black-translucent",
+  /**
+   * Светлую схему пользователь включает в панели «Ещё» (CheckerMoreSheet).
+   * Цвета интерфейса — в src/styles/flavors/checker.css, здесь только чром
+   * вокруг страницы. Значения совпадают с холстами обеих схем: если они
+   * разойдутся, при запуске и при прокрутке за край мелькнёт чужой фон.
+   */
+  themeSwitch: {
+    cookie: "ck-theme",
+    defaultTheme: "dark",
+    themes: {
+      dark: { themeColor: "#0b120d", statusBarStyle: "black-translucent" },
+      light: { themeColor: "#f3f7f1", statusBarStyle: "default" },
+    },
+  },
   internalSegment: "/ck",
   internalRewrites: {
     "/": "/ck/landing",

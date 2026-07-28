@@ -7,6 +7,9 @@
  * спутник), честная оценка объёма до старта и возможность отмены. Оценку
  * и отмену убирать нельзя — люди качают карты в роуминге и на мобильном
  * трафике, и это единственное место, где видно реальную цену загрузки.
+ *
+ * Входов в загрузку два: привычный «радиус × детализация» здесь и выбор области
+ * прямо на карте (WayBackAreaPicker) — он открывается поверх этого экрана.
  */
 
 import dynamic from "next/dynamic";
@@ -27,18 +30,21 @@ import {
   type DownloadedRegion,
 } from "@/lib/offline/tileStore";
 import {
+  AVG_OUTDOOR_TILE_BYTES,
+  AVG_SATELLITE_TILE_BYTES,
+} from "@/lib/offline/tileWeights";
+import { formatBytes } from "@/lib/wayback/offlineArea";
+import type { Coords } from "@/lib/native/geolocation";
+import {
   WbLabel,
   WbPrimaryButton,
+  WbRowTile,
   WbSegmented,
   WbTile,
   WbTopBar,
 } from "@/components/wayback/primitives";
 
 const DOWNLOAD_MIN_ZOOM = 9;
-/** Средний вес тайла троп (PNG) для оценки размера до загрузки. */
-const AVG_TILE_BYTES = 14 * 1024;
-/** Средний вес спутникового тайла (JPEG Esri) — заметно тяжелее. */
-const AVG_SAT_TILE_BYTES = 25 * 1024;
 
 const RADIUS_OPTIONS = [10, 25, 50] as const;
 
@@ -55,20 +61,29 @@ const RegionPreview = dynamic(
   { ssr: false },
 );
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+/** Выбор области на карте — тяжёлая карта, поэтому только по требованию. */
+const WayBackAreaPicker = dynamic(
+  () =>
+    import("@/components/wayback/WayBackAreaPicker").then(
+      (m) => m.WayBackAreaPicker,
+    ),
+  { ssr: false },
+);
 
 export function WayBackOfflineScreen({
   center,
+  areaView,
   onBack,
   onRegionsChange,
+  onFullscreenChange,
 }: {
   center?: { lat: number; lng: number } | null;
+  /** Экран открыт кнопкой на карте главной — сразу показываем выбор области. */
+  areaView?: { center: Coords; zoom: number } | null;
   onBack: () => void;
   onRegionsChange?: (count: number) => void;
+  /** Выбор области занимает весь экран — родитель прячет нижнее меню. */
+  onFullscreenChange?: (fullscreen: boolean) => void;
 }) {
   const t = useTranslations("wayback.offline");
 
@@ -82,11 +97,45 @@ export function WayBackOfflineScreen({
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<DownloadedRegion | null>(null);
+  const [areaOpen, setAreaOpen] = useState(Boolean(areaView));
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (center) setOrigin(center);
   }, [center]);
+
+  /**
+   * Экран открыт сразу с выбором области (кнопка на карте главной) — своей
+   * записи в истории он не занимает: «назад» в этом случае должен возвращать
+   * на главную, откуда человек и пришёл.
+   */
+  const autoOpened = useRef(Boolean(areaView));
+
+  // Своя запись в истории: системная кнопка «назад» закрывает выбор области,
+  // а не весь экран офлайн-карты.
+  useEffect(() => {
+    if (!areaOpen) return;
+    if (autoOpened.current) {
+      autoOpened.current = false;
+      return;
+    }
+    window.history.pushState({ wbArea: true }, "");
+    const onPop = () => setAreaOpen(false);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [areaOpen]);
+
+  const closeArea = () => {
+    if (window.history.state?.wbArea) window.history.back();
+    else setAreaOpen(false);
+  };
+
+  // Нижнее меню прячется на полноэкранной карте и возвращается при закрытии —
+  // в том числе если экран размонтировали, пока карта была открыта.
+  useEffect(() => {
+    onFullscreenChange?.(areaOpen);
+    return () => onFullscreenChange?.(false);
+  }, [areaOpen, onFullscreenChange]);
 
   const refreshRegions = useCallback(() => {
     void listRegions().then((list) => {
@@ -110,7 +159,8 @@ export function WayBackOfflineScreen({
       )
     : 0;
   const estimateTiles = tilesPerLayer * 2;
-  const estimateBytes = tilesPerLayer * (AVG_TILE_BYTES + AVG_SAT_TILE_BYTES);
+  const estimateBytes =
+    tilesPerLayer * (AVG_OUTDOOR_TILE_BYTES + AVG_SATELLITE_TILE_BYTES);
   const estimateSize = formatBytes(estimateBytes);
 
   const useMyLocation = async () => {
@@ -183,8 +233,21 @@ export function WayBackOfflineScreen({
     ? Math.round((progress.done / progress.total) * 100)
     : 0;
 
+  // Выбор области — полноэкранная карта поверх экрана: список скачанного и
+  // настройки радиуса остаются в состоянии и вернутся при закрытии.
+  if (areaOpen) {
+    return (
+      <WayBackAreaPicker
+        center={areaView?.center ?? origin ?? null}
+        zoom={areaView?.zoom}
+        onClose={closeArea}
+        onSaved={refreshRegions}
+      />
+    );
+  }
+
   return (
-    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(24px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
       <WbTopBar title={t("title")} onBack={onBack} />
 
       <div className="flex flex-col gap-2.5">
@@ -206,6 +269,15 @@ export function WayBackOfflineScreen({
           )}
         </WbTile>
 
+        {/* Второй вход: область выбирают прямо на карте касанием и зумом. */}
+        {!progress && (
+          <WbRowTile
+            label={t("pickOnMap")}
+            sublabel={t("pickOnMapHint")}
+            onClick={() => setAreaOpen(true)}
+          />
+        )}
+
         {/* Загрузка идёт: прогресс вместо кнопки, переключатели заблокированы */}
         {progress && (
           <div className="rounded-[26px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
@@ -221,7 +293,7 @@ export function WayBackOfflineScreen({
               </span>
             </div>
             <div
-              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.25)]"
+              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[rgba(6,18,10,0.22)]"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}
@@ -242,7 +314,7 @@ export function WayBackOfflineScreen({
               <button
                 type="button"
                 onClick={() => abortRef.current?.abort()}
-                className="h-9 flex-none rounded-full bg-[rgba(255,255,255,0.22)] px-4 text-[13px] font-bold text-wb-on-primary"
+                className="h-9 flex-none rounded-full bg-[rgba(6,18,10,0.16)] px-4 text-[13px] font-bold text-wb-on-primary"
               >
                 {t("cancel")}
               </button>

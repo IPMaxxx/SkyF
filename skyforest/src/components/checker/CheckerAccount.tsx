@@ -143,7 +143,7 @@ export function CheckerAccount({
 
         {/* Профиль */}
         <div className="flex items-center gap-3.5 rounded-[26px] border border-ck-border bg-ck-surface p-[18px]">
-          <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-[18px] bg-ck-primary-tint text-xl font-extrabold text-ck-primary">
+          <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-[18px] bg-ck-primary-tint text-xl font-extrabold text-ck-primary-text">
             {initial}
           </span>
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -179,7 +179,7 @@ export function CheckerAccount({
             </div>
             <Link
               href="/payment"
-              className="flex-none text-[12.5px] font-extrabold text-ck-primary"
+              className="flex-none text-[12.5px] font-extrabold text-ck-primary-text"
             >
               {t("manage")}
             </Link>
@@ -196,7 +196,7 @@ export function CheckerAccount({
             </div>
             <Link
               href="/payment"
-              className="flex-none text-[12.5px] font-extrabold text-ck-primary"
+              className="flex-none text-[12.5px] font-extrabold text-ck-primary-text"
             >
               {t("subscribe")}
             </Link>
@@ -489,7 +489,9 @@ function TwoFactorSheet({
       setError(enrollError?.message || t2("enableError"));
       return;
     }
-    setQr(data.totp.qr_code);
+    // Supabase отдаёт data-URI с переводом строки на конце, а next/image на
+    // таком src бросает «cannot end with a space or control character».
+    setQr(data.totp.qr_code?.trim() || null);
     setSecret(data.totp.secret);
     setFactorId(data.id);
   };
@@ -556,6 +558,8 @@ function TwoFactorSheet({
             <p className="text-[13px] font-medium leading-[1.5] text-ck-body-soft">
               {t2("scanQr")}
             </p>
+            {/* Подложка QR остаётся белой в обеих темах: сканеру нужен
+                светлый фон вокруг тёмных модулей кода. */}
             <Image
               src={qr}
               alt={t2("qrAlt")}
@@ -684,7 +688,7 @@ function DeleteSheet({
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder={email}
-            className="border-[#e6c9c3]"
+            className="border-ck-danger-border"
           />
         </div>
 

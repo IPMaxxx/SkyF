@@ -106,7 +106,7 @@ export function WayBackHistoryScreen({
   const hasLocal = Boolean(items?.some((i) => i.local));
 
   return (
-    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(24px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto w-full max-w-[520px] px-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
       <WbTopBar
         title={t("title")}
         onBack={onBack}

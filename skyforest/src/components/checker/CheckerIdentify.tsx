@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Mushroom Checker — весь флоу распознавания в светлой схеме:
+ * Mushroom Checker — весь флоу распознавания:
  * главный экран → превью → подтверждение → анализ → результат / ошибка.
  *
  * Поведение, которое нельзя терять при редизайне:
@@ -57,7 +57,7 @@ function pct(probability: number): string {
 }
 
 function pctColor(probability: number): string {
-  if (probability >= 0.5) return "text-ck-primary";
+  if (probability >= 0.5) return "text-ck-primary-text";
   if (probability >= 0.3) return "text-ck-amber";
   return "text-ck-muted-2";
 }
@@ -322,7 +322,7 @@ export function CheckerIdentify() {
       className={cn(
         "flex h-12 w-full items-center justify-center rounded-3xl text-[14.5px] font-extrabold",
         error.action === "subscription"
-          ? "bg-ck-amber text-white"
+          ? "bg-ck-amber text-ck-on-amber"
           : "border border-ck-border bg-ck-canvas text-ck-ink-3",
       )}
     >
@@ -352,7 +352,7 @@ export function CheckerIdentify() {
   if (analyzing) {
     return (
       <CkScreen
-        className="bg-[linear-gradient(180deg,#e7f4e9_0%,#f3f7f1_60%)]"
+        className="ck-grad-primary"
         bottom={
           <CkSecondaryButton onClick={cancelAnalyzing}>
             {t("analyzing.cancel")}
@@ -360,7 +360,7 @@ export function CheckerIdentify() {
         }
       >
         <div className="flex min-h-[70vh] flex-col items-center justify-center gap-[26px]">
-          <div className="flex h-[150px] w-[150px] animate-spin items-center justify-center rounded-full border-[3px] border-[#cfe4d3] border-t-ck-primary [animation-duration:1.4s]">
+          <div className="flex h-[150px] w-[150px] animate-spin items-center justify-center rounded-full border-[3px] border-ck-primary-border border-t-ck-primary [animation-duration:1.4s]">
             <div className="ck-photo-stripes h-24 w-24 overflow-hidden rounded-full">
               {previewUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -392,15 +392,15 @@ export function CheckerIdentify() {
                 key={step.label}
                 className={cn(
                   "flex items-center gap-2.5 text-[12.5px] font-semibold",
-                  step.done ? "text-ck-primary" : "text-ck-muted-2",
+                  step.done ? "text-ck-primary-text" : "text-ck-muted-2",
                 )}
               >
                 {step.done ? (
-                  <i className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ck-primary text-white">
+                  <i className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ck-primary text-ck-on-primary">
                     <Check className="h-2.5 w-2.5" strokeWidth={4} />
                   </i>
                 ) : (
-                  <i className="block h-[18px] w-[18px] flex-none rounded-full border-2 border-[#cfe4d3]" />
+                  <i className="block h-[18px] w-[18px] flex-none rounded-full border-2 border-ck-primary-border" />
                 )}
                 {step.label}
               </div>
@@ -468,7 +468,7 @@ export function CheckerIdentify() {
             type="button"
             onClick={resetAll}
             aria-label={t("result.back")}
-            className="absolute left-4 top-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white/90 text-ck-ink-3"
+            className="absolute left-4 top-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-ck-surface/90 text-ck-ink-3"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.4} />
           </button>
@@ -609,7 +609,7 @@ export function CheckerIdentify() {
           {result.lookalikes.length > 0 && (
             <div className="flex flex-col gap-3 rounded-[24px] border border-ck-danger-border bg-ck-danger-tint p-4">
               <div className="flex items-center gap-2.5">
-                <i className="flex h-[26px] w-[26px] items-center justify-center rounded-[9px] bg-ck-danger text-sm font-extrabold text-white">
+                <i className="flex h-[26px] w-[26px] items-center justify-center rounded-[9px] bg-ck-danger text-sm font-extrabold text-ck-on-danger">
                   !
                 </i>
                 <span className="text-[15px] font-extrabold text-ck-danger-deep">
@@ -618,7 +618,7 @@ export function CheckerIdentify() {
               </div>
               {result.lookalikes.map((la) => (
                 <div key={la.scientific_name} className="flex items-center gap-3">
-                  <span className="h-14 w-14 flex-none overflow-hidden rounded-2xl bg-[repeating-linear-gradient(135deg,#f0ddd8_0_6px,#f8ebe7_6px_12px)]">
+                  <span className="ck-photo-stripes-danger h-14 w-14 flex-none overflow-hidden rounded-2xl">
                     {la.photo_url && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -630,7 +630,7 @@ export function CheckerIdentify() {
                     )}
                   </span>
                   <div className="flex min-w-0 flex-col gap-[3px]">
-                    <span className="text-[13.5px] font-extrabold text-[#7c2b20]">
+                    <span className="text-[13.5px] font-extrabold text-ck-danger-deep">
                       {la.scientific_name}
                     </span>
                     <span className="text-[11.5px] font-medium leading-[1.35] text-ck-danger-mid">
@@ -668,8 +668,8 @@ export function CheckerIdentify() {
                       className={cn(
                         "mt-px flex h-5 w-5 flex-none items-center justify-center rounded-[7px] border-[1.5px]",
                         on
-                          ? "border-ck-primary bg-ck-primary text-white"
-                          : "border-[#cfe4d3]",
+                          ? "border-ck-primary bg-ck-primary text-ck-on-primary"
+                          : "border-ck-primary-border",
                       )}
                     >
                       {on && <Check className="h-3 w-3" strokeWidth={3.5} />}
@@ -750,7 +750,7 @@ export function CheckerIdentify() {
                   <button
                     type="button"
                     onClick={() => router.push("/payment")}
-                    className="flex h-12 w-full items-center justify-center rounded-3xl bg-ck-amber text-[14.5px] font-extrabold text-white"
+                    className="flex h-12 w-full items-center justify-center rounded-3xl bg-ck-amber text-[14.5px] font-extrabold text-ck-on-amber"
                   >
                     {t("errors.limitCta")}
                   </button>
@@ -779,7 +779,7 @@ export function CheckerIdentify() {
           label={t("confirm.cancel")}
         >
           <div className="flex flex-col gap-4">
-            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px] bg-ck-primary-tint text-ck-primary">
+            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px] bg-ck-primary-tint text-ck-primary-text">
               <Camera className="h-[22px] w-[22px]" strokeWidth={1.8} />
             </div>
             <div className="flex flex-col gap-2">
@@ -810,14 +810,14 @@ export function CheckerIdentify() {
                     key={row.label}
                     className={cn(
                       "flex justify-between py-[11px] text-[13.5px] font-semibold text-ck-body",
-                      i > 0 && "border-t border-[#e6ede4]",
+                      i > 0 && "border-t border-ck-hairline",
                     )}
                   >
                     <span>{row.label}</span>
                     <span
                       className={cn(
                         "font-extrabold",
-                        row.accent ? "text-ck-primary" : "text-ck-ink",
+                        row.accent ? "text-ck-primary-text" : "text-ck-ink",
                       )}
                     >
                       {row.value}
@@ -873,7 +873,7 @@ export function CheckerIdentify() {
         <h1 className="text-[38px] font-extrabold leading-[0.98] tracking-[-0.035em] text-ck-ink">
           {t("home.titleLine1")}
           <br />
-          <span className="text-ck-primary">{t("home.titleLine2")}</span>
+          <span className="text-ck-primary-text">{t("home.titleLine2")}</span>
         </h1>
 
         {/* Карточка состояния подписки. Три состояния: оплаченная подписка
@@ -882,7 +882,7 @@ export function CheckerIdentify() {
         {!subLoading &&
           (unlimited ? (
             <div className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5">
-              <span className="text-[26px] font-extrabold leading-none text-ck-primary">
+              <span className="text-[26px] font-extrabold leading-none text-ck-primary-text">
                 ∞
               </span>
               <div className="flex flex-col gap-0.5">
@@ -922,7 +922,7 @@ export function CheckerIdentify() {
               href="/payment"
               className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5"
             >
-              <span className="text-[26px] font-extrabold leading-none text-ck-primary">
+              <span className="text-[26px] font-extrabold leading-none text-ck-primary-text">
                 {CHECKER_PLAN.trialDays}
               </span>
               <span className="text-[12.5px] font-medium leading-[1.35] text-ck-primary-mid">
@@ -940,7 +940,7 @@ export function CheckerIdentify() {
               strokeWidth={1.8}
             />
           </div>
-          <CkMono className="tracking-[0.08em] text-[11px] text-[#7a8d7e]">
+          <CkMono className="tracking-[0.08em] text-[11px] text-ck-muted">
             {t("home.photoCaption")}
           </CkMono>
         </div>
@@ -951,7 +951,7 @@ export function CheckerIdentify() {
               key={tip.label}
               className="flex flex-col gap-1.5 rounded-[20px] border border-ck-border-2 bg-ck-surface px-3.5 py-3"
             >
-              <span className="text-base leading-none text-ck-primary">
+              <span className="text-base leading-none text-ck-primary-text">
                 {tip.glyph}
               </span>
               <span className="text-xs font-bold text-ck-ink-2">

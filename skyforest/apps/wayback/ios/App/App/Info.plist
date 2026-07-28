@@ -35,12 +35,22 @@
 	  Purpose strings обязательны: без них iOS убивает процесс при первом
 	  запросе, а загрузку отклоняют с ITMS-90683.
 
-	  Локация — «when in use», а не «always»: watchPosition останавливается,
-	  когда приложение уходит в фон (см. syncTrackWatch в TrackRecorder),
-	  фоновой записи трека нет.
+	  Приложение запрашивает только «when in use»: watchPosition
+	  останавливается, когда приложение уходит в фон (см. syncTrackWatch
+	  в TrackRecorder), фоновой записи трека нет. Поэтому UIBackgroundModes
+	  здесь нет и быть не должно — заявленный, но неиспользуемый background
+	  mode ревью отклоняет.
+
+	  Строку «always» всё равно приходится держать: @capacitor/geolocation
+	  линкует IONGeolocationLib, где в IONGLOCAuthorisationRequestType.swift
+	  есть ветка с CLLocationManager.requestAlwaysAuthorization. Статический
+	  анализ Apple видит ссылку на API в бинарнике (сам плагин зовёт только
+	  .whenInUse) и требует ключ — без него прилетает ITMS-90683.
 	-->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>WayBack uses your location to mark the point where you entered the forest and to show the direction and distance back to it.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>WayBack records the path you walk so it can lead you back to the point where you entered the forest, even when there is no mobile signal. Your location is used only while WayBack is open on screen; the app does not follow you in the background.</string>
 	<!-- Стрелка возврата работает по компасу телефона, когда курса GPS ещё нет. -->
 	<key>NSMotionUsageDescription</key>
 	<string>WayBack uses the compass to point the arrow toward your entry point while you are standing still.</string>
@@ -52,16 +62,13 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<!--
+	  Приложение только для iPhone (TARGETED_DEVICE_FAMILY = 1), поэтому
+	  варианта ориентаций ~ipad здесь нет.
+	-->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

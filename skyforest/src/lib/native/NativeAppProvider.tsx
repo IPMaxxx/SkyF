@@ -5,7 +5,9 @@ import { useRouter, usePathname } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { flavorConfig, getClientFlavor } from "@/lib/appFlavor";
 import { isNativeApp, getPlatform } from "./capacitor";
+import { navigateToDeepLink, takeLaunchUrl } from "./deepLinks";
 
 /**
  * Инициализация нативных возможностей при запуске внутри оболочки Capacitor.
@@ -67,31 +69,35 @@ export function NativeAppProvider() {
       // экрана) — здесь этого не делаем, иначе между ними мелькнёт пустой WebView.
 
       // --- Status bar (тёмный фон бренда, светлые иконки) ---
-      try {
-        const { StatusBar, Style } = await import("@capacitor/status-bar");
-        await StatusBar.setStyle({ style: Style.Dark });
-        if (platform === "android") {
-          await StatusBar.setBackgroundColor({ color: "#0f1a12" });
+      // Приложения с переключателем темы (Checker) держат статус-бар сами:
+      // он должен меняться вместе с выбором пользователя, а здесь мы знаем
+      // только про тёмный бренд и перебивали бы этот выбор.
+      if (!flavorConfig(getClientFlavor()).themeSwitch) {
+        try {
+          const { StatusBar, Style } = await import("@capacitor/status-bar");
+          await StatusBar.setStyle({ style: Style.Dark });
+          if (platform === "android") {
+            await StatusBar.setBackgroundColor({ color: "#0f1a12" });
+          }
+        } catch {
+          /* игнорируем */
         }
-      } catch {
-        /* игнорируем */
       }
 
-      // --- Deep links (OAuth callback, рефералы) ---
+      // --- Deep links (OAuth callback, подтверждение почты, рефералы) ---
       try {
         const { App } = await import("@capacitor/app");
         const sub = await App.addListener("appUrlOpen", ({ url }) => {
           if (disposed) return;
-          try {
-            const parsed = new URL(url);
-            // Приводим внешний deep link к внутреннему пути приложения.
-            const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
-            if (path && path !== "/") router.push(path);
-          } catch {
-            /* некорректный url — игнорируем */
-          }
+          navigateToDeepLink(url, (path) => router.push(path));
         });
         cleanups.push(() => void sub.remove());
+
+        // Холодный старт по ссылке: событие проходит до загрузки нашего JS.
+        const launch = takeLaunchUrl((await App.getLaunchUrl())?.url);
+        if (launch && !disposed) {
+          navigateToDeepLink(launch, (path) => router.push(path));
+        }
 
         // Android hardware back
         const back = await App.addListener("backButton", ({ canGoBack }) => {

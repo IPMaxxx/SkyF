@@ -30,7 +30,7 @@ export function CheckerBackButton({
       aria-label={label ?? t("back")}
       className="-m-[3px] flex h-11 w-11 flex-none items-center justify-center rounded-full"
     >
-      <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-ck-border-4 bg-ck-surface text-[#41594a]">
+      <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-ck-border-4 bg-ck-surface text-ck-ink-3">
         <ArrowLeft className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
       </span>
     </button>

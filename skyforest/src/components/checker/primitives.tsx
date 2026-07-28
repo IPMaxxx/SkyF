@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Строительные блоки светлой схемы Mushroom Checker («Soft Product»).
+ * Строительные блоки Mushroom Checker.
  *
- * Размеры и цвета взяты из дизайна как есть: кнопки 58/56/52, карточки
- * radius 24–28, палитра в токенах `--color-ck-*` (src/app/globals.css).
- * Компоненты используются только во флейворе `checker`, поэтому тёмная
- * тема SkyForest и WayBack ими не затрагивается.
+ * Размеры взяты из дизайна как есть: кнопки 58/56/52, карточки radius 24–28.
+ * Цвета — только токены `ck-*` (src/styles/flavors/checker.css): их значения
+ * меняются вместе с выбранной темой, поэтому literal-цветов здесь быть не
+ * должно. Компоненты используются только во флейворе `checker`, поэтому
+ * тёмная тема SkyForest и WayBack ими не затрагивается.
  */
 
 import { Check, ChevronRight } from "lucide-react";
@@ -164,7 +165,7 @@ export function CkField({
             {label}
           </span>
           {hint && (
-            <span className="text-[11px] font-bold text-[#a8b6ac]">{hint}</span>
+            <span className="text-[11px] font-bold text-ck-faint">{hint}</span>
           )}
         </div>
       )}
@@ -181,7 +182,7 @@ export function CkInput({
     <input
       {...props}
       className={cn(
-        "h-[52px] w-full rounded-[18px] border border-ck-border-4 bg-ck-surface px-4 text-[14.5px] font-medium text-ck-ink outline-none transition-shadow placeholder:text-ck-muted-2",
+        "h-[52px] w-full rounded-[18px] border border-ck-border-4 bg-ck-field px-4 text-[14.5px] font-medium text-ck-ink outline-none transition-shadow placeholder:text-ck-muted-2",
         className,
       )}
     />
@@ -200,13 +201,13 @@ const STATUS_STYLES: Record<
 > = {
   success: {
     card: "bg-ck-primary-tint border-ck-primary-border",
-    icon: "bg-ck-primary text-white",
+    icon: "bg-ck-primary text-ck-on-primary",
     title: "text-ck-primary-deep",
     body: "text-ck-primary-mid",
   },
   warn: {
     card: "bg-ck-amber-tint border-ck-amber-border",
-    icon: "bg-white text-ck-amber",
+    icon: "bg-ck-surface text-ck-amber",
     title: "text-ck-amber-deep",
     body: "text-ck-amber-mid",
   },
@@ -214,7 +215,7 @@ const STATUS_STYLES: Record<
     card: "bg-ck-surface border-ck-danger-border",
     icon: "bg-ck-danger-tint text-ck-danger",
     title: "text-ck-danger-deep",
-    body: "text-[#6a5a56]",
+    body: "text-ck-danger-body",
   },
   neutral: {
     card: "bg-ck-surface border-ck-border",
@@ -333,7 +334,7 @@ export function CkListRow({
         <span className="flex flex-none items-center gap-1 text-[13.5px] font-semibold text-ck-muted">
           {value}
           <ChevronRight
-            className={cn("h-4 w-4", danger && "text-[#e0a99f]")}
+            className={cn("h-4 w-4", danger && "text-ck-danger-soft")}
             strokeWidth={2}
             aria-hidden="true"
           />
@@ -383,7 +384,7 @@ export function CkToggle({
     >
       <span
         className={cn(
-          "h-[22px] w-[22px] rounded-full bg-white shadow-sm transition-transform",
+          "h-[22px] w-[22px] rounded-full bg-ck-knob shadow-sm transition-transform",
           checked ? "translate-x-[18px]" : "translate-x-0",
         )}
       />
@@ -394,8 +395,8 @@ export function CkToggle({
 /** Пункт списка фич пейволла: 20px зелёный квадрат с галкой. */
 export function CkFeatureRow({ children }: { children: ReactNode }) {
   return (
-    <span className="flex items-center gap-2.5 text-[13px] font-semibold text-[#3d4c43]">
-      <i className="flex h-5 w-5 flex-none items-center justify-center rounded-[7px] bg-ck-primary-tint text-ck-primary">
+    <span className="flex items-center gap-2.5 text-[13px] font-semibold text-ck-body">
+      <i className="flex h-5 w-5 flex-none items-center justify-center rounded-[7px] bg-ck-primary-tint text-ck-primary-text">
         <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
       </i>
       {children}
@@ -427,12 +428,12 @@ export function CkModal({
         type="button"
         aria-label={label}
         onClick={onClose}
-        className="absolute inset-0 bg-[rgba(19,35,24,0.45)]"
+        className="ck-scrim absolute inset-0"
       />
       <div
         role="dialog"
         aria-modal="true"
-        className="font-ck relative z-10 w-full max-w-[420px] rounded-[30px] bg-ck-surface px-6 py-[26px] shadow-[0_30px_60px_-24px_rgba(19,35,24,0.6)]"
+        className="font-ck relative z-10 w-full max-w-[420px] rounded-[30px] bg-ck-surface px-6 py-[26px] shadow-[0_30px_60px_-24px_var(--ck-shadow)]"
       >
         {children}
       </div>
@@ -494,8 +495,8 @@ export function CkSheet({
         type="button"
         aria-label={label}
         onClick={onClose}
-        className="absolute inset-0"
-        style={{ background: `rgba(19,35,24,${scrim})` }}
+        className="ck-scrim absolute inset-0"
+        style={{ "--ck-scrim-alpha": scrim } as React.CSSProperties}
       />
       <div
         ref={panelRef}
@@ -503,7 +504,7 @@ export function CkSheet({
         aria-modal="true"
         tabIndex={-1}
         style={{ transform: drag ? `translateY(${drag}px)` : undefined }}
-        className="font-ck relative z-10 mx-auto w-full max-w-[520px] rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_rgba(19,35,24,0.4)] outline-none"
+        className="font-ck relative z-10 mx-auto w-full max-w-[520px] rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_var(--ck-shadow-soft)] outline-none"
       >
         <div
           onTouchStart={onTouchStart}

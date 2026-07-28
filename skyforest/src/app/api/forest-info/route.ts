@@ -5,6 +5,7 @@ import type { ForestInfo, TreeSpecies } from "@/lib/supabase/types";
 import { getModisLandCover, type ModisLandCover } from "@/lib/gee";
 import { TOKEN_COSTS } from "@/lib/tokens";
 import { getActiveSubscription, isUnlimitedAction } from "@/lib/subscription";
+import { getServerFlavor } from "@/lib/serverFlavor";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const INAT_URL = "https://api.inaturalist.org/v1/observations/species_counts";
@@ -540,7 +541,7 @@ export async function GET(request: NextRequest) {
   // зрения пользователя каждое определение стоит одинаково, кэш — деталь
   // реализации (экономия внешних запросов).
   let charged = false;
-  const sub = await getActiveSubscription(user.id);
+  const sub = await getActiveSubscription(user.id, await getServerFlavor());
   if (!sub || !isUnlimitedAction(sub, "forest_info")) {
     const { data: spent, error: spendErr } = await supabase.rpc("spend_tokens", {
       p_user_id: user.id,

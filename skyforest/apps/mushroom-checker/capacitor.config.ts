@@ -7,12 +7,20 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const serverUrl = process.env.CAP_SERVER_URL || "https://checker.skyforest.ai";
 
+/**
+ * Холст тёмной темы — она основная (светлую пользователь включает сам).
+ * Значение должно совпадать с холстом сайта, иначе при запуске и при
+ * прокрутке за край мелькает полоса чужого фона. У тех, кто выбрал светлую
+ * тему, полоса за краем остаётся тёмной: цвет вшит в бинарник и выбор
+ * пользователя ему недоступен.
+ */
+const CANVAS = "#0b120d";
+
 const config: CapacitorConfig = {
   appId: "ai.skyforest.mushroomchecker",
   appName: "Mushroom Checker",
   webDir: "www",
-  // Светлая схема редизайна: WebView не должен мигать тёмным.
-  backgroundColor: "#F3F7F1",
+  backgroundColor: CANVAS,
   server: {
     url: serverUrl,
     cleartext: false,
@@ -33,7 +41,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#F3F7F1",
+      backgroundColor: CANVAS,
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashImmersive: true,

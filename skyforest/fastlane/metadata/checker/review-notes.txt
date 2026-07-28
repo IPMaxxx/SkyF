@@ -1,0 +1,32 @@
+Mushroom Checker looks at a photo of a mushroom and tells you which species it is most likely looking at, which species it could be confused with, and what to check on the specimen by hand. It is a reference tool for foragers, not a food safety test.
+
+ACCESSING THE APP
+1. On the first screen tap "Continue with email" and sign in with the demo account - please sign in with email and password, not with Google or Apple:
+   Email: {email}
+   Password: {password}
+2. This demo account already holds an active Premium entitlement on our side, so identification works right after sign-in and no purchase is needed to review the app.
+3. If a subscription screen appears anyway, "Restore purchase" on that screen reads the entitlement again. As a fallback, "Start free trial" can be confirmed with a Sandbox Apple Account: sandbox transactions are accepted by our production server for this account only ({email} is on a server-side allowlist), so the purchase completes and the app opens.
+
+HOW TO TEST THE MAIN FEATURE
+1. On the home screen tap "Take photo" to shoot a mushroom, or "From gallery" to pick an image that is already on the device.
+2. If there is no mushroom at hand, any mushroom picture from the internet works just as well: open an image search for "mushroom" on a second device or in Safari on this one, then either photograph that screen with "Take photo" or save the image to Photos and choose it with "From gallery". The app analyses it the same way.
+3. Tap "Identify" on the preview screen. The analysis takes about 5 to 15 seconds.
+4. The result screen shows the top match with a confidence score, the other species the photo could be, family, genus and habitat, dangerous lookalikes with toxicity notes, and a "check yourself" list of features to verify on the mushroom itself.
+5. A photo that is not a mushroom returns "That doesn't look like a mushroom". That is expected behaviour, not a failure, and it is not counted against the trial allowance.
+
+A CONNECTION IS REQUIRED
+Identification runs on our servers: the photo is uploaded, analysed and the result is sent back. The app cannot identify anything offline, so please review it with a working connection.
+
+SUBSCRIPTION INFO (guideline 3.1.2)
+- Mushroom Checker Premium (Monthly): one month, USD 2.00.
+- Mushroom Checker Premium (Yearly): one year, USD 14.99.
+- Both plans start with a 3-day free trial that covers up to 10 identifications. Once billing starts, identifications are unlimited while the subscription is active.
+- The purchase screen shows the plan title, its length and its price, states that it renews automatically unless cancelled at least 24 hours before the period ends, and carries functional links to the Terms of Use (EULA) and the Privacy Policy.
+- Terms of Use (EULA): https://checker.skyforest.ai/offer
+- Privacy Policy: https://checker.skyforest.ai/privacy
+- The same links are in the App Description and inside the app, on the Account screen.
+
+PERMISSIONS
+The camera is used only to photograph a mushroom for identification, and the photo library only when an existing image is picked. Neither is accessed in the background.
+
+Contact: support@skyforest.ai

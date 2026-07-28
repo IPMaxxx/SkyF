@@ -6,7 +6,7 @@
   "scripts": {
     "sync:shell": "node sync-shell.mjs",
     "sync": "npm run sync:shell && npx cap sync",
-    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#0e1710' --iconBackgroundColorDark '#0e1710' --splashBackgroundColor '#0e1710' --splashBackgroundColorDark '#0e1710'"
+    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#141a15' --iconBackgroundColorDark '#141a15' --splashBackgroundColor '#0b120d' --splashBackgroundColorDark '#0b120d'"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",

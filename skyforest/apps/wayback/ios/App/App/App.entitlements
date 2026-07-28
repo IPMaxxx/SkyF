@@ -6,5 +6,15 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<!-- Universal links: ссылка из письма (/auth/confirm) открывается в
+	     приложении, а не в Safari, иначе сессия ставится в браузере и человек
+	     остаётся невошедшим. Какие пути забирает приложение, решает
+	     /.well-known/apple-app-site-association на wayback.skyforest.ai.
+	     Capability ASSOCIATED_DOMAINS включена у App ID ai.skyforest.wayback —
+	     без неё профиль не выпускается и сборка падает. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:wayback.skyforest.ai</string>
+	</array>
 </dict>
 </plist>

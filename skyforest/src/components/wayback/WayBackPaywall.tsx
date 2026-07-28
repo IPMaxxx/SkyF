@@ -4,38 +4,34 @@
  * Пейволл WayBack и управление активной подпиской — один маршрут `/payment`,
  * что показать решает статус из /api/subscription.
  *
- * Тон экрана задан дизайном: базовая функция (стрелка домой) бесплатна
- * навсегда, и об этом сказано прямо на пейволле. Премиум продаём за офлайн-
- * области, синхронизацию и спутник, а не за возврат из леса — убирать плитку
- * «free forever» нельзя, она снимает главное возражение.
+ * С обязательным гейтом на старте (WayBackStartGate) этот экран остаётся
+ * нужным: через него подписку продлевают, отменяют и восстанавливают уже
+ * вошедшие пользователи, а на вебе он объясняет, что оформить можно только в
+ * приложении. Обещания «базовое бесплатно навсегда» здесь больше нет — в
+ * приложении без подписки не работает ничего, и держать на экране покупки
+ * текст, противоречащий гейту, нельзя.
  *
  * Покупка возможна только в нативной оболочке; на вебе показываем карточку
  * «оформите в приложении».
+ *
+ * Тариф ровно один — годовой (FLAVORS.wayback.subscriptionPlan). Выбора
+ * периода на экране нет намеренно: месячного товара в сторах не существует.
  */
 
-import { useCallback, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Loader2 } from "lucide-react";
-import { isNativeApp, storeName } from "@/lib/native/capacitor";
-import {
-  getSubscriptionPrices,
-  initIap,
-  manageSubscriptions,
-  purchaseSubscription,
-  restorePurchases,
-  subscribeSubscriptionPrices,
-} from "@/lib/native/iap";
-import {
-  subscriptionProductsForBundle,
-  WAYBACK_BUNDLE_ID,
-  type SubscriptionPeriod,
-} from "@/lib/native/iapProducts";
+import { storeName } from "@/lib/native/capacitor";
+import { manageSubscriptions } from "@/lib/native/iap";
 import {
   formatWaybackDate,
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
-import { cn } from "@/lib/utils";
+import {
+  useWaybackPurchase,
+  WAYBACK_PLAN,
+} from "@/lib/wayback/useWaybackPurchase";
+import { WayBackTrialTerms } from "@/components/wayback/WayBackTrialTerms";
 import {
   WbLabel,
   WbPrimaryButton,
@@ -43,8 +39,6 @@ import {
   WbTile,
   WbTopBar,
 } from "@/components/wayback/primitives";
-
-const CATALOG = subscriptionProductsForBundle(WAYBACK_BUNDLE_ID);
 
 function FeatureRow({ children }: { children: React.ReactNode }) {
   return (
@@ -63,66 +57,20 @@ export function WayBackPaywall() {
   const router = useRouter();
   const { subscription, loading, refresh } = useWaybackAccount();
 
-  const [native, setNative] = useState(false);
-  const [period, setPeriod] = useState<SubscriptionPeriod>("yearly");
-  const [prices, setPrices] = useState<Record<string, string>>({});
-  const [purchasing, setPurchasing] = useState(false);
-  const [restoring, setRestoring] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setNative(isNativeApp());
-  }, []);
-
-  useEffect(() => {
-    if (!native) return;
-    let unsub: (() => void) | undefined;
-    let cancelled = false;
-    (async () => {
-      await initIap();
-      if (cancelled) return;
-      setPrices(getSubscriptionPrices());
-      unsub = subscribeSubscriptionPrices(setPrices);
-    })();
-    return () => {
-      cancelled = true;
-      unsub?.();
-    };
-  }, [native]);
+  const {
+    native,
+    price,
+    trialDays,
+    purchasing,
+    restoring,
+    error,
+    subscribe,
+    restore,
+  } = useWaybackPurchase(refresh, t("cta", { days: WAYBACK_PLAN.trialDays }));
 
   const store = native
     ? storeName()
     : `${t("storeApple")} / ${t("storeGoogle")}`;
-
-  const product = CATALOG.find((p) => p.period === period)!;
-  const price = prices[product.productId] || product.fallbackPrice;
-
-  const subscribe = async () => {
-    if (purchasing) return;
-    setPurchasing(true);
-    setError("");
-    try {
-      const r = await purchaseSubscription(product.productId, locale);
-      if (r.ok) await refresh();
-      else setError(r.error || t("cta"));
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
-  const restore = useCallback(async () => {
-    if (restoring) return;
-    setRestoring(true);
-    setError("");
-    try {
-      await restorePurchases();
-      // Плагин доставляет чеки асинхронно: даём серверу записать статус.
-      await new Promise((r) => setTimeout(r, 2500));
-      await refresh();
-    } finally {
-      setRestoring(false);
-    }
-  }, [refresh, restoring]);
 
   if (loading) {
     return (
@@ -140,15 +88,7 @@ export function WayBackPaywall() {
   /* ---------------- Активная подписка ---------------- */
 
   if (subscription) {
-    const planName =
-      subscription.period === "yearly" ? t("planYearly") : t("planMonthly");
     const renews = formatWaybackDate(subscription.current_period_end, locale);
-    const activePrice =
-      prices[
-        CATALOG.find((p) => p.period === subscription.period)?.productId ?? ""
-      ] ||
-      CATALOG.find((p) => p.period === subscription.period)?.fallbackPrice ||
-      "";
 
     return (
       <WbScreen>
@@ -163,7 +103,7 @@ export function WayBackPaywall() {
               {t("activeTitle", { date: renews })}
             </span>
             <span className="wb-mono text-[12.5px] text-wb-muted">
-              {t("activeMeta", { plan: planName, price: activePrice })}
+              {t("activeMeta", { plan: t("planYearly"), price })}
             </span>
             {native && (
               <button
@@ -228,16 +168,15 @@ export function WayBackPaywall() {
       bottom={
         native ? (
           <div className="flex flex-col gap-2.5">
-            <WbPrimaryButton onClick={subscribe} disabled={purchasing}>
+            <WbPrimaryButton
+              onClick={() => void subscribe()}
+              disabled={purchasing}
+            >
               {purchasing && <Loader2 className="h-4 w-4 animate-spin" />}
-              {t("cta")}
+              {t("cta", { days: trialDays })}
             </WbPrimaryButton>
             <p className="text-center text-[12px] font-medium leading-[1.45] text-wb-muted">
-              {t("renewNote", {
-                price,
-                period: period === "yearly" ? t("perYear") : t("perMonth"),
-                store,
-              })}{" "}
+              {t("renewNote", { price, period: t("perYear"), store })}{" "}
               <button
                 type="button"
                 onClick={restore}
@@ -260,71 +199,32 @@ export function WayBackPaywall() {
       <WbTopBar title={t("title")} onBack={() => router.back()} />
 
       <div className="flex flex-col gap-2.5">
-        {/* Период: две плитки вместо пилюли — попасть пальцем в лесу проще. */}
-        <div className="grid grid-cols-2 gap-2">
-          {(["monthly", "yearly"] as const).map((p) => {
-            const active = period === p;
-            const item = CATALOG.find((c) => c.period === p)!;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                aria-pressed={active}
-                className={cn(
-                  "flex flex-col gap-1 rounded-[22px] px-4 py-[14px] text-left transition-colors",
-                  active
-                    ? "bg-wb-primary text-wb-on-primary"
-                    : "bg-wb-surface text-wb-ink",
-                )}
-              >
-                <span
-                  className={cn(
-                    "wb-mono text-[10.5px] tracking-[0.14em] uppercase",
-                    active ? "text-wb-primary-soft" : "text-wb-muted-2",
-                  )}
-                >
-                  {p === "monthly" ? t("monthly") : t("yearlyDiscount")}
-                </span>
-                <span className="text-[22px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-                  {prices[item.productId] || item.fallbackPrice}
-                </span>
-                <span
-                  className={cn(
-                    "text-[12.5px] font-semibold",
-                    active ? "text-wb-primary-soft" : "text-wb-muted",
-                  )}
-                >
-                  {p === "monthly" ? t("perMonth") : t("perYear")}
-                </span>
-              </button>
-            );
-          })}
+        {/* Тариф один, поэтому это не переключатель, а цена: крупная цифра
+            и период, без выбора, который нечего выбирать. */}
+        <div className="flex items-end justify-between gap-3 rounded-[22px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
+          <div className="flex flex-col gap-1">
+            <span className="wb-mono text-[10.5px] tracking-[0.14em] text-wb-primary-soft uppercase">
+              {t("yearly")}
+            </span>
+            <span className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">
+              {price}
+            </span>
+          </div>
+          <span className="pb-1 text-[13px] font-semibold text-wb-primary-soft">
+            {t("perYear")}
+          </span>
         </div>
 
         <WbTile className="flex flex-col gap-3 px-5 py-[18px]">
           <span className="w-fit rounded-full bg-wb-primary-soft px-3 py-1 text-[11px] font-extrabold tracking-[0.06em] text-wb-primary-deep uppercase">
-            {t("trialBadge")}
+            {t("trialBadge", { days: trialDays })}
           </span>
           <FeatureRow>{t("f1")}</FeatureRow>
           <FeatureRow>{t("f2")}</FeatureRow>
           <FeatureRow>{t("f3")}</FeatureRow>
         </WbTile>
 
-        {/* Главное обещание продукта: стрелка домой не станет платной. */}
-        <WbTile tone="tint" className="flex flex-col gap-1.5 px-5 py-[18px]">
-          <span className="text-[16px] font-extrabold text-wb-ink">
-            {t("freeTitle")}
-          </span>
-          <span className="text-[13.5px] font-medium leading-[1.5] text-wb-body">
-            {t("freeBody")}
-          </span>
-        </WbTile>
-
-        <div className="flex justify-center gap-4 py-1 text-[12px] font-bold text-wb-primary">
-          <Link href="/offer">{t("terms")}</Link>
-          <Link href="/privacy">{t("privacy")}</Link>
-        </div>
+        <WayBackTrialTerms trialDays={trialDays} price={price} store={store} />
 
         {error && (
           <WbTile

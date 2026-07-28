@@ -341,7 +341,14 @@ export async function POST(request: NextRequest) {
       const { data, error } = await anon.auth.signUp({
         email: smtpTestEmail!,
         password: makePassword(),
-        options: { data: { full_name: "Reg Test SMTP" } },
+        options: {
+          data: { full_name: "Reg Test SMTP" },
+          // Без redirect_to Supabase подставит в письмо Site URL проекта — а он
+          // один на три домена. Тест должен проверять ту же ссылку, что придёт
+          // живому пользователю этого хоста. `next` обязателен: шаблон письма
+          // дописывает token_hash к этому адресу через «&».
+          emailRedirectTo: `${new URL(request.url).origin}/auth/confirm?next=/dashboard`,
+        },
       });
       if (error) {
         const msg = error.message || "";

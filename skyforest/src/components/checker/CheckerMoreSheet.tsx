@@ -23,8 +23,28 @@ import {
   WAYBACK_SITE,
 } from "@/lib/checker/externalLinks";
 import { CkMono, CkSheet } from "@/components/checker/primitives";
+import { useCheckerTheme } from "@/components/checker/CheckerThemeProvider";
+import { CHECKER_THEMES } from "@/lib/checker/theme";
 
 const LOCALE_LABELS: Record<string, string> = { en: "EN", ru: "RU" };
+
+/** Сегментный переключатель настройки: подписи внутри «пилюли», как у языка. */
+function SettingRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-[44px] items-center gap-3.5 px-3 py-2">
+      <span className="flex-1 text-[15.5px] font-bold text-ck-ink-2">
+        {label}
+      </span>
+      <div className="flex gap-1 rounded-full bg-ck-canvas p-1">{children}</div>
+    </div>
+  );
+}
 
 /** Строка панели: 44px минимум по высоте — требование к области нажатия. */
 function MoreRow({
@@ -101,6 +121,7 @@ export function CheckerMoreSheet({
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useCheckerTheme();
 
   const logout = async () => {
     const supabase = createClient();
@@ -170,36 +191,55 @@ export function CheckerMoreSheet({
 
         <Divider />
 
+        {/* Тема. Панель открывается поверх любого экрана, поэтому цвета
+            меняются у пользователя на глазах — отдельного экрана настроек
+            для этого не нужно. Лист не закрываем: выбор хочется сравнить. */}
+        <SettingRow label={t("theme")}>
+          {CHECKER_THEMES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setTheme(option)}
+              aria-pressed={option === theme}
+              className={cn(
+                "flex min-h-[44px] items-center justify-center rounded-full px-3.5 py-2 text-[13px] font-extrabold",
+                option === theme
+                  ? "bg-ck-primary text-ck-on-primary"
+                  : "text-ck-muted",
+              )}
+            >
+              {t(option === "dark" ? "themeDark" : "themeLight")}
+            </button>
+          ))}
+        </SettingRow>
+
         {/* Язык. Выбор запоминаем в куке NEXT_LOCALE руками: у локали по
             умолчанию нет префикса в URL, так что по одному адресу middleware
             не отличил бы «выбрал этот язык» от «языка не выбирал» и снова
             показал бы основной язык приложения (английский). */}
-        <div className="flex min-h-[44px] items-center gap-3.5 px-3 py-2">
-          <span className="flex-1 text-[15.5px] font-bold text-ck-ink-2">
-            {t("language")}
-          </span>
-          <div className="flex gap-1 rounded-full bg-ck-canvas p-1">
-            {routing.locales.map((loc) => (
-              <Link
-                key={loc}
-                href={pathname}
-                locale={loc}
-                scroll={false}
-                onClick={() => {
-                  document.cookie = `NEXT_LOCALE=${loc}; path=/; max-age=31536000; samesite=lax`;
-                  onClose();
-                }}
-                aria-current={loc === locale ? "true" : undefined}
-                className={cn(
-                  "flex min-w-[44px] items-center justify-center rounded-full px-3 py-2 text-[13px] font-extrabold",
-                  loc === locale ? "bg-ck-primary text-white" : "text-ck-muted",
-                )}
-              >
-                {LOCALE_LABELS[loc]}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <SettingRow label={t("language")}>
+          {routing.locales.map((loc) => (
+            <Link
+              key={loc}
+              href={pathname}
+              locale={loc}
+              scroll={false}
+              onClick={() => {
+                document.cookie = `NEXT_LOCALE=${loc}; path=/; max-age=31536000; samesite=lax`;
+                onClose();
+              }}
+              aria-current={loc === locale ? "true" : undefined}
+              className={cn(
+                "flex min-w-[44px] items-center justify-center rounded-full px-3 py-2 text-[13px] font-extrabold",
+                loc === locale
+                  ? "bg-ck-primary text-ck-on-primary"
+                  : "text-ck-muted",
+              )}
+            >
+              {LOCALE_LABELS[loc]}
+            </Link>
+          ))}
+        </SettingRow>
 
         <Divider />
 
@@ -233,7 +273,7 @@ export function CheckerMoreSheet({
           onClick={() => void logout()}
         />
 
-        <span className="ck-mono mt-1 text-center text-[10px] tracking-[0.12em] text-[#a8b6ac]">
+        <span className="ck-mono mt-1 text-center text-[10px] tracking-[0.12em] text-ck-faint">
           V {process.env.NEXT_PUBLIC_APP_VERSION} · BY SKYFOREST
         </span>
       </div>

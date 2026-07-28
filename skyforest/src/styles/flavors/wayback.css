@@ -1,51 +1,79 @@
 /* ==========================================================================
-   WayBack — светлая схема «Widget Board»
+   WayBack — тёмная схема «Widget Board»
 
    Файл принадлежит приложению WayBack: тёмную тему SkyForest и схему Checker
    он не затрагивает. Включается атрибутом `data-flavor="wayback"` на <html>
    (ставится в src/app/layout.tsx по хосту), поэтому действует только на
    поддомене wayback.* и в нативной оболочке ai.skyforest.wayback.
 
-   Правило системы: контент живёт в белых плитках 26px на холсте #eef0ec,
-   действия — зелёные #2f6b3f, подписи к данным — моно капсом.
+   Схема тёмная и намеренно совпадает по палитре с SkyForest: холст #0b120d и
+   акцент #5fb573 — те же значения, что в globals.css, чтобы три приложения
+   выглядели одной семьёй. Раскладка остаётся своей: контент в плитках 26px,
+   подписи к данным — моно капсом.
+
+   Приложением пользуются на солнце в лесу, поэтому контраст замерян, а не
+   подобран на глаз (числа — на AA по WCAG, 4.5:1 для текста, 3:1 для крупного):
+
+     ink / canvas          16.6:1
+     ink / surface         14.1:1
+     body / surface         9.7:1
+     muted / surface        7.4:1
+     muted-2 / surface      6.6:1
+     muted-3 / surface-2    4.6:1
+     primary / surface      6.4:1
+     primary / tint         4.8:1
+     on-primary / primary   7.6:1
+     primary-soft / primary 5.1:1  (подписи на зелёной заливке)
+     primary-deep / soft    7.1:1  (бейдж: светлый текст на тёмной зелени)
+     danger / surface       7.6:1
+     danger / danger-tint   5.6:1
+     ink / danger-fill      6.3:1  (сплошная кнопка необратимого действия)
 
    Подключается из src/app/globals.css.
    ========================================================================== */
 
 /* Токены с префиксом `wb-` дают готовые утилиты вида `bg-wb-surface`. */
 @theme inline {
-  --color-wb-primary: #2f6b3f;
-  --color-wb-primary-deep: #26582f;
-  --color-wb-primary-soft: #cdeed5;
-  --color-wb-primary-tint: #eaf1ea;
-  --color-wb-primary-tint-2: #e3ebe2;
-  --color-wb-on-primary: #f2f7f2;
-  --color-wb-canvas: #eef0ec;
-  --color-wb-surface: #ffffff;
-  --color-wb-surface-2: #f4f6f3;
-  --color-wb-surface-3: #eef2ec;
-  --color-wb-ink: #141a15;
-  --color-wb-ink-2: #253027;
-  --color-wb-body: #414a42;
-  --color-wb-body-soft: #4f5b4c;
-  --color-wb-muted: #5d675f;
-  --color-wb-muted-2: #7d867e;
-  --color-wb-muted-3: #97a098;
-  --color-wb-border: #dcdfd8;
-  --color-wb-border-2: #e3ebe2;
-  --color-wb-border-3: #d9e2d2;
-  --color-wb-hairline: #e9ede8;
-  --color-wb-danger: #a83b3b;
-  --color-wb-danger-tint: #fbeceb;
-  --color-wb-danger-ink: #8d5150;
-  --color-wb-amber-tint: #f6ecdc;
-  --color-wb-amber-border: #f6e3b8;
-  --color-wb-amber-ink: #7d6435;
+  --color-wb-primary: #5fb573;
+  /* Роли «deep» и «soft» на тёмном меняются местами против светлой схемы:
+     `deep` — светлый акцент поверх тёмных плиток (ховер кнопки, ссылки-акценты),
+     `soft` — тёмная зелень: подложка бейджей и подписи поверх зелёных заливок.
+     Так все существующие пары (`bg-soft` + `text-deep`, `text-soft` на
+     `bg-primary`) остаются читаемыми без правок в компонентах. */
+  --color-wb-primary-deep: #7fd48f;
+  --color-wb-primary-soft: #0e3a1d;
+  --color-wb-primary-tint: rgba(95, 181, 115, 0.16);
+  --color-wb-primary-tint-2: rgba(95, 181, 115, 0.13);
+  --color-wb-on-primary: #06120a;
+  --color-wb-canvas: #0b120d;
+  --color-wb-surface: #18241c;
+  --color-wb-surface-2: #222f26;
+  --color-wb-surface-3: #1e2a21;
+  --color-wb-ink: #eaf2ea;
+  --color-wb-ink-2: #dbe7dd;
+  --color-wb-body: #bccdbf;
+  --color-wb-body-soft: #adbfb0;
+  --color-wb-muted: #a2b4a5;
+  --color-wb-muted-2: #93a596;
+  --color-wb-muted-3: #8a9c8c;
+  --color-wb-border: rgba(255, 255, 255, 0.09);
+  --color-wb-border-2: rgba(255, 255, 255, 0.12);
+  --color-wb-border-3: rgba(255, 255, 255, 0.16);
+  --color-wb-hairline: rgba(255, 255, 255, 0.07);
+  --color-wb-danger: #ff8b82;
+  /* Сплошная заливка чуть темнее текстового красного: на тёмном экране
+     #ff8b82 во всю кнопку слепит, а тёмная подпись на нём даёт 6.3:1. */
+  --color-wb-danger-fill: #f2726f;
+  --color-wb-danger-tint: rgba(255, 139, 130, 0.14);
+  --color-wb-danger-ink: #ffb3ad;
+  --color-wb-amber-tint: rgba(242, 179, 74, 0.13);
+  --color-wb-amber-border: rgba(242, 179, 74, 0.32);
+  --color-wb-amber-ink: #f2b34a;
   --font-wb-mono: var(--font-plex-mono);
 }
 
 html[data-flavor="wayback"] {
-  color-scheme: light;
+  color-scheme: dark;
   background: var(--color-wb-canvas);
 }
 
@@ -55,8 +83,9 @@ html[data-flavor="wayback"] body {
   font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
-/* Базовые правила globals.css красят поля под тёмный фон через !important —
-   в светлой схеме их перебивает более высокая специфичность селектора. */
+/* Поля ввода. Базовые правила globals.css красят их под тёмную тему
+   SkyForest через !important — здесь перебиваем на свои поверхности той же
+   специфичностью, чтобы поля совпадали с плитками WayBack. */
 html[data-flavor="wayback"] input[type="text"],
 html[data-flavor="wayback"] input[type="email"],
 html[data-flavor="wayback"] input[type="password"],
@@ -65,7 +94,7 @@ html[data-flavor="wayback"] input[type="date"],
 html[data-flavor="wayback"] select,
 html[data-flavor="wayback"] textarea {
   background: var(--color-wb-surface-2) !important;
-  border-color: transparent !important;
+  border-color: var(--color-wb-border) !important;
   color: var(--color-wb-ink) !important;
 }
 
@@ -77,35 +106,42 @@ html[data-flavor="wayback"] textarea::placeholder {
 html[data-flavor="wayback"] input:focus,
 html[data-flavor="wayback"] textarea:focus {
   border-color: var(--color-wb-primary) !important;
-  box-shadow: 0 0 0 3px rgba(47, 107, 63, 0.16) !important;
+  box-shadow: 0 0 0 3px rgba(95, 181, 115, 0.22) !important;
 }
 
 html[data-flavor="wayback"] :focus-visible {
-  outline-color: var(--color-wb-primary);
+  outline-color: var(--color-wb-primary-deep);
 }
 
 html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
-  background: rgba(20, 26, 21, 0.18);
+  background: rgba(255, 255, 255, 0.16);
 }
 
-/* Плитка — базовый носитель контента. 26px радиус во всей системе. */
+/* Плитка — базовый носитель контента. 26px радиус во всей системе.
+   На тёмном холсте разница по яркости между плиткой и фоном всего 1.18:1,
+   поэтому границу плитки задаёт волосяная линия — без неё на солнце плитки
+   сливаются с холстом. */
 .wb-tile {
   background: var(--color-wb-surface);
+  border: 1px solid var(--color-wb-hairline);
   border-radius: 26px;
 }
 
 .wb-tile-tint {
   background: var(--color-wb-primary-tint);
+  border: 1px solid rgba(95, 181, 115, 0.24);
   border-radius: 26px;
 }
 
 .wb-tile-quiet {
   background: var(--color-wb-surface-3);
+  border: 1px solid var(--color-wb-hairline);
   border-radius: 26px;
 }
 
 .wb-tile-danger {
   background: var(--color-wb-danger-tint);
+  border: 1px solid rgba(255, 139, 130, 0.26);
   border-radius: 26px;
 }
 
@@ -151,11 +187,20 @@ html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
 .wb-btn-primary:hover:not(:disabled) {
   background: var(--color-wb-primary-deep);
 }
+/* Главную кнопку иногда показывают отключённой поверх карты (выбор точки
+   входа, пока место не указано). Карта светлая, поэтому гасим кнопку цветом,
+   а не прозрачностью: через альфу подпись читалась поверх тайлов кашей.
+   Текст #a9bdae на #2c4635 — 5.2:1. */
+.wb-btn-primary:disabled {
+  opacity: 1;
+  background: #2c4635;
+  color: #a9bdae;
+}
 
 .wb-btn-quiet {
   height: 50px;
-  background: var(--color-wb-surface);
-  color: #3a453c;
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-ink-2);
   font-weight: 700;
   font-size: 15px;
 }
@@ -178,12 +223,13 @@ html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
   font-size: 17px;
 }
 
-/* Сплошная опасная — только в подтверждении необратимого действия. */
+/* Сплошная опасная — только в подтверждении необратимого действия.
+   На тёмном фоне заливка светлая, текст — тёмный. */
 .wb-btn-danger {
   height: 64px;
   border-radius: 20px;
-  background: var(--color-wb-danger);
-  color: #fdf4f3;
+  background: var(--color-wb-danger-fill);
+  color: #2a0f0d;
   font-weight: 800;
   font-size: 18px;
 }
@@ -205,11 +251,299 @@ html[data-flavor="wayback"] ::-webkit-scrollbar-thumb {
   color: var(--color-wb-on-primary);
 }
 
-/* Заглушка карты/фото — та же штриховка, что в макете. */
+/* ==========================================================================
+   Главное действие: «START»
+
+   Единственная кнопка, ради которой открывают приложение. Её жмут на опушке,
+   на ходу, часто одной рукой и в перчатке, поэтому она занимает верх экрана
+   целиком (высота 156px против 58px обычной primary) и оформлена как объект,
+   лежащий выше холста: зелёный градиент (тот же, что у SkyForest .btn-primary),
+   свечение под кнопкой и внутренняя световая кромка сверху.
+
+   Внимание к ней привлекает кольцо, которое расходится ТРИ раза и
+   останавливается: человек проводит в приложении часы, и бесконечная
+   анимация на его экране — это расход батареи без пользы. Под
+   prefers-reduced-motion кольцо не рисуется вовсе.
+   ========================================================================== */
+.wb-start {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 1rem;
+  padding: 26px 24px;
+  border: 0;
+  border-radius: 30px;
+  text-align: left;
+  color: var(--color-wb-on-primary);
+  background: linear-gradient(135deg, #4fa863 0%, #6fce7f 55%, #8ee39c 100%);
+  box-shadow:
+    0 18px 44px -18px rgba(95, 181, 115, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+.wb-start:active:not(:disabled) {
+  transform: scale(0.985);
+  box-shadow:
+    0 10px 24px -16px rgba(95, 181, 115, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.wb-start:disabled {
+  opacity: 0.75;
+}
+
+/* «START» — крупнейший текст приложения. clamp, чтобы на 375px не ломался. */
+.wb-start-word {
+  display: block;
+  font-size: clamp(40px, 13vw, 52px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* Подпись под словом: смысл действия, читается вторым. */
+.wb-start-sub {
+  display: block;
+  margin-top: 6px;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: rgba(6, 18, 10, 0.72);
+}
+
+/* Круг со стрелкой справа — «здесь нажимают». */
+.wb-start-badge {
+  position: relative;
+  display: flex;
+  height: 76px;
+  width: 76px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(6, 18, 10, 0.14);
+}
+
+/* Кольцо внимания: три круга и стоп. */
+.wb-start-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgba(6, 18, 10, 0.5);
+  animation: wb-start-ring 1.9s ease-out 3;
+  pointer-events: none;
+}
+
+@keyframes wb-start-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  70% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-start-ring {
+    display: none;
+  }
+  .wb-start:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Нижнее меню
+
+   Панель у нижнего края: главное действие на экране трогать нельзя, поэтому
+   меню переехало из шапки вниз. Высота 60px плюс safe-area — иначе на iPhone
+   пункты уезжают под системный индикатор.
+   ========================================================================== */
+.wb-tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Выше карт (у Leaflet свои слои до 700, контролы — 1000) и выше панели
+     «ещё»: меню внизу остаётся нажимаемым, пока панель открыта, иначе из неё
+     нельзя перейти на вкладку, не закрыв её отдельным движением. */
+  z-index: 1250;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(11, 18, 13, 0.92);
+  border-top: 1px solid var(--color-wb-border);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+
+/* Пункт: иконка + подпись. 60px по высоте — палец в перчатке попадает. */
+.wb-tab {
+  display: flex;
+  min-height: 60px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 0;
+  background: none;
+  padding: 8px 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-wb-muted-2);
+  transition: color 0.15s ease;
+}
+.wb-tab[aria-current="true"],
+.wb-tab[aria-expanded="true"] {
+  color: var(--color-wb-primary);
+}
+
+/* Точка активного пункта: подпись мелкая, цветом одним её мало. */
+.wb-tab-dot {
+  height: 3px;
+  width: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Панель «ещё»: лист снизу, поверх меню и карт, со своим скроллом. */
+.wb-sheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1190;
+  max-height: 82vh;
+  overflow-y: auto;
+  border-radius: 26px 26px 0 0;
+  border: 1px solid var(--color-wb-border);
+  border-bottom: 0;
+  background: var(--color-wb-canvas);
+  box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.85);
+}
+
+/* Рамка предсохранения карты: то, что внутри, скачается. Затемнение вокруг
+   рисуем тенью наружу — так оно точно совпадает с границей рамки. */
+.wb-area-frame {
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 9999px rgba(4, 8, 5, 0.55),
+    inset 0 0 0 2px var(--color-wb-primary);
+}
+
+/* Центр рамки: перекрестие показывает, куда встанет касание. */
+.wb-area-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  background:
+    linear-gradient(var(--color-wb-primary), var(--color-wb-primary)) center /
+      2px 100% no-repeat,
+    linear-gradient(var(--color-wb-primary), var(--color-wb-primary)) center /
+      100% 2px no-repeat;
+  opacity: 0.9;
+}
+
+/* Заглушка карты/фото: тёмная штриховка, чтобы при загрузке тайлов не
+   вспыхивал светлый прямоугольник. */
 .wb-map-stripes {
   background: repeating-linear-gradient(
     135deg,
-    #e0e8dd 0 10px,
-    #e7eee4 10px 20px
+    #16211a 0 10px,
+    #1c2a21 10px 20px
   );
+}
+
+/* ==========================================================================
+   Leaflet
+
+   Растровые тайлы приходят с сервера и остаются как есть, а всё вокруг них —
+   контролы, атрибуция, подложка — рисует Leaflet своим светлым CSS. На тёмном
+   это выглядело бы заплатками, поэтому переопределяем в границах флейвора.
+   ========================================================================== */
+html[data-flavor="wayback"] .leaflet-container {
+  background: #0f1712;
+}
+
+html[data-flavor="wayback"] .leaflet-bar,
+html[data-flavor="wayback"] .leaflet-bar a,
+html[data-flavor="wayback"] .leaflet-control-zoom a {
+  background: var(--color-wb-surface);
+  border-color: var(--color-wb-border);
+  color: var(--color-wb-ink);
+}
+
+html[data-flavor="wayback"] .leaflet-bar a:hover,
+html[data-flavor="wayback"] .leaflet-control-zoom a:hover {
+  background: var(--color-wb-surface-2);
+  color: var(--color-wb-ink);
+}
+
+html[data-flavor="wayback"] .leaflet-control-attribution {
+  background: rgba(11, 18, 13, 0.78);
+  color: var(--color-wb-muted-2);
+}
+
+html[data-flavor="wayback"] .leaflet-control-attribution a {
+  color: var(--color-wb-primary);
+}
+
+html[data-flavor="wayback"] .leaflet-popup-content-wrapper,
+html[data-flavor="wayback"] .leaflet-popup-tip {
+  background: var(--color-wb-surface);
+  color: var(--color-wb-ink);
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Подложка карты светлее холста приложения, поэтому маркеры и линии трека
+   обводим тёмным — иначе они теряются на светлых участках тайлов. */
+html[data-flavor="wayback"] .leaflet-marker-icon svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+/* Кнопки поверх карты приходят из общего компонента TrackMap: он принадлежит
+   SkyForest, и белые кружки в его вёрстке зашиты классами Tailwind. Файл
+   трогать нельзя, поэтому перекрашиваем их здесь.
+
+   Границей служит сам контейнер карты, а не класс на обёртке экрана. Так
+   правило действует на КАЖДОЙ карте WayBack по построению: контролы TrackMap
+   рисуются внутри MapContainer, то есть внутри .leaflet-container, и новый
+   экран получает тёмные кнопки просто потому, что он экран WayBack. Пока
+   границей был класс `wb-map-frame`, его нужно было не забыть проставить, и
+   карта в истории походов осталась со светлыми кнопками именно поэтому.
+
+   Если разметка TrackMap изменится, правило просто перестанет применяться:
+   сломать оно ничего не может. */
+html[data-flavor="wayback"] .leaflet-container [class*="bg-white"] {
+  background: rgba(11, 18, 13, 0.88) !important;
+  color: var(--color-wb-ink) !important;
+}
+
+html[data-flavor="wayback"]
+  .leaflet-container
+  [class*="bg-white"]
+  button:not([aria-pressed="true"]) {
+  color: var(--color-wb-ink-2);
+}
+
+html[data-flavor="wayback"]
+  .leaflet-container
+  [class*="bg-white"]
+  button[aria-pressed="true"] {
+  background: var(--color-wb-primary);
+  color: var(--color-wb-on-primary);
 }

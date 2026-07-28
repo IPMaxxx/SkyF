@@ -6,34 +6,40 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
     />
-    <meta name="theme-color" content="#eef0ec" />
+    <meta name="theme-color" content="#0b120d" />
+    <meta name="color-scheme" content="dark" />
     <title>WayBack — offline</title>
     <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
     <style>
-      /* Светлая схема «Widget Board» — те же токены, что в
-         src/styles/flavors/wayback.css. Дублируются намеренно: офлайн-ядро не
+      /* Тёмная схема — те же токены, что в src/styles/flavors/wayback.css
+         (единое оформление с SkyForest). Дублируются намеренно: офлайн-ядро не
          зависит от Next-сборки и должно открываться без сети.
 
          Шрифты только системные: Manrope и IBM Plex Mono тянутся из сети,
          а этот экран нужен именно там, где сети нет. */
       :root {
-        --primary: #2f6b3f;
-        --primary-deep: #26582f;
-        --on-primary: #f2f7f2;
-        --canvas: #eef0ec;
-        --surface: #ffffff;
-        --surface-2: #f4f6f3;
-        --ink: #141a15;
-        --ink-2: #253027;
-        --body: #414a42;
-        --muted: #5d675f;
-        --muted-2: #7d867e;
-        --border: #dcdfd8;
-        --danger: #a83b3b;
-        --danger-tint: #fbeceb;
-        --amber-tint: #f6ecdc;
-        --amber-border: #f6e3b8;
-        --amber-ink: #7d6435;
+        color-scheme: dark;
+        --primary: #5fb573;
+        --primary-light: #7fd48f;
+        --on-primary: #06120a;
+        --primary-tint: rgba(95, 181, 115, 0.16);
+        --canvas: #0b120d;
+        --surface: #18241c;
+        --surface-2: #222f26;
+        --surface-3: #1e2a21;
+        --ink: #eaf2ea;
+        --ink-2: #dbe7dd;
+        --body: #bccdbf;
+        --muted: #a2b4a5;
+        --muted-2: #93a596;
+        --muted-3: #8a9c8c;
+        --border: rgba(255, 255, 255, 0.09);
+        --danger: #ff8b82;
+        --danger-tint: rgba(255, 139, 130, 0.14);
+        --amber: #f2b34a;
+        --amber-tint: rgba(242, 179, 74, 0.14);
+        --amber-border: rgba(242, 179, 74, 0.32);
+        --shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.7);
         --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
       }
       * { box-sizing: border-box; }
@@ -83,7 +89,7 @@
         font-weight: 600;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: var(--amber-ink);
+        color: var(--amber);
         background: var(--amber-tint);
         border: 1px solid var(--amber-border);
         border-radius: 999px;
@@ -98,9 +104,12 @@
         color: var(--body);
       }
 
-      /* Плитка — базовый носитель контента, радиус 26 во всей системе. */
+      /* Плитка — базовый носитель контента, радиус 26 во всей системе.
+         На тёмном холсте плитка отличается от фона слабо (1.18:1), поэтому
+         край очерчен волосяной линией. */
       .card {
         background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 26px;
         padding: 16px 18px;
       }
@@ -122,6 +131,7 @@
         align-items: center;
         gap: 16px;
         background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 26px;
         padding: 16px 18px;
       }
@@ -130,7 +140,7 @@
         height: 88px;
         flex: 0 0 88px;
         border-radius: 50%;
-        background: #eaf1ea;
+        background: var(--surface-2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -164,40 +174,105 @@
       }
 
       /* Карта — такая же плитка, поэтому скругление режем по контейнеру. */
+      /* Фон под тайлами тёмный: пока плитки карты не подгрузились (а офлайн они
+         могут не подгрузиться вовсе), место карты должно быть тёмной заглушкой,
+         а не белым прямоугольником. */
       #mapWrap {
         position: relative;
         flex: 1 1 auto;
         min-height: 0;
+        border: 1px solid var(--border);
         border-radius: 26px;
         overflow: hidden;
-        background: #e7eee4;
+        background: var(--canvas);
       }
-      #map { width: 100%; height: 100%; background: #e7eee4; }
+      #map { width: 100%; height: 100%; background: var(--canvas); }
       .leaflet-container {
-        background: #e7eee4;
+        background: var(--canvas);
         font-family: -apple-system, Roboto, system-ui, sans-serif;
       }
-      /* Стандартный zoom-контрол Leaflet квадратный с рамкой — приводим к
-         скруглениям системы, иначе выбивается из плиток. */
-      .leaflet-control-zoom {
-        border: none !important;
+      .leaflet-container a { color: var(--primary); }
+      /* Стандартный zoom-контрол Leaflet квадратный, белый и с рамкой —
+         приводим к скруглениям и цветам системы, иначе на тёмном он выглядит
+         светлой заплаткой. Те же правила для .leaflet-bar: под ним лежат все
+         штатные контролы Leaflet. */
+      .leaflet-control-zoom,
+      .leaflet-bar {
+        border: 1px solid var(--border) !important;
         border-radius: 16px !important;
         overflow: hidden;
-        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.3);
+        box-shadow: var(--shadow);
       }
-      .leaflet-control-zoom a {
+      .leaflet-control-zoom a,
+      .leaflet-bar a {
         width: 38px;
         height: 38px;
         line-height: 38px;
         background: var(--surface);
+        background-color: var(--surface);
         color: var(--ink-2);
         border: none !important;
         font-size: 19px;
         font-weight: 600;
       }
-      .leaflet-control-zoom a:hover { background: var(--surface-2); }
-      .leaflet-control-zoom a:first-child {
+      .leaflet-control-zoom a:hover,
+      .leaflet-control-zoom a:focus,
+      .leaflet-bar a:hover,
+      .leaflet-bar a:focus {
+        background-color: var(--surface-2);
+        color: var(--ink);
+      }
+      .leaflet-control-zoom a.leaflet-disabled,
+      .leaflet-bar a.leaflet-disabled {
+        background-color: var(--surface-3);
+        color: var(--muted-3);
+      }
+      .leaflet-control-zoom a:first-child,
+      .leaflet-bar a:first-child {
         border-bottom: 1px solid var(--border) !important;
+      }
+      .leaflet-touch .leaflet-control-layers,
+      .leaflet-touch .leaflet-bar {
+        border: 1px solid var(--border) !important;
+      }
+      /* Атрибуция и слои: штатно белые плашки поверх тайлов. */
+      .leaflet-container .leaflet-control-attribution,
+      .leaflet-control-layers,
+      .leaflet-control-layers-expanded {
+        background: rgba(11, 18, 13, 0.86);
+        color: var(--body);
+        border-radius: 10px;
+      }
+      .leaflet-control-attribution a,
+      .leaflet-control-layers a { color: var(--primary); }
+      .leaflet-control-layers-separator { border-top: 1px solid var(--border); }
+      .leaflet-control-scale-line {
+        background: rgba(11, 18, 13, 0.86);
+        border: 2px solid var(--border);
+        border-top: none;
+        color: var(--body);
+      }
+      /* Попапы и тултипы: у Leaflet белые, приводим к плитке. */
+      .leaflet-popup-content-wrapper,
+      .leaflet-popup-tip,
+      .leaflet-tooltip {
+        background: var(--surface);
+        color: var(--ink);
+        border-color: var(--border);
+        box-shadow: var(--shadow);
+      }
+      .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+      .leaflet-container a.leaflet-popup-close-button:hover,
+      .leaflet-container a.leaflet-popup-close-button:focus {
+        color: var(--ink);
+      }
+      .leaflet-tooltip-top:before { border-top-color: var(--surface); }
+      .leaflet-tooltip-bottom:before { border-bottom-color: var(--surface); }
+      .leaflet-tooltip-left:before { border-left-color: var(--surface); }
+      .leaflet-tooltip-right:before { border-right-color: var(--surface); }
+      .leaflet-zoom-box {
+        border: 2px dotted var(--primary);
+        background: var(--primary-tint);
       }
 
       #locateBtn {
@@ -210,8 +285,8 @@
         border-radius: 50%;
         background: var(--surface);
         color: var(--ink-2);
-        border: none;
-        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.35);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -229,7 +304,8 @@
         padding: 3px;
         border-radius: 999px;
         background: var(--surface);
-        box-shadow: 0 6px 18px -6px rgba(20, 26, 21, 0.3);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
       }
       #layerSwitch button {
         border: none;
@@ -250,6 +326,7 @@
 
       .start-pane {
         background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 26px;
         padding: 16px 18px;
       }
@@ -294,8 +371,9 @@
       .btn.ghost {
         height: 50px;
         border-radius: 18px;
-        background: var(--surface);
-        color: #3a453c;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--ink-2);
         font-size: 15px;
         font-weight: 700;
       }
@@ -332,8 +410,8 @@
               <svg viewBox="0 0 24 24" width="52" height="52" aria-hidden="true">
                 <path
                   d="M12 2 L20 20 L12 15.5 L4 20 Z"
-                  fill="#2f6b3f"
-                  stroke="#2f6b3f"
+                  fill="#5fb573"
+                  stroke="#5fb573"
                   stroke-width="1"
                   stroke-linejoin="round"
                 />

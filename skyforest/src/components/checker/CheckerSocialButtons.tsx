@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * Соц-вход в светлой схеме Checker: Google — белая кнопка с рамкой,
- * Apple — тёмная (#132318). Логика та же, что в общем SocialLoginButtons:
- * в нативе — SDK → idToken → Supabase, в браузере — web-OAuth с редиректом.
+ * Соц-вход Checker: Google — кнопка цвета поверхности с рамкой, Apple —
+ * инверсная (`ck-contrast`: чёрная на светлой теме, белая на тёмной, как
+ * требует HIG). Логика та же, что в общем SocialLoginButtons: в нативе —
+ * SDK → idToken → Supabase, в браузере — web-OAuth с редиректом.
  */
 
 import { useState } from "react";
@@ -112,7 +113,7 @@ export function CheckerSocialButtons({ redirect }: { redirect: string }) {
         type="button"
         onClick={() => handle("google")}
         disabled={busy !== null}
-        className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[26px] border border-ck-border-3 bg-ck-surface text-[15px] font-bold text-[#1e3325] disabled:opacity-55"
+        className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[26px] border border-ck-border-3 bg-ck-surface text-[15px] font-bold text-ck-ink-2 disabled:opacity-55"
       >
         {busy === "google" ? (
           <Loader2 className="h-[18px] w-[18px] animate-spin" />
@@ -127,7 +128,7 @@ export function CheckerSocialButtons({ redirect }: { redirect: string }) {
           type="button"
           onClick={() => handle("apple")}
           disabled={busy !== null}
-          className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[26px] bg-ck-ink text-[15px] font-bold text-white disabled:opacity-55"
+          className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[26px] bg-ck-contrast text-[15px] font-bold text-ck-on-contrast disabled:opacity-55"
         >
           {busy === "apple" ? (
             <Loader2 className="h-4 w-4 animate-spin" />
