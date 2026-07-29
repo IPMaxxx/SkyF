@@ -107,8 +107,13 @@ export default {
   /** Вкладка «История»: топ-1 результат каждого распознавания. */
   history: {
     title: "History",
+    /**
+     * Ветка `=0` говорит, для чего вкладка, а не «находок нет»: заголовок
+     * пустой карточки ниже произносит это и так, и две одинаковые фразы
+     * подряд читались как ошибка.
+     */
     subtitle:
-      "{count, plural, =0 {No finds yet} one {# identification} other {# identifications}} · the top match of each",
+      "{count, plural, =0 {Every identification you make lands here} one {# identification · top match} other {# identifications · the top match of each}}",
     subtitleLoading: "Loading your finds…",
     readMoreOf: "{name} — read about the species",
     emptyTitle: "No finds yet",
