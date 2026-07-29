@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { useQuestsBadge } from "@/lib/checker/achievements";
 import { CHECKER_HOME } from "@/lib/checker/backNavigation";
 import { cn } from "@/lib/utils";
 import { CheckerMoreSheet } from "@/components/checker/CheckerMoreSheet";
@@ -53,6 +54,7 @@ export function CheckerTabBar() {
   const t = useTranslations("checker.nav");
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const questsNew = useQuestsBadge();
 
   const questsActive = pathname === QUESTS_HREF;
 
@@ -104,13 +106,23 @@ export function CheckerTabBar() {
           >
             <span
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full",
+                "relative flex h-8 w-8 items-center justify-center rounded-full",
                 questsActive
                   ? "bg-ck-primary text-ck-on-primary shadow-[0_8px_16px_-8px_var(--ck-glow)]"
                   : "bg-ck-primary-tint text-ck-primary-text",
               )}
             >
               <Target className="h-[18px] w-[18px]" strokeWidth={2.3} aria-hidden="true" />
+              {/* Точка «есть непросмотренное» ставится в момент, когда находка
+                  закрыла квест, и гаснет от визита во вкладку. Состояние лежит
+                  в браузере, поэтому меню не делает лишних запросов. */}
+              {questsNew && !questsActive && (
+                <i
+                  role="status"
+                  aria-label={t("questsNew")}
+                  className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-ck-surface bg-ck-amber"
+                />
+              )}
             </span>
             <span
               className={cn(

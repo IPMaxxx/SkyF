@@ -59,12 +59,29 @@ export function isInternalPath(pathname: string): boolean {
   );
 }
 
-/** Куда переписать публичный путь внутри этого флейвора (или undefined). */
+/**
+ * Куда переписать публичный путь внутри этого флейвора (или undefined).
+ *
+ * Ключ таблицы совпадает либо целиком, либо целым сегментом в начале пути:
+ * так путь с продолжением (`/s/<токен>` — публичная карточка «поделиться»
+ * Checker) уезжает в `/ck/s/<токен>`. Префикс проверяется через `${from}/`,
+ * поэтому `/sitemap` под ключ `/s` не попадает. Ровно так же сравнивают путь
+ * `isPathAllowed` и `isAnonymousAllowed` выше.
+ */
 export function internalRewrite(
   flavor: AppFlavor,
   pathname: string,
 ): string | undefined {
-  return FLAVORS[flavor].internalRewrites[pathname];
+  const table = FLAVORS[flavor].internalRewrites;
+  const exact = table[pathname];
+  if (exact) return exact;
+
+  for (const [from, to] of Object.entries(table)) {
+    if (from !== "/" && pathname.startsWith(`${from}/`)) {
+      return to + pathname.slice(from.length);
+    }
+  }
+  return undefined;
 }
 
 /** Доступен ли защищённый путь анонимно в данном флейворе. */

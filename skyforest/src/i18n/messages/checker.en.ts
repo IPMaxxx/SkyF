@@ -35,6 +35,7 @@ export default {
     identify: "Identify",
     history: "History",
     quests: "Quests",
+    questsNew: "New quest progress",
     account: "Account",
     more: "More",
     openMore: "Open more",
@@ -126,21 +127,43 @@ export default {
     retry: "Try again",
   },
 
-  /** Вкладка «Квесты»: три уровня по пять видов. */
+  /** Вкладка «Квесты»: коллекция из трёх уровней по пять видов. */
   quests: {
     title: "Quests",
-    subtitle:
-      "Photograph and identify 15 species. A quest closes when the species comes out first in an identification.",
-    overall: "OVERALL PROGRESS",
-    overallCount: "{found} of {total}",
+    subtitle: "Fifteen species to photograph and identify.",
+    rankLabel: "YOUR RANK",
+    /** Ранги аккаунта — пороги в src/lib/checker/achievements.ts. */
+    ranks: {
+      start: "Not started",
+      spotter: "Spotter",
+      naturalist: "Field naturalist",
+      mycophile: "Mycophile",
+      master: "Master identifier",
+    },
+    toNextRank:
+      "{count, plural, one {# more species} other {# more species}} to {rank}",
+    rankMax: "Every species identified — nothing left to prove.",
+    nextUp: "NEXT UP",
+    takePhoto: "Take photo",
+    readMore: "Read about the species",
+    shareFind: "Share this find",
+    shareProgress: "Share progress",
+    /** Подписи к системному листу «поделиться». Ссылка ведёт на нашу карточку. */
+    shareTextFind: "{name} — identified with Mushroom Checker",
+    shareTextLevel:
+      "Level {level} complete in Mushroom Checker — {found} of {total} species identified",
+    shareTextRank:
+      "{rank} in Mushroom Checker — {found} of {total} species identified",
+    close: "Close",
+    whereLabel: "WHERE AND WHEN",
+    lookalikeTitle: "Dangerous lookalike",
+    openFound: "{name} — identified. Open details",
+    openTarget: "{name} — not identified yet. Open details",
     safetyTitle: "Never eat a mushroom based on the result.",
     safetyBody:
-      "Quests are about photographing and identifying, not about filling a basket. Tap a species to read about it and its dangerous lookalikes.",
-    levelBadge: "LEVEL {n}",
-    levelDone: "Level complete · {date}",
+      "Quests are about photographing and identifying, not about filling a basket.",
+    levelDone: "Complete · {date}",
     foundLabel: "Identified {date}",
-    foundOn: "{name} — identified on {date}. Open species info",
-    notFoundHint: "{name} — not identified yet. Open species info",
     allDoneTitle: "All 15 species identified",
     allDoneBody:
       "Every level is complete. Keep identifying — history keeps all of your finds.",
@@ -181,8 +204,32 @@ export default {
       flammulinaVelutipes: "Velvet shank",
     },
     /**
-     * Предупреждения для видов с флагом `warning` в конфиге квестов. Строка
-     * стоит прямо в карточке: цель квеста нельзя показать без неё.
+     * «Где и когда искать» — сезон и место, без указаний по сбору. Строка
+     * показывается в карточке ближайшей цели и в шите вида.
+     */
+    where: {
+      cantharellusCibarius:
+        "July–October, moss and litter in conifer and mixed woods",
+      boletusReticulatus: "June–September, oak and open broadleaf woods",
+      armillariaMellea:
+        "August–November, stumps and roots of broadleaf trees",
+      suillusLuteus: "July–October, young pine stands and their edges",
+      russulaAeruginea: "July–September, under birches in mixed woods",
+      macrolepiotaProcera: "July–October, clearings, meadows and forest edges",
+      leccinumScabrum: "June–October, birch woods and undergrowth",
+      lactariusDeliciosus: "August–October, young pines and spruces",
+      leccinumVersipelle: "July–October, birches in damp spots",
+      tricholomaEquestre: "September–November, sandy pine forests",
+      morchellaEsculenta: "April–May, floodplains, orchards and burned ground",
+      boletusPinophilus: "June–October, pine forests on sandy soil",
+      craterellusCornucopioides: "August–October, shady broadleaf woods",
+      leccinumAlbostipitatum: "July–September, aspen groves",
+      flammulinaVelutipes: "November–March, weakened broadleaf trees",
+    },
+    /**
+     * Предупреждения для видов с флагом `warning` в конфиге квестов. Полный
+     * текст показывается в шите вида и в результате распознавания, а на плитке
+     * стоит амбровый значок — цель с опасным двойником нельзя показать без него.
      */
     warnings: {
       cantharellusCibarius:
@@ -237,6 +284,12 @@ export default {
 
   result: {
     back: "Back to home",
+    /** Карточка закрытого квеста — только на новой находке. */
+    questDone: "Quest complete — added to your collection",
+    levelDone: "Level {level} complete",
+    questProgress: "{found} of {total} species",
+    rankUp: "new rank: {rank}",
+    openQuests: "Quests",
     topMatch: "TOP MATCH · {pct}",
     lowConfidence:
       "Confidence is low — treat every match below as a guess, not an answer.",
@@ -367,6 +420,8 @@ export default {
     noSubscriptionHint: "Start a {days}-day free trial",
     manage: "Manage",
     subscribe: "Subscribe",
+    achievements: "ACHIEVEMENTS",
+    achievementsHint: "{found} of {total} species identified",
     displayName: "Display name",
     displayNameEmpty: "Not set",
     changePassword: "Change password",
