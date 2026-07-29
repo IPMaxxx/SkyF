@@ -495,19 +495,43 @@ export function CheckerIdentify() {
     return (
       <CkScreen
         padding="px-0"
+        reserveTabBar
         bottom={
-          <div className="flex gap-2.5 px-5">
-            <CkPrimaryButton onClick={resetAll} className="h-14 flex-1">
-              {t("result.newPhoto")}
-            </CkPrimaryButton>
-            <button
-              type="button"
-              onClick={share}
-              aria-label={t("result.share")}
-              className="flex h-14 w-14 flex-none items-center justify-center rounded-full border border-ck-border-3 bg-ck-surface text-ck-ink-3"
-            >
-              <Share2 className="h-[18px] w-[18px]" />
-            </button>
+          /* Следующая находка начинается прямо отсюда — и камерой, и файлом
+             из галереи. Возврат на главный экран остался на стрелке над
+             фотографией: она и подписана «назад», а кнопки внизу — про
+             следующее распознавание. */
+          <div className="flex flex-col gap-2.5 px-5">
+            {errorCard}
+            <div className="flex gap-2.5">
+              <CkPrimaryButton
+                onClick={handleTakePhoto}
+                className="h-14 flex-1"
+              >
+                <Camera
+                  className="h-[19px] w-[19px]"
+                  strokeWidth={2.2}
+                  aria-hidden="true"
+                />
+                {t("result.newPhoto")}
+              </CkPrimaryButton>
+              <button
+                type="button"
+                onClick={share}
+                aria-label={t("result.share")}
+                className="flex h-14 w-14 flex-none items-center justify-center rounded-full border border-ck-border-3 bg-ck-surface text-ck-ink-3"
+              >
+                <Share2 className="h-[18px] w-[18px]" />
+              </button>
+            </div>
+            <CkSecondaryButton onClick={handleGallery}>
+              <Images
+                className="h-[17px] w-[17px]"
+                strokeWidth={2.1}
+                aria-hidden="true"
+              />
+              {t("result.fromGallery")}
+            </CkSecondaryButton>
           </div>
         }
       >
@@ -763,6 +787,7 @@ export function CheckerIdentify() {
     return (
       <>
         <CkScreen
+          reserveTabBar
           bottom={
             <div className="flex flex-col gap-2.5">
               <CkPrimaryButton
@@ -776,9 +801,27 @@ export function CheckerIdentify() {
                   </span>
                 )}
               </CkPrimaryButton>
-              <CkSecondaryButton onClick={handleTakePhoto}>
-                {t("preview.retake")}
-              </CkSecondaryButton>
+              {/* Заменить кадр можно обоими способами: ошибиться легко и в
+                  съёмке, и в выборе файла, а одной «переснять» из превью
+                  выхода к галерее не было — только сброс всего экрана. */}
+              <div className="flex gap-2.5">
+                <CkSecondaryButton onClick={handleTakePhoto} className="flex-1">
+                  <Camera
+                    className="h-[17px] w-[17px]"
+                    strokeWidth={2.1}
+                    aria-hidden="true"
+                  />
+                  {t("preview.retake")}
+                </CkSecondaryButton>
+                <CkSecondaryButton onClick={handleGallery} className="flex-1">
+                  <Images
+                    className="h-[17px] w-[17px]"
+                    strokeWidth={2.1}
+                    aria-hidden="true"
+                  />
+                  {t("preview.gallery")}
+                </CkSecondaryButton>
+              </div>
             </div>
           }
         >

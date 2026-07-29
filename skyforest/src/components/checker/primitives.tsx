@@ -45,6 +45,13 @@ function useEscape(open: boolean, onClose: () => void) {
  * из самого экрана, не выходит: обёртка контента — блок с высотой от флексбокса,
  * а процентная высота от такой высоты не разрешается, и `h-full` на потомке
  * молча превращается в `auto`.
+ *
+ * `reserveTabBar` нужен экранам, чей контент выше окна: нижнее меню
+ * зафиксировано у края, поэтому последние 62px документа всегда закрыты им, и
+ * доскроллить до блока кнопок невозможно — он оказывается под панелью. Резерв
+ * прибавляется и к min-height, и к нижнему отступу сразу: там, где контент в
+ * окно помещается, кнопки остаются ровно на прежнем месте, а там, где нет —
+ * страница удлиняется на высоту меню, и кнопки выходят из-под него.
  */
 export function CkScreen({
   children,
@@ -52,17 +59,22 @@ export function CkScreen({
   className,
   padding = "px-5",
   centerContent = false,
+  reserveTabBar = false,
 }: {
   children: ReactNode;
   bottom?: ReactNode;
   className?: string;
   padding?: string;
   centerContent?: boolean;
+  reserveTabBar?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "font-ck mx-auto flex min-h-[calc(100dvh-var(--ck-chrome,0px))] w-full max-w-[520px] flex-col text-ck-ink",
+        "font-ck mx-auto flex w-full max-w-[520px] flex-col text-ck-ink",
+        reserveTabBar
+          ? "min-h-[calc(100dvh-var(--ck-chrome,0px)+var(--ck-tabbar,0px))]"
+          : "min-h-[calc(100dvh-var(--ck-chrome,0px))]",
         className,
       )}
     >
@@ -78,7 +90,10 @@ export function CkScreen({
       {bottom && (
         <div
           className={cn(
-            "pt-4 pb-[var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))]",
+            "pt-4",
+            reserveTabBar
+              ? "pb-[calc(var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))+var(--ck-tabbar,0px))]"
+              : "pb-[var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))]",
             padding,
           )}
         >
