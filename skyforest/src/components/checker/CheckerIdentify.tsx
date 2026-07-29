@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, Camera, Check, Share2 } from "lucide-react";
+import { ArrowLeft, Camera, Check, Images, Share2 } from "lucide-react";
 import {
   CaptureError,
   capturePhoto,
@@ -38,6 +38,7 @@ import {
   CkStatusCard,
   type CkStatusVariant,
 } from "@/components/checker/primitives";
+import { CheckerShootingTips } from "@/components/checker/CheckerShootingTips";
 
 const REQUEST_TIMEOUT_MS = 35000;
 /** Шаг «признаки выделены» отмечаем по времени — сервер промежуточных событий не шлёт. */
@@ -846,63 +847,77 @@ export function CheckerIdentify() {
 
   /* ---------------- Главный экран ---------------- */
 
-  const tips = [
-    { glyph: "◠", label: t("home.tipCap") },
-    { glyph: "▮", label: t("home.tipStem") },
-    { glyph: "≡", label: t("home.tipGills") },
-    { glyph: "☀", label: t("home.tipLight") },
-  ];
-
+  /**
+   * Порядок блоков задан требованиями к первому экрану, а не вкусом:
+   *
+   *  - пустой рамки «здесь будет фото» больше нет — в начале сеанса фото нет,
+   *    и 206px под заглушку отбирали место у того, ради чего экран открыли;
+   *  - две кнопки съёмки — самый крупный и самый контрастный элемент;
+   *  - предупреждение «не ешьте гриб по результату» стоит прямо над ними и
+   *    видно без прокрутки: это требование безопасности, а не сноска;
+   *  - подсказки по съёмке сжаты в одну полосу, подробности — в листе
+   *    (CheckerShootingTips);
+   *  - про безлимит в подписке главный экран больше не говорит: об этом
+   *    рассказывает экран подписки, здесь остаётся только то, что влияет на
+   *    следующее действие (сколько распознаваний осталось в триале).
+   *
+   * Высоты подобраны так, чтобы экран целиком помещался без прокрутки на
+   * 568px (iPhone SE 1-го поколения) с учётом шапки и нижнего меню.
+   */
   return (
     <CkScreen
       bottom={
-        <div className="flex flex-col gap-2.5">
+        <div className="ck-home-actions flex flex-col gap-2.5">
+          <div className="ck-home-safety flex items-start gap-2.5 rounded-[20px] border border-ck-amber-border bg-ck-amber-tint px-3.5 py-3">
+            <i
+              aria-hidden="true"
+              className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[9px] bg-ck-surface text-[14px] font-extrabold text-ck-amber"
+            >
+              !
+            </i>
+            <p className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-[13px] font-extrabold leading-[1.3] text-ck-amber-deep">
+                {t("home.safetyTitle")}
+              </span>
+              <span className="text-[11.5px] font-medium leading-[1.35] text-ck-amber-mid">
+                {t("home.safetyBody")}
+              </span>
+            </p>
+          </div>
+
           <CkPrimaryButton onClick={handleTakePhoto}>
+            <Camera className="h-[19px] w-[19px]" strokeWidth={2.2} aria-hidden="true" />
             {t("home.takePhoto")}
           </CkPrimaryButton>
           <CkSecondaryButton onClick={handleGallery}>
+            <Images className="h-[17px] w-[17px]" strokeWidth={2.1} aria-hidden="true" />
             {t("home.fromGallery")}
           </CkSecondaryButton>
-          <p className="mt-0.5 text-center text-[10.5px] font-medium leading-[1.4] text-ck-muted">
-            {t("home.disclaimer")}
-          </p>
+
+          <CheckerShootingTips />
         </div>
       }
     >
-      <div className="flex flex-col gap-4 pt-5">
-        <h1 className="text-[38px] font-extrabold leading-[0.98] tracking-[-0.035em] text-ck-ink">
+      <div className="ck-home-top flex flex-col gap-3.5 pt-4">
+        <h1 className="ck-home-title text-[34px] font-extrabold leading-[1.0] tracking-[-0.035em] text-ck-ink">
           {t("home.titleLine1")}
           <br />
           <span className="text-ck-primary-text">{t("home.titleLine2")}</span>
         </h1>
 
-        {/* Карточка состояния подписки. Три состояния: оплаченная подписка
-            (лимита нет), пробный период (счётчик от лимита триала) и
-            отсутствие подписки (приглашение начать пробный период). */}
+        {/* Состояние подписки. В оплаченной подписке карточки нет вовсе:
+            лимита нет, решать нечего, а место на первом экране дорого. */}
         {!subLoading &&
-          (unlimited ? (
-            <div className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5">
-              <span className="text-[26px] font-extrabold leading-none text-ck-primary-text">
-                ∞
-              </span>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[12.5px] font-medium leading-[1.35] text-ck-primary-mid">
-                  {t("home.quotaUnlimited")}
-                </span>
-                <CkMono className="text-ck-primary-mid">
-                  {t("home.quotaUnlimitedNote")}
-                </CkMono>
-              </div>
-            </div>
-          ) : subscription ? (
+          !unlimited &&
+          (subscription ? (
             <Link
               href="/payment"
-              className="flex items-center gap-3 rounded-[24px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3.5"
+              className="ck-home-quota flex items-center gap-3 rounded-[22px] border border-ck-amber-border bg-ck-amber-tint px-4 py-3"
             >
-              <span className="text-[26px] font-extrabold leading-none text-ck-amber">
+              <span className="text-[24px] font-extrabold leading-none text-ck-amber">
                 {left ?? 0}
               </span>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-[12.5px] font-medium leading-[1.35] text-ck-amber-mid">
                   {left === 0
                     ? t("home.quotaTrialEnded")
@@ -920,9 +935,9 @@ export function CheckerIdentify() {
           ) : (
             <Link
               href="/payment"
-              className="flex items-center gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3.5"
+              className="ck-home-quota flex items-center gap-3 rounded-[22px] border border-ck-primary-border bg-ck-primary-tint px-4 py-3"
             >
-              <span className="text-[26px] font-extrabold leading-none text-ck-primary-text">
+              <span className="text-[24px] font-extrabold leading-none text-ck-primary-text">
                 {CHECKER_PLAN.trialDays}
               </span>
               <span className="text-[12.5px] font-medium leading-[1.35] text-ck-primary-mid">
@@ -932,34 +947,6 @@ export function CheckerIdentify() {
           ))}
 
         {errorCard}
-
-        <div className="ck-lift flex h-[206px] flex-col items-center justify-center gap-3 rounded-[28px] border border-ck-border bg-ck-surface">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ck-primary-tint">
-            <Camera
-              className="h-6 w-6 text-ck-primary-light"
-              strokeWidth={1.8}
-            />
-          </div>
-          <CkMono className="tracking-[0.08em] text-[11px] text-ck-muted">
-            {t("home.photoCaption")}
-          </CkMono>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5">
-          {tips.map((tip) => (
-            <div
-              key={tip.label}
-              className="flex flex-col gap-1.5 rounded-[20px] border border-ck-border-2 bg-ck-surface px-3.5 py-3"
-            >
-              <span className="text-base leading-none text-ck-primary-text">
-                {tip.glyph}
-              </span>
-              <span className="text-xs font-bold text-ck-ink-2">
-                {tip.label}
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
     </CkScreen>
   );
