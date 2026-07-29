@@ -57,7 +57,9 @@ export const APP_LINKS: Record<AppFlavor, AppLinks> = {
     androidPackage: "ai.skyforest.mushroomchecker",
     androidSha256:
       "74:9B:9B:F3:B7:80:D0:20:A8:C8:19:B3:E2:23:43:FA:A1:E9:AD:4B:82:47:2A:B8:09:58:67:AF:D6:8F:28:39",
-    paths: AUTH_PATHS,
+    // `/s/*` — публичная карточка «поделиться»: у владельца приложения ссылка
+    // из мессенджера должна открывать приложение, а не браузер.
+    paths: [...AUTH_PATHS, "/s"],
   },
   wayback: {
     appleAppId: `${TEAM_ID}.ai.skyforest.wayback`,

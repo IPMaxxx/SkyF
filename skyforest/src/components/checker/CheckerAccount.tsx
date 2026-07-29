@@ -27,7 +27,10 @@ import {
   formatFullDate,
   useCheckerSubscription,
 } from "@/lib/checker/useSubscription";
+import { useQuestStats } from "@/lib/checker/achievements";
 import { openCheckerDoc } from "@/lib/checker/externalLinks";
+import { CheckerMedal } from "@/components/checker/CheckerMedal";
+import { CheckerProgressPips } from "@/components/checker/CheckerProgressPips";
 import { CheckerTopBar } from "@/components/checker/CheckerTopBar";
 import {
   CkDangerButton,
@@ -53,10 +56,13 @@ export function CheckerAccount({
 }) {
   const t = useTranslations("checker.account");
   const td = useTranslations("checker.deleteAccount");
+  const tq = useTranslations("checker.quests");
   const locale = useLocale();
   const router = useRouter();
   const { subscription, left, limit, isTrial, unlimited } =
     useCheckerSubscription();
+  const { counts, rank, loading: statsLoading, failed: statsFailed } =
+    useQuestStats();
 
   const [sheet, setSheet] = useState<Sheet>(null);
   const [name, setName] = useState(initialName ?? "");
@@ -155,6 +161,43 @@ export function CheckerAccount({
             </span>
           </div>
         </div>
+
+        {/* Достижения. Считаются из истории распознаваний облегчённым запросом
+            (без фотографий), поэтому карточка появляется по готовности и не
+            задерживает остальной экран. */}
+        {!statsLoading && !statsFailed && (
+          <Link
+            href="/dashboard/quests"
+            className="flex flex-col gap-3 rounded-[26px] border border-ck-border bg-ck-surface p-[18px]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <CkMono>{t("achievements")}</CkMono>
+                <span className="text-[15px] font-extrabold text-ck-ink">
+                  {tq(`ranks.${rank.rank.key}`)}
+                </span>
+                <span className="text-[11.5px] font-medium text-ck-muted">
+                  {t("achievementsHint", {
+                    found: counts.found,
+                    total: counts.total,
+                  })}
+                </span>
+              </div>
+              <div className="flex flex-none items-center gap-1">
+                {counts.levels.map((level) => (
+                  <CheckerMedal
+                    key={level.id}
+                    level={level.id}
+                    found={level.found}
+                    total={level.total}
+                    size={32}
+                  />
+                ))}
+              </div>
+            </div>
+            <CheckerProgressPips levels={counts.levels} />
+          </Link>
+        )}
 
         {/* Подписка */}
         {subscription ? (

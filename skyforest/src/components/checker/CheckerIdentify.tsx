@@ -22,6 +22,14 @@ import {
   pickPhotoFromGallery,
 } from "@/lib/capturePhoto";
 import {
+  fetchQuestFinds,
+  markQuestsUnseen,
+  unlockFrom,
+  type QuestUnlock,
+} from "@/lib/checker/achievements";
+import { findQuestSpecies } from "@/lib/checker/quests";
+import { buildShareUrl, shareContent } from "@/lib/checker/share";
+import {
   CHECKER_PLAN,
   formatQuotaDate,
   useCheckerSubscription,
@@ -38,6 +46,7 @@ import {
   CkStatusCard,
   type CkStatusVariant,
 } from "@/components/checker/primitives";
+import { CheckerMedal } from "@/components/checker/CheckerMedal";
 import { CheckerShootingTips } from "@/components/checker/CheckerShootingTips";
 
 const REQUEST_TIMEOUT_MS = 35000;
@@ -88,6 +97,7 @@ export function CheckerIdentify() {
   const [result, setResult] = useState<IdentifyResponse | null>(null);
   const [error, setError] = useState<CheckerError | null>(null);
   const [checked, setChecked] = useState<number[]>([]);
+  const [unlock, setUnlock] = useState<QuestUnlock | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -121,6 +131,25 @@ export function CheckerIdentify() {
     setRequestId(crypto.randomUUID());
     setResult(null);
     setError(null);
+    setUnlock(null);
+  };
+
+  /**
+   * Закрыла ли эта находка квест. Считается по облегчённой выборке (без
+   * фотографий) и только после успешного результата: распознавание уже
+   * записано в историю, поэтому «нашёл впервые» видно по id самой ранней
+   * находки вида. Молчаливая неудача здесь допустима — праздник не критичен.
+   */
+  const checkUnlock = async (data: IdentifyResponse) => {
+    const species = data.suggestions[0]?.scientific_name;
+    if (!species) return;
+    const finds = await fetchQuestFinds();
+    if (!finds) return;
+    const opened = unlockFrom(finds, data.id, species);
+    if (!opened) return;
+    setUnlock(opened);
+    // Точка на вкладке «Квесты»: пользователь может не открыть её сразу.
+    markQuestsUnseen();
   };
 
   /**
@@ -182,6 +211,7 @@ export function CheckerIdentify() {
     setResult(null);
     setError(null);
     setChecked([]);
+    setUnlock(null);
   };
 
   const mapError = useCallback(
@@ -288,6 +318,7 @@ export function CheckerIdentify() {
 
       setResult(data as IdentifyResponse);
       void refreshSub();
+      void checkUnlock(data as IdentifyResponse);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         setError({
@@ -422,8 +453,33 @@ export function CheckerIdentify() {
       : null;
     const habitatZone = result.habitat?.zone ?? habitat?.zone ?? null;
 
+    /**
+     * Находкой из квестов делимся своей карточкой: у неё есть страница с
+     * названием вида и ссылками на приложение. Для вида вне квестов такой
+     * страницы нет (название взять негде), поэтому там остаётся прежнее
+     * поведение — ссылка на справочник.
+     */
     const share = async () => {
       const title = top?.common_name || details.scientific_name;
+      const quest = top ? findQuestSpecies(top.scientific_name) : null;
+
+      if (quest) {
+        const url = await buildShareUrl(
+          {
+            kind: "find",
+            speciesKey: quest.species.key,
+            date: new Date().toISOString().slice(0, 10),
+          },
+          locale,
+        );
+        const shared = await shareContent({
+          title,
+          text: t("quests.shareTextFind", { name: title }),
+          url,
+        });
+        if (shared) return;
+      }
+
       const url = details.wikipedia_url || details.gbif_url || undefined;
       try {
         if (navigator.share) {
@@ -476,6 +532,11 @@ export function CheckerIdentify() {
         </div>
 
         <div className="flex flex-col gap-3.5 px-5 pt-[18px]">
+          {/* Квест закрыт — первое, что видно после фотографии: иначе связь
+              между распознаванием и коллекцией остаётся невидимой, и за
+              прогрессом приходится ходить во вкладку самому. */}
+          {unlock && <UnlockCard unlock={unlock} />}
+
           {top && (
             <div className="flex flex-col gap-1.5">
               <CkMono>{t("result.topMatch", { pct: pct(top.probability) })}</CkMono>
@@ -958,5 +1019,103 @@ export function CheckerIdentify() {
         {errorCard}
       </div>
     </CkScreen>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Закрытый квест                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Карточка «квест закрыт» в результате распознавания.
+ *
+ * Показывается только на новой находке (см. `unlockFrom`): повторный снимок
+ * того же гриба ничего не празднует. Заголовок выбирается по самому крупному
+ * событию — все виды, потом уровень, потом отдельный квест.
+ */
+function UnlockCard({ unlock }: { unlock: QuestUnlock }) {
+  const t = useTranslations("checker");
+  const tq = useTranslations("checker.quests");
+  const locale = useLocale();
+  const level = unlock.counts.levels.find((item) => item.id === unlock.levelId);
+
+  const title = unlock.allDone
+    ? tq("allDoneTitle")
+    : unlock.levelComplete
+      ? t("result.levelDone", { level: unlock.levelId })
+      : t("result.questDone");
+
+  // Закрытым уровнем делимся карточкой уровня, отдельным квестом — карточкой
+  // вида: получатель должен увидеть именно то, что произошло.
+  const share = async () => {
+    const url = await buildShareUrl(
+      unlock.levelComplete
+        ? {
+            kind: "level",
+            levelId: unlock.levelId,
+            found: level?.found ?? 0,
+            total: level?.total ?? 0,
+          }
+        : {
+            kind: "find",
+            speciesKey: unlock.speciesKey,
+            date: new Date().toISOString().slice(0, 10),
+          },
+      locale,
+    );
+    await shareContent({
+      title,
+      text: unlock.levelComplete
+        ? tq("shareTextLevel", {
+            level: unlock.levelId,
+            found: unlock.counts.found,
+            total: unlock.counts.total,
+          })
+        : tq("shareTextFind", { name: tq(`species.${unlock.speciesKey}`) }),
+      url,
+    });
+  };
+
+  return (
+    <div className="ck-step-in flex flex-col gap-3 rounded-[24px] border border-ck-primary-border bg-ck-primary-tint p-4">
+      <div className="flex items-center gap-3">
+        <CheckerMedal
+          level={unlock.levelId}
+          found={level?.found ?? 0}
+          total={level?.total ?? 0}
+          size={44}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-[14.5px] font-extrabold leading-[1.25] text-ck-primary-deep">
+            {title}
+          </span>
+          <span className="text-[11.5px] font-medium leading-[1.35] text-ck-primary-mid">
+            {t("result.questProgress", {
+              found: unlock.counts.found,
+              total: unlock.counts.total,
+            })}
+            {unlock.rankUp
+              ? ` · ${t("result.rankUp", { rank: tq(`ranks.${unlock.rankUp}`) })}`
+              : ""}
+          </span>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => void share()}
+          className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-ck-primary text-[14px] font-extrabold text-ck-on-primary"
+        >
+          <Share2 className="h-4 w-4" strokeWidth={2.4} />
+          {t("result.share")}
+        </button>
+        <Link
+          href="/dashboard/quests"
+          className="flex h-11 flex-1 items-center justify-center rounded-full border border-ck-primary-border bg-ck-surface text-[14px] font-extrabold text-ck-primary-text"
+        >
+          {t("result.openQuests")}
+        </Link>
+      </div>
+    </div>
   );
 }

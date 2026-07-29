@@ -20,6 +20,9 @@ export const checkerFlavor: FlavorConfig = {
     "/dashboard/quests",
     "/payment",
     "/offer",
+    // Публичная карточка «поделиться»: /s/<токен>. Открыта без авторизации —
+    // это ссылка для посторонних (src/app/[locale]/ck/s/[token]).
+    "/s",
   ],
   anonymousPaths: [],
   navHrefs: ["/dashboard/identify", "/dashboard/history", "/dashboard/quests"],
@@ -61,6 +64,16 @@ export const checkerFlavor: FlavorConfig = {
     "/dashboard/quests": "/ck/quests",
     "/account": "/ck/account",
     "/payment": "/ck/payment",
+    /**
+     * Карточка «поделиться». Единственный путь с продолжением: адрес выглядит
+     * как `/s/<токен>` и должен переписываться в `/ck/s/<токен>` целиком.
+     *
+     * ВНИМАНИЕ: `internalRewrite()` в src/lib/appFlavor.ts ищет ключ точным
+     * совпадением, поэтому сейчас сюда попадает только голый `/s`, а ссылка с
+     * токеном отдаёт 404. Нужна поддержка префикса — правка одного общего
+     * файла, см. отчёт.
+     */
+    "/s": "/ck/s",
   },
   /**
    * Модель монетизации: пробный период на 3 дня с ограниченным числом
