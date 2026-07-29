@@ -38,17 +38,26 @@ function useEscape(open: boolean, onClose: () => void) {
  * (`ck/(app)/layout.tsx` и `identify/layout.tsx`): из 100dvh вычитается всё,
  * что занято шапкой и нижним меню, а safe-area отступы держат они же. Без
  * оболочки (экраны входа) переменных нет и работают значения по умолчанию.
+ *
+ * `centerContent` центрирует содержимое по вертикали в свободной части экрана.
+ * Нужен там, где контента заведомо меньше высоты телефона (главный экран), —
+ * иначе внизу большого экрана остаётся полоса пустоты. Центрировать снаружи,
+ * из самого экрана, не выходит: обёртка контента — блок с высотой от флексбокса,
+ * а процентная высота от такой высоты не разрешается, и `h-full` на потомке
+ * молча превращается в `auto`.
  */
 export function CkScreen({
   children,
   bottom,
   className,
   padding = "px-5",
+  centerContent = false,
 }: {
   children: ReactNode;
   bottom?: ReactNode;
   className?: string;
   padding?: string;
+  centerContent?: boolean;
 }) {
   return (
     <div
@@ -60,6 +69,7 @@ export function CkScreen({
       <div
         className={cn(
           "flex-1 pt-[var(--ck-safe-top,env(safe-area-inset-top))]",
+          centerContent && "flex flex-col justify-center",
           padding,
         )}
       >
