@@ -29,10 +29,12 @@ export const checkerBrand = {
 } as const;
 
 export default {
-  /** Нижнее меню: две вкладки и кнопка панели «Ещё». */
+  /** Нижнее меню: четыре вкладки («Квесты» по центру) и кнопка панели «Ещё». */
   nav: {
     tabBar: "Main navigation",
     identify: "Identify",
+    history: "History",
+    quests: "Quests",
     account: "Account",
     more: "More",
     openMore: "Open more",
@@ -62,21 +64,137 @@ export default {
   home: {
     titleLine1: "Mushroom?",
     titleLine2: "Let's check.",
-    quotaUnlimited: "Unlimited identifications",
-    quotaUnlimitedNote: "PREMIUM",
     quotaTrialLeft: "identifications left in your free trial, out of {limit}",
     quotaTrialEnded: "Trial identifications used up — subscribe to continue",
     quotaNoSub:
       "{days, plural, one {day} other {days}} free — tap to start your trial",
-    photoCaption: "MUSHROOM PHOTO",
-    tipCap: "Cap from above",
-    tipStem: "Whole stem",
-    tipGills: "Gills underneath",
-    tipLight: "Daylight",
     takePhoto: "Take photo",
     fromGallery: "From gallery",
-    disclaimer:
-      "The app is not a substitute for an expert. Never eat a mushroom based on the result alone.",
+    /** Предупреждение над кнопками — видно без прокрутки, это требование. */
+    safetyTitle: "Never eat a mushroom based on the result.",
+    safetyBody:
+      "The app identifies from a photo and can be wrong. It is not a substitute for an expert.",
+    /** Полоса подсказок внизу главного экрана и лист с подробностями. */
+    tipsStrip: "How to photograph a mushroom",
+    tipsTitle: "How to photograph a mushroom",
+    tipsIntro:
+      "Five things that decide whether the answer is right. Half a minute of work.",
+    tipsClose: "Got it",
+    tips: [
+      {
+        title: "The whole cap, from above",
+        body: "Hold the camera straight above the mushroom so the entire top of the cap fits in the frame. Its colour and shape are the first thing the model looks at.",
+      },
+      {
+        title: "The stem all the way down",
+        body: "Brush the leaves aside and show the stem to the very bottom. A bulb, a sac or a ring down there is what separates deadly species from edible ones.",
+      },
+      {
+        title: "The underside of the cap",
+        body: "Turn the mushroom over and photograph what is under the cap — plates, tubes or spines. It is the single most telling feature.",
+      },
+      {
+        title: "Daylight, no flash",
+        body: "Shoot in natural light. Flash washes the colour out, and colour is often the whole difference between two species.",
+      },
+      {
+        title: "One mushroom, close up",
+        body: "One specimen filling most of the frame, in focus. A photo of the whole clearing gives the model nothing to work with.",
+      },
+    ],
+  },
+
+  /** Вкладка «История»: топ-1 результат каждого распознавания. */
+  history: {
+    title: "History",
+    subtitle:
+      "{count, plural, =0 {No finds yet} one {# identification} other {# identifications}} · the top match of each",
+    subtitleLoading: "Loading your finds…",
+    readMoreOf: "{name} — read about the species",
+    emptyTitle: "No finds yet",
+    emptyBody:
+      "Identify a mushroom from a photo and it shows up here — with your photo, the date and a link to read about the species.",
+    emptyCta: "Identify a mushroom",
+    note: "Every entry is the top match of one identification. Links go to the Wikipedia or GBIF page from that result; if the result had neither, to an iNaturalist search by the scientific name.",
+    failedTitle: "Could not load the history",
+    failedBody: "Check the connection and try again — nothing is lost.",
+    retry: "Try again",
+  },
+
+  /** Вкладка «Квесты»: три уровня по пять видов. */
+  quests: {
+    title: "Quests",
+    subtitle:
+      "Photograph and identify 15 species. A quest closes when the species comes out first in an identification.",
+    overall: "OVERALL PROGRESS",
+    overallCount: "{found} of {total}",
+    safetyTitle: "Never eat a mushroom based on the result.",
+    safetyBody:
+      "Quests are about photographing and identifying, not about filling a basket. Tap a species to read about it and its dangerous lookalikes.",
+    levelBadge: "LEVEL {n}",
+    levelDone: "Level complete · {date}",
+    foundLabel: "Identified {date}",
+    foundOn: "{name} — identified on {date}. Open species info",
+    notFoundHint: "{name} — not identified yet. Open species info",
+    allDoneTitle: "All 15 species identified",
+    allDoneBody:
+      "Every level is complete. Keep identifying — history keeps all of your finds.",
+    note: "Progress comes from your identification history: a species counts when it comes out first. Levels are not locked — a find counts at any level.",
+    failedTitle: "Could not load your progress",
+    failedBody: "Check the connection and try again — nothing is lost.",
+    retry: "Try again",
+    levels: {
+      level1: {
+        title: "Common finds",
+        hint: "Parks, roadsides and forest edges — these turn up first.",
+      },
+      level2: {
+        title: "Into the woods",
+        hint: "The right forest and the right season, but well within reach.",
+      },
+      level3: {
+        title: "Rare shots",
+        hint: "Own season, own place and a little luck.",
+      },
+    },
+    /** Названия целей квестов. Латынь берётся из src/lib/checker/quests.ts. */
+    species: {
+      cantharellusCibarius: "Golden chanterelle",
+      boletusReticulatus: "Summer bolete",
+      armillariaMellea: "Honey fungus",
+      suillusLuteus: "Slippery jack",
+      russulaAeruginea: "Green brittlegill",
+      macrolepiotaProcera: "Parasol mushroom",
+      leccinumScabrum: "Brown birch bolete",
+      lactariusDeliciosus: "Saffron milkcap",
+      leccinumVersipelle: "Orange birch bolete",
+      tricholomaEquestre: "Yellow knight",
+      morchellaEsculenta: "Common morel",
+      boletusPinophilus: "Pine bolete",
+      craterellusCornucopioides: "Black trumpet",
+      leccinumAlbostipitatum: "White-stemmed orange bolete",
+      flammulinaVelutipes: "Velvet shank",
+    },
+    /**
+     * Предупреждения для видов с флагом `warning` в конфиге квестов. Строка
+     * стоит прямо в карточке: цель квеста нельзя показать без неё.
+     */
+    warnings: {
+      cantharellusCibarius:
+        "Confused with the poisonous jack-o'-lantern (Omphalotus): it has true gills, the chanterelle only blunt folds.",
+      armillariaMellea:
+        "The deadly funeral bell (Galerina marginata) grows on the same stumps and looks alike.",
+      russulaAeruginea:
+        "A green cap is easy to confuse with the death cap (Amanita phalloides), which is deadly.",
+      macrolepiotaProcera:
+        "In North America it is confused with the green-spored parasol (Chlorophyllum molybdites) — the most common mushroom poisoning in the USA.",
+      tricholomaEquestre:
+        "After cases of rhabdomyolysis it is no longer considered unconditionally edible in many countries.",
+      morchellaEsculenta:
+        "Confused with the false morel (Gyromitra esculenta). Raw morels are poisonous.",
+      flammulinaVelutipes:
+        "The deadly funeral bell (Galerina marginata) fruits in winter on the same wood.",
+    },
   },
 
   preview: {

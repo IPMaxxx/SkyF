@@ -16,11 +16,13 @@ export const checkerFlavor: FlavorConfig = {
   allowedPaths: [
     ...COMMON_ALLOWED_PATHS,
     "/dashboard/identify",
+    "/dashboard/history",
+    "/dashboard/quests",
     "/payment",
     "/offer",
   ],
   anonymousPaths: [],
-  navHrefs: ["/dashboard/identify"],
+  navHrefs: ["/dashboard/identify", "/dashboard/history", "/dashboard/quests"],
   // Токенов в Checker нет — монетизация только подпиской (/payment).
   showTokens: false,
   manifestPath: "/manifest-checker.webmanifest",
@@ -55,6 +57,8 @@ export const checkerFlavor: FlavorConfig = {
     "/reset-password": "/ck/reset-password",
     "/verify-mfa": "/ck/verify-mfa",
     "/dashboard/identify": "/ck/identify",
+    "/dashboard/history": "/ck/history",
+    "/dashboard/quests": "/ck/quests",
     "/account": "/ck/account",
     "/payment": "/ck/payment",
   },

@@ -20,11 +20,20 @@
 
 Заливка и сверка: `node fastlane/wayback-listings.mjs` (сухой прогон) и
 `node fastlane/wayback-listings.mjs --apply`. Скрипт после записи перечитывает
-поля из API и сравнивает их с файлами.
+поля из API и сравнивает их с файлами. Флаг `--play-only` обходит App Store
+Connect стороной — он нужен, пока версия висит в WAITING_FOR_REVIEW и Apple
+отвечает на PATCH локализации 409.
+
+Что лежит в Google Play прямо сейчас, целиком и только через GET, показывает
+`node fastlane/wayback-play-audit.mjs` — листинг, графика с sha256, треки,
+релизы, подписки, офферы. Скрипт ничего не меняет.
+
+Release notes в Play живут не в листинге, а у релиза в треке; их пишет туда всё
+тот же `wayback-listings.mjs` из `en-US/release_notes.txt`.
 
 Графика листинга Play:
 
-- иконка 512×512 — `docs/store-shots/wayback/play/icon.png`,
+- иконка 512×512 — `public/icons/wayback-512.png`,
   заливается `PLAY_PKG=ai.skyforest.wayback node fastlane/play-icon.mjs <файл> --apply`;
 - feature graphic 1024×500 — `docs/store-shots/wayback/play/feature-graphic.png`,
   собирается `node apps/wayback/make-feature-graphic.mjs`, заливается
@@ -34,9 +43,50 @@
 
 ## Чего в API нет
 
-- **Play → App content → Privacy policy.** Ссылку на политику Play принимает
-  только в консоли: в Android Publisher API v3 такого поля нет ни в `listings`,
-  ни в `details`. Заполняется руками значением из `en-US/privacy_url.txt`.
+Проверено по discovery-документу `androidpublisher v3` (полный список методов —
+`curl 'https://androidpublisher.googleapis.com/$discovery/rest?version=v3'`).
+Ресурсов под раздел **App content** там нет ни одного, кроме `applications.dataSafety`.
+Поля `privacyPolicyUrl`, `iarcCertificateId` и `isAdultOnlyAudience` в схемах
+встречаются, но только внутри `CatalogAppView` — это выгрузка каталога Google Play
+для операторов сторонних магазинов приложений. На своём пакете она отвечает
+403 `Third party app store RPC called for non-third party app store app`, то есть
+прочитать через неё свои же настройки нельзя.
+
+Значит, руками в Play Console заполняется всё перечисленное ниже. Порядок —
+по тому, что раньше упрётся в публикацию.
+
+| Раздел Play Console | Что выбрать |
+| --- | --- |
+| Policy → App content → **Privacy policy** | `https://wayback.skyforest.ai/privacy` |
+| Policy → App content → **App access** | «All or some functionality is restricted», демо-логин ниже |
+| Policy → App content → **Ads** | «No, my app does not contain ads» |
+| Policy → App content → **Content rating** | анкета IARC, ответы ниже |
+| Policy → App content → **Target audience and content** | возрастная группа только «18 and over»; «appeal to children» — No |
+| Policy → App content → **Data safety** | отправлено через API, глазами сверить сводку |
+| Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
+| Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
+| Policy → App content → **Government apps** | «No, it is not a government app» |
+| Policy → App content → **Advertising ID** | «No» — в манифесте и плагинах нет `AD_ID` |
+| Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
+
+**App access.** Приложение без подписки не открывается с первого экрана, поэтому
+ревьюеру нужен готовый аккаунт. Логин `appreview@skyforest.ai`, пароль лежит в
+`review-notes.txt`-обвязке скриптов и в самой консоли; менять его нельзя, он
+прописан в нескольких местах. Текст инструкции берётся из `review-notes.txt`
+этого каталога, с одной поправкой: в Play покупка идёт через Google Play Billing,
+а не через Sandbox Apple Account.
+
+**Content rating.** Категория — не игра, «Utility, Productivity, Communication or
+Other». Все вопросы про насилие, секс, лексику, наркотики, страх, юмор и азартные
+игры — No. Пользователи между собой не общаются и местоположением не обмениваются,
+поэтому вопросы про обмен контентом и передачу местоположения другим людям — тоже
+No. Единственное «да» — покупка цифровых товаров: в приложении есть подписка.
+Ожидаемый результат: Everyone / PEGI 3 / USK 0.
+
+**Про 18+ в Target audience.** Возраст ставится не потому, что в приложении есть
+что-то взрослое, а потому что любая группа младше 18 включает требования Families
+policy, а WayBack под них не проектировался.
+
 - **Apple EULA.** Пользуемся стандартным лицензионным соглашением Apple, а
   ссылки на оферту и политику даны в конце описания — так же, как в листинге
   основного приложения SkyForest.
