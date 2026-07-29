@@ -1,9 +1,16 @@
 /**
  * Глобальный сбор точек активного похода («Путь назад»).
  *
- * Основной источник точек — непрерывный watchPosition, пока приложение
- * активно (в фоне WebView геолокация не работает, поэтому watch честно
- * останавливается — разрывы дорисовываются пунктиром на карте).
+ * Источник точек — непрерывный watch, и он бывает двух видов. Если оболочка
+ * умеет фоновую запись (см. track/backgroundWatch), watch не выключается на
+ * свёрнутом приложении и погасшем экране: на Android его держит служба
+ * переднего плана, на iOS — фоновый режим геолокации. Если не умеет — остаётся
+ * прежнее поведение: watch честно глохнет при уходе в фон, а разрывы
+ * дорисовываются пунктиром на карте.
+ *
+ * Оба вида должны сосуществовать: веб приезжает в оболочку с сайта, поэтому
+ * этот же код работает и в приложениях, собранных без нативной части.
+ *
  * Дополнительно остаётся редкий одиночный замер: страховочный тик таймера
  * и мгновенный capture при возврате из фона / открытии страницы трека.
  *
@@ -16,12 +23,26 @@ import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
+import {
+  backgroundWatchAvailable,
+  startBackgroundWatch,
+  stopBackgroundWatch,
+  type BackgroundNotice,
+} from "@/lib/track/backgroundWatch";
 
 /** Интервал страховочного одиночного замера при активном походе. */
 export const TRACK_CAPTURE_INTERVAL_MS = 90_000;
 
 /** Замеры с погрешностью хуже этой отбрасываем (метры). */
 export const MAX_ACCURACY_M = 50;
+
+/**
+ * Сдвиг, после которого фоновый плагин отдаёт координату. Стоит между двумя
+ * порогами: выше MIN_COURSE_DISTANCE_M (12 м), иначе перестанет считаться курс
+ * движения и стрелка замрёт, и ниже MIN_POINT_DISTANCE_M (20 м), иначе точки
+ * пути начнёт отбрасывать уже appendPoint.
+ */
+const BACKGROUND_DISTANCE_FILTER_M = 10;
 
 /** Событие window после каждого удачного замера позиции. */
 export const TRACK_CAPTURE_EVENT = "sf:track-capture";
@@ -66,12 +87,24 @@ export async function captureTrackPoint(): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Непрерывный watchPosition (только пока приложение активно)          */
+/* Непрерывный watch: фоновый, если оболочка умеет, иначе обычный       */
 /* ------------------------------------------------------------------ */
 
 let stopWatch: (() => void) | null = null;
-let watchStarting = false;
 let watchWanted = false;
+let watchIsBackground = false;
+let appForeground = true;
+let notice: BackgroundNotice | null = null;
+
+/**
+ * Текст постоянного уведомления Android, без которого фоновую запись включать
+ * нельзя. Приложение задаёт его из своего словаря; пока текста нет, фоновый
+ * режим не запускается и watch ведёт себя по-старому.
+ */
+export function setBackgroundNotice(next: BackgroundNotice): void {
+  notice = next;
+  scheduleReconcile();
+}
 
 function onWatchPosition(lat: number, lng: number, accuracy: number | null | undefined) {
   if (!loadTrack()) {
@@ -83,55 +116,105 @@ function onWatchPosition(lat: number, lng: number, accuracy: number | null | und
   recordPosition({ lat, lng });
 }
 
-async function startTrackWatch(): Promise<void> {
-  if (stopWatch || watchStarting) return;
-  watchStarting = true;
-  try {
-    if (isNativeApp()) {
-      try {
-        const { Geolocation } = await import("@capacitor/geolocation");
-        const id = await Geolocation.watchPosition(
-          { enableHighAccuracy: true },
-          (pos) => {
-            if (pos) onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-          },
-        );
-        stopWatch = () => void Geolocation.clearWatch({ id });
-        return;
-      } catch {
-        /* плагин недоступен — падаем в браузерный API ниже */
-      }
-    }
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      const id = navigator.geolocation.watchPosition(
-        (pos) => onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-        () => {
-          /* временная ошибка GPS — watch продолжит сам */
+function teardownWatch(): void {
+  stopWatch?.();
+  stopWatch = null;
+  watchIsBackground = false;
+}
+
+async function startForegroundWatch(): Promise<void> {
+  if (isNativeApp()) {
+    try {
+      const { Geolocation } = await import("@capacitor/geolocation");
+      const id = await Geolocation.watchPosition(
+        { enableHighAccuracy: true },
+        (pos) => {
+          if (pos) onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
         },
-        { enableHighAccuracy: true, maximumAge: 5_000 },
       );
-      stopWatch = () => navigator.geolocation.clearWatch(id);
+      stopWatch = () => void Geolocation.clearWatch({ id });
+      return;
+    } catch {
+      /* плагин недоступен — падаем в браузерный API ниже */
     }
-  } finally {
-    watchStarting = false;
-    // Пока ждали старт, поход могли завершить или приложение ушло в фон.
-    if (stopWatch && !watchWanted) stopTrackWatch();
   }
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
+    const id = navigator.geolocation.watchPosition(
+      (pos) => onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+      () => {
+        /* временная ошибка GPS — watch продолжит сам */
+      },
+      { enableHighAccuracy: true, maximumAge: 5_000 },
+    );
+    stopWatch = () => navigator.geolocation.clearWatch(id);
+  }
+}
+
+async function startBackground(): Promise<boolean> {
+  if (!notice) return false;
+  const ok = await startBackgroundWatch({
+    notice,
+    distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
+    onPosition: onWatchPosition,
+  });
+  if (!ok) return false;
+  stopWatch = () => void stopBackgroundWatch();
+  watchIsBackground = true;
+  return true;
+}
+
+/**
+ * Приводит watch к нужному состоянию. Фоновая запись нужна, пока идёт поход, —
+ * независимо от того, на экране приложение или нет. Обычный watch включается
+ * только на переднем плане: в фоне WebView координат не получает, и держать его
+ * там незачем.
+ */
+async function reconcileWatch(): Promise<void> {
+  const hasTrack = !!loadTrack();
+  const background = hasTrack && notice != null && (await backgroundWatchAvailable());
+  watchWanted = hasTrack && (appForeground || background);
+
+  if (!watchWanted) {
+    teardownWatch();
+    return;
+  }
+  // Источник уже поднят и он же нужен — не трогаем: перезапуск фоновой службы
+  // роняет постоянное уведомление и на секунду теряет координаты.
+  if (stopWatch && watchIsBackground === background) return;
+  teardownWatch();
+
+  if (background && (await startBackground())) {
+    if (!watchWanted) teardownWatch();
+    return;
+  }
+  // Фоновый слой не поднялся (нет плагина, отказ в разрешении, выключена
+  // геолокация). Обычный watch в фоне координат не даёт, поэтому там его и не
+  // заводим; следующее событие попробует поднять фоновый снова.
+  if (!appForeground) return;
+  await startForegroundWatch();
+  // Пока поднимали watch, поход могли завершить или приложение ушло в фон.
+  if (stopWatch && !watchWanted) teardownWatch();
+}
+
+/**
+ * Сверки выполняются по очереди: события старта похода, смены видимости и
+ * появления текста уведомления приходят пачками, а внутри есть await — без
+ * очереди два прохода успевают поднять по watch каждый.
+ */
+let reconciling: Promise<void> = Promise.resolve();
+
+function scheduleReconcile(): void {
+  reconciling = reconciling.then(reconcileWatch).catch(() => {
+    /* сверку повторит следующее событие */
+  });
 }
 
 export function stopTrackWatch(): void {
   watchWanted = false;
-  stopWatch?.();
-  stopWatch = null;
+  teardownWatch();
 }
 
-/**
- * Приводит watchPosition к нужному состоянию: включён только когда есть
- * активный поход И приложение на переднем плане (экономия батареи; в фоне
- * WebView всё равно не получает координаты).
- */
 export function syncTrackWatch(appActive: boolean): void {
-  watchWanted = appActive && !!loadTrack();
-  if (watchWanted) void startTrackWatch();
-  else stopTrackWatch();
+  appForeground = appActive;
+  scheduleReconcile();
 }

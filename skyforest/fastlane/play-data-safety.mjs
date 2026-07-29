@@ -18,9 +18,12 @@
  *   - на каждой странице работают Google Analytics и Яндекс.Метрика, значит
  *     взаимодействия и идентификатор устройства собираются для аналитики;
  *   - Checker грузит фотографию на сервер — без этого распознавания нет;
- *   - WayBack точки маршрута НЕ выгружает: они лежат в Preferences и
- *     localStorage устройства (см. src/lib/track/useTrackController.ts),
- *     поэтому местоположение не объявлено как собираемое.
+ *   - WayBack пишет путь по GPS, и завершённый поход уходит в таблицу `tracks`
+ *     Supabase (см. src/lib/trackHistory.ts). Активный поход действительно
+ *     лежит только на устройстве, но история — на сервере, а вход в WayBack
+ *     обязателен, поэтому точное местоположение объявлено как собираемое.
+ *     Раньше здесь стояло обратное — это была ошибка декларации, а не
+ *     следствие фоновой записи.
  *
  * Запуск из каталога skyforest:
  *   node fastlane/play-data-safety.mjs            — показать сводку и CSV-диф
@@ -86,7 +89,18 @@ const DECLARATIONS = {
     encryptedInTransit: true,
     userRequestDelete: true,
     deletionUrl: "https://wayback.skyforest.ai/delete-account",
-    types: SHARED_TYPES,
+    types: [
+      ...SHARED_TYPES,
+      {
+        type: "PSL_PRECISE_LOCATION",
+        what:
+          "Точки пути по GPS: запись идёт между «начал поход» и «вышел из леса»," +
+          " в том числе со свёрнутым приложением, а завершённый поход попадает" +
+          " в историю на сервере",
+        required: true,
+        purposes: [FUNCTIONALITY],
+      },
+    ],
   },
   "ai.skyforest.mushroomchecker": {
     name: "Mushroom Checker",

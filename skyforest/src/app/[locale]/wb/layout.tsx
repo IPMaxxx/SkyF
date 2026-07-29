@@ -1,5 +1,5 @@
 import { Toaster } from "sonner";
-import { TrackRecorder } from "@/components/app/TrackRecorder";
+import { WayBackTrackRecorder } from "@/components/wayback/WayBackTrackRecorder";
 import { DeepLinkListener } from "@/lib/native/DeepLinkListener";
 import { WayBackSplash } from "@/flavors/wayback/WayBackSplash";
 
@@ -15,11 +15,14 @@ import { WayBackSplash } from "@/flavors/wayback/WayBackSplash";
  * верхнюю панель (WbTopBar) — со стрелкой назад или кнопкой меню.
  *
  * Провайдеры токенов и данных кабинета SkyForest не подключены: в WayBack нет
- * ни токенов, ни маркетплейса. А вот TrackRecorder обязателен — он пишет точки
- * пути, пока приложение в фоне, и без него стрелка домой перестанет обновляться
- * (раньше он приходил из layout группы `(app)`). По той же причине здесь стоит
- * DeepLinkListener: ссылку из письма (universal link на /auth/confirm) в
- * SkyForest ловит NativeAppProvider, которого в этом дереве нет.
+ * ни токенов, ни маркетплейса. А вот рекордер обязателен — он пишет точки пути,
+ * в том числе со свёрнутым приложением и погашенным экраном, и без него стрелка
+ * домой перестанет обновляться (раньше он приходил из layout группы `(app)`).
+ * Здесь стоит обёртка WayBackTrackRecorder, а не общий TrackRecorder: фоновая
+ * запись требует текста постоянного уведомления Android, а он живёт в словаре
+ * WayBack. По той же причине здесь стоит DeepLinkListener: ссылку из письма
+ * (universal link на /auth/confirm) в SkyForest ловит NativeAppProvider,
+ * которого в этом дереве нет.
  */
 export default function WayBackLayout({
   children,
@@ -34,7 +37,7 @@ export default function WayBackLayout({
       <main id="main-content" className="flex-1" tabIndex={-1}>
         {children}
       </main>
-      <TrackRecorder />
+      <WayBackTrackRecorder />
       {/* Тосты в тёмной схеме WayBack: плитка #18241c с волосяной границей,
           как у остального контента. Светлые тосты на холсте #0b120d слепят. */}
       <Toaster

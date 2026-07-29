@@ -23,7 +23,7 @@ YOUR WALKS
 History keeps every finished walk with its track on the map, the distance covered and the time spent in the forest. Walks belong to your account, so they are still there on your next phone.
 
 WHAT TO EXPECT
-- Recording runs while the app is open. When the app goes to the background or the screen turns off, recording pauses and picks up again when you come back - stretches with no recording are drawn as a dashed line on the map.
+- Recording keeps going with the phone in your pocket and the screen off, so the path is whole when you turn around. It runs only between "I'm entering the forest" and "I'm out of the forest" - never outside a walk - and iOS shows its blue location indicator while it does. Stretches where the phone could not see satellites are drawn as a dashed line on the map.
 - The trial is set up once while you still have a connection, because the App Store needs the network for it. After that WayBack works in the forest with no signal.
 - WayBack is a simple aid for finding your way back, not a replacement for a paper map, a compass, or telling somebody where you are going.
 

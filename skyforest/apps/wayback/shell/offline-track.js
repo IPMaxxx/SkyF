@@ -8,8 +8,9 @@
  *    куда его зеркалирует приложение (см. src/lib/trackState.ts);
  *  - тайлы карты — из Capacitor Filesystem (скачаны через OfflineMapManager),
  *    доступ по Capacitor.convertFileSrc; при наличии сети — дозагрузка из сети;
- *  - позиция — через Capacitor Geolocation (watchPosition), с браузерным
- *    fallback для отладки.
+ *  - позиция — через плагин фоновой геолокации (запись продолжается со
+ *    свёрнутым приложением и погашенным экраном), с откатом на Capacitor
+ *    Geolocation и браузерный API;
  *
  * Гео-формулы — мини-копия src/lib/trackGeo.ts (тот модуль в сборку сюда не
  * попадает).
@@ -18,15 +19,40 @@
   "use strict";
 
   /**
-   * Мост для Android-errorPath: при заданном server.url Capacitor не инжектит
-   * native-bridge.js в офлайн-страницу, поэтому window.Capacitor здесь нет.
-   * Но androidBridge (WebMessageListener) на странице есть — реализуем поверх
-   * него минимальный совместимый слой: постим вызовы плагинов в штатном
-   * формате {callbackId, pluginId, methodName, options} и разбираем ответы
-   * {callbackId, success, data, save} из onmessage (см. MessageHandler.java).
-   * На iOS window.Capacitor инжектится штатно — шим не используется.
+   * Доступ к нативным плагинам с этой страницы. Случаев три, и ни в одном
+   * window.Capacitor.Plugins не годится: его заполняет registerPlugin из
+   * бандла сайта, а здесь бандла нет.
+   *
+   *  - iOS: native-bridge.js оболочка инжектит, и он даёт низкоуровневые
+   *    nativePromise/nativeCallback — плагины зовём через них напрямую;
+   *  - Android с заданным server.url: в errorPath-страницу native-bridge.js не
+   *    инжектится вовсе, но androidBridge (WebMessageListener) на странице
+   *    есть — постим вызовы в штатном формате
+   *    {callbackId, pluginId, methodName, options} и разбираем ответы
+   *    {callbackId, success, data, save} (см. MessageHandler.java);
+   *  - обычный браузер (отладка): моста нет, остаётся navigator.geolocation.
    */
-  function createAndroidBridgeShim() {
+  function injectedBridgeTransport() {
+    var cap = window.Capacitor;
+    if (!cap || typeof cap.nativeCallback !== "function" || typeof cap.nativePromise !== "function") {
+      return null;
+    }
+    return {
+      convertFileSrc: typeof cap.convertFileSrc === "function"
+        ? function (uri) { return cap.convertFileSrc(uri); }
+        : function (uri) { return uri; },
+      callMethod: function (pluginId, methodName, options) {
+        return cap.nativePromise(pluginId, methodName, options || {});
+      },
+      callWatch: function (pluginId, methodName, options, cb) {
+        return cap.nativeCallback(pluginId, methodName, options || {}, function (data, error) {
+          cb(error ? null : data);
+        });
+      },
+    };
+  }
+
+  function androidShimTransport() {
     var ab = window.androidBridge;
     if (!ab || typeof ab.postMessage !== "function") return null;
 
@@ -52,56 +78,73 @@
       }));
     }
 
-    function callMethod(pluginId, methodName, options) {
-      return new Promise(function (resolve, reject) {
-        var id = String(++counter);
-        callbacks[id] = { onResult: resolve, onError: reject };
-        try { post(id, pluginId, methodName, options); }
-        catch (e) { delete callbacks[id]; reject(e); }
-      });
-    }
-
-    // Callback-методы (watchPosition): ответы приходят многократно (save=true).
-    function callWatch(pluginId, methodName, options, cb) {
-      var id = String(++counter);
-      callbacks[id] = {
-        onResult: function (data) { cb(data); },
-        onError: function () { cb(null); },
-      };
-      try { post(id, pluginId, methodName, options); } catch (e) {}
-      return id;
-    }
-
     return {
       convertFileSrc: function (uri) {
         return typeof uri === "string" && uri.indexOf("file://") === 0
           ? window.location.origin + "/_capacitor_file_" + uri.slice(7)
           : uri;
       },
+      callMethod: function (pluginId, methodName, options) {
+        return new Promise(function (resolve, reject) {
+          var id = String(++counter);
+          callbacks[id] = { onResult: resolve, onError: reject };
+          try { post(id, pluginId, methodName, options); }
+          catch (e) { delete callbacks[id]; reject(e); }
+        });
+      },
+      // Callback-методы (watchPosition, старт фоновой записи): ответы приходят
+      // многократно (save=true).
+      callWatch: function (pluginId, methodName, options, cb) {
+        var id = String(++counter);
+        callbacks[id] = {
+          onResult: function (data) { cb(data); },
+          onError: function () { cb(null); },
+        };
+        try { post(id, pluginId, methodName, options); } catch (e) {}
+        return id;
+      },
+    };
+  }
+
+  function createBridge() {
+    var t = injectedBridgeTransport() || androidShimTransport();
+    if (!t) return null;
+    var call = t.callMethod;
+    var watch = t.callWatch;
+    return {
+      convertFileSrc: t.convertFileSrc,
       Plugins: {
         SplashScreen: {
-          hide: function (o) { return callMethod("SplashScreen", "hide", o); },
+          hide: function (o) { return call("SplashScreen", "hide", o); },
         },
         Preferences: {
-          get: function (o) { return callMethod("Preferences", "get", o); },
-          set: function (o) { return callMethod("Preferences", "set", o); },
-          remove: function (o) { return callMethod("Preferences", "remove", o); },
+          get: function (o) { return call("Preferences", "get", o); },
+          set: function (o) { return call("Preferences", "set", o); },
+          remove: function (o) { return call("Preferences", "remove", o); },
         },
         Filesystem: {
-          stat: function (o) { return callMethod("Filesystem", "stat", o); },
-          getUri: function (o) { return callMethod("Filesystem", "getUri", o); },
-          writeFile: function (o) { return callMethod("Filesystem", "writeFile", o); },
+          stat: function (o) { return call("Filesystem", "stat", o); },
+          getUri: function (o) { return call("Filesystem", "getUri", o); },
+          writeFile: function (o) { return call("Filesystem", "writeFile", o); },
         },
         Geolocation: {
-          getCurrentPosition: function (o) { return callMethod("Geolocation", "getCurrentPosition", o); },
-          requestPermissions: function () { return callMethod("Geolocation", "requestPermissions", {}); },
-          watchPosition: function (o, cb) { return callWatch("Geolocation", "watchPosition", o, cb); },
+          getCurrentPosition: function (o) { return call("Geolocation", "getCurrentPosition", o); },
+          requestPermissions: function () { return call("Geolocation", "requestPermissions", {}); },
+          watchPosition: function (o, cb) { return watch("Geolocation", "watchPosition", o, cb); },
+          clearWatch: function (o) { return call("Geolocation", "clearWatch", o); },
+        },
+        // Плагина нет в оболочках, собранных до появления фоновой записи:
+        // вызов там ответит ошибкой, и страница останется на обычном watch.
+        BackgroundGeolocation: {
+          start: function (o, cb) { return watch("BackgroundGeolocation", "start", o, cb); },
+          stop: function () { return call("BackgroundGeolocation", "stop", {}); },
+          getPluginVersion: function () { return call("BackgroundGeolocation", "getPluginVersion", {}); },
         },
       },
     };
   }
 
-  var Cap = window.Capacitor || createAndroidBridgeShim();
+  var Cap = createBridge();
 
   // Нативный splash не прячется автоматически (launchAutoHide: false) — на
   // офлайн-странице прячем его сами, иначе он завис бы поверх карты.
@@ -168,6 +211,9 @@
         compass: "Направление по компасу телефона — держите его ровно.",
         enableCompass: "Включить компас",
         dirText: function (dir, dist) { return "Вход: " + dir + ", " + dist; },
+        // Постоянное уведомление Android на всё время записи.
+        bgTitle: "Записываем путь назад",
+        bgMessage: "Ведём тропинку к точке входа, пока экран погашен",
       }
     : {
         title: "Return to entry point",
@@ -189,6 +235,9 @@
         compass: "Direction from the phone compass — hold the phone flat.",
         enableCompass: "Enable compass",
         dirText: function (dir, dist) { return "Entry point: " + dir + ", " + dist; },
+        // Постоянное уведомление Android на всё время записи.
+        bgTitle: "Recording your way back",
+        bgMessage: "Keeps the trail to your entry point while the screen is off",
       };
 
   function $(id) { return document.getElementById(id); }
@@ -393,23 +442,128 @@
     return Promise.resolve();
   }
 
-  function startWatch(onPos) {
+  /* --- Обычный watch: живёт, только пока страница на экране --- */
+
+  var plainWatchId = null;
+  var browserWatchId = null;
+
+  function startPlainWatch(onPos) {
+    if (plainWatchId != null || browserWatchId != null) return;
     var geo = geoPlugin();
     if (geo) {
       try {
-        return geo.watchPosition({ enableHighAccuracy: true }, function (pos) {
+        plainWatchId = geo.watchPosition({ enableHighAccuracy: true }, function (pos) {
           if (pos && pos.coords) onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         });
+        return;
       } catch (e) {}
     }
     if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
+      browserWatchId = navigator.geolocation.watchPosition(
         function (p) { onPos({ lat: p.coords.latitude, lng: p.coords.longitude }); },
         function () {},
         { enableHighAccuracy: true, maximumAge: 5000 },
       );
     }
-    return null;
+  }
+
+  function stopPlainWatch() {
+    var geo = geoPlugin();
+    if (plainWatchId != null && geo) {
+      geo.clearWatch({ id: plainWatchId }).catch(function () {});
+    }
+    plainWatchId = null;
+    if (browserWatchId != null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(browserWatchId);
+    }
+    browserWatchId = null;
+  }
+
+  /* --- Фоновая запись: продолжается со свёрнутым приложением --- */
+
+  /**
+   * Сдвиг, после которого плагин отдаёт координату: выше порога расчёта курса
+   * (12 м) и ниже порога записи точки (20 м) — те же числа, что на сайте.
+   */
+  var BACKGROUND_DISTANCE_FILTER_M = 10;
+
+  var backgroundOn = false;
+  var backgroundAvailable = null;
+
+  function bgPlugin() {
+    return Cap && Cap.Plugins && Cap.Plugins.BackgroundGeolocation
+      ? Cap.Plugins.BackgroundGeolocation
+      : null;
+  }
+
+  /**
+   * Плагина нет в оболочках, собранных до появления фоновой записи. Прокси
+   * вызова есть всегда, поэтому спрашиваем самый дешёвый метод: ответил —
+   * нативная часть на месте.
+   */
+  function probeBackground() {
+    if (backgroundAvailable !== null) return Promise.resolve(backgroundAvailable);
+    var bg = bgPlugin();
+    if (!bg) { backgroundAvailable = false; return Promise.resolve(false); }
+    return bg.getPluginVersion()
+      .then(function () { backgroundAvailable = true; return true; })
+      .catch(function () { backgroundAvailable = false; return false; });
+  }
+
+  function launchBackground(onPos, retry) {
+    var bg = bgPlugin();
+    if (!bg) return;
+    try {
+      bg.start(
+        {
+          backgroundTitle: T.bgTitle,
+          backgroundMessage: T.bgMessage,
+          requestPermissions: true,
+          distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
+          stale: false,
+        },
+        function (loc) {
+          if (loc && typeof loc.latitude === "number") {
+            onPos({ lat: loc.latitude, lng: loc.longitude });
+            return;
+          }
+          // Ошибка старта. Самая частая — служба уже поднята приложением, а её
+          // колбэк остался в прежнем контексте: глушим и пробуем один раз ещё.
+          backgroundOn = false;
+          if (retry) { startPlainWatch(onPos); return; }
+          bg.stop()
+            .catch(function () {})
+            .then(function () { launchBackground(onPos, true); });
+        },
+      );
+      backgroundOn = true;
+      stopPlainWatch();
+    } catch (e) {
+      backgroundOn = false;
+      startPlainWatch(onPos);
+    }
+  }
+
+  /**
+   * Приводит источник координат к состоянию похода: идёт поход — пишем в фоне
+   * (если оболочка умеет), иначе хватает обычного watch. Постоянное уведомление
+   * Android висит ровно столько, сколько идёт запись.
+   */
+  function syncWatch(onPos) {
+    if (!track) {
+      if (backgroundOn) {
+        backgroundOn = false;
+        var bg = bgPlugin();
+        if (bg) bg.stop().catch(function () {});
+      }
+      startPlainWatch(onPos);
+      return;
+    }
+    if (backgroundOn) return;
+    probeBackground().then(function (ok) {
+      if (!ok || !track || backgroundOn) return;
+      launchBackground(onPos, false);
+    });
   }
 
   /* ------------------------- Карта ------------------------- */
@@ -624,6 +778,9 @@
     map.setView([pos.lat, pos.lng], 16);
     render();
     tickDuration();
+    // Поход начался — переводим запись в фон, чтобы она не оборвалась, когда
+    // телефон уедет в карман.
+    syncWatch(onPosition);
   }
 
   /**
@@ -685,6 +842,8 @@
     showStartMode();
     $("distance").textContent = "—";
     $("duration").textContent = "0:00";
+    // Поход закрыт — глушим фоновую службу и снимаем постоянное уведомление.
+    syncWatch(onPosition);
   }
 
   function browserPositionOnce() {
@@ -800,7 +959,10 @@
         showStartMode();
       }
       setInterval(tickDuration, 30000);
-      startWatch(onPosition);
+      // Обычный watch поднимаем сразу — он даёт первую позицию быстрее всего,
+      // а syncWatch тут же переведёт запись в фон, если поход уже идёт.
+      startPlainWatch(onPosition);
+      syncWatch(onPosition);
     });
   }
 

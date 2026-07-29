@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -42,6 +43,26 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Службу записи пути (foregroundServiceType="location") объявляет
+             манифест плагина фоновой геолокации, она приходит слиянием. Но там
+             она exported="true" — то есть запустить её могло бы любое
+             приложение на телефоне. Своему процессу это не нужно: плагин
+             привязывается к ней явным интентом. -->
+        <service
+            android:name="com.capgo.capacitor_background_geolocation.BackgroundGeolocationService"
+            android:exported="false"
+            tools:replace="android:exported" />
+
+        <!-- Приёмники геозон из того же манифеста нам не нужны: геозоны мы не
+             используем, зато BOOT_COMPLETED — повод для вопросов и у ревью, и у
+             человека, читающего список разрешений. -->
+        <receiver
+            android:name="com.capgo.capacitor_background_geolocation.GeofenceBroadcastReceiver"
+            tools:node="remove" />
+        <receiver
+            android:name="com.capgo.capacitor_background_geolocation.GeofenceBootReceiver"
+            tools:node="remove" />
     </application>
 
     <!-- Permissions -->
@@ -52,5 +73,27 @@
     <!-- Геолокация для wayback-навигации (@capacitor/geolocation) -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <!-- Запись пути со свёрнутым приложением и погашенным экраном держит служба
+         переднего плана с постоянным уведомлением. Разрешения ниже приходят и из
+         манифеста плагина, но перечислены здесь намеренно: по манифесту
+         приложения должно быть видно, что оно делает в фоне.
+
+         ACCESS_BACKGROUND_LOCATION здесь нет и добавлять его не нужно: службе
+         переднего плана оно не требуется, а с ним пришлось бы проходить
+         отдельную анкету Google с видео-обоснованием. Запись идёт только между
+         «начал поход» и «вышел из леса», уведомление при этом висит на виду. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Приходит из манифеста плагина ради геозон, которыми мы не пользуемся. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
+
+    <!-- Плагин объявляет GPS обязательным; оставляем своё «не обязателен»,
+         иначе Play молча сузит список поддерживаемых устройств. -->
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false"
+        tools:replace="android:required" />
 </manifest>
