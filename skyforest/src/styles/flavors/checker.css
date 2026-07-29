@@ -443,6 +443,31 @@ html[data-flavor="checker"][data-scheme="light"] ::-webkit-scrollbar-thumb {
   }
 }
 
+/* iPhone SE 1-го поколения: 568pt минус статус-бар, шапка и нижнее меню
+   оставляют 434pt, и предыдущей ступени не хватает — полоса подсказок
+   заезжала под меню на 9pt. Отдельный порог, чтобы не ужимать заодно SE 3
+   (667pt), которому и так хватает. */
+@media (max-height: 600px) {
+  .ck-home-top {
+    padding-top: 4px;
+    gap: 8px;
+  }
+  .ck-home-title {
+    font-size: 25px;
+  }
+  .ck-home-quota {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .ck-home-actions {
+    gap: 6px;
+  }
+  .ck-home-safety {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
 @keyframes ck-step-in {
   from {
     opacity: 0;
