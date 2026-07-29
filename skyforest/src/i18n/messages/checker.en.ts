@@ -260,6 +260,7 @@ export default {
     identify: "Identify",
     counter: "· {used} of {limit}",
     retake: "Retake",
+    gallery: "Gallery",
   },
 
   confirm: {
@@ -305,6 +306,7 @@ export default {
     disclaimer:
       "Identification is probabilistic and provided for reference only. Never eat a wild mushroom based on this app — confirm with an experienced forager or mycologist.",
     newPhoto: "New photo",
+    fromGallery: "From gallery",
     share: "Share result",
     sourceChip: "Source: {source}",
     toxicChip: "Toxic",
