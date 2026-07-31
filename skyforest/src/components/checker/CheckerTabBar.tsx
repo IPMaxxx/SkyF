@@ -18,6 +18,13 @@
  * Панель фиксирована у нижнего края и сама держит `safe-area-inset-bottom`;
  * контент экранов не заезжает под неё за счёт `--ck-tabbar` (её вычитает из
  * высоты CkScreen оболочка `ck/(app)/layout.tsx`).
+ *
+ * ПОДСВЕТКА НЕ ЖДЁТ НАВИГАЦИИ. Разделы — серверные маршруты, и `usePathname()`
+ * меняется только после ответа сервера. Пока подсветка шла от него одного,
+ * тап по вкладке на пару сотен миллисекунд не давал вообще никакого отклика,
+ * и меню казалось подтормаживающим. Поэтому нажатая вкладка запоминается в
+ * `pending` и подсвечивается сразу; значение снимается, когда путь догнал, а
+ * если переход сорвался (офлайн, ошибка) — по таймауту.
  */
 
 import { useState } from "react";
@@ -50,13 +57,30 @@ const MORE_PATHS = ["/payment"];
 const ITEM_CLASS =
   "flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl pt-0.5";
 
+/** Столько ждём ответа сервера, прежде чем вернуть подсветку на текущий путь. */
+const PENDING_TIMEOUT_MS = 5000;
+
 export function CheckerTabBar() {
   const t = useTranslations("checker.nav");
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  // Нажатая вкладка вместе с путём, с которого её нажали: как только путь
+  // сменился, навигация дошла, и метка перестаёт учитываться — так подсветка
+  // не залипает на разделе, с которого потом ушли кнопкой «назад».
+  const [pending, setPending] = useState<{ href: string; from: string } | null>(
+    null,
+  );
   const questsNew = useQuestsBadge();
 
-  const questsActive = pathname === QUESTS_HREF;
+  const tap = (href: string) => {
+    setPending({ href, from: pathname });
+    // Страховка на случай, когда переход не состоялся (офлайн, ошибка): путь
+    // не изменится, и снять метку больше нечему.
+    setTimeout(() => setPending(null), PENDING_TIMEOUT_MS);
+  };
+
+  const current = pending?.from === pathname ? pending.href : pathname;
+  const questsActive = current === QUESTS_HREF;
 
   const renderTab = ({
     key,
@@ -67,11 +91,12 @@ export function CheckerTabBar() {
     href: string;
     Icon: typeof ScanSearch;
   }) => {
-    const active = pathname === href;
+    const active = current === href;
     return (
       <Link
         key={key}
         href={href}
+        onClick={() => tap(href)}
         aria-current={active ? "page" : undefined}
         className={cn(ITEM_CLASS, active ? "text-ck-primary-text" : "text-ck-muted")}
       >
@@ -98,6 +123,7 @@ export function CheckerTabBar() {
 
           <Link
             href={QUESTS_HREF}
+            onClick={() => tap(QUESTS_HREF)}
             aria-current={questsActive ? "page" : undefined}
             className={cn(
               "flex min-h-[48px] flex-1 flex-col items-center justify-center gap-[3px] rounded-2xl",
@@ -143,7 +169,7 @@ export function CheckerTabBar() {
             aria-expanded={moreOpen}
             className={cn(
               ITEM_CLASS,
-              moreOpen || MORE_PATHS.includes(pathname)
+              moreOpen || MORE_PATHS.includes(current)
                 ? "text-ck-primary-text"
                 : "text-ck-muted",
             )}

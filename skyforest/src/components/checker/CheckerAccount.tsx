@@ -206,9 +206,9 @@ export function CheckerAccount({
               <span className="text-[14.5px] font-extrabold text-ck-primary-deep">
                 {t(isTrial ? "trialPlan" : "premiumPlan", {
                   plan:
-                    subscription.period === "yearly"
-                      ? t("premiumYearly")
-                      : t("premiumMonthly"),
+                  subscription.period === "yearly"
+                    ? t("premiumYearly")
+                    : t("premiumWeekly"),
                 })}
               </span>
               <span className="text-[11.5px] font-medium text-ck-primary-mid">

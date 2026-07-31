@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { subscriptionProductFor } from "@/lib/native/iapProducts";
+import {
+  subscriptionProductFor,
+  type SubscriptionPeriod,
+} from "@/lib/native/iapProducts";
 import {
   getAppleSubscription,
   getGoogleSubscription,
@@ -43,17 +46,40 @@ function sandboxAllowed(userEmail: string | undefined): boolean {
   return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
 }
 
+/**
+ * Дата на длину периода раньше заданной.
+ *
+ * Разбор union'а полный намеренно: фолбэк «всё, что не месяц — год» однажды
+ * уже отдавал недельной подписке период длиной в год, то есть премиум на год
+ * за цену недели. Новый вариант SubscriptionPeriod теперь ломает сборку здесь,
+ * а не тихо превращается в чужую длину.
+ */
+function shiftBackByPeriod(end: Date, period: SubscriptionPeriod): Date {
+  const start = new Date(end);
+  switch (period) {
+    case "weekly":
+      start.setUTCDate(start.getUTCDate() - 7);
+      return start;
+    case "monthly":
+      start.setUTCMonth(start.getUTCMonth() - 1);
+      return start;
+    case "yearly":
+      start.setUTCFullYear(start.getUTCFullYear() - 1);
+      return start;
+    default: {
+      const unknown: never = period;
+      throw new Error(`Unknown subscription period: ${String(unknown)}`);
+    }
+  }
+}
+
 /** Начало текущего периода: из стора или назад от expiry на длину периода. */
 function derivePeriodStart(
   state: StoreSubscriptionState,
-  period: "monthly" | "yearly",
+  period: SubscriptionPeriod,
 ): Date {
   if (state.periodStartMs) return new Date(state.periodStartMs);
-  const end = new Date(state.expiresMs ?? Date.now());
-  const start = new Date(end);
-  if (period === "monthly") start.setUTCMonth(start.getUTCMonth() - 1);
-  else start.setUTCFullYear(start.getUTCFullYear() - 1);
-  return start;
+  return shiftBackByPeriod(new Date(state.expiresMs ?? Date.now()), period);
 }
 
 export async function POST(req: NextRequest) {

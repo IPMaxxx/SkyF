@@ -56,7 +56,12 @@ export function tokensForProduct(productId: string): number | null {
 // forager/pro — тиры основного SkyForest; checker/wayback — единственные
 // подписки одноимённых флейвор-приложений (без бонус-токенов).
 export type SubscriptionTier = "forager" | "pro" | "checker" | "wayback";
-export type SubscriptionPeriod = "monthly" | "yearly";
+/**
+ * Длина оплаченного периода товара. По ней сервер восстанавливает начало
+ * периода, когда стор не прислал его явно (/api/native/iap/verify-subscription),
+ * поэтому каждый новый вариант обязан быть разобран во ВСЕХ расчётах дат.
+ */
+export type SubscriptionPeriod = "weekly" | "monthly" | "yearly";
 
 /** Цены флейворов живут в конфигах приложений, а не строками здесь. */
 const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan;
@@ -106,15 +111,31 @@ export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
     fallbackPrice: "$71.99",
     bundleId: MAIN_BUNDLE_ID,
   },
-  // ---- Mushroom Checker: единственная подписка месяц/год с бесплатным
+  // ---- Mushroom Checker: единственная подписка неделя/год с бесплатным
   // пробным периодом. Цены и длина триала описаны в одном месте —
   // FLAVORS.checker.subscriptionPlan; там же они должны совпадать с
   // App Store Connect и Google Play.
   {
+    productId: "ai.skyforest.mushroomchecker.sub.weekly",
+    tier: "checker",
+    period: "weekly",
+    fallbackPrice: usd(CHECKER_PLAN?.priceWeeklyUsd),
+    bundleId: CHECKER_BUNDLE_ID,
+  },
+  // Месячный товар снят с продажи (короткий период теперь недельный), но
+  // остаётся в каталоге ради действующих подписчиков: по нему приходят
+  // продления, restorePurchases и перепроверки крона, а они находят товар
+  // только здесь — без записи isSubscriptionProduct() отправил бы чек в
+  // роут разовых покупок, а крон спросил бы Apple про чужой bundle.
+  // Цена задана строкой, а не из FLAVORS.checker.subscriptionPlan: конфиг
+  // приложения описывает действующие тарифы, и месячного среди них больше
+  // нет. Это только заглушка на пейволле до цены стора, а месячного товара
+  // на пейволле уже нет вовсе.
+  {
     productId: "ai.skyforest.mushroomchecker.sub.monthly",
     tier: "checker",
     period: "monthly",
-    fallbackPrice: usd(CHECKER_PLAN?.priceMonthlyUsd),
+    fallbackPrice: "$2.00",
     bundleId: CHECKER_BUNDLE_ID,
   },
   {

@@ -22,10 +22,10 @@ import {
   subscribeSubscriptionPrices,
 } from "@/lib/native/iap";
 import {
-  subscriptionProductsForBundle,
-  CHECKER_BUNDLE_ID,
-  type SubscriptionPeriod,
-} from "@/lib/native/iapProducts";
+  checkerProduct,
+  WEEKS_PER_YEAR,
+  type CheckerPeriod,
+} from "@/lib/checker/subscriptionProducts";
 import {
   CHECKER_PLAN,
   formatFullDate,
@@ -41,8 +41,6 @@ import {
   CkScreen,
   CkStatusCard,
 } from "@/components/checker/primitives";
-
-const CATALOG = subscriptionProductsForBundle(CHECKER_BUNDLE_ID);
 
 /** Число внутри отформатированной стором цены: «$29.99», «1 990,00 ₽». */
 const PRICE_NUMBER = /\d[\d\s\u00a0.,]*\d|\d/;
@@ -64,26 +62,26 @@ function parsePrice(formatted: string): number | null {
 }
 
 /**
- * Годовая цена в пересчёте на месяц: подставляем результат обратно в строку
+ * Годовая цена в пересчёте на неделю: подставляем результат обратно в строку
  * стора, чтобы сохранить валюту и её позицию. Если цену не распарсили —
  * подпись просто не показываем, выдумывать числа на пейволле нельзя.
  */
-function perMonthLabel(yearly: string, locale: string): string | null {
+function perWeekLabel(yearly: string, locale: string): string | null {
   const value = parsePrice(yearly);
   if (value === null) return null;
-  const perMonth = (value / 12).toLocaleString(locale, {
+  const perWeek = (value / WEEKS_PER_YEAR).toLocaleString(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return yearly.replace(PRICE_NUMBER, perMonth);
+  return yearly.replace(PRICE_NUMBER, perWeek);
 }
 
-/** Скидка годовой подписки против 12 месячных, в процентах (или null). */
-function yearlyDiscount(yearly: string, monthly: string): number | null {
+/** Скидка годовой подписки против 52 недельных, в процентах (или null). */
+function yearlyDiscount(yearly: string, weekly: string): number | null {
   const y = parsePrice(yearly);
-  const m = parsePrice(monthly);
-  if (y === null || m === null) return null;
-  const percent = Math.round((1 - y / (m * 12)) * 100);
+  const w = parsePrice(weekly);
+  if (y === null || w === null) return null;
+  const percent = Math.round((1 - y / (w * WEEKS_PER_YEAR)) * 100);
   return percent >= 5 ? percent : null;
 }
 
@@ -95,7 +93,7 @@ export function CheckerPaywall() {
     useCheckerSubscription();
 
   const [native, setNative] = useState(false);
-  const [period, setPeriod] = useState<SubscriptionPeriod>("yearly");
+  const [period, setPeriod] = useState<CheckerPeriod>("yearly");
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -144,14 +142,14 @@ export function CheckerPaywall() {
     </div>
   );
 
-  const product = CATALOG.find((p) => p.period === period)!;
-  const monthly = CATALOG.find((p) => p.period === "monthly")!;
-  const yearly = CATALOG.find((p) => p.period === "yearly")!;
+  const product = checkerProduct(period);
+  const weekly = checkerProduct("weekly");
+  const yearly = checkerProduct("yearly");
   const price = prices[product.productId] || product.fallbackPrice;
-  const monthlyPrice = prices[monthly.productId] || monthly.fallbackPrice;
+  const weeklyPrice = prices[weekly.productId] || weekly.fallbackPrice;
   const yearlyPrice = prices[yearly.productId] || yearly.fallbackPrice;
-  const perMonth = perMonthLabel(yearlyPrice, locale);
-  const discount = yearlyDiscount(yearlyPrice, monthlyPrice);
+  const perWeek = perWeekLabel(yearlyPrice, locale);
+  const discount = yearlyDiscount(yearlyPrice, weeklyPrice);
 
   const subscribe = async () => {
     if (purchasing) return;
@@ -193,8 +191,10 @@ export function CheckerPaywall() {
   }
 
   if (subscription) {
+    // Месячных подписок больше не продают, но старые строки в базе остались:
+    // всё, что не год, называем коротким периодом текущей модели.
     const planName =
-      subscription.period === "yearly" ? ts("planYearly") : ts("planMonthly");
+      subscription.period === "yearly" ? ts("planYearly") : ts("planWeekly");
     // В триале эта дата — начало списаний, в подписке — дата продления.
     const renews = formatFullDate(subscription.current_period_end, locale);
     const used = limit != null && left != null ? limit - left : 0;
@@ -358,9 +358,9 @@ export function CheckerPaywall() {
           </p>
         </div>
 
-        {/* Сегмент-контрол месяц/год: белая «пилюля» 4px padding, элементы 42px. */}
+        {/* Сегмент-контрол неделя/год: белая «пилюля» 4px padding, элементы 42px. */}
         <div className="flex rounded-full bg-ck-surface p-1">
-          {(["monthly", "yearly"] as const).map((p) => {
+          {(["weekly", "yearly"] as const).map((p) => {
             const active = period === p;
             return (
               <button
@@ -375,7 +375,7 @@ export function CheckerPaywall() {
                     : "font-bold text-ck-muted",
                 )}
               >
-                {p === "monthly" ? t("monthly") : t("yearly")}
+                {p === "weekly" ? t("weekly") : t("yearly")}
                 {p === "yearly" && discount !== null && (
                   <i className="rounded-full bg-ck-primary-light px-1.5 py-0.5 text-[10px] font-extrabold not-italic text-ck-on-primary">
                     {t("yearlyBadge", { percent: discount })}
@@ -397,12 +397,12 @@ export function CheckerPaywall() {
               {price}
             </span>
             <span className="text-[13px] font-semibold text-ck-muted">
-              {period === "yearly" ? t("perYear") : t("perMonth")}
+              {period === "yearly" ? t("perYear") : t("perWeek")}
             </span>
           </div>
-          {period === "yearly" && perMonth && (
+          {period === "yearly" && perWeek && (
             <CkMono className="-mt-2">
-              {t("perMonthHint", { price: perMonth })}
+              {t("perWeekHint", { price: perWeek })}
             </CkMono>
           )}
 
@@ -430,7 +430,7 @@ export function CheckerPaywall() {
                   store,
                   days: CHECKER_PLAN.trialDays,
                 })
-              : t("autoRenewMonth", {
+              : t("autoRenewWeek", {
                   price,
                   store,
                   days: CHECKER_PLAN.trialDays,

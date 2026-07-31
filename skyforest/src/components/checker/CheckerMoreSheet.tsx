@@ -25,8 +25,10 @@ import {
 import { CkMono, CkSheet } from "@/components/checker/primitives";
 import { useCheckerTheme } from "@/components/checker/CheckerThemeProvider";
 import { CHECKER_THEMES } from "@/lib/checker/theme";
-
-const LOCALE_LABELS: Record<string, string> = { en: "EN", ru: "RU" };
+import {
+  CHECKER_LOCALE_LABELS,
+  rememberCheckerLocale,
+} from "@/lib/checker/locale";
 
 /** Сегментный переключатель настройки: подписи внутри «пилюли», как у языка. */
 function SettingRow({
@@ -213,10 +215,10 @@ export function CheckerMoreSheet({
           ))}
         </SettingRow>
 
-        {/* Язык. Выбор запоминаем в куке NEXT_LOCALE руками: у локали по
-            умолчанию нет префикса в URL, так что по одному адресу middleware
-            не отличил бы «выбрал этот язык» от «языка не выбирал» и снова
-            показал бы основной язык приложения (английский). */}
+        {/* Язык. Тот же переключатель есть в шапке главного экрана: оба пишут
+            куку `NEXT_LOCALE` через src/lib/checker/locale.ts — без неё
+            middleware по одному адресу не отличил бы «выбрал этот язык» от
+            «языка не выбирал» и снова показал бы английский. */}
         <SettingRow label={t("language")}>
           {routing.locales.map((loc) => (
             <Link
@@ -225,7 +227,7 @@ export function CheckerMoreSheet({
               locale={loc}
               scroll={false}
               onClick={() => {
-                document.cookie = `NEXT_LOCALE=${loc}; path=/; max-age=31536000; samesite=lax`;
+                rememberCheckerLocale(loc);
                 onClose();
               }}
               aria-current={loc === locale ? "true" : undefined}
@@ -236,7 +238,7 @@ export function CheckerMoreSheet({
                   : "text-ck-muted",
               )}
             >
-              {LOCALE_LABELS[loc]}
+              {CHECKER_LOCALE_LABELS[loc]}
             </Link>
           ))}
         </SettingRow>
