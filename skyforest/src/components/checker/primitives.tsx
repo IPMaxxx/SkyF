@@ -34,10 +34,13 @@ function useEscape(open: boolean, onClose: () => void) {
  * Экран во всю высоту: контент скроллится, нижний блок кнопок «прилипает»
  * к краю с отступом под safe-area (в дизайне — 34px).
  *
- * `--ck-chrome`, `--ck-safe-top` и `--ck-screen-pb` выставляют оболочки
- * (`ck/(app)/layout.tsx` и `identify/layout.tsx`): из 100dvh вычитается всё,
- * что занято шапкой и нижним меню, а safe-area отступы держат они же. Без
- * оболочки (экраны входа) переменных нет и работают значения по умолчанию.
+ * Высоту задаёт утилита `.ck-screen` (src/styles/flavors/checker.css). В
+ * оболочке приложения (`CheckerAppShell`) она равна высоте скроллера — шапка и
+ * нижнее меню лежат вне него, поэтому контент физически не может оказаться под
+ * меню и подгонять числа под его высоту не нужно. Вне оболочки (экраны входа)
+ * работает прежняя арифметика: 100dvh минус `--ck-chrome`, то есть минус
+ * шапку. `--ck-safe-top` и `--ck-screen-pb` тоже выставляют оболочки: там, где
+ * safe-area держат шапка и меню, экрану её добавлять не надо.
  *
  * `centerContent` центрирует содержимое по вертикали в свободной части экрана.
  * Нужен там, где контента заведомо меньше высоты телефона (главный экран), —
@@ -45,13 +48,6 @@ function useEscape(open: boolean, onClose: () => void) {
  * из самого экрана, не выходит: обёртка контента — блок с высотой от флексбокса,
  * а процентная высота от такой высоты не разрешается, и `h-full` на потомке
  * молча превращается в `auto`.
- *
- * `reserveTabBar` нужен экранам, чей контент выше окна: нижнее меню
- * зафиксировано у края, поэтому последние 62px документа всегда закрыты им, и
- * доскроллить до блока кнопок невозможно — он оказывается под панелью. Резерв
- * прибавляется и к min-height, и к нижнему отступу сразу: там, где контент в
- * окно помещается, кнопки остаются ровно на прежнем месте, а там, где нет —
- * страница удлиняется на высоту меню, и кнопки выходят из-под него.
  */
 export function CkScreen({
   children,
@@ -59,22 +55,17 @@ export function CkScreen({
   className,
   padding = "px-5",
   centerContent = false,
-  reserveTabBar = false,
 }: {
   children: ReactNode;
   bottom?: ReactNode;
   className?: string;
   padding?: string;
   centerContent?: boolean;
-  reserveTabBar?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "font-ck mx-auto flex w-full max-w-[520px] flex-col text-ck-ink",
-        reserveTabBar
-          ? "min-h-[calc(100dvh-var(--ck-chrome,0px)+var(--ck-tabbar,0px))]"
-          : "min-h-[calc(100dvh-var(--ck-chrome,0px))]",
+        "ck-screen font-ck mx-auto flex w-full max-w-[520px] flex-col text-ck-ink",
         className,
       )}
     >
@@ -90,10 +81,7 @@ export function CkScreen({
       {bottom && (
         <div
           className={cn(
-            "pt-4",
-            reserveTabBar
-              ? "pb-[calc(var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))+var(--ck-tabbar,0px))]"
-              : "pb-[var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))]",
+            "pt-4 pb-[var(--ck-screen-pb,calc(34px+env(safe-area-inset-bottom)))]",
             padding,
           )}
         >
@@ -475,6 +463,11 @@ const SHEET_CLOSE_DISTANCE = 70;
  * Закрывается тапом по фону, Escape и свайпом вниз за ручку. Свайп повешен
  * только на область ручки: если слушать весь лист, жест перехватывал бы
  * прокрутку и поля ввода внутри.
+ *
+ * Высота ограничена окном, а длинное содержимое прокручивается внутри листа.
+ * Панель «Ещё» на iPhone SE выше экрана, и без ограничения её верх — заголовок
+ * и первые строки — уезжал за край, откуда его нечем достать. `overscroll` не
+ * выпускаем наружу: иначе прокрутка листа продолжилась бы экраном под ним.
  */
 export function CkSheet({
   open,
@@ -529,7 +522,7 @@ export function CkSheet({
         aria-modal="true"
         tabIndex={-1}
         style={{ transform: drag ? `translateY(${drag}px)` : undefined }}
-        className="font-ck relative z-10 mx-auto w-full max-w-[520px] rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_var(--ck-shadow-soft)] outline-none"
+        className="font-ck relative z-10 mx-auto max-h-[calc(100dvh-28px)] w-full max-w-[520px] overflow-y-auto overscroll-contain rounded-t-[32px] bg-ck-surface px-5 pt-3.5 pb-[calc(34px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_var(--ck-shadow-soft)] outline-none"
       >
         <div
           onTouchStart={onTouchStart}
