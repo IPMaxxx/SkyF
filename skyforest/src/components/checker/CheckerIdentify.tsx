@@ -12,6 +12,7 @@
  *  - дисклеймер на экране результата (требование App Review).
  */
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -1017,6 +1018,22 @@ export function CheckerIdentify() {
           <br />
           <span className="text-ck-primary-text">{t("home.titleLine2")}</span>
         </h1>
+
+        {/* Фотография находки между заголовком и кнопками съёмки. Кадр —
+            обрывок бумаги с прозрачными рваными краями: холст под ним разный
+            в тёмной и светлой схеме, залитые края выдали бы прямоугольник.
+            Высоту ограничивает `.ck-home-photo` (src/styles/flavors/checker.css):
+            предупреждение над кнопками обязано оставаться видимым без
+            прокрутки, поэтому на низких экранах снимок уступает место ему. */}
+        <Image
+          src="/checker/home-mushroom.webp"
+          alt=""
+          width={1080}
+          height={810}
+          priority
+          sizes="(max-width: 520px) 100vw, 480px"
+          className="ck-home-photo"
+        />
 
         {/* Состояние подписки. В оплаченной подписке карточки нет вовсе:
             лимита нет, решать нечего, а место на первом экране дорого. */}

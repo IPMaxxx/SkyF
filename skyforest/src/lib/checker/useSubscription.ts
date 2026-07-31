@@ -20,7 +20,12 @@ export const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan!;
 
 export interface CheckerSubscription {
   tier: string;
-  period: "monthly" | "yearly";
+  /**
+   * Период оплаченной подписки. «monthly» — только у подписок, купленных до
+   * перехода на недельный тариф: новый товар месячного периода не продаётся,
+   * но чужие старые строки в базе никуда не деваются.
+   */
+  period: "weekly" | "monthly" | "yearly";
   status: "active" | "grace" | "canceled";
   platform: "ios" | "android" | "web";
   current_period_end: string;

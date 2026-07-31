@@ -77,15 +77,18 @@ export const checkerFlavor: FlavorConfig = {
   },
   /**
    * Модель монетизации: пробный период на 3 дня с ограниченным числом
-   * распознаваний, затем подписка без лимита за $2/мес или $14.99/год.
+   * распознаваний, затем подписка без лимита за $5/неделю или $39.99/год.
    * Числа отсюда идут и в квоту на сервере, и в тексты пейволла —
    * менять их нужно только тут (и синхронно в App Store Connect / Play).
+   *
+   * Месячного тарифа нет: короткий период теперь недельный, товар
+   * `...sub.monthly` снимается с продажи (см. src/lib/checker/subscriptionProducts.ts).
    */
   subscriptionPlan: {
     trialDays: 3,
     trialIdentifyLimit: 10,
     identifyLimit: null,
-    priceMonthlyUsd: 2,
-    priceYearlyUsd: 14.99,
+    priceWeeklyUsd: 5,
+    priceYearlyUsd: 39.99,
   },
 };

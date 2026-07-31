@@ -57,8 +57,8 @@ export default {
   },
 
   home: {
-    titleLine1: "Гриб?",
-    titleLine2: "Проверим.",
+    titleLine1: "Нашли гриб?",
+    titleLine2: "Давайте проверим!",
     quotaTrialLeft: "распознаваний осталось в пробном периоде, из {limit}",
     quotaTrialEnded:
       "Пробные распознавания закончились — оформите подписку",
@@ -350,14 +350,14 @@ export default {
     title: "Mushroom Checker Premium",
     subtitle:
       "Распознавания без ограничений, полные данные о видах и предупреждения о двойниках.",
-    monthly: "Месяц",
+    weekly: "Неделя",
     yearly: "Год",
     yearlyBadge: "−{percent}%",
     trialBadge:
       "{days, plural, one {# ДЕНЬ} few {# ДНЯ} other {# ДНЕЙ}} БЕСПЛАТНО",
     perYear: "/ год",
-    perMonth: "/ месяц",
-    perMonthHint: "· {price} в месяц",
+    perWeek: "/ неделя",
+    perWeekHint: "· {price} в неделю",
     feature1: "Распознавания без ограничений",
     feature2: "Опасные двойники и пометки о токсичности",
     feature3: "Полная таксономия и места роста",
@@ -365,8 +365,8 @@ export default {
       "В бесплатный период входит {limit} распознаваний на {days, plural, one {# день} few {# дня} other {# дней}}. После начала списаний лимита нет.",
     autoRenewYear:
       "{days, plural, one {# день} few {# дня} other {# дней}} бесплатно, затем автопродление за {price} в год. Отменить можно в любой момент в {store}.",
-    autoRenewMonth:
-      "{days, plural, one {# день} few {# дня} other {# дней}} бесплатно, затем автопродление за {price} в месяц. Отменить можно в любой момент в {store}.",
+    autoRenewWeek:
+      "{days, plural, one {# день} few {# дня} other {# дней}} бесплатно, затем автопродление за {price} в неделю. Отменить можно в любой момент в {store}.",
     cta: "Начать бесплатный период",
     ctaBusy: "Открываем {store}…",
     eula: "Условия использования (EULA)",
@@ -387,10 +387,10 @@ export default {
     trialTitle: "Идёт бесплатный период",
     trialBody:
       "Тариф «{plan}» · списания начнутся {date}. Управление через аккаунт {store}.",
-    planMonthly: "Месяц",
+    planWeekly: "Неделя",
     planYearly: "Год",
     quotaUnlimited: "Распознавания без ограничений",
-    quotaUnlimitedNote: "месячного лимита нет",
+    quotaUnlimitedNote: "лимита нет вообще",
     quotaLine: "из {limit} пробных распознаваний осталось",
     quotaReset: "пробный период до {date}",
     manage: "Управлять подпиской",
@@ -409,7 +409,7 @@ export default {
     back: "Назад",
     premiumPlan: "Premium · {plan}",
     trialPlan: "Бесплатный период · {plan}",
-    premiumMonthly: "Помесячно",
+    premiumWeekly: "Недельная",
     premiumYearly: "Годовая",
     idsUnlimited: "Распознавания без ограничений",
     idsTrialLeft: "{left} из {limit} пробных распознаваний осталось",

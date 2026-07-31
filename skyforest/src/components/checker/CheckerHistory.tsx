@@ -125,9 +125,12 @@ export function CheckerHistory() {
                 )}
               >
                 <span className="ck-photo-stripes h-[58px] w-[58px] flex-none rounded-[18px]" />
+                {/* Цвет заглушек — `ck-border-3`, а не `ck-field`: в светлой
+                    схеме поле и поверхность карточки оба белые, и полоски на
+                    ней пропадали — виднелись только штрихованные квадраты. */}
                 <span className="flex flex-1 flex-col gap-2">
-                  <span className="h-3 w-2/3 rounded-full bg-ck-field" />
-                  <span className="h-2.5 w-1/3 rounded-full bg-ck-field" />
+                  <span className="h-3 w-2/3 rounded-full bg-ck-border-3" />
+                  <span className="h-2.5 w-1/3 rounded-full bg-ck-border-3" />
                 </span>
               </div>
             ))}

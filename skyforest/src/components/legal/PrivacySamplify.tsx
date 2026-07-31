@@ -21,7 +21,7 @@ const PRODUCT_COPY: Record<
   },
   wayback: {
     content:
-      "User content: coordinates of your entry point and walking tracks (kept on your device; they are not uploaded to the Operator)",
+      "User content: coordinates of your entry point and the path you walk. The path is recorded only between the moment you start a walk and the moment you finish it, including while the app is in the background with the screen off. While you walk it is kept on your device; a finished walk is saved to your own account so that your history is still there on your next phone. Tracks are never shared with other users or with third parties",
     payments: "Processing subscription payments and account management",
   },
 };

@@ -63,8 +63,8 @@ export default {
   },
 
   home: {
-    titleLine1: "Mushroom?",
-    titleLine2: "Let's check.",
+    titleLine1: "Found a mushroom?",
+    titleLine2: "Let's check it!",
     quotaTrialLeft: "identifications left in your free trial, out of {limit}",
     quotaTrialEnded: "Trial identifications used up — subscribe to continue",
     quotaNoSub:
@@ -357,13 +357,13 @@ export default {
     title: "Mushroom Checker Premium",
     subtitle:
       "Unlimited identifications, full species data and lookalike warnings.",
-    monthly: "Monthly",
+    weekly: "Weekly",
     yearly: "Yearly",
     yearlyBadge: "−{percent}%",
     trialBadge: "{days}-DAY FREE TRIAL",
     perYear: "/ year",
-    perMonth: "/ month",
-    perMonthHint: "· {price} per month",
+    perWeek: "/ week",
+    perWeekHint: "· {price} per week",
     feature1: "Unlimited identifications",
     feature2: "Dangerous lookalikes & toxicity notes",
     feature3: "Full taxonomy and habitat data",
@@ -371,8 +371,8 @@ export default {
       "The free trial covers {limit} identifications over {days} days. After it starts billing, identifications are unlimited.",
     autoRenewYear:
       "{days} days free, then auto-renews at {price}/year. Cancel anytime in the {store}.",
-    autoRenewMonth:
-      "{days} days free, then auto-renews at {price}/month. Cancel anytime in the {store}.",
+    autoRenewWeek:
+      "{days} days free, then auto-renews at {price}/week. Cancel anytime in the {store}.",
     cta: "Start free trial",
     ctaBusy: "Opening the {store}…",
     eula: "Terms of Use (EULA)",
@@ -392,10 +392,10 @@ export default {
     trialTitle: "Free trial is active",
     trialBody:
       "{plan} plan · billing starts {date}. Managed through your {store} account.",
-    planMonthly: "Monthly",
+    planWeekly: "Weekly",
     planYearly: "Yearly",
     quotaUnlimited: "Unlimited identifications",
-    quotaUnlimitedNote: "no monthly limit",
+    quotaUnlimitedNote: "no limit at all",
     quotaLine: "of {limit} trial identifications left",
     quotaReset: "trial ends {date}",
     manage: "Manage subscription",
@@ -414,7 +414,7 @@ export default {
     back: "Back",
     premiumPlan: "Premium · {plan}",
     trialPlan: "Free trial · {plan}",
-    premiumMonthly: "Monthly",
+    premiumWeekly: "Weekly",
     premiumYearly: "Yearly",
     idsUnlimited: "Unlimited identifications",
     idsTrialLeft: "{left} of {limit} trial identifications left",

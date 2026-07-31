@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * Невидимый глобальный «магнитофон» похода: живёт в (app)-layout.
+ * Невидимый глобальный «магнитофон» похода: живёт в layout приложения.
  *
- * Пока приложение активно и есть поход — работает непрерывный watchPosition
- * (частые точки, фильтры точности/сдвига в trackRecorder). При уходе в фон
- * watch останавливается (батарея; в фоне WebView координат всё равно нет),
- * при возврате — мгновенный одиночный замер + перезапуск watch. Страховочный
+ * Пока есть поход, работает непрерывный watch (частые точки, фильтры
+ * точности/сдвига в trackRecorder). Что происходит при уходе в фон, зависит от
+ * оболочки: с переданным `notice` и нативной частью фоновой записи watch не
+ * снимается и точки продолжают писаться с погашенным экраном, без него — watch
+ * глохнет (батарея; обычный WebView в фоне координат не получает), а при
+ * возврате делается мгновенный замер и watch поднимается снова. Страховочный
  * редкий таймер оставлен на случай, если watch молчит. Без активного похода
  * каждый тик — дешёвый no-op без обращения к GPS.
  */
@@ -17,11 +19,26 @@ import {
   captureTrackPoint,
   syncTrackWatch,
   stopTrackWatch,
+  setBackgroundNotice,
   TRACK_CAPTURE_INTERVAL_MS,
 } from "@/lib/trackRecorder";
+import type { BackgroundNotice } from "@/lib/track/backgroundWatch";
 import { TRACK_STATE_EVENT, hydrateTrackFromNative } from "@/lib/trackState";
 
-export function TrackRecorder() {
+/**
+ * `notice` — текст постоянного уведомления Android, без которого фоновую запись
+ * включать нельзя. Приложение передаёт его из своего словаря; без него запись
+ * работает по-старому и в фоне останавливается.
+ */
+export function TrackRecorder({ notice }: { notice?: BackgroundNotice }) {
+  // По строкам, а не по объекту: родитель может пересобирать литерал на каждый
+  // рендер, а лишняя сверка дёргает фоновую службу.
+  const title = notice?.title;
+  const message = notice?.message;
+  useEffect(() => {
+    if (title && message) setBackgroundNotice({ title, message });
+  }, [title, message]);
+
   useEffect(() => {
     // Поход мог быть начат в офлайн-экране (Preferences). Если сеть появилась и
     // приложение открылось — переносим его в localStorage сайта, чтобы запись
