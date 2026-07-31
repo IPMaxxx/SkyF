@@ -31,6 +31,18 @@ export const WAYBACK_SITE = "https://wayback.skyforest.ai";
 export const CHECKER_SUPPORT_EMAIL = "support@skyforest.ai";
 
 /**
+ * Свой публичный адрес — им делятся из панели «Ещё».
+ *
+ * Константа, а не `window.location.origin`: на локальном хосте и в превью
+ * Vercel origin другой, а ссылка уезжает в чужой мессенджер и должна открыться
+ * у получателя. Ведём на сайт, а не в магазин: страница сама разберётся, с
+ * какого устройства пришли, и на iOS не придётся упоминать Google Play
+ * (guideline 2.3.10). Тот же адрес знают src/lib/serverFlavor.ts (юридические
+ * документы) и WayBack — это домен продукта, он один.
+ */
+export const CHECKER_SITE = "https://checker.skyforest.ai";
+
+/**
  * Куда вести на SkyForest: в нативном приложении — в магазин своей платформы
  * (на iOS упоминать Google Play нельзя, guideline 2.3.10), в вебе — на сайт.
  */

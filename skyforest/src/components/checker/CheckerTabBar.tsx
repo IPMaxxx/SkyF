@@ -1,23 +1,28 @@
 "use client";
 
 /**
- * Нижнее меню Mushroom Checker: «Распознать», «История», «Квесты» по центру,
- * «Аккаунт» и кнопка «Ещё».
+ * Нижнее меню Mushroom Checker: «Квесты» и «История» слева, «Распознать» по
+ * центру, «Аккаунт» и кнопка «Ещё» справа.
  *
  * Своя реализация: общий NativeTabBar SkyForest — тёмный и с другим набором
  * разделов, во флейвор его тянуть нельзя. Всё, что не вкладка (подписка, язык,
  * документы, выход, соседние приложения), живёт в панели «Ещё», чтобы низ
  * экрана не превращался в список.
  *
- * ЦЕНТРАЛЬНАЯ КНОПКА. «Квесты» выделены заливкой, а не подъёмом над панелью:
- * приподнятый кружок пришлось бы компенсировать дополнительным отступом снизу
- * на каждом экране, а главный экран и без того рассчитан впритык, чтобы
- * уместиться без прокрутки на 568px. Зелёный круг среди тонких контурных
- * значков читается как центр меню и без выступа.
+ * ЦЕНТРАЛЬНАЯ КНОПКА — «Распознать»: ради неё приложение и открывают, поэтому
+ * она в середине, крупнее остальных и с заливкой. Раньше центр занимали
+ * «Квесты» — они уехали на край, а вместе с ними и амбровая точка «есть
+ * непросмотренное». Выделение сделано заливкой, а не подъёмом над панелью:
+ * приподнятый кружок пришлось бы компенсировать отступом снизу на каждом
+ * экране, а главный экран и без того рассчитан впритык, чтобы уместиться без
+ * прокрутки на 568px.
  *
- * Панель фиксирована у нижнего края и сама держит `safe-area-inset-bottom`;
- * контент экранов не заезжает под неё за счёт `--ck-tabbar` (её вычитает из
- * высоты CkScreen оболочка `ck/(app)/layout.tsx`).
+ * ПАНЕЛЬ НЕ ЕЗДИТ. Меню — обычный блок в оболочке `CheckerAppShell`, а не
+ * `position: fixed`: страница под ним не прокручивается вообще, прокрутка живёт
+ * во внутреннем скроллере. Пока меню было фиксированным, WKWebView сдвигал его
+ * вместе с layout-вьюпортом при резиновом отскоке. Safe-area снизу держит сама
+ * панель, а контенту резервировать место под неё больше не нужно — он
+ * физически не может под неё попасть.
  *
  * ПОДСВЕТКА НЕ ЖДЁТ НАВИГАЦИИ. Разделы — серверные маршруты, и `usePathname()`
  * меняется только после ответа сервера. Пока подсветка шла от него одного,
@@ -44,11 +49,13 @@ import { CheckerMoreSheet } from "@/components/checker/CheckerMoreSheet";
 
 const QUESTS_HREF = "/dashboard/quests";
 
+/** Слева от центра: квесты (с точкой прогресса) и история. */
 const LEFT_TABS = [
-  { key: "identify", href: CHECKER_HOME, Icon: ScanSearch },
+  { key: "quests", href: QUESTS_HREF, Icon: Target, badge: true },
   { key: "history", href: "/dashboard/history", Icon: History },
 ] as const;
 
+/** Справа от центра: аккаунт и панель «Ещё» — симметрично левой паре. */
 const RIGHT_TABS = [{ key: "account", href: "/account", Icon: UserRound }] as const;
 
 /** Экраны, которые открываются из панели «Ещё»: на них подсвечена она. */
@@ -80,16 +87,18 @@ export function CheckerTabBar() {
   };
 
   const current = pending?.from === pathname ? pending.href : pathname;
-  const questsActive = current === QUESTS_HREF;
+  const identifyActive = current === CHECKER_HOME;
 
   const renderTab = ({
     key,
     href,
     Icon,
+    badge,
   }: {
     key: string;
     href: string;
     Icon: typeof ScanSearch;
+    badge?: boolean;
   }) => {
     const active = current === href;
     return (
@@ -100,11 +109,23 @@ export function CheckerTabBar() {
         aria-current={active ? "page" : undefined}
         className={cn(ITEM_CLASS, active ? "text-ck-primary-text" : "text-ck-muted")}
       >
-        <Icon
-          className="h-[22px] w-[22px]"
-          strokeWidth={active ? 2.4 : 1.9}
-          aria-hidden="true"
-        />
+        <span className="relative flex items-center justify-center">
+          <Icon
+            className="h-[22px] w-[22px]"
+            strokeWidth={active ? 2.4 : 1.9}
+            aria-hidden="true"
+          />
+          {/* Точка «есть непросмотренное» ставится в момент, когда находка
+              закрыла квест, и гаснет от визита во вкладку. Состояние лежит
+              в браузере, поэтому меню не делает лишних запросов. */}
+          {badge && questsNew && !active && (
+            <i
+              role="status"
+              aria-label={t("questsNew")}
+              className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full border-2 border-ck-surface bg-ck-amber"
+            />
+          )}
+        </span>
         <span className={cn("text-[11px]", active ? "font-extrabold" : "font-bold")}>
           {t(key)}
         </span>
@@ -116,47 +137,41 @@ export function CheckerTabBar() {
     <>
       <nav
         aria-label={t("tabBar")}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-ck-hairline bg-ck-surface pb-[env(safe-area-inset-bottom)]"
+        className="flex-none border-t border-ck-hairline bg-ck-surface pb-[env(safe-area-inset-bottom)]"
       >
         <div className="font-ck mx-auto flex w-full max-w-[520px] items-stretch gap-0.5 px-2 py-1.5">
           {LEFT_TABS.map(renderTab)}
 
           <Link
-            href={QUESTS_HREF}
-            onClick={() => tap(QUESTS_HREF)}
-            aria-current={questsActive ? "page" : undefined}
+            href={CHECKER_HOME}
+            onClick={() => tap(CHECKER_HOME)}
+            aria-current={identifyActive ? "page" : undefined}
             className={cn(
               "flex min-h-[48px] flex-1 flex-col items-center justify-center gap-[3px] rounded-2xl",
-              questsActive ? "text-ck-primary-text" : "text-ck-body",
+              identifyActive ? "text-ck-primary-text" : "text-ck-body",
             )}
           >
             <span
               className={cn(
-                "relative flex h-8 w-8 items-center justify-center rounded-full",
-                questsActive
+                "flex h-9 w-9 items-center justify-center rounded-full",
+                identifyActive
                   ? "bg-ck-primary text-ck-on-primary shadow-[0_8px_16px_-8px_var(--ck-glow)]"
                   : "bg-ck-primary-tint text-ck-primary-text",
               )}
             >
-              <Target className="h-[18px] w-[18px]" strokeWidth={2.3} aria-hidden="true" />
-              {/* Точка «есть непросмотренное» ставится в момент, когда находка
-                  закрыла квест, и гаснет от визита во вкладку. Состояние лежит
-                  в браузере, поэтому меню не делает лишних запросов. */}
-              {questsNew && !questsActive && (
-                <i
-                  role="status"
-                  aria-label={t("questsNew")}
-                  className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-ck-surface bg-ck-amber"
-                />
-              )}
+              <ScanSearch
+                className="h-[21px] w-[21px]"
+                strokeWidth={2.3}
+                aria-hidden="true"
+              />
             </span>
             <span
               className={cn(
-                "text-[11px]",
-                questsActive ? "font-extrabold" : "font-bold",
+                "text-[11.5px]",
+                identifyActive ? "font-extrabold" : "font-bold",
               )}
             >
-              {t("quests")}
+              {t("identify")}
             </span>
           </Link>
 

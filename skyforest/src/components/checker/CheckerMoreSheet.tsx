@@ -4,24 +4,38 @@
  * Панель «Ещё» Mushroom Checker — всё, что не поместилось в две вкладки.
  *
  * Здесь собрано то, что раньше жило в бургер-меню шапки (подписка, язык,
- * выход, версия) плюс документы, поддержка и ссылки на соседние приложения
- * SkyForest. Бургер убран: две точки входа в одну и ту же навигацию только
- * путали бы.
+ * выход, версия) плюс «поделиться приложением», документы, поддержка и ссылки
+ * на соседние приложения SkyForest. Бургер убран: две точки входа в одну и ту
+ * же навигацию только путали бы.
+ *
+ * Иконки соседних приложений лежат в `public/checker/app-icons` — копии входных
+ * иконок нативных сборок, их делает `scripts/make-checker-app-icons.mjs`.
  */
 
-import { ChevronRight, ExternalLink, LogOut, X } from "lucide-react";
+import Image from "next/image";
+import {
+  ChevronRight,
+  Crown,
+  ExternalLink,
+  LogOut,
+  Share2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
+  CHECKER_SITE,
   CHECKER_SUPPORT_EMAIL,
   openCheckerDoc,
   openExternal,
   skyforestLink,
   WAYBACK_SITE,
 } from "@/lib/checker/externalLinks";
+import { shareContent } from "@/lib/checker/share";
 import { CkMono, CkSheet } from "@/components/checker/primitives";
 import { useCheckerTheme } from "@/components/checker/CheckerThemeProvider";
 import { CHECKER_THEMES } from "@/lib/checker/theme";
@@ -48,11 +62,21 @@ function SettingRow({
   );
 }
 
-/** Строка панели: 44px минимум по высоте — требование к области нажатия. */
+/**
+ * Строка панели: 44px минимум по высоте — требование к области нажатия.
+ *
+ * Слева — что за строка: либо значок в цветной плитке (`glyph` + `tint`), либо
+ * иконка соседнего приложения (`icon`). Плитка без значка внутри читалась как
+ * недогрузившаяся картинка, поэтому пустой её быть нельзя: `tint` задаёт и фон,
+ * и цвет значка на нём. Справа — что произойдёт: плашка тарифа, шеврон
+ * документа, стрелка «уйдём из приложения».
+ */
 function MoreRow({
   label,
   hint,
+  glyph: Glyph,
   tint,
+  icon,
   right,
   danger,
   onClick,
@@ -60,7 +84,13 @@ function MoreRow({
 }: {
   label: string;
   hint?: string;
+  /** Значок в плитке. Цвет наследует от `tint`, размер — 14px в плитке 22px. */
+  glyph?: LucideIcon;
+  /** Пара классов плитки: фон и цвет значка (например `bg-ck-amber-tint text-ck-amber`). */
   tint?: string;
+  /** Иконка приложения вместо плитки — того же размера, чтобы подписи в списке
+      стояли в одну колонку. */
+  icon?: string;
   right?: React.ReactNode;
   danger?: boolean;
   onClick?: () => void;
@@ -68,8 +98,29 @@ function MoreRow({
 }) {
   const content = (
     <>
-      {tint && (
-        <i className={cn("block h-[22px] w-[22px] flex-none rounded-[7px]", tint)} />
+      {icon && (
+        /* Иконка крупнее плитки-акцента (26 против 22): на 22px рисунок
+           приложения уже не читается. Колонка при этом остаётся 22px, поэтому
+           подписи всех строк панели стоят на одной вертикали. */
+        <span className="flex h-[22px] w-[22px] flex-none items-center justify-center">
+          <Image
+            src={icon}
+            alt=""
+            width={96}
+            height={96}
+            className="h-[26px] w-[26px] rounded-[8px] object-cover"
+          />
+        </span>
+      )}
+      {!icon && Glyph && (
+        <span
+          className={cn(
+            "flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px]",
+            tint,
+          )}
+        >
+          <Glyph className="h-[14px] w-[14px]" strokeWidth={2.4} aria-hidden="true" />
+        </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
         <span
@@ -138,6 +189,21 @@ export function CheckerMoreSheet({
     openCheckerDoc(href, locale);
   };
 
+  /**
+   * Системный лист «поделиться» с ссылкой на приложение. Вызываем до `onClose`
+   * и без `await`: и `navigator.share`, и нативный плагин требуют, чтобы лист
+   * открылся в том же обработчике, что и касание, — иначе Safari считает жест
+   * потраченным и молча ничего не показывает.
+   */
+  const shareApp = () => {
+    void shareContent({
+      title: t("brandShort"),
+      text: t("shareAppText"),
+      url: CHECKER_SITE,
+    });
+    onClose();
+  };
+
   return (
     <CkSheet open={open} onClose={onClose} label={t("close")} scrim={0.42}>
       <div className="flex flex-col gap-1">
@@ -158,7 +224,8 @@ export function CheckerMoreSheet({
         <MoreRow
           href="/payment"
           onClick={onClose}
-          tint="bg-ck-amber-border"
+          glyph={Crown}
+          tint="bg-ck-amber-tint text-ck-amber"
           label={t("subscription")}
           right={
             <span className="rounded-full border border-ck-amber-border bg-ck-amber-tint px-[9px] py-1 text-[11px] font-extrabold text-ck-amber">
@@ -167,11 +234,22 @@ export function CheckerMoreSheet({
           }
         />
 
+        {/* Рассказать о приложении — сразу под подпиской: это самое частое,
+            зачем панель открывают после неё. */}
+        <MoreRow
+          glyph={Share2}
+          tint="bg-ck-primary-tint text-ck-primary-text"
+          label={t("shareApp")}
+          hint={t("shareAppHint")}
+          right={<ChevronRight className="h-4 w-4 flex-none text-ck-muted-2" aria-hidden="true" />}
+          onClick={shareApp}
+        />
+
         <Divider />
 
         <CkMono className="px-3 pb-0.5 pt-1">{t("otherApps")}</CkMono>
         <MoreRow
-          tint="bg-ck-primary-tint"
+          icon="/checker/app-icons/wayback.webp"
           label={t("waybackName")}
           hint={t("waybackHint")}
           right={<ExternalLink className="h-4 w-4 flex-none text-ck-muted-2" aria-hidden="true" />}
@@ -181,7 +259,7 @@ export function CheckerMoreSheet({
           }}
         />
         <MoreRow
-          tint="bg-ck-primary-tint"
+          icon="/checker/app-icons/skyforest.webp"
           label={t("skyforestName")}
           hint={t("skyforestHint")}
           right={<ExternalLink className="h-4 w-4 flex-none text-ck-muted-2" aria-hidden="true" />}
@@ -267,11 +345,12 @@ export function CheckerMoreSheet({
 
         <Divider />
 
+        {/* Значок выхода — слева, в плитке: справа он дублировал бы сам себя. */}
         <MoreRow
           danger
-          tint="bg-ck-danger-tint"
+          glyph={LogOut}
+          tint="bg-ck-danger-tint text-ck-danger"
           label={t("logout")}
-          right={<LogOut className="h-4 w-4 flex-none text-ck-danger" aria-hidden="true" />}
           onClick={() => void logout()}
         />
 

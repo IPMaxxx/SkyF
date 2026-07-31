@@ -496,7 +496,6 @@ export function CheckerIdentify() {
     return (
       <CkScreen
         padding="px-0"
-        reserveTabBar
         bottom={
           /* Следующая находка начинается прямо отсюда — и камерой, и файлом
              из галереи. Возврат на главный экран остался на стрелке над
@@ -788,7 +787,6 @@ export function CheckerIdentify() {
     return (
       <>
         <CkScreen
-          reserveTabBar
           bottom={
             <div className="flex flex-col gap-2.5">
               <CkPrimaryButton

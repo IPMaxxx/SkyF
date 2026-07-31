@@ -23,7 +23,7 @@ export const checkerBrand = {
 } as const;
 
 export default {
-  /** Нижнее меню: четыре вкладки («Квесты» по центру) и кнопка панели «Ещё». */
+  /** Нижнее меню: четыре вкладки («Распознать» по центру) и кнопка панели «Ещё». */
   nav: {
     tabBar: "Основная навигация",
     identify: "Распознать",
@@ -39,10 +39,16 @@ export default {
   /** Панель «Ещё» — то, что не поместилось во вкладки. */
   menu: {
     brandShort: "Mushroom Checker",
+    /** Имя ссылки-марки в шапке: она ведёт на экран распознавания. */
+    brandHome: "Mushroom Checker — на экран распознавания",
     close: "Закрыть",
     moreTitle: "Ещё",
     subscription: "Подписка",
     premiumPill: "PREMIUM",
+    shareApp: "Поделиться приложением",
+    shareAppHint: "Отправить ссылку друзьям",
+    /** Текст в системном листе «поделиться» — рядом со ссылкой на сайт. */
+    shareAppText: "Mushroom Checker — определит гриб по фотографии",
     theme: "Оформление",
     themeDark: "Тёмное",
     themeLight: "Светлое",
