@@ -354,7 +354,7 @@ async function startWithService(
     // Служба могла подняться частично и держать GPS — глушим, иначе батарея
     // тратится на запись, которой в JS нет.
     service.stop().catch(() => {});
-    options.onIssue(serviceIssue(failure, state), errorDetail(failure));
+    options.onIssue(serviceIssue(failure, state), state?.failure ?? errorDetail(failure));
     return null;
   }
 }
@@ -422,9 +422,11 @@ function afterStart(
  */
 function serviceIssue(
   error: { code?: string; message?: string },
-  state: { location: boolean; precise: boolean } | null,
+  state: { location: boolean; precise: boolean; failure: string | null } | null,
 ): BackgroundIssue {
   if (error.code === "NOT_AUTHORIZED" || state?.location === false) return "locationDenied";
+  // Служба назвала свою причину — она точнее любой догадки.
+  if (state?.failure) return "failed";
   if (state && !state.precise) return "preciseLocation";
   return "failed";
 }
