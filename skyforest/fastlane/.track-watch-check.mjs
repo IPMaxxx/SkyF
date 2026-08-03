@@ -12,6 +12,7 @@
  */
 
 import { createWatchController } from "../src/lib/track/watchController.ts";
+import { watchMessage } from "../src/lib/track/watchMessage.ts";
 
 let failures = 0;
 
@@ -191,7 +192,54 @@ async function scenarioOldLogic() {
   console.log("     ^ это и есть регресс: ожидали бы plain: true");
 }
 
+/**
+ * Что приложение говорит человеку. Ошиблись мы именно здесь: с погашенным
+ * экраном и неподнявшимся фоном показывали «путь не записывается» и совет
+ * проверить включённую геолокацию.
+ */
+async function scenarioMessages() {
+  console.log("\n— что сказано человеку —");
+  const say = (patch) =>
+    watchMessage({
+      hasTrack: true,
+      appForeground: true,
+      plain: true,
+      background: true,
+      backgroundIssue: null,
+      ...patch,
+    });
+
+  check("похода нет — молчим", say({ hasTrack: false }), "silent");
+  check("пишут оба источника — молчим", say({}), "silent");
+  check(
+    "фон не поднялся, приложение открыто — спокойное «пока открыто»",
+    say({ background: false, backgroundIssue: "preciseLocation" }),
+    "foregroundOnly",
+  );
+  check(
+    "экран погас, фона нет — молчим, а не пугаем",
+    say({ appForeground: false, plain: false, background: false, backgroundIssue: "preciseLocation" }),
+    "silent",
+  );
+  check(
+    "не пишет никто при открытом приложении — тревога",
+    say({ plain: false, background: false, backgroundIssue: "failed" }),
+    "notRecording",
+  );
+  check(
+    "уведомления запрещены — об этом говорит отдельный тост",
+    say({ background: false, backgroundIssue: "notificationsBlocked" }),
+    "silent",
+  );
+  check(
+    "старая оболочка без фона — спокойное «обновите»",
+    say({ background: false, backgroundIssue: "unsupported" }),
+    "foregroundOnly",
+  );
+}
+
 await scenarioOldLogic();
+await scenarioMessages();
 await scenarioHappyPath();
 await scenarioBackgroundFails();
 await scenarioNoBackgroundSupport();

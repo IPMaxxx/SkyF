@@ -133,10 +133,17 @@ export default {
      */
     recordingIssue: {
       offTitle: "The trail is not being recorded",
-      offBody: "Check that location is on, then start the walk again.",
-      foregroundOnlyTitle: "Recording only while the app is open",
-      foregroundOnlyBody: "With the screen off the trail will have gaps.",
+      offBody: "We can't reach location right now. Start the walk again.",
+      /**
+       * Спокойный тон намеренно: путь пишется, просто с погашенным экраном
+       * запись прервётся. Пугать тут нечем.
+       */
+      foregroundOnlyTitle: "Recording while the app is open",
+      foregroundOnlyBody: "With the screen off the trail may have gaps.",
       updateBody: "Update WayBack so the trail keeps going with the screen off.",
+      preciseBody:
+        "Allow precise location so the trail keeps going with the screen off.",
+      preciseAction: "Settings",
     },
     offlineMapTitle: "Offline map",
     offlineMapAround:

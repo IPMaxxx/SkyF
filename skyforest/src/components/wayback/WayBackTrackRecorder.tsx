@@ -8,6 +8,7 @@ import {
   BACKGROUND_NOTICE_BLOCKED_EVENT,
   openAppSettings,
 } from "@/lib/track/backgroundWatch";
+import { watchMessage, type WatchMessage } from "@/lib/track/watchMessage";
 import { TRACK_WATCH_STATUS_EVENT, trackWatchStatus } from "@/lib/trackRecorder";
 import { loadTrack, TRACK_STATE_EVENT } from "@/lib/trackState";
 
@@ -54,7 +55,7 @@ export function WayBackTrackRecorder() {
     return () => window.removeEventListener(BACKGROUND_NOTICE_BLOCKED_EVENT, onBlocked);
   }, [t]);
 
-  const told = useRef(false);
+  const told = useRef<WatchMessage>("silent");
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -62,10 +63,15 @@ export function WayBackTrackRecorder() {
       // Судим по итоговому состоянию, а не по снимку из события: источники
       // поднимаются асинхронно, и промежуточное «ещё ничего не работает» —
       // не новость.
-      if (!loadTrack() || told.current) return;
       const status = trackWatchStatus();
-      if (!status.recording) {
-        told.current = true;
+      const message = watchMessage(status);
+      if (message === "silent" || message === told.current) return;
+      // Спокойное сообщение уже сказано, а стало хуже — сказать можно ещё раз.
+      // Обратный переход молчит: человек и так знает, что фона нет.
+      if (told.current === "notRecording") return;
+      told.current = message;
+
+      if (message === "notRecording") {
         toast.error(t("recordingIssue.offTitle"), {
           id: "wb-recording-off",
           description: t("recordingIssue.offBody"),
@@ -73,24 +79,32 @@ export function WayBackTrackRecorder() {
         });
         return;
       }
-      if (status.background || status.backgroundIssue == null) return;
-      // Про запрет уведомлений уже сказано отдельным тостом со ссылкой в
-      // настройки — второй раз о том же не говорим.
-      if (status.backgroundIssue === "notificationsBlocked") return;
-      told.current = true;
-      toast.warning(t("recordingIssue.foregroundOnlyTitle"), {
+
+      const precise = status.backgroundIssue === "preciseLocation";
+      const body =
+        status.backgroundIssue === "unsupported"
+          ? t("recordingIssue.updateBody")
+          : precise
+            ? t("recordingIssue.preciseBody")
+            : t("recordingIssue.foregroundOnlyBody");
+      toast.info(t("recordingIssue.foregroundOnlyTitle"), {
         id: "wb-recording-foreground",
-        description:
-          status.backgroundIssue === "unsupported"
-            ? t("recordingIssue.updateBody")
-            : t("recordingIssue.foregroundOnlyBody"),
+        // Код отказа плагина дописываем как есть: без него причина остаётся
+        // догадкой, а переслать строку человек может.
+        description: status.backgroundDetail ? `${body} (${status.backgroundDetail})` : body,
         duration: 10_000,
+        action: precise
+          ? {
+              label: t("recordingIssue.preciseAction"),
+              onClick: () => void openAppSettings(),
+            }
+          : undefined,
       });
     };
 
     const recheck = () => {
       // Новый поход — новый разговор: сказанное про прошлый не в счёт.
-      if (!loadTrack()) told.current = false;
+      if (!loadTrack()) told.current = "silent";
       if (timer) clearTimeout(timer);
       timer = setTimeout(judge, SETTLE_MS);
     };

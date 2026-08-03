@@ -39,6 +39,7 @@ export interface BackgroundNotice {
 export type BackgroundIssue =
   | "unsupported"
   | "notificationsBlocked"
+  | "preciseLocation"
   | "locationOff"
   | "failed";
 
@@ -47,8 +48,12 @@ export interface BackgroundWatchOptions {
   /** Сдвиг, после которого плагин отдаёт новую координату (метры). */
   distanceFilter: number;
   onPosition: (lat: number, lng: number, accuracy: number | null) => void;
-  /** Служба не поднялась или отвалилась уже после старта. */
-  onIssue: (issue: BackgroundIssue) => void;
+  /**
+   * Служба не поднялась или отвалилась уже после старта. `detail` — код и
+   * текст ровно как их вернул плагин: без них причину приходится угадывать,
+   * а Logcat у человека в лесу не спросишь.
+   */
+  onIssue: (issue: BackgroundIssue, detail: string | null) => void;
 }
 
 type BackgroundGeolocationPlugin =
@@ -140,10 +145,26 @@ export async function openAppSettings(): Promise<void> {
   }
 }
 
+/**
+ * Плагин различает два отказа одним кодом NOT_AUTHORIZED, а лечатся они
+ * по-разному, поэтому смотрим на текст.
+ *
+ * «Denied location permission» — не обязательно полный запрет: алиас location
+ * у плагина считается выданным, только когда выданы ОБА разрешения, грубое и
+ * точное. С Android 12 человек может дать «приблизительное», и тогда обычный
+ * watch работает (иконка геолокации горит), а служба стартовать отказывается.
+ * Лечится переключателем «Точное местоположение», а не включением геолокации.
+ */
 function issueFromError(error: { code?: string; message?: string } | undefined): BackgroundIssue {
   const text = `${error?.code ?? ""} ${error?.message ?? ""}`;
-  if (/NOT_AUTHORIZED|disabled/i.test(text)) return "locationOff";
+  if (/disabled/i.test(text)) return "locationOff";
+  if (/permission|NOT_AUTHORIZED/i.test(text)) return "preciseLocation";
   return "failed";
+}
+
+function errorDetail(error: { code?: string; message?: string } | undefined): string | null {
+  const detail = [error?.code, error?.message].filter(Boolean).join(": ");
+  return detail || null;
 }
 
 /**
@@ -156,7 +177,7 @@ export async function startBackgroundWatch(
 ): Promise<(() => void) | null> {
   const api = await plugin();
   if (!api) {
-    options.onIssue("unsupported");
+    options.onIssue("unsupported", null);
     return null;
   }
   const notificationsOk = await ensureNotificationPermission(api);
@@ -196,23 +217,26 @@ export async function startBackgroundWatch(
           await api!.stop();
           await run();
         } catch {
-          options.onIssue("failed");
+          options.onIssue("failed", errorDetail(error));
         }
       })();
       return;
     }
-    options.onIssue(issueFromError(error));
+    // Служба могла успеть частично подняться и держать GPS — глушим, иначе
+    // батарея тратится на запись, которой нет.
+    void stopBackgroundWatch();
+    options.onIssue(issueFromError(error), errorDetail(error));
   }
 
   try {
     await run();
   } catch {
     // Сюда попадают только отказы самого моста; отказ службы приходит колбэком.
-    options.onIssue("failed");
+    options.onIssue("failed", null);
     return null;
   }
 
-  if (!notificationsOk) options.onIssue("notificationsBlocked");
+  if (!notificationsOk) options.onIssue("notificationsBlocked", null);
 
   return () => {
     stopped = true;

@@ -92,9 +92,14 @@ export async function captureTrackPoint(): Promise<void> {
 
 let notice: BackgroundNotice | null = null;
 let backgroundIssue: BackgroundIssue | null = null;
+let backgroundDetail: string | null = null;
+let foreground = true;
 
 /** Что сейчас пишет точки и что мешает фону. */
 export interface TrackWatchStatus {
+  hasTrack: boolean;
+  /** Открыто ли приложение: с погашенным экраном о записи не судят. */
+  appForeground: boolean;
   /** Идёт ли запись хоть каким-то источником. */
   recording: boolean;
   /** Обычный watch: только пока приложение открыто. */
@@ -103,6 +108,8 @@ export interface TrackWatchStatus {
   background: boolean;
   /** Почему фона нет; null — вопросов нет либо он ещё не пробовал стартовать. */
   backgroundIssue: BackgroundIssue | null;
+  /** Код и текст отказа ровно как их вернул плагин — для пересылки в саппорт. */
+  backgroundDetail: string | null;
 }
 
 /** Событие window после каждой смены состояния источников записи. */
@@ -150,15 +157,19 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
     notice,
     distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
     onPosition: onWatchPosition,
-    onIssue: (issue) => {
+    onIssue: (issue, detail) => {
       backgroundIssue = issue;
+      backgroundDetail = detail;
       // Служба отвалилась уже после старта — контроллер должен об этом знать,
       // иначе он будет считать её работающей и не попробует поднять снова.
       if (issue !== "notificationsBlocked") controller.markStopped("background");
       emitStatus();
     },
   });
-  if (stop) backgroundIssue = null;
+  if (stop) {
+    backgroundIssue = null;
+    backgroundDetail = null;
+  }
   emitStatus();
   return stop;
 }
@@ -180,10 +191,19 @@ const controller = createWatchController(
 export function trackWatchStatus(): TrackWatchStatus {
   const plain = controller.running("plain");
   const background = controller.running("background");
-  return { recording: plain || background, plain, background, backgroundIssue };
+  return {
+    hasTrack: !!loadTrack(),
+    appForeground: foreground,
+    recording: plain || background,
+    plain,
+    background,
+    backgroundIssue,
+    backgroundDetail,
+  };
 }
 
 function sync(patch?: { appForeground?: boolean; backgroundAllowed?: boolean }): void {
+  if (patch?.appForeground != null) foreground = patch.appForeground;
   controller.update({ hasTrack: !!loadTrack(), ...patch });
 }
 
