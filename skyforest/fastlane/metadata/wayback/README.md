@@ -63,11 +63,11 @@ Release notes в Play живут не в листинге, а у релиза в
 | Policy → App content → **Content rating** | анкета IARC, ответы ниже |
 | Policy → App content → **Target audience and content** | возрастная группа только «18 and over»; «appeal to children» — No |
 | Policy → App content → **Data safety** | отправлено через API, глазами сверить сводку |
-| Policy → App content → **Foreground service permissions** | с версии 1.1 обязательна: манифест объявляет `FOREGROUND_SERVICE_LOCATION`. Назначение — запись пути между «начал поход» и «вышел из леса», служба видна постоянным уведомлением. Google просит короткое видео с демонстрацией: экран старта похода, погашенный экран, уведомление в статус-баре, карта с непрерывным путём после возврата |
+| Policy → App content → **Foreground service permissions** | с версии 1.1 обязательна: манифест объявляет `FOREGROUND_SERVICE_LOCATION`. Назначение — запись пути между «начал поход» и «вышел из леса», служба видна постоянным уведомлением. Google просит короткое видео с демонстрацией: экран старта похода, погашенный экран, уведомление в статус-баре, карта с непрерывным путём после возврата. **Пока не заполнено, релиз не выложить вообще**: `edits:validate` и `edits:commit` с этим бинарником отвечают 403 «You must let us know whether your app uses any Foreground Service permissions», причём в любом треке, включая internal. Правки листинга без бинарника проходят |
 | Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
 | Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
 | Policy → App content → **Government apps** | «No, it is not a government app» |
-| Policy → App content → **Advertising ID** | «No» — в манифесте и плагинах нет `AD_ID` |
+| Policy → App content → **Advertising ID** | ответ придётся давать по факту, а не «No»: в слитом манифесте `com.google.android.gms.permission.AD_ID` **есть** — его тянет `@capgo/capacitor-social-login` через Facebook SDK и play-services. Так было уже в 1.0 (versionCode 6), это не следствие фоновой записи. Либо отвечать «Yes», либо в следующей сборке вырезать разрешение (`<uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />` в `apps/wayback/android/app/src/main/AndroidManifest.xml`) и тогда честно отвечать «No» |
 | Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
 
 **App access.** Приложение без подписки не открывается с первого экрана, поэтому

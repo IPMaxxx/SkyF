@@ -28,11 +28,18 @@
  * Запуск из каталога skyforest:
  *   node fastlane/play-data-safety.mjs            — показать сводку и CSV-диф
  *   node fastlane/play-data-safety.mjs --apply    — отправить в Google Play
+ *   … --pkg ai.skyforest.wayback                  — только одно приложение
+ *
+ * Фильтр по пакету нужен, когда декларация поменялась у одного приложения:
+ * отправлять заодно и второе — значит перетереть то, что могли поправить в
+ * консоли руками.
  */
 import { readFileSync } from "node:fs";
 import { createSign } from "node:crypto";
 
 const APPLY = process.argv.includes("--apply");
+const PKG_ARG = process.argv[process.argv.indexOf("--pkg") + 1];
+const ONLY_PKG = process.argv.includes("--pkg") ? PKG_ARG : null;
 const HERE = new URL("./", import.meta.url);
 
 /** Цели сбора в терминах CSV — используются в таблицах ниже. */
@@ -241,6 +248,7 @@ async function accessToken() {
 
 let failed = false;
 for (const [pkg, decl] of Object.entries(DECLARATIONS)) {
+  if (ONLY_PKG && pkg !== ONLY_PKG) continue;
   console.log(`\n===== ${decl.name} (${pkg}) =====`);
   const { csv, filled, total } = buildCsv(decl);
   console.log(`собираем ${decl.types.length} типов данных, «да» в ${filled} из ${total} строк CSV:`);
