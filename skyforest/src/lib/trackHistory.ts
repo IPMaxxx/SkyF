@@ -11,6 +11,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { SUPABASE_TIMEOUT_MS, withTimeout } from "@/lib/offline/deadline";
 import { haversineM, trackDistanceM, type ActiveTrack, type TrackPoint } from "@/lib/trackState";
 
 export interface SavedTrack {
@@ -87,6 +88,12 @@ export function simplifyPoints(points: TrackPoint[], toleranceM = SIMPLIFY_TOLER
  * Сохраняет завершённый поход: в Supabase, а при отсутствии сессии или
  * ошибке сети — в localStorage. Никогда не бросает: трек не должен
  * потеряться из-за сбоя сохранения.
+ *
+ * Со сроком, и это главное свойство функции. Завершение похода — действие
+ * человека, который стоит на опушке и ждёт: у него на экране крутится
+ * спиннер, пока мы разговариваем с сервером. Без связи `getUser()` уходит в
+ * сеть и на мёртвом соединении не отвечает и не отказывает, а значит поход не
+ * завершился бы вовсе. Локальная копия дороже серверной: она есть всегда.
  */
 export async function saveFinishedTrack(track: ActiveTrack, name: string): Promise<SavedTrack> {
   const finishedAt = Date.now();
@@ -103,26 +110,34 @@ export async function saveFinishedTrack(track: ActiveTrack, name: string): Promi
 
   try {
     const supabase = createClient();
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await withTimeout(
+      supabase.auth.getUser(),
+      SUPABASE_TIMEOUT_MS,
+      "supabase.auth.getUser",
+    );
     if (auth.user) {
-      const { data, error } = await supabase
-        .from("tracks")
-        .insert({
-          user_id: auth.user.id,
-          name,
-          started_at: new Date(track.startedAt).toISOString(),
-          finished_at: new Date(finishedAt).toISOString(),
-          distance_m: saved.distanceM,
-          points,
-        })
-        .select("id")
-        .single();
+      const { data, error } = await withTimeout(
+        supabase
+          .from("tracks")
+          .insert({
+            user_id: auth.user.id,
+            name,
+            started_at: new Date(track.startedAt).toISOString(),
+            finished_at: new Date(finishedAt).toISOString(),
+            distance_m: saved.distanceM,
+            points,
+          })
+          .select("id")
+          .single(),
+        SUPABASE_TIMEOUT_MS,
+        "tracks.insert",
+      );
       if (!error && data) {
         return { ...saved, id: data.id as string, local: false };
       }
     }
   } catch {
-    /* нет сети/сессии — сохраняем локально ниже */
+    /* нет сети/сессии или сервер молчит — сохраняем локально ниже */
   }
 
   saveLocal(saved);
@@ -133,18 +148,31 @@ export async function saveFinishedTrack(track: ActiveTrack, name: string): Promi
 /* Список и удаление                                                   */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Список походов: локальные плюс серверные. Со сроком по той же причине, что и
+ * сохранение, — экран истории открывают и в лесу, чтобы посмотреть прошлый
+ * маршрут, и он обязан показать хотя бы то, что лежит на устройстве.
+ */
 export async function loadTrackHistory(): Promise<SavedTrack[]> {
   const local = loadLocal();
   let remote: SavedTrack[] = [];
   try {
     const supabase = createClient();
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await withTimeout(
+      supabase.auth.getUser(),
+      SUPABASE_TIMEOUT_MS,
+      "supabase.auth.getUser",
+    );
     if (auth.user) {
-      const { data, error } = await supabase
-        .from("tracks")
-        .select("id, name, started_at, finished_at, distance_m, points")
-        .order("finished_at", { ascending: false })
-        .limit(100);
+      const { data, error } = await withTimeout(
+        supabase
+          .from("tracks")
+          .select("id, name, started_at, finished_at, distance_m, points")
+          .order("finished_at", { ascending: false })
+          .limit(100),
+        SUPABASE_TIMEOUT_MS,
+        "tracks.select",
+      );
       if (!error && data) {
         remote = data.map((row) => ({
           id: row.id as string,

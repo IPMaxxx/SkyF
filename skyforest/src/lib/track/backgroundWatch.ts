@@ -37,6 +37,7 @@
 
 import { isNativeApp } from "@/lib/native/capacitor";
 import { trackLog } from "@/lib/track/trackLog";
+import { loadChunk } from "@/lib/offline/deadline";
 import {
   foregroundService,
   foregroundServiceFound,
@@ -94,10 +95,9 @@ async function loadPlugin(): Promise<BackgroundGeolocationPlugin | null> {
   try {
     // Со сроком: сам import() — это запрос за куском бандла по сети, и в лесу
     // он не отваливается по ошибке, а просто не завершается никогда.
-    const { BackgroundGeolocation } = await withTimeout(
-      import("@capgo/background-geolocation"),
-      FOREGROUND_SERVICE_TIMEOUTS.load,
-      "import @capgo/background-geolocation",
+    const { BackgroundGeolocation } = await loadChunk(
+      "@capgo/background-geolocation",
+      () => import("@capgo/background-geolocation"),
     );
     await withTimeout(
       BackgroundGeolocation.getPluginVersion(),

@@ -20,6 +20,8 @@
  */
 
 import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
+import { geolocationPlugin } from "@/lib/native/plugins";
+import { withTimeout } from "@/lib/offline/deadline";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
@@ -136,23 +138,50 @@ function onWatchPosition(lat: number, lng: number, accuracy: number | null | und
   recordPosition({ lat, lng });
 }
 
+/**
+ * Сколько ждём, пока мост подтвердит подписку на координаты. С запасом на
+ * системный диалог разрешения, который плагин может показать внутри вызова.
+ *
+ * Срок обязателен: сверки слота идут по очереди, поэтому не ответивший мост
+ * запер бы обычный watch до конца похода — а на переднем плане это
+ * единственный источник записи.
+ */
+const PLAIN_WATCH_REGISTER_TIMEOUT_MS = 15_000;
+
 async function startPlainWatch(): Promise<(() => void) | null> {
   if (isNativeApp()) {
+    let late: (() => void) | null = null;
     try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const id = await Geolocation.watchPosition(
+      const { Geolocation } = await geolocationPlugin();
+      const pending = Geolocation.watchPosition(
         { enableHighAccuracy: true },
         (pos) => {
           if (pos) onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
         },
+      );
+      late = () => void pending.then((id) => Geolocation.clearWatch({ id })).catch(() => {});
+      const id = await withTimeout(
+        pending,
+        PLAIN_WATCH_REGISTER_TIMEOUT_MS,
+        "Geolocation.watchPosition",
       );
       trackLog("plain.started");
       return () => {
         trackLog("plain.stopped");
         void Geolocation.clearWatch({ id });
       };
-    } catch {
-      /* плагин недоступен — падаем в браузерный API ниже */
+    } catch (error) {
+      // Плагина нет, его кусок бандла не приехал по сети или мост не ответил.
+      // Второе — не экзотика: обычный watch поднимается в том числе посреди
+      // похода, при каждом возвращении в приложение. Браузерный watchPosition
+      // в WebView работает и без плагина, поэтому терять из-за этого запись
+      // нельзя.
+      const failure = error as { code?: string; message?: string };
+      trackLog("plain.plugin", `${failure?.code ?? ""} ${failure?.message ?? error}`.trim());
+      // Подписка могла зарегистрироваться уже после того, как мы перестали
+      // ждать. Снимаем её, иначе рядом с браузерным watch останется вторая, о
+      // которой мы не знаем, — лишний расход батареи ради тех же точек.
+      late?.();
     }
   }
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;

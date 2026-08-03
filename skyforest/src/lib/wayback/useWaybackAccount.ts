@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SUPABASE_TIMEOUT_MS, withTimeout } from "@/lib/offline/deadline";
 
 export interface WaybackSubscription {
   tier: string;
@@ -46,9 +47,16 @@ export function useWaybackAccount(): WaybackAccountState {
   const refresh = useCallback(async () => {
     try {
       const supabase = createClient();
+      // Со сроком: без связи оба обращения уходят в сеть, а `loading` держит
+      // экран в состоянии «ещё не знаем». Не знать — нормально, знать
+      // навсегда «сейчас узнаем» — нет.
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await withTimeout(
+        supabase.auth.getUser(),
+        SUPABASE_TIMEOUT_MS,
+        "supabase.auth.getUser",
+      );
 
       setSignedIn(Boolean(user));
       setEmail(user?.email ?? null);
@@ -58,7 +66,11 @@ export function useWaybackAccount(): WaybackAccountState {
         return;
       }
 
-      const res = await fetch("/api/subscription");
+      const res = await withTimeout(
+        fetch("/api/subscription"),
+        SUPABASE_TIMEOUT_MS,
+        "GET /api/subscription",
+      );
       if (!res.ok) {
         setSubscription(null);
         return;

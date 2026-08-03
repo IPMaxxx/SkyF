@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { isNativeApp } from "./capacitor";
+import { appPlugin } from "./plugins";
 import { navigateToDeepLink, takeLaunchUrl } from "./deepLinks";
 
 /**
@@ -25,7 +26,7 @@ export function DeepLinkListener() {
 
     (async () => {
       try {
-        const { App } = await import("@capacitor/app");
+        const { App } = await appPlugin();
 
         const sub = await App.addListener("appUrlOpen", ({ url }) => {
           if (disposed) return;

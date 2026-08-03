@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useUnits } from "@/lib/units";
 import { listRegions } from "@/lib/offline/tileStore";
+import { preloadChunk } from "@/lib/offline/deadline";
 import { loadTrackHistory } from "@/lib/trackHistory";
 import { useWaybackAccount } from "@/lib/wayback/useWaybackAccount";
 import type { TrackController } from "@/lib/track/useTrackController";
@@ -50,6 +51,21 @@ const WayBackPicker = dynamic(
     import("@/components/wayback/WayBackPicker").then((m) => m.WayBackPicker),
   { ssr: false },
 );
+
+/**
+ * Обе карты нужны там, где связи уже нет: карта похода рисуется, как только
+ * поход начался, а выбор точки входа открывается ровно тогда, когда GPS не
+ * дался, — и то и другое случается в лесу. Кусок бандла в этот момент по сети
+ * не приедет и, хуже того, не откажет: `next/dynamic` останется на скелете
+ * навсегда (у выбора точки скелета нет вовсе — был бы пустой экран).
+ *
+ * Поэтому тянем их сразу при открытии экрана: он открывается на старте
+ * приложения, когда человек чаще всего ещё дома или у машины.
+ */
+function preloadHikeMaps(): void {
+  preloadChunk("components/TrackMap", () => import("@/components/app/TrackMap"));
+  preloadChunk("components/WayBackPicker", () => import("@/components/wayback/WayBackPicker"));
+}
 
 /**
  * Карта «где я сейчас» на главной. Скелет повторяет её размеры один в один
@@ -122,6 +138,8 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
     void listRegions().then((list) => setRegionCount(list.length));
     void loadTrackHistory().then((list) => setHistoryCount(list.length));
   }, [hasActiveTrack]);
+
+  useEffect(preloadHikeMaps, []);
 
   // Системная кнопка «назад» должна закрывать подэкран, а не выкидывать из
   // приложения: подэкраны кладём в history.state. Переход между подэкранами

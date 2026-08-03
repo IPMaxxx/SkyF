@@ -15,6 +15,8 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import { filesystemPlugin, preferencesPlugin } from "@/lib/native/plugins";
+import { fetchBlobWithDeadline } from "@/lib/offline/deadline";
 
 export interface TileSource {
   id: string;
@@ -214,7 +216,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 async function writeTileNative(sourceId: string, coord: TileCoord, base64: string) {
-  const { Filesystem, Directory } = await import("@capacitor/filesystem");
+  const { Filesystem, Directory } = await filesystemPlugin();
   await Filesystem.writeFile({
     path: tilePath(sourceId, coord),
     directory: Directory.Data,
@@ -235,7 +237,7 @@ async function writeTileWeb(sourceId: string, coord: TileCoord, blob: Blob) {
 async function deleteTile(sourceId: string, coord: TileCoord) {
   try {
     if (isNativeApp()) {
-      const { Filesystem, Directory } = await import("@capacitor/filesystem");
+      const { Filesystem, Directory } = await filesystemPlugin();
       await Filesystem.deleteFile({ path: tilePath(sourceId, coord), directory: Directory.Data });
     } else if (typeof caches !== "undefined") {
       const cache = await caches.open(CACHE_NAME);
@@ -253,7 +255,7 @@ async function deleteTile(sourceId: string, coord: TileCoord) {
 export async function hasTile(sourceId: string, coord: TileCoord): Promise<boolean> {
   try {
     if (isNativeApp()) {
-      const { Filesystem, Directory } = await import("@capacitor/filesystem");
+      const { Filesystem, Directory } = await filesystemPlugin();
       await Filesystem.stat({ path: tilePath(sourceId, coord), directory: Directory.Data });
       return true;
     }
@@ -305,25 +307,34 @@ export async function resolveTileUrl(
   const autoCache = typeof opts === "boolean" ? false : !!opts.autoCache;
 
   if (isNativeApp()) {
-    const { Filesystem, Directory } = await import("@capacitor/filesystem");
-    const path = tilePath(source.id, coord);
+    // Плагин может не ответить, и это не повод возвращать пустоту: онлайн
+    // тайл возьмётся прямо из сети, офлайн — фолбэком у вызывающего слоя.
+    // Раньше здесь стоял голый import(), и без связи он не отваливался, а
+    // висел: карта не рисовала ни одного тайла и не сообщала почему.
+    let fs: Awaited<ReturnType<typeof filesystemPlugin>> | null = null;
     try {
-      await Filesystem.stat({ path, directory: Directory.Data });
-      const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
-      return convertFileSrc(uri);
+      fs = await filesystemPlugin();
     } catch {
-      /* не скачан — ниже сеть */
+      /* кусок бандла не приехал — идём сетевым путём ниже */
+    }
+    const path = tilePath(source.id, coord);
+    if (fs) {
+      const { Filesystem, Directory } = fs;
+      try {
+        await Filesystem.stat({ path, directory: Directory.Data });
+        const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
+        return convertFileSrc(uri);
+      } catch {
+        /* не скачан — ниже сеть */
+      }
     }
     if (!online) return null;
-    if (autoCache) {
+    if (autoCache && fs) {
       try {
-        const resp = await fetch(buildRemoteUrl(source, coord));
-        if (resp.ok) {
-          const blob = await resp.blob();
-          await writeTileNative(source.id, coord, await blobToBase64(blob));
-          const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
-          return convertFileSrc(uri);
-        }
+        const blob = await fetchBlobWithDeadline(buildRemoteUrl(source, coord));
+        await writeTileNative(source.id, coord, await blobToBase64(blob));
+        const { uri } = await fs.Filesystem.getUri({ path, directory: fs.Directory.Data });
+        return convertFileSrc(uri);
       } catch {
         /* сеть/квота — отдаём прямой сетевой URL ниже */
       }
@@ -343,12 +354,9 @@ export async function resolveTileUrl(
   if (!online) return null;
   if (autoCache && typeof caches !== "undefined") {
     try {
-      const resp = await fetch(buildRemoteUrl(source, coord));
-      if (resp.ok) {
-        const blob = await resp.blob();
-        await writeTileWeb(source.id, coord, blob);
-        return URL.createObjectURL(blob);
-      }
+      const blob = await fetchBlobWithDeadline(buildRemoteUrl(source, coord));
+      await writeTileWeb(source.id, coord, blob);
+      return URL.createObjectURL(blob);
     } catch {
       /* сеть/квота — отдаём прямой сетевой URL ниже */
     }
@@ -390,7 +398,7 @@ export async function resolveParentTile(
     const parent: TileCoord = { z: coord.z - dz, x: coord.x >> dz, y: coord.y >> dz };
     if (native) {
       try {
-        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Filesystem, Directory } = await filesystemPlugin();
         const path = tilePath(source.id, parent);
         await Filesystem.stat({ path, directory: Directory.Data });
         const { uri } = await Filesystem.getUri({ path, directory: Directory.Data });
@@ -465,7 +473,7 @@ export async function upscaleFromParent(
 export async function listRegions(): Promise<DownloadedRegion[]> {
   try {
     if (isNativeApp()) {
-      const { Preferences } = await import("@capacitor/preferences");
+      const { Preferences } = await preferencesPlugin();
       const { value } = await Preferences.get({ key: REGIONS_KEY });
       return value ? (JSON.parse(value) as DownloadedRegion[]) : [];
     }
@@ -480,7 +488,7 @@ async function writeRegions(regions: DownloadedRegion[]) {
   const json = JSON.stringify(regions);
   try {
     if (isNativeApp()) {
-      const { Preferences } = await import("@capacitor/preferences");
+      const { Preferences } = await preferencesPlugin();
       await Preferences.set({ key: REGIONS_KEY, value: json });
     } else if (typeof localStorage !== "undefined") {
       localStorage.setItem(REGIONS_KEY, json);
@@ -535,9 +543,10 @@ export async function downloadRegion(
   let bytes = 0;
 
   const fetchOne = async (job: { source: TileSource; coord: TileCoord }) => {
-    const resp = await fetch(buildRemoteUrl(job.source, job.coord));
-    if (!resp.ok) throw new Error(`http ${resp.status}`);
-    const blob = await resp.blob();
+    // Со сроком: тайлы качают в дороге, где связь то есть, то нет. Повисший
+    // запрос занял бы одного из шести рабочих до конца времён, а загрузка
+    // области — остановилась бы на 97% без единой ошибки.
+    const blob = await fetchBlobWithDeadline(buildRemoteUrl(job.source, job.coord));
     bytes += blob.size;
     if (native) await writeTileNative(job.source.id, job.coord, await blobToBase64(blob));
     else await writeTileWeb(job.source.id, job.coord, blob);

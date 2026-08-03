@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { splashScreenPlugin } from "@/lib/native/plugins";
 
 /**
  * Тайминги брендового splash нативной оболочки — общие для всех приложений,
@@ -26,6 +27,34 @@ const VISIBLE_MS = 1300;
 export const SPLASH_FADE_MS = 500;
 /** Подстраховка: продолжаем, даже если логотип не загрузился (нет сети/кеша). */
 const SAFETY_MS = 3000;
+/** Пауза между попытками достучаться до плагина splash. */
+const RETRY_MS = 4000;
+const ATTEMPTS = 5;
+
+/**
+ * Прячет нативный splash, не сдаваясь после первой неудачи.
+ *
+ * Кусок бандла с плагином приезжает по сети, и если связь пропала посреди
+ * загрузки страницы, обычный `import()` не отваливается, а висит — нативный
+ * splash остаётся поверх приложения навсегда, и человек видит заставку вместо
+ * стрелки домой. Запасного пути тут нет: спрятать заставку умеет только сам
+ * плагин, поэтому единственное осмысленное поведение по истечении срока —
+ * спросить ещё раз. Запрос за куском продолжает жить (см. offline/deadline),
+ * так что доехавший позже плагин ответит следующей попытке мгновенно.
+ */
+async function hideNativeSplash(abandoned: () => boolean): Promise<void> {
+  for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
+    if (abandoned()) return;
+    try {
+      const { SplashScreen } = await splashScreenPlugin();
+      await SplashScreen.hide({ fadeOutDuration: 250 });
+      return;
+    } catch {
+      /* нативной части нет либо кусок ещё в пути — ждём и пробуем снова */
+    }
+    await new Promise((done) => setTimeout(done, RETRY_MS));
+  }
+}
 
 export function useSplashSequence(active: boolean) {
   const [gone, setGone] = useState(shownOnce);
@@ -41,12 +70,12 @@ export function useSplashSequence(active: boolean) {
 
   useEffect(() => {
     if (!ready) return;
-    import("@capacitor/splash-screen")
-      .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 250 }))
-      .catch(() => {});
+    let abandoned = false;
+    void hideNativeSplash(() => abandoned);
     const fadeTimer = setTimeout(() => setFading(true), VISIBLE_MS);
     const goneTimer = setTimeout(() => setGone(true), VISIBLE_MS + SPLASH_FADE_MS);
     return () => {
+      abandoned = true;
       clearTimeout(fadeTimer);
       clearTimeout(goneTimer);
     };

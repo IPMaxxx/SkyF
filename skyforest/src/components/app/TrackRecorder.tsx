@@ -15,6 +15,7 @@
 
 import { useEffect } from "react";
 import { isNativeApp } from "@/lib/native/capacitor";
+import { appPlugin, preloadOfflinePlugins } from "@/lib/native/plugins";
 import {
   captureTrackPoint,
   syncTrackWatch,
@@ -40,6 +41,11 @@ export function TrackRecorder({ notice }: { notice?: BackgroundNotice }) {
   }, [title, message]);
 
   useEffect(() => {
+    // Куски бандла с нативными плагинами тянем сразу, пока связь ещё есть.
+    // Рекордер смонтирован на каждом экране, то есть это самый ранний момент
+    // из возможных — а в лесу эти же куски уже не приедут (offline/deadline).
+    preloadOfflinePlugins();
+
     // Поход мог быть начат в офлайн-экране (Preferences). Если сеть появилась и
     // приложение открылось — переносим его в localStorage сайта, чтобы запись
     // пути и точка входа продолжились без потери.
@@ -65,14 +71,19 @@ export function TrackRecorder({ notice }: { notice?: BackgroundNotice }) {
 
     let removeListener: (() => void) | undefined;
     if (isNativeApp()) {
-      void import("@capacitor/app").then(({ App }) =>
-        App.addListener("appStateChange", ({ isActive }) => {
-          if (isActive) void captureTrackPoint();
-          syncTrackWatch(isActive);
-        }).then((sub) => {
-          removeListener = () => void sub.remove();
-        }),
-      );
+      void appPlugin()
+        .then(({ App }) =>
+          App.addListener("appStateChange", ({ isActive }) => {
+            if (isActive) void captureTrackPoint();
+            syncTrackWatch(isActive);
+          }).then((sub) => {
+            removeListener = () => void sub.remove();
+          }),
+        )
+        // Без подписки на жизненный цикл остаётся visibilitychange выше: он
+        // ловит те же переходы в большинстве случаев, поэтому запись из-за
+        // недоехавшего куска бандла не встаёт.
+        .catch(() => {});
     }
 
     return () => {

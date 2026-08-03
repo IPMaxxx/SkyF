@@ -15,6 +15,13 @@ import { createWatchController } from "../src/lib/track/watchController.ts";
 import { watchMessage } from "../src/lib/track/watchMessage.ts";
 import { recordingStatusView } from "../src/lib/track/recordingStatusView.ts";
 import { confirmServiceStart } from "../src/lib/track/serviceStartup.ts";
+import {
+  CHUNK_TIMEOUT_MS,
+  chunkArrived,
+  forgetChunks,
+  loadChunk,
+  withTimeout,
+} from "../src/lib/offline/deadline.ts";
 
 let failures = 0;
 
@@ -571,6 +578,138 @@ async function scenarioLostAnswer() {
   check("и запись признана идущей", instant.running, true);
 }
 
+/**
+ * Кусок бандла не приезжает.
+ *
+ * Оболочка грузит веб с сайта, поэтому `import()` за ещё не скачанным куском —
+ * это сетевой запрос. Без связи он не отваливается с ошибкой, а просто никогда
+ * не завершается: ни исключения, ни лога, и весь код после `await` не
+ * исполняется. В лесу связи нет по определению, то есть это не редкий случай.
+ *
+ * Проверяем ровно одно свойство: вечное ожидание обязано кончаться названной
+ * причиной. Сроки здесь маленькие — суть не в числе, а в том, что исход есть.
+ */
+async function scenarioMissingChunk() {
+  console.log("\n— кусок бандла не приезжает —");
+  forgetChunks();
+
+  const never = () => new Promise(() => {});
+  const failure = await loadChunk("@capacitor/geolocation", never, 30).then(
+    () => null,
+    (err) => err,
+  );
+  check("не дождались — отказ, а не зависание", failure?.code, "TIMEOUT");
+  check(
+    "и в отказе названо, чего именно не дождались",
+    failure?.message?.includes("import @capacitor/geolocation"),
+    true,
+  );
+  check("срок по умолчанию конечен", Number.isFinite(CHUNK_TIMEOUT_MS), true);
+
+  // Запрос за куском продолжает жить: связь могла вернуться. Повтор обязан
+  // ответить мгновенно, а не начать всё сначала — иначе после единственной
+  // осечки приложение осталось бы без плагина до перезапуска, а перезапуск в
+  // лесу невозможен: страница грузится с сайта.
+  forgetChunks();
+  let calls = 0;
+  let land;
+  const slow = () => {
+    calls += 1;
+    return new Promise((resolve) => {
+      land = () => resolve({ Geolocation: "plugin" });
+    });
+  };
+  await loadChunk("slow", slow, 20).catch(() => {});
+  land();
+  const late = await loadChunk("slow", slow, 20);
+  check("доехавший позже кусок отдан повтору", late, { Geolocation: "plugin" });
+  check("и запрос за ним был один, а не два", calls, 1);
+
+  await loadChunk("slow", slow, 20);
+  check("приехавший кусок больше не запрашивают", calls, 1);
+  check("и это видно снаружи", chunkArrived("slow"), true);
+
+  // Отказ — другое дело: он мог быть случайным, и запоминать его нельзя.
+  forgetChunks();
+  let tries = 0;
+  const broken = () => {
+    tries += 1;
+    return Promise.reject(new Error("chunk load failed"));
+  };
+  await loadChunk("broken", broken, 20).catch(() => {});
+  await loadChunk("broken", broken, 20).catch(() => {});
+  check("отказ не запомнен — пробуем снова", tries, 2);
+}
+
+/**
+ * Что из этого следует на офлайн-путях WayBack: у каждого есть исход.
+ *
+ * Проверяются три места, где вечное ожидание стоило бы похода: запись точек,
+ * завершение похода и снятие нативного splash. Все три смоделированы так же,
+ * как устроены в приложении, — заглушкой подменена только сеть.
+ */
+async function scenarioOfflinePaths() {
+  console.log("\n— офлайн-пути: у ожидания всегда есть исход —");
+  forgetChunks();
+
+  // 1. Обычный watch. Плагина не дождались — остаётся браузерный API, и
+  // запись на переднем плане идёт как ни в чём не бывало.
+  let usedBrowserApi = false;
+  const plain = async () => {
+    try {
+      await loadChunk("@capacitor/geolocation", () => new Promise(() => {}), 30);
+      return () => {};
+    } catch {
+      usedBrowserApi = true;
+      return () => {};
+    }
+  };
+  const c = createWatchController({ plain, background: async () => null });
+  c.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+  await c.settled();
+  check("кусок с плагином не приехал — перешли на браузерный watch", usedBrowserApi, true);
+  check("и запись идёт", c.running("plain"), true);
+  c.stopAll();
+
+  // 2. Завершение похода. Сервер молчит — трек обязан сохраниться локально, а
+  // не оставить человека со спиннером на кнопке «завершить».
+  const saveFinished = async () => {
+    try {
+      await withTimeout(new Promise(() => {}), 30, "supabase.auth.getUser");
+      return "remote";
+    } catch {
+      return "local";
+    }
+  };
+  check("сервер молчит — поход завершён и сохранён на устройстве", await saveFinished(), "local");
+
+  // 3. Нативный splash. Запасного пути нет: спрятать заставку умеет только
+  // плагин, поэтому единственное осмысленное поведение — спросить ещё раз.
+  forgetChunks();
+  let attempts = 0;
+  let arrive;
+  const splash = () => {
+    attempts += 1;
+    return new Promise((resolve) => {
+      arrive = () => resolve({ SplashScreen: { hide: async () => "hidden" } });
+    });
+  };
+  let hidden = null;
+  for (let i = 0; i < 3 && !hidden; i += 1) {
+    try {
+      const { SplashScreen } = await loadChunk("@capacitor/splash-screen", splash, 20);
+      hidden = await SplashScreen.hide();
+    } catch {
+      // Связь вернулась между попытками — ровно то, ради чего повтор и нужен.
+      if (i === 0) arrive();
+    }
+  }
+  check("splash спрятан со второй попытки, а не висит вечно", hidden, "hidden");
+  check("и запрос за куском был один", attempts, 1);
+}
+
+await scenarioMissingChunk();
+await scenarioOfflinePaths();
 await scenarioLostAnswer();
 await scenarioOldLogic();
 await scenarioMessages();

@@ -23,6 +23,20 @@
 
 import { isNativeApp } from "@/lib/native/capacitor";
 import { trackLog } from "@/lib/track/trackLog";
+import {
+  CHUNK_TIMEOUT_MS,
+  loadChunk,
+  withTimeout,
+  type NativeCallFailure,
+} from "@/lib/offline/deadline";
+
+/**
+ * Срок и его обёртка переехали в offline/deadline: та же беда — вечное
+ * ожидание — обнаружилась не только у моста, но и у карты, у истории походов
+ * и у гейта подписки. Реэкспорт оставлен, чтобы не переписывать вызывающих.
+ */
+export { withTimeout };
+export type { NativeCallFailure };
 
 /**
  * Сколько ждём ответа моста, прежде чем считать вызов провалившимся.
@@ -48,51 +62,12 @@ const DETECT_TIMEOUT_MS = 4_000;
  */
 const START_TIMEOUT_MS = 8_000;
 const CALL_TIMEOUT_MS = 4_000;
-/**
- * Загрузка модуля плагина — это сетевой запрос за куском бандла, и он тоже
- * обязан иметь срок. Без него «включаем запись…» висело на телефоне, где
- * связи нет: import() за недостающим куском не отваливается по ошибке, он
- * просто не завершается, и сторож ловил уже пустоту через двадцать секунд.
- * В лесу связи нет по определению — то есть это не редкий случай, а обычный.
- */
-const IMPORT_TIMEOUT_MS = 5_000;
-
-export interface NativeCallFailure {
-  code: string;
-  message: string;
-}
-
-/**
- * Ограничивает ожидание нативного вызова. Отказ по времени выглядит как
- * обычный отказ плагина, поэтому вызывающей стороне не нужен отдельный путь.
- */
-export function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      const failure: NativeCallFailure = {
-        code: "TIMEOUT",
-        message: `${what} did not answer in ${ms} ms`,
-      };
-      reject(failure);
-    }, ms);
-    work.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
 
 export const FOREGROUND_SERVICE_TIMEOUTS = {
   detect: DETECT_TIMEOUT_MS,
   start: START_TIMEOUT_MS,
   call: CALL_TIMEOUT_MS,
-  load: IMPORT_TIMEOUT_MS,
+  load: CHUNK_TIMEOUT_MS,
 };
 
 export interface ForegroundServiceStatus {
@@ -148,11 +123,7 @@ async function load(): Promise<ForegroundServicePlugin | null> {
   if (!isNativeApp()) return null;
   const began = Date.now();
   try {
-    const { registerPlugin } = await withTimeout(
-      import("@capacitor/core"),
-      IMPORT_TIMEOUT_MS,
-      "import @capacitor/core",
-    );
+    const { registerPlugin } = await loadChunk("@capacitor/core", () => import("@capacitor/core"));
     const api = registerPlugin<ForegroundServicePlugin>("WayBackTrack");
     // Прокси создаётся всегда, поэтому отсутствие нативной части видно только
     // по вызову: без неё мост отвечает UNIMPLEMENTED. С таймаутом, потому что

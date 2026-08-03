@@ -16,6 +16,7 @@
  */
 
 import { isNativeApp } from "./native/capacitor";
+import { preferencesPlugin } from "./native/plugins";
 
 export {
   haversineM,
@@ -71,12 +72,17 @@ function notifyStateChange() {
  * Зеркалирует активный трек в нативное хранилище (Preferences), доступное
  * офлайн-экрану с другого origin. Fire-and-forget: не блокирует запись в
  * localStorage и никогда не бросает.
+ *
+ * Кусок бандла с плагином берётся через preferencesPlugin, то есть со сроком.
+ * Здесь это не про зависание интерфейса (никто не ждёт), а про то, что зовут
+ * зеркало на каждой точке пути: без срока за поход накопились бы сотни
+ * незавершённых обещаний, а офлайн-экран так и остался бы со старым треком.
  */
 function mirrorToNative(track: ActiveTrack | null) {
   if (!isNativeApp()) return;
   void (async () => {
     try {
-      const { Preferences } = await import("@capacitor/preferences");
+      const { Preferences } = await preferencesPlugin();
       if (track) await Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(track) });
       else await Preferences.remove({ key: STORAGE_KEY });
     } catch {
@@ -120,7 +126,7 @@ export async function hydrateTrackFromNative(): Promise<ActiveTrack | null> {
   if (typeof window === "undefined" || !isNativeApp()) return null;
   if (loadTrack()) return null;
   try {
-    const { Preferences } = await import("@capacitor/preferences");
+    const { Preferences } = await preferencesPlugin();
     const { value } = await Preferences.get({ key: STORAGE_KEY });
     if (!value) return null;
     const parsed = JSON.parse(value) as ActiveTrack;
