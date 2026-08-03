@@ -118,6 +118,25 @@ export default {
     bgNotice: {
       title: "Recording your way back",
       message: "Keeps the trail to your entry point while the screen is off",
+      /**
+       * Уведомления выключены: запись идёт, но человек её не видит. Android
+       * второй раз диалог не покажет, поэтому единственный выход — настройки.
+       */
+      blockedTitle: "Notifications for WayBack are off",
+      blockedBody: "The walk is being recorded, but you won't see it on the lock screen.",
+      blockedAction: "Turn on",
+    },
+    /**
+     * Состояние записи словами. Молчать о том, что путь не пишется, нельзя:
+     * человек узнаёт об этом, только когда путь уже понадобился, — а именно
+     * так поломка записи и доехала однажды до всех установленных приложений.
+     */
+    recordingIssue: {
+      offTitle: "The trail is not being recorded",
+      offBody: "Check that location is on, then start the walk again.",
+      foregroundOnlyTitle: "Recording only while the app is open",
+      foregroundOnlyBody: "With the screen off the trail will have gaps.",
+      updateBody: "Update WayBack so the trail keeps going with the screen off.",
     },
     offlineMapTitle: "Offline map",
     offlineMapAround:

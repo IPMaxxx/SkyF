@@ -1,12 +1,12 @@
 /**
  * Глобальный сбор точек активного похода («Путь назад»).
  *
- * Источник точек — непрерывный watch, и он бывает двух видов. Если оболочка
- * умеет фоновую запись (см. track/backgroundWatch), watch не выключается на
- * свёрнутом приложении и погасшем экране: на Android его держит служба
- * переднего плана, на iOS — фоновый режим геолокации. Если не умеет — остаётся
- * прежнее поведение: watch честно глохнет при уходе в фон, а разрывы
- * дорисовываются пунктиром на карте.
+ * Источников точек два, и они складываются, а не заменяют друг друга (почему
+ * именно так — в track/watchController). Обычный watch работает, пока идёт
+ * поход и приложение открыто; в фоне WebView координат не получает, поэтому там
+ * он снимается. Фоновая служба (см. track/backgroundWatch) добавляется, если
+ * оболочка её умеет, и пишет с погашенным экраном; если не умеет — остаётся
+ * прежнее поведение, а разрывы дорисовываются пунктиром на карте.
  *
  * Оба вида должны сосуществовать: веб приезжает в оболочку с сайта, поэтому
  * этот же код работает и в приложениях, собранных без нативной части.
@@ -24,11 +24,11 @@ import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
 import {
-  backgroundWatchAvailable,
   startBackgroundWatch,
-  stopBackgroundWatch,
+  type BackgroundIssue,
   type BackgroundNotice,
 } from "@/lib/track/backgroundWatch";
+import { createWatchController } from "@/lib/track/watchController";
 
 /** Интервал страховочного одиночного замера при активном походе. */
 export const TRACK_CAPTURE_INTERVAL_MS = 90_000;
@@ -87,24 +87,26 @@ export async function captureTrackPoint(): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Непрерывный watch: фоновый, если оболочка умеет, иначе обычный       */
+/* Непрерывный watch: обычный на переднем плане плюс фоновый, если есть  */
 /* ------------------------------------------------------------------ */
 
-let stopWatch: (() => void) | null = null;
-let watchWanted = false;
-let watchIsBackground = false;
-let appForeground = true;
 let notice: BackgroundNotice | null = null;
+let backgroundIssue: BackgroundIssue | null = null;
 
-/**
- * Текст постоянного уведомления Android, без которого фоновую запись включать
- * нельзя. Приложение задаёт его из своего словаря; пока текста нет, фоновый
- * режим не запускается и watch ведёт себя по-старому.
- */
-export function setBackgroundNotice(next: BackgroundNotice): void {
-  notice = next;
-  scheduleReconcile();
+/** Что сейчас пишет точки и что мешает фону. */
+export interface TrackWatchStatus {
+  /** Идёт ли запись хоть каким-то источником. */
+  recording: boolean;
+  /** Обычный watch: только пока приложение открыто. */
+  plain: boolean;
+  /** Фоновая служба: пишет и с погашенным экраном. */
+  background: boolean;
+  /** Почему фона нет; null — вопросов нет либо он ещё не пробовал стартовать. */
+  backgroundIssue: BackgroundIssue | null;
 }
+
+/** Событие window после каждой смены состояния источников записи. */
+export const TRACK_WATCH_STATUS_EVENT = "sf:track-watch-status";
 
 function onWatchPosition(lat: number, lng: number, accuracy: number | null | undefined) {
   if (!loadTrack()) {
@@ -116,13 +118,7 @@ function onWatchPosition(lat: number, lng: number, accuracy: number | null | und
   recordPosition({ lat, lng });
 }
 
-function teardownWatch(): void {
-  stopWatch?.();
-  stopWatch = null;
-  watchIsBackground = false;
-}
-
-async function startForegroundWatch(): Promise<void> {
+async function startPlainWatch(): Promise<(() => void) | null> {
   if (isNativeApp()) {
     try {
       const { Geolocation } = await import("@capacitor/geolocation");
@@ -132,89 +128,84 @@ async function startForegroundWatch(): Promise<void> {
           if (pos) onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
         },
       );
-      stopWatch = () => void Geolocation.clearWatch({ id });
-      return;
+      return () => void Geolocation.clearWatch({ id });
     } catch {
       /* плагин недоступен — падаем в браузерный API ниже */
     }
   }
-  if (typeof navigator !== "undefined" && navigator.geolocation) {
-    const id = navigator.geolocation.watchPosition(
-      (pos) => onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-      () => {
-        /* временная ошибка GPS — watch продолжит сам */
-      },
-      { enableHighAccuracy: true, maximumAge: 5_000 },
-    );
-    stopWatch = () => navigator.geolocation.clearWatch(id);
-  }
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  const id = navigator.geolocation.watchPosition(
+    (pos) => onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+    () => {
+      /* временная ошибка GPS — watch продолжит сам */
+    },
+    { enableHighAccuracy: true, maximumAge: 5_000 },
+  );
+  return () => navigator.geolocation.clearWatch(id);
 }
 
-async function startBackground(): Promise<boolean> {
-  if (!notice) return false;
-  const ok = await startBackgroundWatch({
+async function startBackgroundSlot(): Promise<(() => void) | null> {
+  if (!notice) return null;
+  const stop = await startBackgroundWatch({
     notice,
     distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
     onPosition: onWatchPosition,
+    onIssue: (issue) => {
+      backgroundIssue = issue;
+      // Служба отвалилась уже после старта — контроллер должен об этом знать,
+      // иначе он будет считать её работающей и не попробует поднять снова.
+      if (issue !== "notificationsBlocked") controller.markStopped("background");
+      emitStatus();
+    },
   });
-  if (!ok) return false;
-  stopWatch = () => void stopBackgroundWatch();
-  watchIsBackground = true;
-  return true;
+  if (stop) backgroundIssue = null;
+  emitStatus();
+  return stop;
+}
+
+function emitStatus(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<TrackWatchStatus>(TRACK_WATCH_STATUS_EVENT, {
+      detail: trackWatchStatus(),
+    }),
+  );
+}
+
+const controller = createWatchController(
+  { plain: startPlainWatch, background: startBackgroundSlot },
+  emitStatus,
+);
+
+export function trackWatchStatus(): TrackWatchStatus {
+  const plain = controller.running("plain");
+  const background = controller.running("background");
+  return { recording: plain || background, plain, background, backgroundIssue };
+}
+
+function sync(patch?: { appForeground?: boolean; backgroundAllowed?: boolean }): void {
+  controller.update({ hasTrack: !!loadTrack(), ...patch });
 }
 
 /**
- * Приводит watch к нужному состоянию. Фоновая запись нужна, пока идёт поход, —
- * независимо от того, на экране приложение или нет. Обычный watch включается
- * только на переднем плане: в фоне WebView координат не получает, и держать его
- * там незачем.
+ * Текст постоянного уведомления Android, без которого фоновую запись включать
+ * нельзя. Приложение задаёт его из своего словаря; пока текста нет, работает
+ * только обычный watch и запись останавливается вместе с приложением.
  */
-async function reconcileWatch(): Promise<void> {
-  const hasTrack = !!loadTrack();
-  const background = hasTrack && notice != null && (await backgroundWatchAvailable());
-  watchWanted = hasTrack && (appForeground || background);
-
-  if (!watchWanted) {
-    teardownWatch();
-    return;
-  }
-  // Источник уже поднят и он же нужен — не трогаем: перезапуск фоновой службы
-  // роняет постоянное уведомление и на секунду теряет координаты.
-  if (stopWatch && watchIsBackground === background) return;
-  teardownWatch();
-
-  if (background && (await startBackground())) {
-    if (!watchWanted) teardownWatch();
-    return;
-  }
-  // Фоновый слой не поднялся (нет плагина, отказ в разрешении, выключена
-  // геолокация). Обычный watch в фоне координат не даёт, поэтому там его и не
-  // заводим; следующее событие попробует поднять фоновый снова.
-  if (!appForeground) return;
-  await startForegroundWatch();
-  // Пока поднимали watch, поход могли завершить или приложение ушло в фон.
-  if (stopWatch && !watchWanted) teardownWatch();
-}
-
-/**
- * Сверки выполняются по очереди: события старта похода, смены видимости и
- * появления текста уведомления приходят пачками, а внутри есть await — без
- * очереди два прохода успевают поднять по watch каждый.
- */
-let reconciling: Promise<void> = Promise.resolve();
-
-function scheduleReconcile(): void {
-  reconciling = reconciling.then(reconcileWatch).catch(() => {
-    /* сверку повторит следующее событие */
-  });
+export function setBackgroundNotice(next: BackgroundNotice): void {
+  notice = next;
+  sync({ backgroundAllowed: true });
 }
 
 export function stopTrackWatch(): void {
-  watchWanted = false;
-  teardownWatch();
+  controller.stopAll();
 }
 
 export function syncTrackWatch(appActive: boolean): void {
-  appForeground = appActive;
-  scheduleReconcile();
+  sync({ appForeground: appActive });
+}
+
+/** Только для проверок: дождаться, пока сверки источников закончатся. */
+export function trackWatchSettled(): Promise<void> {
+  return controller.settled();
 }

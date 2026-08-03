@@ -19,6 +19,12 @@
  * колбэком через мост, а нативного буфера у него нет. Значит запись держится на
  * том, что приложение с активным фоновым режимом система не усыпляет; страховка
  * на возвращении в приложение (одиночный замер в trackRecorder) остаётся.
+ *
+ * Главная ловушка этого плагина: `start()` объявлен колбэчным методом. Его
+ * промис отдаёт идентификатор колбэка сразу и НЕ отклоняется, когда служба не
+ * поднялась, — отказ приезжает вторым аргументом колбэка. «Await прошёл» здесь
+ * не значит «запись идёт», и всё, что об этом судит, обязано смотреть на
+ * колбэк.
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
@@ -29,17 +35,27 @@ export interface BackgroundNotice {
   message: string;
 }
 
+/** Почему фоновая запись не идёт — в терминах, годных для текста человеку. */
+export type BackgroundIssue =
+  | "unsupported"
+  | "notificationsBlocked"
+  | "locationOff"
+  | "failed";
+
 export interface BackgroundWatchOptions {
   notice: BackgroundNotice;
   /** Сдвиг, после которого плагин отдаёт новую координату (метры). */
   distanceFilter: number;
   onPosition: (lat: number, lng: number, accuracy: number | null) => void;
+  /** Служба не поднялась или отвалилась уже после старта. */
+  onIssue: (issue: BackgroundIssue) => void;
 }
 
 type BackgroundGeolocationPlugin =
   typeof import("@capgo/background-geolocation").BackgroundGeolocation;
 
-let pluginPromise: Promise<BackgroundGeolocationPlugin | null> | null = null;
+let cachedPlugin: BackgroundGeolocationPlugin | null = null;
+let pendingPlugin: Promise<BackgroundGeolocationPlugin | null> | null = null;
 
 /**
  * Прокси плагина создаётся всегда, поэтому отсутствие нативной части видно
@@ -56,51 +72,99 @@ async function loadPlugin(): Promise<BackgroundGeolocationPlugin | null> {
   }
 }
 
+/**
+ * Удачную находку кешируем, неудачу — нет. Нативная часть либо есть в
+ * бинарнике, либо нет, но провалиться проверка может и по случайности (мост
+ * ещё не поднят на самом первом обращении), а запомненный навсегда отказ
+ * означал бы поход без фоновой записи до перезапуска приложения.
+ */
 function plugin(): Promise<BackgroundGeolocationPlugin | null> {
-  pluginPromise ??= loadPlugin();
-  return pluginPromise;
-}
-
-/** Есть ли в этой сборке нативная часть фоновой записи. */
-export async function backgroundWatchAvailable(): Promise<boolean> {
-  return (await plugin()) != null;
+  if (cachedPlugin) return Promise.resolve(cachedPlugin);
+  pendingPlugin ??= loadPlugin().then((api) => {
+    pendingPlugin = null;
+    if (api) cachedPlugin = api;
+    return api;
+  });
+  return pendingPlugin;
 }
 
 /**
+ * Событие window: запись идёт, а постоянное уведомление человеку не
+ * показывается. Слушает его приложение — только оно знает свои тексты.
+ */
+export const BACKGROUND_NOTICE_BLOCKED_EVENT = "sf:bg-notice-blocked";
+
+/**
  * Спрашивает разрешение на уведомления, пока его ещё можно спросить.
+ * Возвращает false, если уведомления запрещены.
  *
  * Сам плагин просит его только по пути, где не выдана геолокация, а в WayBack
  * она выдана задолго до похода (её просит карта на главном экране). Без этого
  * разрешения служба переднего плана на Android 13+ работает, но её уведомление
- * человеку не показывается — то есть запись идёт молча, без объяснения.
+ * не показывается нигде — ни в шторке, ни на экране блокировки. Незаметная
+ * запись геолокации — ровно то, чего требует не допускать политика Google, да
+ * и человеку так нельзя. Второй раз система диалог не покажет, поэтому о таком
+ * состоянии приложение обязано сказать вслух.
  */
 async function ensureNotificationPermission(
   api: BackgroundGeolocationPlugin,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const status = await api.checkPermissions();
-    // На iOS поля нет; «denied» второй раз спрашивать бессмысленно — система
-    // диалог не покажет.
-    if (!status.notification || status.notification === "granted") return;
-    if (status.notification === "denied") return;
-    await api.requestPermissions({ permissions: ["notification"] });
+    // На iOS поля нет вовсе: там постоянного уведомления не существует, роль
+    // видимой отметки играет синий индикатор геолокации.
+    if (!status.notification || status.notification === "granted") return true;
+    if (status.notification !== "denied") {
+      const next = await api.requestPermissions({ permissions: ["notification"] });
+      if (next.notification === "granted") return true;
+    }
+    window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
+    return false;
   } catch {
-    /* отказ или старая версия плагина: запись важнее уведомления */
+    /* старая версия плагина без этих методов: запись важнее уведомления */
+    return true;
   }
 }
 
 /**
- * Включает фоновую запись. Возвращает false, если нативной части нет или плагин
- * отказался стартовать — тогда вызывающая сторона остаётся на обычном watch.
+ * Открывает системные настройки приложения — единственный путь вернуть
+ * разрешение на уведомления после отказа.
+ */
+export async function openAppSettings(): Promise<void> {
+  const api = await plugin();
+  if (!api) return;
+  try {
+    await api.openSettings();
+  } catch {
+    /* нативной части нет — открывать нечего */
+  }
+}
+
+function issueFromError(error: { code?: string; message?: string } | undefined): BackgroundIssue {
+  const text = `${error?.code ?? ""} ${error?.message ?? ""}`;
+  if (/NOT_AUTHORIZED|disabled/i.test(text)) return "locationOff";
+  return "failed";
+}
+
+/**
+ * Включает фоновую запись. Возвращает функцию остановки либо null, если
+ * нативной части нет или служба не поднялась, — вызывающая сторона обязана
+ * остаться при обычном watch.
  */
 export async function startBackgroundWatch(
   options: BackgroundWatchOptions,
-): Promise<boolean> {
+): Promise<(() => void) | null> {
   const api = await plugin();
-  if (!api) return false;
-  await ensureNotificationPermission(api);
+  if (!api) {
+    options.onIssue("unsupported");
+    return null;
+  }
+  const notificationsOk = await ensureNotificationPermission(api);
 
-  const run = () =>
+  let stopped = false;
+  let retried = false;
+
+  const run = (): Promise<unknown> =>
     api.start(
       {
         backgroundTitle: options.notice.title,
@@ -110,27 +174,50 @@ export async function startBackgroundWatch(
         stale: false,
       },
       (position, error) => {
-        if (error || !position) return;
+        if (stopped) return;
+        if (error) {
+          handleError(error);
+          return;
+        }
+        if (!position) return;
         options.onPosition(position.latitude, position.longitude, position.accuracy ?? null);
       },
     );
 
-  try {
-    await run();
-    return true;
-  } catch {
+  function handleError(error: { code?: string; message?: string }): void {
     // Служба переднего плана живёт вне JS-контекста, поэтому после перезагрузки
     // страницы посреди похода она ещё пишет, а её колбэк потерян вместе с
     // прежним контекстом — плагин отвечает ALREADY_STARTED. Поднимаем заново,
     // иначе до перезапуска приложения точки в фоне будут уходить в никуда.
-    try {
-      await api.stop();
-      await run();
-      return true;
-    } catch {
-      return false;
+    if (!retried && /ALREADY_STARTED/i.test(`${error.code ?? ""} ${error.message ?? ""}`)) {
+      retried = true;
+      void (async () => {
+        try {
+          await api!.stop();
+          await run();
+        } catch {
+          options.onIssue("failed");
+        }
+      })();
+      return;
     }
+    options.onIssue(issueFromError(error));
   }
+
+  try {
+    await run();
+  } catch {
+    // Сюда попадают только отказы самого моста; отказ службы приходит колбэком.
+    options.onIssue("failed");
+    return null;
+  }
+
+  if (!notificationsOk) options.onIssue("notificationsBlocked");
+
+  return () => {
+    stopped = true;
+    void stopBackgroundWatch();
+  };
 }
 
 export async function stopBackgroundWatch(): Promise<void> {
