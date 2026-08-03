@@ -46,7 +46,7 @@ export default {
     pickOnMap: "Set entry point on the map",
     howTitle: "How it works",
     how1: "Tap at the forest edge — we drop an anchor by GPS",
-    how2: "Points as you walk — recording keeps going with the screen off",
+    how2: "Points are dropped as you walk — battery-friendly",
     how3: "Arrow and distance lead you back — no internet needed",
     localOnly: "The walk is recorded on this device; finished walks are saved to your account.",
     mapLocating: "finding your position…",
@@ -105,7 +105,11 @@ export default {
     layerTrails: "Trails",
     layerSatellite: "Satellite",
     expandMap: "Open the map full screen",
-    gapHint: "dashed — stretches with no recording (no satellites in view)",
+    /**
+     * Причину разрыва не называем: карта её не знает, а в сборках без фоновой
+     * записи и с ней она разная (фон против отсутствия спутников).
+     */
+    gapHint: "dashed — stretches with no recording",
     /**
      * Постоянное уведомление Android, пока идёт запись. Android показывает его
      * всё время похода, поэтому текст должен объяснять, почему оно тут, и не
