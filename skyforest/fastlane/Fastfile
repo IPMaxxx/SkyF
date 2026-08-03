@@ -7,6 +7,14 @@
 # Сборка приложения — Capacitor: WebView открывает https://skyforest.ai,
 # поэтому нативную обёртку достаточно собрать и подписать.
 
+# xcpretty разбирает вывод xcodebuild в кодировке текущей локали. Если fastlane
+# запущен из окружения без локали (LANG пуст или "C"), Ruby считает поток
+# US-ASCII и падает на первом не-ASCII байте: "invalid byte sequence in
+# US-ASCII" — а не-ASCII в логах есть всегда (пути, имена, тексты Apple).
+# Ставим UTF-8 здесь, чтобы лейн работал одинаково из любой оболочки.
+ENV["LANG"] = "en_US.UTF-8" unless ENV["LANG"].to_s.include?("UTF-8")
+ENV["LC_ALL"] = "en_US.UTF-8" unless ENV["LC_ALL"].to_s.include?("UTF-8")
+
 APP_ID = "ai.skyforest.app"
 APP_NAME = "SkyForest"
 ASC_KEY = "fastlane/asc_api_key.json"
@@ -263,7 +271,9 @@ platform :android do
   # ---------- Флейворы ----------
   # Требуют вручную созданных приложений в Play Console (API создания нет)
   # и доступа сервис-аккаунта к ним. AAB собирать заранее:
-  #   cd apps/<dir>/android && ./gradlew bundleRelease
+  #   cd apps/<dir> && npm run android:release
+  # Обёртка scripts/android-release.sh подставляет JDK 21: на 17 из PATH Gradle
+  # не соберётся. Скрипт один и тот же для всех трёх оболочек.
 
   desc "Загрузить Mushroom Checker во внутренний трек Google Play"
   lane :checker_internal do

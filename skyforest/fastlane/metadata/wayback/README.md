@@ -67,7 +67,7 @@ Release notes в Play живут не в листинге, а у релиза в
 | Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
 | Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
 | Policy → App content → **Government apps** | «No, it is not a government app» |
-| Policy → App content → **Advertising ID** | ответ придётся давать по факту, а не «No»: в слитом манифесте `com.google.android.gms.permission.AD_ID` **есть** — его тянет `@capgo/capacitor-social-login` через Facebook SDK и play-services. Так было уже в 1.0 (versionCode 6), это не следствие фоновой записи. Либо отвечать «Yes», либо в следующей сборке вырезать разрешение (`<uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />` в `apps/wayback/android/app/src/main/AndroidManifest.xml`) и тогда честно отвечать «No» |
+| Policy → App content → **Advertising ID** | «No»: с versionCode 7 разрешения `com.google.android.gms.permission.AD_ID` в бандле нет — оно вырезано `tools:node="remove"` в `apps/wayback/android/app/src/main/AndroidManifest.xml` (приезжало из facebook-core, который тянет за собой `@capgo/capacitor-social-login`; рекламы у нас нет, Facebook-провайдер не инициализируется). В 1.0 разрешение было, поэтому артефакты versionCode 3–6 ему противоречат: пока они активны хоть в одном треке, Play будет ругаться на ответ «No» — их надо перекрыть версией 7 или деактивировать в App Bundle Explorer |
 | Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
 
 **App access.** Приложение без подписки не открывается с первого экрана, поэтому
@@ -112,10 +112,12 @@ policy, а WayBack под них не проектировался.
   пользователя (`src/lib/trackHistory.ts`, таблица `tracks` с RLS «только
   свои»). Плагин умеет POST-ить точки на URL — этой возможностью мы не
   пользуемся, и в review-notes про это сказано прямо;
-- **прежней причины пунктира.** Разрывы на карте теперь объясняются
-  отсутствием спутников, а не уходом в фон: `gapHint` в
-  `src/i18n/messages/wayback.{en,ru}.ts` переписан, листинг должен говорить то
-  же самое.
+- **обещаний про пунктир.** Легенда в приложении (`gapHint` в
+  `src/i18n/messages/wayback.{en,ru}.ts`) намеренно молчит о причине разрыва —
+  «участки без записи», и всё. Причина зависит от версии: в 1.0, которая ещё
+  стоит у людей, пунктир значит уход в фон, в 1.1 — потерю спутников. Пока в
+  проде обе, тексты сторов не должны толковать пунктир вообще, иначе одна из
+  версий будет им противоречить.
 
 Отдельный подвох: нативной части плагина нет в оболочках, собранных до 1.1, —
 код это переживает (`backgroundWatchAvailable` вернёт false, запись останется
