@@ -36,6 +36,7 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import { trackLog } from "@/lib/track/trackLog";
 import {
   foregroundService,
   FOREGROUND_SERVICE_TIMEOUTS,
@@ -156,6 +157,40 @@ async function ensureNotificationPermission(
 }
 
 /**
+ * Что о себе говорит нативная часть: работает ли служба прямо сейчас и какие
+ * разрешения выданы.
+ *
+ * Спрашивать её напрямую нужно потому, что состояние записи нельзя держать
+ * только в памяти JS: при погашенном экране WebView замораживается, а при
+ * нехватке памяти выгружается, тогда как служба продолжает работать. После
+ * пробуждения истина — у службы, а не у наших переменных.
+ */
+export async function backgroundWatchState(): Promise<{
+  running: boolean;
+  location: boolean;
+  precise: boolean;
+  notifications: boolean;
+} | null> {
+  const service = await foregroundService();
+  if (!service) return null;
+  try {
+    const status = await withTimeout(
+      service.status(),
+      FOREGROUND_SERVICE_TIMEOUTS.call,
+      "WayBackTrack.status",
+    );
+    return {
+      running: status.running,
+      location: status.location,
+      precise: status.precise,
+      notifications: status.notifications,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Открывает системные настройки приложения — единственный путь вернуть
  * разрешение на уведомления после отказа.
  */
@@ -213,6 +248,7 @@ export async function startBackgroundWatch(
   options: BackgroundWatchOptions,
 ): Promise<(() => void) | null> {
   const service = await foregroundService();
+  trackLog("bg.impl", service ? "WayBackTrack" : "capgo/plugin");
   if (service) return startWithService(service, options);
   return startWithPlugin(options);
 }

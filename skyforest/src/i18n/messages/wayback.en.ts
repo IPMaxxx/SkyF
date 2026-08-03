@@ -82,6 +82,18 @@ export default {
     locate: "Use my location",
   },
 
+  // Журнал записи пути: техническая выписка для нас, подписи — для человека,
+  // который её присылает.
+  diagnostics: {
+    title: "Recording log",
+    hint: "Technical notes about this hike's recording. Copy them and send them to support — that is usually enough for us to see what went wrong.",
+    empty: "Nothing recorded yet.",
+    copy: "Copy the log",
+    copied: "Log copied",
+    clear: "Clear",
+    close: "Close",
+  },
+
   active: {
     title: "On the way",
     toEntry: "to entry",

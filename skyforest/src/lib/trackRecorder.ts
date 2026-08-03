@@ -24,11 +24,14 @@ import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
 import {
+  backgroundWatchState,
   startBackgroundWatch,
+  stopBackgroundWatch,
   type BackgroundIssue,
   type BackgroundNotice,
 } from "@/lib/track/backgroundWatch";
 import { createWatchController } from "@/lib/track/watchController";
+import { trackLog } from "@/lib/track/trackLog";
 
 /** Интервал страховочного одиночного замера при активном походе. */
 export const TRACK_CAPTURE_INTERVAL_MS = 90_000;
@@ -142,7 +145,11 @@ async function startPlainWatch(): Promise<(() => void) | null> {
           if (pos) onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
         },
       );
-      return () => void Geolocation.clearWatch({ id });
+      trackLog("plain.started");
+      return () => {
+        trackLog("plain.stopped");
+        void Geolocation.clearWatch({ id });
+      };
     } catch {
       /* плагин недоступен — падаем в браузерный API ниже */
     }
@@ -161,23 +168,36 @@ async function startPlainWatch(): Promise<(() => void) | null> {
 async function startBackgroundSlot(): Promise<(() => void) | null> {
   const current = notice;
   if (!current) return null;
-  // Сбрасываем до попытки, а не после: об отказе служба сообщает уже во время
-  // старта, и сброс «после» стирал бы только что полученную причину.
-  backgroundIssue = null;
-  backgroundDetail = null;
+  // Причину прошлой попытки НЕ стираем. Стирали — и человек четыре раза подряд
+  // видел «включаем запись…» без причины: возвращение в приложение начинало
+  // новую попытку, а вместе с ней обнуляло код, который поставила прежняя.
+  // Пусть лучше висит устаревшая причина: она хотя бы что-то говорит.
   backgroundStarting = true;
+  startedAt = Date.now();
+  trackLog("bg.attempt");
   emitStatus();
   const attempt = launchBackground(current);
   try {
     const stop = await Promise.race([attempt, watchdog()]);
-    if (stop !== WATCHDOG) return stop;
+    if (stop !== WATCHDOG) {
+      if (stop) {
+        backgroundIssue = null;
+        backgroundDetail = null;
+        trackLog("bg.started");
+      } else {
+        trackLog("bg.failed", `${backgroundIssue ?? "?"} ${backgroundDetail ?? ""}`.trim());
+      }
+      return stop;
+    }
+    // Пока мы не дождались ответа, службу могли принять при возвращении в
+    // приложение — тогда запись идёт и трогать её нельзя.
+    if (controller.running("background")) {
+      trackLog("bg.late", "no answer, but the service was already adopted");
+      return null;
+    }
     // Сроки есть у каждого нативного вызова, но появиться может и новый путь,
-    // на котором мы кого-то не дождёмся. «Настраиваем запись…» без конца и без
-    // кода отказа человек уже видел — больше это состояние невозможно: попытка
-    // всегда чем-то оканчивается, и причина всегда названа.
-    backgroundIssue = "failed";
-    backgroundDetail = `WATCHDOG: background start gave no answer in ${BACKGROUND_START_WATCHDOG_MS} ms`;
-    controller.markStopped("background");
+    // на котором мы кого-то не дождёмся.
+    concludeStalled("watchdog");
     // Служба могла всё-таки подняться, просто позже — снимаем, иначе GPS ест
     // батарею ради записи, о которой JS не знает. Следующая сверка поднимет.
     void attempt.then((late) => late?.());
@@ -195,9 +215,28 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
  */
 const BACKGROUND_START_WATCHDOG_MS = 20_000;
 const WATCHDOG = Symbol("watchdog");
+/** Начало текущей попытки; нужно, чтобы судить о ней по часам, а не по таймеру. */
+let startedAt = 0;
 
 function watchdog(): Promise<typeof WATCHDOG> {
   return new Promise((resolve) => setTimeout(() => resolve(WATCHDOG), BACKGROUND_START_WATCHDOG_MS));
+}
+
+/**
+ * Попытка не ответила. Отдельной функцией, потому что судить об этом надо в двух
+ * местах: по таймеру и по часам при возвращении в приложение.
+ *
+ * Второе не подстраховка, а необходимость: при погашенном экране WebView
+ * замораживается — JS не исполняется, setTimeout не тикает, разрешение промиса
+ * ждёт в очереди. Сторож, посчитанный только таймером, в этот момент спит
+ * вместе со всем остальным, и «включаем запись…» переживает и час в кармане.
+ */
+function concludeStalled(reason: string): void {
+  const waited = Date.now() - startedAt;
+  backgroundIssue = "failed";
+  backgroundDetail = `STALLED (${reason}): background start gave no answer in ${waited} ms`;
+  controller.markStopped("background");
+  trackLog("bg.stalled", backgroundDetail);
 }
 
 async function launchBackground(notice: BackgroundNotice): Promise<(() => void) | null> {
@@ -208,6 +247,7 @@ async function launchBackground(notice: BackgroundNotice): Promise<(() => void) 
     onIssue: (issue, detail) => {
       backgroundIssue = issue;
       backgroundDetail = detail;
+      trackLog("bg.issue", `${issue}${detail ? ` — ${detail}` : ""}`);
       // Служба отвалилась уже после старта — контроллер должен об этом знать,
       // иначе он будет считать её работающей и не попробует поднять снова.
       if (issue !== "notificationsBlocked") controller.markStopped("background");
@@ -256,7 +296,9 @@ function sync(patch?: { appForeground?: boolean; backgroundAllowed?: boolean }):
  * только обычный watch и запись останавливается вместе с приложением.
  */
 export function setBackgroundNotice(next: BackgroundNotice): void {
+  const first = !notice;
   notice = next;
+  if (first) trackLog("notice.set");
   sync({ backgroundAllowed: true });
 }
 
@@ -265,7 +307,40 @@ export function stopTrackWatch(): void {
 }
 
 export function syncTrackWatch(appActive: boolean): void {
+  const was = foreground;
+  trackLog(appActive ? "app.foreground" : "app.background");
+  if (appActive && was !== appActive) void onResume();
   sync({ appForeground: appActive });
+}
+
+/**
+ * Возвращение в приложение. Здесь мы заново узнаём правду вместо того, чтобы
+ * доверять переменным: пока экран был погашен, WebView не исполнял JS — таймеры
+ * стояли, разрешения промисов ждали в очереди, а служба всё это время жила
+ * своей жизнью. Поэтому судим о зависшей попытке по часам, а о самой записи —
+ * по ответу службы.
+ */
+async function onResume(): Promise<void> {
+  if (backgroundStarting && Date.now() - startedAt >= BACKGROUND_START_WATCHDOG_MS) {
+    concludeStalled("resume");
+    emitStatus();
+  }
+  if (!loadTrack()) return;
+  const state = await backgroundWatchState();
+  if (!state) return;
+  trackLog(
+    "bg.native",
+    `running=${state.running} location=${state.location} precise=${state.precise} notifications=${state.notifications}`,
+  );
+  if (!state.running || controller.running("background")) return;
+  // Служба работает, а контроллер об этом не знает: ответ на её запуск потерялся
+  // в замороженном контексте. Принимаем как есть — слушатель координат ставился
+  // до старта, в том же заходе, и остаётся живым вместе со страницей.
+  backgroundIssue = null;
+  backgroundDetail = null;
+  controller.adopt("background", () => void stopBackgroundWatch());
+  trackLog("bg.adopted");
+  emitStatus();
 }
 
 /** Только для проверок: дождаться, пока сверки источников закончатся. */

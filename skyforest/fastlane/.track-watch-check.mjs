@@ -470,10 +470,57 @@ async function scenarioStartMoment() {
   failed.stopAll();
 }
 
+/**
+ * Заморозка страницы. При погашенном экране WebView не исполняет JS: таймеры
+ * стоят, разрешение промиса ждёт в очереди. Ответ на запуск службы, пришедший
+ * в этот момент, для нас всё равно что потерян — а служба при этом работает.
+ * Значит после пробуждения истина у службы, а не у наших переменных.
+ */
+async function scenarioFrozenPage() {
+  console.log("\n— страница была заморожена, ответ потерян —");
+
+  let serviceLive = false;
+  const c = createWatchController({
+    plain: async () => () => {},
+    // Ответа нет: обещание запуска зависло вместе с замороженной страницей.
+    background: () =>
+      new Promise(() => {
+        serviceLive = true;
+      }),
+  });
+
+  c.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+  // settled() тут не годится: очередь фонового слота ждёт ответа, которого нет,
+  // — ровно то состояние, в котором приложение и зависало.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  check("служба в системе поднялась", serviceLive, true);
+  check("а контроллер об этом не знает", c.running("background"), false);
+
+  // Возвращение в приложение: спросили службу, она ответила «работаю».
+  c.adopt("background", () => {
+    serviceLive = false;
+  });
+  check("после возвращения запись признана идущей", c.running("background"), true);
+
+  c.stopAll();
+  check("и завершение похода её снимает", serviceLive, false);
+
+  // Принимать нечего, если похода уже нет: службу надо глушить, а не считать
+  // своей, иначе она переживёт поход.
+  const done = createWatchController({ plain: async () => () => {}, background: async () => null });
+  let orphan = true;
+  done.adopt("background", () => {
+    orphan = false;
+  });
+  check("похода нет — принятая служба сразу остановлена", orphan, false);
+  check("и работающей не считается", done.running("background"), false);
+}
+
 await scenarioOldLogic();
 await scenarioMessages();
 await scenarioEnvironments();
 await scenarioStartMoment();
+await scenarioFrozenPage();
 await scenarioForegroundService();
 await scenarioHappyPath();
 await scenarioBackgroundFails();

@@ -32,6 +32,7 @@ import {
 } from "@/lib/wayback/useWaybackAccount";
 import { cn } from "@/lib/utils";
 import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
+import { WayBackDiagnostics } from "@/components/wayback/WayBackDiagnostics";
 import { WbLabel } from "@/components/wayback/primitives";
 
 export function WayBackMenu({
@@ -51,6 +52,7 @@ export function WayBackMenu({
   const [loggingOut, setLoggingOut] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [shellVersion, setShellVersion] = useState<string | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
 
   useEffect(() => {
     void nativeBuild().then((info) => setShellVersion(formatNativeBuild(info)));
@@ -295,11 +297,18 @@ export function WayBackMenu({
 
           {/* Версия сайта и версия оболочки рядом: сайт обновляется сам, а
               оболочка — только переустановкой, и без второй цифры разбор любой
-              поломки начинался с гадания, что у человека стоит. */}
-          <span className="wb-mono mt-1 text-center text-[10px] tracking-[0.12em] text-wb-muted-3">
+              поломки начинался с гадания, что у человека стоит. По нажатию —
+              журнал записи: спрятан здесь, чтобы не попадаться на глаза, но
+              путь к нему объясняется одной фразой. */}
+          <button
+            type="button"
+            onClick={() => setLogOpen(true)}
+            className="wb-mono mt-1 text-center text-[10px] tracking-[0.12em] text-wb-muted-3"
+          >
             V {process.env.NEXT_PUBLIC_APP_VERSION}
             {shellVersion ? ` · APP ${shellVersion}` : ""} · BY SKYFOREST
-          </span>
+          </button>
+          <WayBackDiagnostics open={logOpen} onClose={() => setLogOpen(false)} />
         </div>
       </div>
     </>

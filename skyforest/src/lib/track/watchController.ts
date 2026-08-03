@@ -37,6 +37,12 @@ export interface WatchController {
   update(patch: Partial<WatchInputs>): void;
   /** Источник сам сообщил, что перестал работать (ошибка плагина). */
   markStopped(slot: WatchSlot): void;
+  /**
+   * Источник уже работает, хотя контроллер его не поднимал. Так бывает с
+   * фоновой службой: она живёт в системе, а не в JS, и переживает и заморозку
+   * страницы, и её перезагрузку.
+   */
+  adopt(slot: WatchSlot, stop: () => void): void;
   /** Снимает всё: поход завершён или страница уходит. */
   stopAll(): void;
   running(slot: WatchSlot): boolean;
@@ -131,6 +137,14 @@ export function createWatchController(
     markStopped(slot) {
       if (!stops[slot]) return;
       stops[slot] = null;
+      onChange?.();
+    },
+    adopt(slot, stop) {
+      if (stops[slot] || !wanted(slot)) {
+        stop();
+        return;
+      }
+      stops[slot] = stop;
       onChange?.();
     },
     stopAll() {
