@@ -15,8 +15,12 @@ android {
         applicationId "ai.skyforest.wayback"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "1.1"
+        // 1.1 (7) уже лежит в Play (internal), тот же versionCode второй раз не
+        // принимается — поэтому исправление видимости постоянного уведомления
+        // выходит отдельным номером. Разный versionName ещё и позволяет
+        // человеку различить сборки в «Настройки → Приложения → WayBack».
+        versionCode 8
+        versionName "1.1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

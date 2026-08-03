@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Имя канала уведомлений видно в системных настройках телефона, а они
+         бывают на русском. Остальные строки приложения приходят с сайта и
+         переводятся там. -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Запись пути назад</string>
+</resources>

@@ -467,18 +467,6 @@
     }
   }
 
-  function stopPlainWatch() {
-    var geo = geoPlugin();
-    if (plainWatchId != null && geo) {
-      geo.clearWatch({ id: plainWatchId }).catch(function () {});
-    }
-    plainWatchId = null;
-    if (browserWatchId != null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(browserWatchId);
-    }
-    browserWatchId = null;
-  }
-
   /* --- Фоновая запись: продолжается со свёрнутым приложением --- */
 
   /**
@@ -502,12 +490,16 @@
    * нативная часть на месте.
    */
   function probeBackground() {
-    if (backgroundAvailable !== null) return Promise.resolve(backgroundAvailable);
+    if (backgroundAvailable) return Promise.resolve(true);
     var bg = bgPlugin();
-    if (!bg) { backgroundAvailable = false; return Promise.resolve(false); }
+    if (!bg) return Promise.resolve(false);
+    // Кешируем только удачу: нативная часть либо есть в бинарнике, либо нет,
+    // но провалиться проверка может и по случайности (мост ещё не поднят на
+    // самом первом обращении), а запомненный отказ означал бы поход без
+    // фоновой записи до перезапуска приложения.
     return bg.getPluginVersion()
       .then(function () { backgroundAvailable = true; return true; })
-      .catch(function () { backgroundAvailable = false; return false; });
+      .catch(function () { return false; });
   }
 
   function launchBackground(onPos, retry) {
@@ -530,33 +522,39 @@
           // Ошибка старта. Самая частая — служба уже поднята приложением, а её
           // колбэк остался в прежнем контексте: глушим и пробуем один раз ещё.
           backgroundOn = false;
-          if (retry) { startPlainWatch(onPos); return; }
+          if (retry) return;
           bg.stop()
             .catch(function () {})
             .then(function () { launchBackground(onPos, true); });
         },
       );
+      // Оптимистично: bg.start отвечает идентификатором колбэка сразу и не
+      // отклоняется, когда служба не поднялась. Поэтому обычный watch отсюда
+      // не снимаем — он основа записи, а фон к нему добавка.
       backgroundOn = true;
-      stopPlainWatch();
     } catch (e) {
       backgroundOn = false;
-      startPlainWatch(onPos);
     }
   }
 
   /**
-   * Приводит источник координат к состоянию похода: идёт поход — пишем в фоне
-   * (если оболочка умеет), иначе хватает обычного watch. Постоянное уведомление
-   * Android висит ровно столько, сколько идёт запись.
+   * Приводит источники координат к состоянию похода. Обычный watch работает
+   * всегда, пока страница на экране: он не зависит ни от чего и без него
+   * запись не идёт вовсе. Фоновая служба — добавка на время похода, она пишет
+   * с погашенным экраном и держит постоянное уведомление Android.
+   *
+   * Раньше здесь был выбор «фон ИЛИ обычный», и любая осечка фона оставляла
+   * поход без единой точки — в оболочках без плагина запись не начиналась
+   * совсем. Так эта ловушка уже один раз сломала запись на сайте.
    */
   function syncWatch(onPos) {
+    startPlainWatch(onPos);
     if (!track) {
       if (backgroundOn) {
         backgroundOn = false;
         var bg = bgPlugin();
         if (bg) bg.stop().catch(function () {});
       }
-      startPlainWatch(onPos);
       return;
     }
     if (backgroundOn) return;
@@ -959,9 +957,6 @@
         showStartMode();
       }
       setInterval(tickDuration, 30000);
-      // Обычный watch поднимаем сразу — он даёт первую позицию быстрее всего,
-      // а syncWatch тут же переведёт запись в фон, если поход уже идёт.
-      startPlainWatch(onPosition);
       syncWatch(onPosition);
     });
   }
