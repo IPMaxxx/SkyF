@@ -133,6 +133,18 @@
           watchPosition: function (o, cb) { return watch("Geolocation", "watchPosition", o, cb); },
           clearWatch: function (o) { return call("Geolocation", "clearWatch", o); },
         },
+        // Своя служба переднего плана (оболочка Android, versionCode 9 и
+        // новее): честный промис вместо колбэчного старта и уведомление,
+        // которое видно сразу и на экране блокировки. Координаты приходят
+        // событием location, поэтому подписка — через callWatch.
+        WayBackTrack: {
+          start: function (o) { return call("WayBackTrack", "start", o); },
+          stop: function () { return call("WayBackTrack", "stop", {}); },
+          onLocation: function (cb) {
+            return watch("WayBackTrack", "addListener", { eventName: "location" }, cb);
+          },
+          removeAllListeners: function () { return call("WayBackTrack", "removeAllListeners", {}); },
+        },
         // Плагина нет в оболочках, собранных до появления фоновой записи:
         // вызов там ответит ошибкой, и страница останется на обычном watch.
         BackgroundGeolocation: {
@@ -484,6 +496,36 @@
       : null;
   }
 
+  function trackService() {
+    return Cap && Cap.Plugins && Cap.Plugins.WayBackTrack ? Cap.Plugins.WayBackTrack : null;
+  }
+
+  /**
+   * Своя служба, если она есть в этой оболочке. В отличие от плагина, start
+   * отклоняется, когда службу поднять не удалось, — поэтому здесь можно
+   * честно вернуть «не вышло» и остаться на обычном watch.
+   */
+  function launchService(onPos) {
+    var svc = trackService();
+    if (!svc) return Promise.resolve(false);
+    return svc.removeAllListeners()
+      .catch(function () {})
+      .then(function () {
+        svc.onLocation(function (loc) {
+          if (loc && typeof loc.latitude === "number") {
+            onPos({ lat: loc.latitude, lng: loc.longitude });
+          }
+        });
+        return svc.start({
+          title: T.bgTitle,
+          message: T.bgMessage,
+          distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
+        });
+      })
+      .then(function () { backgroundOn = true; return true; })
+      .catch(function () { return false; });
+  }
+
   /**
    * Плагина нет в оболочках, собранных до появления фоновой записи. Прокси
    * вызова есть всегда, поэтому спрашиваем самый дешёвый метод: ответил —
@@ -552,15 +594,21 @@
     if (!track) {
       if (backgroundOn) {
         backgroundOn = false;
+        var svc = trackService();
+        if (svc) svc.stop().catch(function () {});
         var bg = bgPlugin();
         if (bg) bg.stop().catch(function () {});
       }
       return;
     }
     if (backgroundOn) return;
-    probeBackground().then(function (ok) {
-      if (!ok || !track || backgroundOn) return;
-      launchBackground(onPos, false);
+    launchService(onPos).then(function (started) {
+      if (started || !track || backgroundOn) return;
+      // Своей службы в этой оболочке нет — остаётся плагин.
+      probeBackground().then(function (ok) {
+        if (!ok || !track || backgroundOn) return;
+        launchBackground(onPos, false);
+      });
     });
   }
 

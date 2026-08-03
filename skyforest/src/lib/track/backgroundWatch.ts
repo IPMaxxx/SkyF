@@ -8,6 +8,14 @@
  * мягкое, а вызывающая сторона обязана уметь работать без фона (обычный
  * watchPosition, засыпающий вместе с приложением).
  *
+ * Реализаций две, и порядок такой:
+ *  1. своя служба переднего плана WayBack (track/foregroundService) — Android,
+ *     оболочка versionCode 9 и новее. Полный контроль над уведомлением и
+ *     честный ответ «поднялась / не поднялась»;
+ *  2. плагин @capgo/background-geolocation — iOS (там уведомления нет вовсе,
+ *     фон держат UIBackgroundModes) и уже установленные сборки Android без
+ *     своей службы. Ломать их нельзя: веб к ним приезжает тот же самый.
+ *
  * Фон на iOS включается самим фактом передачи `backgroundMessage`: плагин
  * выставляет `allowsBackgroundLocationUpdates` и просит «Always». Отказ от
  * «Always» запись не ломает — при «While Using» система продолжает отдавать
@@ -28,6 +36,10 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import {
+  foregroundService,
+  type ForegroundServicePlugin,
+} from "@/lib/track/foregroundService";
 
 /** Текст постоянного уведомления Android; приходит из словаря приложения. */
 export interface BackgroundNotice {
@@ -39,6 +51,8 @@ export interface BackgroundNotice {
 export type BackgroundIssue =
   | "unsupported"
   | "notificationsBlocked"
+  /** Разрешение на геолокацию не выдано вовсе (своя служба различает это точно). */
+  | "locationDenied"
   | "preciseLocation"
   | "locationOff"
   | "failed";
@@ -136,6 +150,15 @@ async function ensureNotificationPermission(
  * разрешение на уведомления после отказа.
  */
 export async function openAppSettings(): Promise<void> {
+  const service = await foregroundService();
+  if (service) {
+    try {
+      await service.openSettings();
+      return;
+    } catch {
+      /* не вышло — пробуем плагином ниже */
+    }
+  }
   const api = await plugin();
   if (!api) return;
   try {
@@ -173,6 +196,66 @@ function errorDetail(error: { code?: string; message?: string } | undefined): st
  * остаться при обычном watch.
  */
 export async function startBackgroundWatch(
+  options: BackgroundWatchOptions,
+): Promise<(() => void) | null> {
+  const service = await foregroundService();
+  if (service) return startWithService(service, options);
+  return startWithPlugin(options);
+}
+
+/**
+ * Своя служба. Повторный вызов посреди похода — штатный случай (перезагрузка
+ * страницы): служба уже поднята, а слушатель потерян вместе с прежним
+ * контекстом, поэтому подписываемся заново и обновляем текст уведомления.
+ * Второй службы при этом не появляется.
+ */
+async function startWithService(
+  service: ForegroundServicePlugin,
+  options: BackgroundWatchOptions,
+): Promise<(() => void) | null> {
+  let stopped = false;
+  try {
+    // Подписки прежнего контекста страницы мост хранит по идентификаторам
+    // колбэков; после перезагрузки они мертвы, и снимать их некому.
+    await service.removeAllListeners();
+    const handle = await service.addListener("location", (position) => {
+      if (stopped) return;
+      options.onPosition(position.latitude, position.longitude, position.accuracy ?? null);
+    });
+    const status = await service.start({
+      title: options.notice.title,
+      message: options.notice.message,
+      distanceFilter: options.distanceFilter,
+    });
+    if (!status.notifications) {
+      // Служба работает, но человек не видит, что идёт запись геолокации.
+      // Молчать об этом нельзя ни по политике Google, ни по-человечески.
+      window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
+      options.onIssue("notificationsBlocked", null);
+    }
+    return () => {
+      stopped = true;
+      void handle.remove();
+      void service.stop();
+    };
+  } catch (error) {
+    const failure = error as { code?: string; message?: string };
+    void service.removeAllListeners();
+    options.onIssue(serviceIssue(failure), errorDetail(failure));
+    return null;
+  }
+}
+
+/**
+ * Коды отказа своей службы; в отличие от плагина, каждый значит ровно одно.
+ * NOT_AUTHORIZED здесь — «геолокация не разрешена совсем», а не «разрешена
+ * приблизительно»: службе хватает и грубого разрешения.
+ */
+function serviceIssue(error: { code?: string; message?: string }): BackgroundIssue {
+  return error.code === "NOT_AUTHORIZED" ? "locationDenied" : "failed";
+}
+
+async function startWithPlugin(
   options: BackgroundWatchOptions,
 ): Promise<(() => void) | null> {
   const api = await plugin();
@@ -245,6 +328,15 @@ export async function startBackgroundWatch(
 }
 
 export async function stopBackgroundWatch(): Promise<void> {
+  const service = await foregroundService();
+  if (service) {
+    try {
+      await service.stop();
+    } catch {
+      /* службы нет — останавливать нечего */
+    }
+    return;
+  }
   const api = await plugin();
   if (!api) return;
   try {

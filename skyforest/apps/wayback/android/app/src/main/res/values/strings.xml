@@ -15,4 +15,11 @@
     <string name="capacitor_background_geolocation_notification_channel_name">Recording your way back</string>
     <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_wayback</string>
     <string name="capacitor_background_geolocation_notification_color">#5FB573</string>
+
+    <!-- Канал своей службы записи (TrackService). Имя и описание человек видит
+         в системных настройках уведомлений, поэтому они называют поход, а не
+         технологию. Текст самого уведомления приходит из словаря WayBack на
+         языке интерфейса, здесь только запасной вариант. -->
+    <string name="wayback_track_channel_name">Recording your way back</string>
+    <string name="wayback_track_channel_description">Shows while WayBack is recording a hike, so you always know the trail is being saved.</string>
 </resources>

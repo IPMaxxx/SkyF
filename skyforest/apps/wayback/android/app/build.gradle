@@ -19,8 +19,9 @@ android {
         // принимается — поэтому исправление видимости постоянного уведомления
         // выходит отдельным номером. Разный versionName ещё и позволяет
         // человеку различить сборки в «Настройки → Приложения → WayBack».
-        versionCode 8
-        versionName "1.1.1"
+        // 1.1.2 (9): запись пути перешла со службы плагина на свою (TrackService).
+        versionCode 9
+        versionName "1.1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -61,6 +62,11 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Координаты для своей службы записи (TrackService) берём у fused-провайдера:
+    // он смешивает GPS с сетью и датчиками и поэтому отдаёт точки в помещении,
+    // где чистый GPS молчит. Транзитивно эта библиотека уже приходит с плагином
+    // фоновой геолокации, но своя зависимость не должна зависеть от чужой.
+    implementation "com.google.android.gms:play-services-location:$playServicesLocationVersion"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

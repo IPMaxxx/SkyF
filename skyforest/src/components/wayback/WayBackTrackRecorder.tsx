@@ -80,25 +80,29 @@ export function WayBackTrackRecorder() {
         return;
       }
 
+      const denied = status.backgroundIssue === "locationDenied";
       const precise = status.backgroundIssue === "preciseLocation";
       const body =
         status.backgroundIssue === "unsupported"
           ? t("recordingIssue.updateBody")
-          : precise
-            ? t("recordingIssue.preciseBody")
-            : t("recordingIssue.foregroundOnlyBody");
+          : denied
+            ? t("recordingIssue.locationDeniedBody")
+            : precise
+              ? t("recordingIssue.preciseBody")
+              : t("recordingIssue.foregroundOnlyBody");
       toast.info(t("recordingIssue.foregroundOnlyTitle"), {
         id: "wb-recording-foreground",
         // Код отказа плагина дописываем как есть: без него причина остаётся
         // догадкой, а переслать строку человек может.
         description: status.backgroundDetail ? `${body} (${status.backgroundDetail})` : body,
         duration: 10_000,
-        action: precise
-          ? {
-              label: t("recordingIssue.preciseAction"),
-              onClick: () => void openAppSettings(),
-            }
-          : undefined,
+        action:
+          precise || denied
+            ? {
+                label: t("recordingIssue.preciseAction"),
+                onClick: () => void openAppSettings(),
+              }
+            : undefined,
       });
     };
 

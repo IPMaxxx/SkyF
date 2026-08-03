@@ -44,6 +44,20 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Своя служба записи пути. Не экспортирована: поднимает её только
+             наш плагин явным интентом, автозапуска нет (BOOT_COMPLETED мы не
+             слушаем).
+
+             stopWithTask="true" — сознательно. Смахнув приложение из недавних,
+             человек уносит и WebView, то есть точки писать становится некому.
+             Служба, пережившая задачу, показывала бы уведомление «записываем
+             путь», не записывая ничего: уведомление не должно врать. -->
+        <service
+            android:name=".TrackService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:stopWithTask="true" />
+
         <!-- Службу записи пути (foregroundServiceType="location") объявляет
              манифест плагина фоновой геолокации, она приходит слиянием. Но там
              она exported="true" — то есть запустить её могло бы любое

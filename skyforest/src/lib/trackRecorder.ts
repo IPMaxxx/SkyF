@@ -153,6 +153,10 @@ async function startPlainWatch(): Promise<(() => void) | null> {
 
 async function startBackgroundSlot(): Promise<(() => void) | null> {
   if (!notice) return null;
+  // Сбрасываем до попытки, а не после: об отказе служба сообщает уже во время
+  // старта, и сброс «после» стирал бы только что полученную причину.
+  backgroundIssue = null;
+  backgroundDetail = null;
   const stop = await startBackgroundWatch({
     notice,
     distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
@@ -166,10 +170,6 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
       emitStatus();
     },
   });
-  if (stop) {
-    backgroundIssue = null;
-    backgroundDetail = null;
-  }
   emitStatus();
   return stop;
 }

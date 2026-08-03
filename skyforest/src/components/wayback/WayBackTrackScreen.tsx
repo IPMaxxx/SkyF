@@ -38,6 +38,7 @@ import { WayBackMenu } from "@/components/wayback/WayBackMenu";
 import { WayBackTabBar } from "@/components/wayback/WayBackTabBar";
 import { WayBackOfflineScreen } from "@/components/wayback/WayBackOfflineScreen";
 import { WayBackHistoryScreen } from "@/components/wayback/WayBackHistoryScreen";
+import { WayBackRecordingStatus } from "@/components/wayback/WayBackRecordingStatus";
 
 const TrackMap = dynamic(
   () => import("@/components/app/TrackMap").then((m) => m.TrackMap),
@@ -576,6 +577,10 @@ function ActiveHike({
           {t("gapHint")}
         </p>
       </WbTile>
+
+      {/* Под картой, а не над стрелкой: в походе главное — направление, но
+          состояние записи должно быть видно без поиска по меню. */}
+      <WayBackRecordingStatus />
 
       <button
         type="button"

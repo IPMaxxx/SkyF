@@ -238,8 +238,71 @@ async function scenarioMessages() {
   );
 }
 
+/**
+ * Правило службы переднего плана: идёт поход — служба и уведомление живут;
+ * поход завершён — служба снята. Уведомление здесь не украшение: без видимой
+ * службы Android забирает геолокацию, поэтому «уведомление висит» и «запись
+ * идёт» — одно и то же утверждение.
+ *
+ * Заглушка повторяет договор нативной части (TrackService.java): start
+ * идемпотентен и второй службы не создаёт, stop гасит уведомление, а
+ * перезагрузка страницы теряет слушателя, но не службу.
+ */
+function fakeNativeService() {
+  const svc = { running: false, notification: null, starts: 0, stops: 0, listener: null };
+  return {
+    svc,
+    /** Стартер слота background: то же, что делает backgroundWatch.ts. */
+    starter: async (notice = "Recording your way back") => {
+      svc.starts += 1;
+      svc.listener = "page";
+      svc.running = true;
+      svc.notification = notice;
+      return () => {
+        svc.stops += 1;
+        svc.running = false;
+        svc.notification = null;
+        svc.listener = null;
+      };
+    },
+  };
+}
+
+async function scenarioForegroundService() {
+  console.log("\n— служба переднего плана и её уведомление —");
+  const { svc, starter } = fakeNativeService();
+  const c = createWatchController({ plain: async () => () => {}, background: starter });
+
+  c.update({ hasTrack: false, appForeground: true, backgroundAllowed: true });
+  await c.settled();
+  check("похода нет — уведомления нет", svc.notification, null);
+
+  c.update({ hasTrack: true });
+  await c.settled();
+  check("поход начат — служба поднята", svc.running, true);
+  check("и уведомление висит", svc.notification, "Recording your way back");
+
+  c.update({ appForeground: false });
+  await c.settled();
+  check("экран погас — служба и уведомление на месте", [svc.running, !!svc.notification], [true, true]);
+
+  // Перезагрузка страницы посреди похода: JS-контекст новый, служба прежняя.
+  svc.listener = null;
+  c.stopAll();
+  const restored = createWatchController({ plain: async () => () => {}, background: starter });
+  restored.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+  await restored.settled();
+  check("после перезагрузки страницы слушатель снова на месте", svc.listener, "page");
+  check("а служба всё та же, второй не появилось", svc.running, true);
+
+  restored.stopAll();
+  check("поход завершён — служба снята", svc.running, false);
+  check("и уведомление убрано", svc.notification, null);
+}
+
 await scenarioOldLogic();
 await scenarioMessages();
+await scenarioForegroundService();
 await scenarioHappyPath();
 await scenarioBackgroundFails();
 await scenarioNoBackgroundSupport();

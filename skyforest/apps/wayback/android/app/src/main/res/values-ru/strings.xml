@@ -4,4 +4,6 @@
          бывают на русском. Остальные строки приложения приходят с сайта и
          переводятся там. -->
     <string name="capacitor_background_geolocation_notification_channel_name">Запись пути назад</string>
+    <string name="wayback_track_channel_name">Запись пути назад</string>
+    <string name="wayback_track_channel_description">Видно, пока WayBack записывает поход, — чтобы вы всегда знали, что путь сохраняется.</string>
 </resources>

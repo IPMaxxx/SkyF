@@ -143,7 +143,33 @@ export default {
       updateBody: "Update WayBack so the trail keeps going with the screen off.",
       preciseBody:
         "Allow precise location so the trail keeps going with the screen off.",
+      locationDeniedBody:
+        "Allow WayBack to use location so the trail keeps going with the screen off.",
       preciseAction: "Settings",
+    },
+    /**
+     * Строка состояния на экране похода. Тост человек пролистывает, а спросить
+     * его «что было написано» потом невозможно — значит состояние записи должно
+     * быть видно в любой момент, вместе с кодом отказа для пересылки.
+     */
+    recordingStatus: {
+      on: "Recording with the screen off",
+      foregroundOnly: "Recording while the app is open",
+      off: "The trail is not being recorded",
+      bodyOn: "The notification above stays until you finish the walk.",
+      bodyNoNotice:
+        "Recording works, but the notification is hidden — turn notifications on to see it on the lock screen.",
+      bodyStarting: "Setting up recording with the screen off…",
+      bodyNothing: "We can't reach location right now.",
+      bodyUnsupported:
+        "This version keeps recording only while the app is open. Update WayBack for the screen-off trail.",
+      bodyLocationDenied: "WayBack has no access to location.",
+      bodyPrecise: "Precise location is off, so the screen-off trail can't start.",
+      bodyLocationOff: "Location is off on this phone.",
+      bodyFailed: "The phone did not let the recording service start.",
+      settings: "Open settings",
+      copy: "copy the code",
+      copied: "Code copied",
     },
     offlineMapTitle: "Offline map",
     offlineMapAround:

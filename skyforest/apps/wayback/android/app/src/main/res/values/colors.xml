@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Акцент постоянного уведомления записи пути: тот же зелёный, что у
+         иконки приложения, чтобы уведомление читалось как «это WayBack». -->
+    <color name="wayback_notification">#FF5FB573</color>
+</resources>
