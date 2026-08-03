@@ -13,6 +13,7 @@
 
 import { createWatchController } from "../src/lib/track/watchController.ts";
 import { watchMessage } from "../src/lib/track/watchMessage.ts";
+import { recordingStatusView } from "../src/lib/track/recordingStatusView.ts";
 
 let failures = 0;
 
@@ -300,8 +301,98 @@ async function scenarioForegroundService() {
   check("и уведомление убрано", svc.notification, null);
 }
 
+/**
+ * Три окружения, в которых живёт один и тот же веб. Проверять надо все три:
+ * прежние проверки гоняли только то, где нативная часть есть и работает, — а
+ * ломалось ровно там, где её нет. Строка состояния в сборке из Play навсегда
+ * застревала на «включаем запись…» и горела красным при работающей записи.
+ *
+ * Слот и строка состояния проверяются вместе: человек видит именно строку.
+ */
+async function scenarioEnvironments() {
+  console.log("\n— три окружения, что видит человек в каждом —");
+
+  /** Прогоняет поход в заданном окружении и возвращает итоговую строку. */
+  const walk = async (env) => {
+    let starting = false;
+    let issue = null;
+    const c = createWatchController({
+      plain: async () => () => {},
+      background: async () => {
+        starting = true;
+        issue = null;
+        try {
+          if (env.support === "none") {
+            issue = "unsupported";
+            return null;
+          }
+          if (env.support === "refuses") {
+            issue = env.issue;
+            return null;
+          }
+          return () => {};
+        } finally {
+          starting = false;
+        }
+      },
+    });
+    c.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+    await c.settled();
+    const state = {
+      hasTrack: true,
+      recording: c.running("plain") || c.running("background"),
+      background: c.running("background"),
+      backgroundStarting: starting,
+      backgroundIssue: issue,
+    };
+    return { view: recordingStatusView(state), state, controller: c };
+  };
+
+  // 1. Сборка 1.0 из Play: нативной части нет ни своей, ни плагинной.
+  const play = await walk({ support: "none" });
+  check("1.0 из Play: запись на переднем плане идёт", play.state.recording, true);
+  check("1.0 из Play: тон спокойный, а не тревожный", play.view.tone, "calm");
+  check("1.0 из Play: не застряли на «включаем…»", play.view.body, "bodyUnsupported");
+
+  // 2. Сборка со службой, служба поднимается.
+  const ok = await walk({ support: "works" });
+  check("служба поднялась: тон «всё как задумано»", ok.view.tone, "on");
+  check("служба поднялась: текст про погашенный экран", ok.view.body, "bodyOn");
+  ok.controller.stopAll();
+  check("поход завершён — строки нет", recordingStatusView({ ...ok.state, hasTrack: false }), null);
+
+  // 3. Сборка со службой, но система не дала её поднять.
+  const refused = await walk({ support: "refuses", issue: "failed" });
+  check("служба отказала: запись всё равно идёт", refused.state.recording, true);
+  check("служба отказала: тон спокойный", refused.view.tone, "calm");
+  check("служба отказала: названа причина, а не «включаем…»", refused.view.body, "bodyFailed");
+
+  // Красный — только когда не пишет никто.
+  const dead = recordingStatusView({
+    hasTrack: true,
+    recording: false,
+    background: false,
+    backgroundStarting: false,
+    backgroundIssue: "failed",
+  });
+  check("не пишет никто — вот теперь красный", dead.tone, "alarm");
+  check("и заголовок тревожный", dead.title, "off");
+
+  // Служба работает, но уведомление запрещено: это не поломка записи.
+  const hidden = recordingStatusView({
+    hasTrack: true,
+    recording: true,
+    background: true,
+    backgroundStarting: false,
+    backgroundIssue: "notificationsBlocked",
+  });
+  check("уведомление скрыто — запись названа работающей", hidden.title, "on");
+  check("и тон спокойный, а не красный", hidden.tone, "calm");
+}
+
 await scenarioOldLogic();
 await scenarioMessages();
+await scenarioEnvironments();
 await scenarioForegroundService();
 await scenarioHappyPath();
 await scenarioBackgroundFails();

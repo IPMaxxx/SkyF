@@ -160,6 +160,7 @@ export default {
       bodyNoNotice:
         "Recording works, but the notification is hidden — turn notifications on to see it on the lock screen.",
       bodyStarting: "Setting up recording with the screen off…",
+      bodyForegroundOnly: "Screen-off recording is not running, so the trail may have gaps.",
       bodyNothing: "We can't reach location right now.",
       bodyUnsupported:
         "This version keeps recording only while the app is open. Update WayBack for the screen-off trail.",

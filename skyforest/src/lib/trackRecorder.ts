@@ -93,6 +93,7 @@ export async function captureTrackPoint(): Promise<void> {
 let notice: BackgroundNotice | null = null;
 let backgroundIssue: BackgroundIssue | null = null;
 let backgroundDetail: string | null = null;
+let backgroundStarting = false;
 let foreground = true;
 
 /** Что сейчас пишет точки и что мешает фону. */
@@ -106,6 +107,12 @@ export interface TrackWatchStatus {
   plain: boolean;
   /** Фоновая служба: пишет и с погашенным экраном. */
   background: boolean;
+  /**
+   * Прямо сейчас идёт попытка поднять фон. Отличает «ещё выясняем» от «выяснили
+   * и не вышло»: без этого «настраиваем запись» висело бы и там, где попытки
+   * вообще не было, — например пока приложение не сообщило текст уведомления.
+   */
+  backgroundStarting: boolean;
   /** Почему фона нет; null — вопросов нет либо он ещё не пробовал стартовать. */
   backgroundIssue: BackgroundIssue | null;
   /** Код и текст отказа ровно как их вернул плагин — для пересылки в саппорт. */
@@ -152,12 +159,24 @@ async function startPlainWatch(): Promise<(() => void) | null> {
 }
 
 async function startBackgroundSlot(): Promise<(() => void) | null> {
-  if (!notice) return null;
+  const current = notice;
+  if (!current) return null;
   // Сбрасываем до попытки, а не после: об отказе служба сообщает уже во время
   // старта, и сброс «после» стирал бы только что полученную причину.
   backgroundIssue = null;
   backgroundDetail = null;
-  const stop = await startBackgroundWatch({
+  backgroundStarting = true;
+  emitStatus();
+  try {
+    return await launchBackground(current);
+  } finally {
+    backgroundStarting = false;
+    emitStatus();
+  }
+}
+
+async function launchBackground(notice: BackgroundNotice): Promise<(() => void) | null> {
+  return startBackgroundWatch({
     notice,
     distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
     onPosition: onWatchPosition,
@@ -170,8 +189,6 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
       emitStatus();
     },
   });
-  emitStatus();
-  return stop;
 }
 
 function emitStatus(): void {
@@ -197,6 +214,7 @@ export function trackWatchStatus(): TrackWatchStatus {
     recording: plain || background,
     plain,
     background,
+    backgroundStarting,
     backgroundIssue,
     backgroundDetail,
   };

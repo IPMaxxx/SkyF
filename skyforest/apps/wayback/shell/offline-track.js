@@ -140,6 +140,7 @@
         WayBackTrack: {
           start: function (o) { return call("WayBackTrack", "start", o); },
           stop: function () { return call("WayBackTrack", "stop", {}); },
+          requestNotifications: function () { return call("WayBackTrack", "requestNotifications", {}); },
           onLocation: function (cb) {
             return watch("WayBackTrack", "addListener", { eventName: "location" }, cb);
           },
@@ -522,7 +523,15 @@
           distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
         });
       })
-      .then(function () { backgroundOn = true; return true; })
+      .then(function (status) {
+        backgroundOn = true;
+        // Разрешение на уведомления спрашиваем после старта и не дожидаясь
+        // ответа: служба уже пишет путь, а диалог человек читает секунды.
+        if (status && status.notifications === false) {
+          svc.requestNotifications().catch(function () {});
+        }
+        return true;
+      })
       .catch(function () { return false; });
   }
 

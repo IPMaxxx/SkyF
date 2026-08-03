@@ -38,6 +38,8 @@
 import { isNativeApp } from "@/lib/native/capacitor";
 import {
   foregroundService,
+  FOREGROUND_SERVICE_TIMEOUTS,
+  withTimeout,
   type ForegroundServicePlugin,
 } from "@/lib/track/foregroundService";
 
@@ -84,7 +86,11 @@ async function loadPlugin(): Promise<BackgroundGeolocationPlugin | null> {
   if (!isNativeApp()) return null;
   try {
     const { BackgroundGeolocation } = await import("@capgo/background-geolocation");
-    await BackgroundGeolocation.getPluginVersion();
+    await withTimeout(
+      BackgroundGeolocation.getPluginVersion(),
+      FOREGROUND_SERVICE_TIMEOUTS.detect,
+      "BackgroundGeolocation.getPluginVersion",
+    );
     return BackgroundGeolocation;
   } catch {
     return null;
@@ -129,7 +135,11 @@ async function ensureNotificationPermission(
   api: BackgroundGeolocationPlugin,
 ): Promise<boolean> {
   try {
-    const status = await api.checkPermissions();
+    const status = await withTimeout(
+      api.checkPermissions(),
+      FOREGROUND_SERVICE_TIMEOUTS.call,
+      "BackgroundGeolocation.checkPermissions",
+    );
     // На iOS поля нет вовсе: там постоянного уведомления не существует, роль
     // видимой отметки играет синий индикатор геолокации.
     if (!status.notification || status.notification === "granted") return true;
@@ -153,7 +163,11 @@ export async function openAppSettings(): Promise<void> {
   const service = await foregroundService();
   if (service) {
     try {
-      await service.openSettings();
+      await withTimeout(
+        service.openSettings(),
+        FOREGROUND_SERVICE_TIMEOUTS.call,
+        "WayBackTrack.openSettings",
+      );
       return;
     } catch {
       /* не вышло — пробуем плагином ниже */
@@ -217,30 +231,55 @@ async function startWithService(
   try {
     // Подписки прежнего контекста страницы мост хранит по идентификаторам
     // колбэков; после перезагрузки они мертвы, и снимать их некому.
-    await service.removeAllListeners();
-    const handle = await service.addListener("location", (position) => {
-      if (stopped) return;
-      options.onPosition(position.latitude, position.longitude, position.accuracy ?? null);
-    });
-    const status = await service.start({
-      title: options.notice.title,
-      message: options.notice.message,
-      distanceFilter: options.distanceFilter,
-    });
+    await withTimeout(
+      service.removeAllListeners(),
+      FOREGROUND_SERVICE_TIMEOUTS.call,
+      "WayBackTrack.removeAllListeners",
+    );
+    const handle = await withTimeout(
+      service.addListener("location", (position) => {
+        if (stopped) return;
+        options.onPosition(position.latitude, position.longitude, position.accuracy ?? null);
+      }),
+      FOREGROUND_SERVICE_TIMEOUTS.call,
+      "WayBackTrack.addListener",
+    );
+    // Запас времени большой намеренно: внутри start плагин может показать
+    // системный диалог разрешения на уведомления, и человек отвечает не сразу.
+    const status = await withTimeout(
+      service.start({
+        title: options.notice.title,
+        message: options.notice.message,
+        distanceFilter: options.distanceFilter,
+      }),
+      FOREGROUND_SERVICE_TIMEOUTS.start,
+      "WayBackTrack.start",
+    );
+    // Разрешение на уведомления досматриваем после старта и не дожидаясь
+    // ответа: диалог человек читает секунды, а служба уже пишет путь. Без
+    // разрешения запись идёт, но её не видно — молчать об этом нельзя ни по
+    // политике Google, ни по-человечески.
     if (!status.notifications) {
-      // Служба работает, но человек не видит, что идёт запись геолокации.
-      // Молчать об этом нельзя ни по политике Google, ни по-человечески.
-      window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
-      options.onIssue("notificationsBlocked", null);
+      service
+        .requestNotifications()
+        .catch(() => status)
+        .then((next) => {
+          if (stopped || next.notifications) return;
+          window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
+          options.onIssue("notificationsBlocked", null);
+        });
     }
     return () => {
       stopped = true;
-      void handle.remove();
-      void service.stop();
+      handle.remove().catch(() => {});
+      service.stop().catch(() => {});
     };
   } catch (error) {
     const failure = error as { code?: string; message?: string };
-    void service.removeAllListeners();
+    service.removeAllListeners().catch(() => {});
+    // Служба могла всё-таки подняться (например мы не дождались ответа) —
+    // глушим, иначе GPS ест батарею ради записи, которой в JS нет.
+    service.stop().catch(() => {});
     options.onIssue(serviceIssue(failure), errorDetail(failure));
     return null;
   }
@@ -331,7 +370,7 @@ export async function stopBackgroundWatch(): Promise<void> {
   const service = await foregroundService();
   if (service) {
     try {
-      await service.stop();
+      await withTimeout(service.stop(), FOREGROUND_SERVICE_TIMEOUTS.call, "WayBackTrack.stop");
     } catch {
       /* службы нет — останавливать нечего */
     }

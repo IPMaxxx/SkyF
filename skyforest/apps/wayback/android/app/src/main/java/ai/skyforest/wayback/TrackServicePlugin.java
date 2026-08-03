@@ -20,11 +20,24 @@ import com.getcapacitor.annotation.PermissionCallback;
 /**
  * Мост в JS для TrackService.
  *
- * Главное отличие от плагина фоновой геолокации, из-за которого этот код и
- * появился: start() возвращает честный промис. Он отклоняется с кодом, если
+ * Два правила, и оба выстраданы.
+ *
+ * Первое: start() возвращает честный промис. Он отклоняется с кодом, если
  * службу поднять не удалось, и разрешается только после того, как служба
- * действительно встала. Раньше «фоновая запись включена» означало лишь то,
- * что вызов зарегистрировали, и поход писался вникуда.
+ * действительно встала. У плагина фоновой геолокации «фоновая запись включена»
+ * означало лишь то, что вызов зарегистрировали.
+ *
+ * Второе: ни один метод не выпускает наружу исключение. Capacitor вызывает
+ * метод плагина внутри try/catch, который на исключении только пишет в лог
+ * («Serious error executing plugin», Bridge.callPluginMethod) и НЕ отклоняет
+ * вызов — промис в JS остаётся висеть навсегда, а экран показывает вечное
+ * «настраиваем запись». Поэтому тело каждого метода обёрнуто, и текст
+ * исключения уезжает в JS кодом отказа: пусть человек увидит причину, а не
+ * бесконечное ожидание.
+ *
+ * Системные диалоги внутри start() тоже под запретом сверх необходимого:
+ * разрешение на уведомления спрашивается отдельным вызовом уже после старта,
+ * иначе ответ на промис ждал бы, пока человек читает диалог.
  */
 @CapacitorPlugin(
     name = "WayBackTrack",
@@ -77,44 +90,81 @@ public class TrackServicePlugin extends Plugin {
 
     @PluginMethod
     public void start(PluginCall call) {
-        if (getPermissionState(LOCATION) != PermissionState.GRANTED) {
-            requestPermissionForAliases(permissionAliases(), call, "afterPermissions");
-            return;
+        try {
+            if (getPermissionState(LOCATION) != PermissionState.GRANTED) {
+                requestPermissionForAliases(new String[] { LOCATION, PRECISE }, call, "afterLocation");
+                return;
+            }
+            launch(call);
+        } catch (Exception e) {
+            failed(call, e);
         }
-        // Разрешение на уведомления спрашиваем до старта: без него служба
-        // работает, но человек не видит, что идёт запись, а нам нужно как раз
-        // обратное.
-        if (needsNotificationPrompt()) {
-            requestPermissionForAlias(NOTIFICATION, call, "afterPermissions");
-            return;
-        }
-        launch(call);
     }
 
     @PermissionCallback
-    private void afterPermissions(PluginCall call) {
-        launch(call);
+    private void afterLocation(PluginCall call) {
+        try {
+            launch(call);
+        } catch (Exception e) {
+            failed(call, e);
+        }
+    }
+
+    /**
+     * Разрешение на уведомления. Отдельным вызовом и после старта: служба
+     * работает и без него, а вот ответ на start() ждал бы человека у диалога.
+     * Без уведомления запись невидима — об этом приложение говорит вслух, но
+     * останавливать из-за этого поход неправильно.
+     */
+    @PluginMethod
+    public void requestNotifications(PluginCall call) {
+        try {
+            if (needsNotificationPrompt()) {
+                requestPermissionForAlias(NOTIFICATION, call, "afterNotifications");
+                return;
+            }
+            call.resolve(status());
+        } catch (Exception e) {
+            failed(call, e);
+        }
+    }
+
+    @PermissionCallback
+    private void afterNotifications(PluginCall call) {
+        call.resolve(status());
     }
 
     @PluginMethod
     public void stop(PluginCall call) {
-        getContext().stopService(new Intent(getContext(), TrackService.class));
-        call.resolve(status());
+        try {
+            getContext().stopService(new Intent(getContext(), TrackService.class));
+            call.resolve(status());
+        } catch (Exception e) {
+            failed(call, e);
+        }
     }
 
     @PluginMethod
     public void status(PluginCall call) {
-        call.resolve(status());
+        try {
+            call.resolve(status());
+        } catch (Exception e) {
+            failed(call, e);
+        }
     }
 
     /** Настройки приложения: единственный путь вернуть однажды отклонённое разрешение. */
     @PluginMethod
     public void openSettings(PluginCall call) {
-        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        intent.setData(Uri.fromParts("package", getContext().getPackageName(), null));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(intent);
-        call.resolve();
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.fromParts("package", getContext().getPackageName(), null));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            failed(call, e);
+        }
     }
 
     private void launch(PluginCall call) {
@@ -128,7 +178,8 @@ public class TrackServicePlugin extends Plugin {
         intent.setAction(TrackService.ACTION_START);
         intent.putExtra(TrackService.EXTRA_TITLE, call.getString("title", ""));
         intent.putExtra(TrackService.EXTRA_MESSAGE, call.getString("message", ""));
-        intent.putExtra(TrackService.EXTRA_DISTANCE, call.getFloat("distanceFilter", 10f));
+        Float distance = call.getFloat("distanceFilter", 10f);
+        intent.putExtra(TrackService.EXTRA_DISTANCE, distance == null ? 10f : distance.floatValue());
         try {
             ContextCompat.startForegroundService(getContext(), intent);
         } catch (Exception e) {
@@ -151,10 +202,20 @@ public class TrackServicePlugin extends Plugin {
             return;
         }
         if (waited >= START_TIMEOUT_MS) {
-            call.reject("The recording service did not start", "SERVICE_FAILED", status());
+            String reason = TrackService.lastFailure();
+            call.reject(
+                reason == null ? "The recording service did not start" : reason,
+                "SERVICE_FAILED",
+                status()
+            );
             return;
         }
         new Handler(Looper.getMainLooper()).postDelayed(() -> awaitRunning(call, waited + START_POLL_MS), START_POLL_MS);
+    }
+
+    /** Исключение наружу выпускать нельзя, поэтому превращаем его в отказ с текстом. */
+    private void failed(PluginCall call, Exception e) {
+        call.reject(e.getClass().getSimpleName() + ": " + e.getMessage(), "PLUGIN_ERROR", e);
     }
 
     private JSObject status() {
@@ -173,16 +234,5 @@ public class TrackServicePlugin extends Plugin {
 
     private boolean needsNotificationPrompt() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && getPermissionState(NOTIFICATION) == PermissionState.PROMPT;
-    }
-
-    /**
-     * До Android 13 разрешения на уведомления не существует, и запрос вернулся
-     * бы отказом — считать бы пришлось, что уведомление запрещено.
-     */
-    private String[] permissionAliases() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return new String[] { LOCATION, PRECISE, NOTIFICATION };
-        }
-        return new String[] { LOCATION, PRECISE };
     }
 }

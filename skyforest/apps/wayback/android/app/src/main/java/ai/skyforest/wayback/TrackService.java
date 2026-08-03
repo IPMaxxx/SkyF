@@ -66,6 +66,12 @@ public class TrackService extends Service {
      */
     private static volatile Listener listener;
     private static volatile boolean running;
+    /**
+     * Почему служба не поднялась. Logcat у человека в лесу не спросишь, поэтому
+     * причина уезжает в JS и показывается на экране похода строкой, которую
+     * можно скопировать и переслать.
+     */
+    private static volatile String lastFailure;
 
     private FusedLocationProviderClient client;
     private LocationCallback callback;
@@ -77,6 +83,10 @@ public class TrackService extends Service {
 
     public static boolean isRunning() {
         return running;
+    }
+
+    public static String lastFailure() {
+        return lastFailure;
     }
 
     @Override
@@ -92,9 +102,11 @@ public class TrackService extends Service {
 
         // Уведомление — первым делом: с момента startForegroundService у службы
         // пять секунд, иначе система убивает приложение.
+        lastFailure = null;
         try {
             promoteToForeground(title, message);
         } catch (Exception e) {
+            lastFailure = "startForeground: " + e.getClass().getSimpleName() + ": " + e.getMessage();
             Log.e(TAG, "Could not show the ongoing notification", e);
             stopSelf();
             return START_NOT_STICKY;

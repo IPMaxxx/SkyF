@@ -23,6 +23,63 @@
 
 import { isNativeApp } from "@/lib/native/capacitor";
 
+/**
+ * Сколько ждём ответа моста, прежде чем считать вызов провалившимся.
+ *
+ * Ждать бесконечно нельзя, и это не перестраховка. Capacitor вызывает метод
+ * плагина внутри try/catch, который на любом исключении только пишет в лог
+ * («Serious error executing plugin», Bridge.callPluginMethod) и НЕ отклоняет
+ * вызов: промис в JS остаётся висеть навсегда. Любая нативная осечка без
+ * таймаута превращается в вечное «настраиваем запись» на экране — ровно то,
+ * что человек и увидел.
+ */
+const DETECT_TIMEOUT_MS = 2_000;
+/**
+ * Нативная часть отвечает за секунды: разрешение на уведомления спрашивается
+ * отдельным вызовом уже после старта, а сама служба подтверждает подъём за
+ * четыре. Системный диалог внутри старта возможен только один — геолокация, и
+ * она в WayBack выдана задолго до похода.
+ */
+const START_TIMEOUT_MS = 8_000;
+const CALL_TIMEOUT_MS = 4_000;
+
+export interface NativeCallFailure {
+  code: string;
+  message: string;
+}
+
+/**
+ * Ограничивает ожидание нативного вызова. Отказ по времени выглядит как
+ * обычный отказ плагина, поэтому вызывающей стороне не нужен отдельный путь.
+ */
+export function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const failure: NativeCallFailure = {
+        code: "TIMEOUT",
+        message: `${what} did not answer in ${ms} ms`,
+      };
+      reject(failure);
+    }, ms);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+export const FOREGROUND_SERVICE_TIMEOUTS = {
+  detect: DETECT_TIMEOUT_MS,
+  start: START_TIMEOUT_MS,
+  call: CALL_TIMEOUT_MS,
+};
+
 export interface ForegroundServiceStatus {
   /** Служба действительно поднята — не «вызов зарегистрирован». */
   running: boolean;
@@ -52,6 +109,8 @@ export interface ForegroundServicePlugin {
   }): Promise<ForegroundServiceStatus>;
   stop(): Promise<ForegroundServiceStatus>;
   status(): Promise<ForegroundServiceStatus>;
+  /** Спрашивает разрешение на уведомления; вызывается уже после старта службы. */
+  requestNotifications(): Promise<ForegroundServiceStatus>;
   openSettings(): Promise<void>;
   addListener(
     event: "location",
@@ -69,8 +128,10 @@ async function load(): Promise<ForegroundServicePlugin | null> {
     const { registerPlugin } = await import("@capacitor/core");
     const api = registerPlugin<ForegroundServicePlugin>("WayBackTrack");
     // Прокси создаётся всегда, поэтому отсутствие нативной части видно только
-    // по вызову: без неё мост отвечает UNIMPLEMENTED.
-    await api.status();
+    // по вызову: без неё мост отвечает UNIMPLEMENTED. С таймаутом, потому что
+    // «нативной части нет» — штатное положение дел для сборок из Play, и
+    // зависнуть на этой проверке приложение права не имеет.
+    await withTimeout(api.status(), DETECT_TIMEOUT_MS, "WayBackTrack.status");
     return api;
   } catch {
     return null;

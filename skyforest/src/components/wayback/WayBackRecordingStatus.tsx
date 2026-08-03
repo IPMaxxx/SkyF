@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { openAppSettings } from "@/lib/track/backgroundWatch";
+import { recordingStatusView } from "@/lib/track/recordingStatusView";
 import {
   TRACK_WATCH_STATUS_EVENT,
   trackWatchStatus,
@@ -19,9 +20,8 @@ import {
  * похода, и код отказа службы можно скопировать и переслать — именно его
  * отсутствие дважды превращало разбор поломки в гадание.
  *
- * Формулировки продуктовые: человек читает «путь пишется и с погашенным
- * экраном» либо «пишется, пока приложение открыто», а код прячется в мелкую
- * строку под ними.
+ * Что именно показать, решает recordingStatusView: там же это и проверяется
+ * без телефона, включая сборки, где нативной службы нет вовсе.
  */
 export function WayBackRecordingStatus() {
   const t = useTranslations("wayback.active.recordingStatus");
@@ -34,35 +34,31 @@ export function WayBackRecordingStatus() {
     return () => window.removeEventListener(TRACK_WATCH_STATUS_EVENT, read);
   }, []);
 
-  // До первого чтения (сервер и первый кадр) не рисуем ничего: мигание
-  // «выключена → включена» на старте похода пугало бы зря.
-  if (!status?.hasTrack) return null;
+  const view = status ? recordingStatusView(status) : null;
+  if (!status || !view) return null;
 
-  const notificationHidden = status.backgroundIssue === "notificationsBlocked";
-  const on = status.background;
-  const reason = reasonKey(status);
+  const fixable =
+    status.backgroundIssue === "locationDenied" ||
+    status.backgroundIssue === "preciseLocation" ||
+    status.backgroundIssue === "notificationsBlocked";
 
   return (
-    <div className={cn("wb-tile flex flex-col gap-1 px-5 py-4")}>
+    <div className="wb-tile flex flex-col gap-1 px-5 py-4">
       <div className="flex items-center gap-2.5">
         <span
           aria-hidden="true"
           className={cn(
             "h-2.5 w-2.5 flex-none rounded-full",
-            on && !notificationHidden
+            view.tone === "on"
               ? "bg-wb-primary"
-              : on
+              : view.tone === "calm"
                 ? "bg-wb-muted-2"
                 : "bg-wb-danger",
           )}
         />
-        <span className="text-[15px] font-bold text-wb-ink">
-          {on ? t("on") : status.recording ? t("foregroundOnly") : t("off")}
-        </span>
+        <span className="text-[15px] font-bold text-wb-ink">{t(view.title)}</span>
       </div>
-      <p className="pl-[21px] text-[13.5px] leading-[1.5] text-wb-body">
-        {t(reason)}
-      </p>
+      <p className="pl-[21px] text-[13.5px] leading-[1.5] text-wb-body">{t(view.body)}</p>
       {status.backgroundDetail && (
         <button
           type="button"
@@ -72,9 +68,7 @@ export function WayBackRecordingStatus() {
           {status.backgroundDetail} · {t("copy")}
         </button>
       )}
-      {(status.backgroundIssue === "locationDenied" ||
-        status.backgroundIssue === "preciseLocation" ||
-        notificationHidden) && (
+      {fixable && (
         <button
           type="button"
           onClick={() => void openAppSettings()}
@@ -85,27 +79,6 @@ export function WayBackRecordingStatus() {
       )}
     </div>
   );
-}
-
-/** Одна причина — один текст; «включается…» до первой попытки. */
-function reasonKey(status: TrackWatchStatus): string {
-  if (status.background) {
-    return status.backgroundIssue === "notificationsBlocked" ? "bodyNoNotice" : "bodyOn";
-  }
-  switch (status.backgroundIssue) {
-    case "unsupported":
-      return "bodyUnsupported";
-    case "locationDenied":
-      return "bodyLocationDenied";
-    case "preciseLocation":
-      return "bodyPrecise";
-    case "locationOff":
-      return "bodyLocationOff";
-    case "failed":
-      return "bodyFailed";
-    default:
-      return status.recording ? "bodyStarting" : "bodyNothing";
-  }
 }
 
 async function copyDetail(detail: string, done: string): Promise<void> {
