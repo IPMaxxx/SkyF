@@ -14,6 +14,7 @@
 import { createWatchController } from "../src/lib/track/watchController.ts";
 import { watchMessage } from "../src/lib/track/watchMessage.ts";
 import { recordingStatusView } from "../src/lib/track/recordingStatusView.ts";
+import { confirmServiceStart } from "../src/lib/track/serviceStartup.ts";
 
 let failures = 0;
 
@@ -516,6 +517,61 @@ async function scenarioFrozenPage() {
   check("и работающей не считается", done.running("background"), false);
 }
 
+/**
+ * Ответ на запуск потерян по дороге — самый дорогой из известных нам отказов.
+ *
+ * На телефоне человека нативный start не ответил вовсе: сторож сработал через
+ * двадцать секунд, и всё это время экран показывал «включаем запись…». Причина
+ * системная — Capacitor вызывает метод плагина внутри try/catch, который на
+ * исключении промис не отклоняет. Значит ответа может не быть на любом вызове,
+ * и строить на нём вывод «идёт запись или нет» нельзя.
+ *
+ * Теперь вывод строится на опросе самой службы: у каждого вопроса свой срок,
+ * число вопросов конечно, поэтому исход есть всегда — «работает» или «не
+ * поднялась, вот причина», но никогда не «ждём».
+ */
+async function scenarioLostAnswer() {
+  console.log("\n— ответа на запуск нет, спрашиваем саму службу —");
+
+  const wait = async () => {};
+
+  // Служба встаёт не мгновенно: первые ответы отрицательные, и это норма.
+  let asked = 0;
+  const slow = await confirmServiceStart({ running: false }, async () => {
+    asked += 1;
+    return { running: asked >= 3 };
+  }, wait);
+  check("служба поднялась с третьего вопроса — признана работающей", slow.running, true);
+  check("и спрашивали ровно до ответа", asked, 3);
+
+  // Служба не встала и назвала причину — ждать дальше нечего.
+  const failed = await confirmServiceStart({ running: false }, async () => ({
+    running: false,
+    failure: "startForeground: ForegroundServiceStartNotAllowedException",
+  }), wait);
+  check("служба назвала причину — она и есть исход", failed.failure?.includes("NotAllowed"), true);
+  check("и работающей не считается", failed.running, false);
+
+  // Мост молчит на каждый вопрос. Раньше это и было вечное «включаем…».
+  let tries = 0;
+  const silent = await confirmServiceStart({ running: false }, async () => {
+    tries += 1;
+    return null;
+  }, wait);
+  check("мост молчит — исход всё равно есть", silent.running, false);
+  check("и число вопросов конечно", tries, 12);
+
+  // Служба ответила «работаю» сразу — лишних вопросов не задаём.
+  let extra = 0;
+  const instant = await confirmServiceStart({ running: true }, async () => {
+    extra += 1;
+    return { running: true };
+  }, wait);
+  check("ответила сразу — переспрашивать не о чем", extra, 0);
+  check("и запись признана идущей", instant.running, true);
+}
+
+await scenarioLostAnswer();
 await scenarioOldLogic();
 await scenarioMessages();
 await scenarioEnvironments();

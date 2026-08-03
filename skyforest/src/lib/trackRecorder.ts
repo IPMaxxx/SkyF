@@ -24,6 +24,7 @@ import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
 import {
+  backgroundWatchNative,
   backgroundWatchState,
   startBackgroundWatch,
   stopBackgroundWatch,
@@ -198,9 +199,15 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
     // Сроки есть у каждого нативного вызова, но появиться может и новый путь,
     // на котором мы кого-то не дождёмся.
     concludeStalled("watchdog");
-    // Служба могла всё-таки подняться, просто позже — снимаем, иначе GPS ест
-    // батарею ради записи, о которой JS не знает. Следующая сверка поднимет.
-    void attempt.then((late) => late?.());
+    // Ответа нет — но спросим саму службу: возможно, запись всё это время шла,
+    // а потерялся именно ответ.
+    void askService();
+    // Служба могла подняться позже — снимаем, иначе GPS ест батарею ради
+    // записи, о которой JS не знает. Если её уже приняли по опросу — не трогаем.
+    void attempt.then((late) => {
+      if (controller.running("background")) return;
+      late?.();
+    });
     return null;
   } finally {
     backgroundStarting = false;
@@ -288,6 +295,7 @@ export function trackWatchStatus(): TrackWatchStatus {
 function sync(patch?: { appForeground?: boolean; backgroundAllowed?: boolean }): void {
   if (patch?.appForeground != null) foreground = patch.appForeground;
   controller.update({ hasTrack: !!loadTrack(), ...patch });
+  updatePolling();
 }
 
 /**
@@ -325,22 +333,71 @@ async function onResume(): Promise<void> {
     concludeStalled("resume");
     emitStatus();
   }
+  await askService();
+}
+
+/**
+ * Спрашивает у службы, идёт ли запись, и приводит наше представление в
+ * соответствие с её ответом.
+ *
+ * Это основной способ узнать состояние фоновой записи, а не страховка. Ответ на
+ * `start()` его заменить не может: он приходит через мост, а мост теряет ответы
+ * (Capacitor вызывает метод плагина внутри try/catch, который на исключении
+ * промис не отклоняет) и молчит, пока WebView заморожен. Служба же на вопрос
+ * отвечает всегда и мгновенно, потому что читает свой флаг, а не ждёт события.
+ */
+async function askService(): Promise<void> {
   if (!loadTrack()) return;
   const state = await backgroundWatchState();
   if (!state) return;
-  trackLog(
-    "bg.native",
-    `running=${state.running} location=${state.location} precise=${state.precise} notifications=${state.notifications}`,
-  );
-  if (!state.running || controller.running("background")) return;
-  // Служба работает, а контроллер об этом не знает: ответ на её запуск потерялся
-  // в замороженном контексте. Принимаем как есть — слушатель координат ставился
-  // до старта, в том же заходе, и остаётся живым вместе со страницей.
-  backgroundIssue = null;
-  backgroundDetail = null;
-  controller.adopt("background", () => void stopBackgroundWatch());
-  trackLog("bg.adopted");
-  emitStatus();
+  const known = controller.running("background");
+  if (state.running !== known || !polled) {
+    trackLog(
+      "bg.native",
+      `running=${state.running} location=${state.location} precise=${state.precise} notifications=${state.notifications}`,
+    );
+  }
+  polled = true;
+  if (state.running && !known) {
+    // Служба работает, а контроллер об этом не знает: ответ на её запуск не
+    // дошёл. Принимаем как есть — слушатель координат ставился до старта, в том
+    // же заходе, и остаётся живым вместе со страницей.
+    backgroundIssue = null;
+    backgroundDetail = null;
+    controller.adopt("background", () => void stopBackgroundWatch());
+    trackLog("bg.adopted");
+    emitStatus();
+    return;
+  }
+  if (!state.running && known) {
+    // Служба умерла сама (система или запрет производителя) — контроллер должен
+    // об этом узнать, иначе он будет считать, что запись идёт, и не попробует
+    // поднять её снова.
+    backgroundIssue = state.location ? "failed" : "locationDenied";
+    backgroundDetail = state.failure ?? "service stopped on its own";
+    controller.markStopped("background");
+    trackLog("bg.gone", backgroundDetail);
+    emitStatus();
+  }
+}
+
+/**
+ * Пока приложение открыто и поход идёт, состояние службы переспрашивается по
+ * таймеру. Там, где своей службы нет, спрашивать нечего — таймер не заводится.
+ */
+const SERVICE_POLL_MS = 5_000;
+let poll: ReturnType<typeof setInterval> | null = null;
+let polled = false;
+
+function updatePolling(): void {
+  const wanted = foreground && !!loadTrack() && backgroundWatchNative();
+  if (wanted === !!poll) return;
+  if (wanted) {
+    poll = setInterval(() => void askService(), SERVICE_POLL_MS);
+    return;
+  }
+  clearInterval(poll!);
+  poll = null;
 }
 
 /** Только для проверок: дождаться, пока сверки источников закончатся. */

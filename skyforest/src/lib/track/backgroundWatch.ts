@@ -39,10 +39,16 @@ import { isNativeApp } from "@/lib/native/capacitor";
 import { trackLog } from "@/lib/track/trackLog";
 import {
   foregroundService,
+  foregroundServiceFound,
   FOREGROUND_SERVICE_TIMEOUTS,
   withTimeout,
   type ForegroundServicePlugin,
+  type ForegroundServiceStatus,
 } from "@/lib/track/foregroundService";
+import { confirmServiceStart } from "@/lib/track/serviceStartup";
+
+/** Есть ли у оболочки своя служба, у которой вообще можно спросить состояние. */
+export { foregroundServiceFound as backgroundWatchNative };
 
 /** Текст постоянного уведомления Android; приходит из словаря приложения. */
 export interface BackgroundNotice {
@@ -86,14 +92,22 @@ let pendingPlugin: Promise<BackgroundGeolocationPlugin | null> | null = null;
 async function loadPlugin(): Promise<BackgroundGeolocationPlugin | null> {
   if (!isNativeApp()) return null;
   try {
-    const { BackgroundGeolocation } = await import("@capgo/background-geolocation");
+    // Со сроком: сам import() — это запрос за куском бандла по сети, и в лесу
+    // он не отваливается по ошибке, а просто не завершается никогда.
+    const { BackgroundGeolocation } = await withTimeout(
+      import("@capgo/background-geolocation"),
+      FOREGROUND_SERVICE_TIMEOUTS.load,
+      "import @capgo/background-geolocation",
+    );
     await withTimeout(
       BackgroundGeolocation.getPluginVersion(),
       FOREGROUND_SERVICE_TIMEOUTS.detect,
       "BackgroundGeolocation.getPluginVersion",
     );
     return BackgroundGeolocation;
-  } catch {
+  } catch (error) {
+    const failure = error as { code?: string; message?: string };
+    trackLog("bg.plugin", `unavailable — ${failure?.code ?? ""} ${failure?.message ?? error}`.trim());
     return null;
   }
 }
@@ -145,7 +159,11 @@ async function ensureNotificationPermission(
     // видимой отметки играет синий индикатор геолокации.
     if (!status.notification || status.notification === "granted") return true;
     if (status.notification !== "denied") {
-      const next = await api.requestPermissions({ permissions: ["notification"] });
+      const next = await withTimeout(
+        api.requestPermissions({ permissions: ["notification"] }),
+        FOREGROUND_SERVICE_TIMEOUTS.start,
+        "BackgroundGeolocation.requestPermissions",
+      );
       if (next.notification === "granted") return true;
     }
     window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
@@ -170,6 +188,7 @@ export async function backgroundWatchState(): Promise<{
   location: boolean;
   precise: boolean;
   notifications: boolean;
+  failure: string | null;
 } | null> {
   const service = await foregroundService();
   if (!service) return null;
@@ -184,6 +203,7 @@ export async function backgroundWatchState(): Promise<{
       location: status.location,
       precise: status.precise,
       notifications: status.notifications,
+      failure: status.failure ?? null,
     };
   } catch {
     return null;
@@ -211,7 +231,11 @@ export async function openAppSettings(): Promise<void> {
   const api = await plugin();
   if (!api) return;
   try {
-    await api.openSettings();
+    await withTimeout(
+      api.openSettings(),
+      FOREGROUND_SERVICE_TIMEOUTS.call,
+      "BackgroundGeolocation.openSettings",
+    );
   } catch {
     /* нативной части нет — открывать нечего */
   }
@@ -264,6 +288,13 @@ async function startWithService(
   options: BackgroundWatchOptions,
 ): Promise<(() => void) | null> {
   let stopped = false;
+  let handle: { remove: () => Promise<void> } | null = null;
+  const stopper = () => {
+    stopped = true;
+    handle?.remove().catch(() => {});
+    service.stop().catch(() => {});
+  };
+
   try {
     // Подписки прежнего контекста страницы мост хранит по идентификаторам
     // колбэков; после перезагрузки они мертвы, и снимать их некому.
@@ -272,7 +303,7 @@ async function startWithService(
       FOREGROUND_SERVICE_TIMEOUTS.call,
       "WayBackTrack.removeAllListeners",
     );
-    const handle = await withTimeout(
+    handle = await withTimeout(
       service.addListener("location", (position) => {
         if (stopped) return;
         options.onPosition(position.latitude, position.longitude, position.accuracy ?? null);
@@ -280,9 +311,8 @@ async function startWithService(
       FOREGROUND_SERVICE_TIMEOUTS.call,
       "WayBackTrack.addListener",
     );
-    // Запас времени большой намеренно: внутри start плагин может показать
-    // системный диалог разрешения на уведомления, и человек отвечает не сразу.
-    const status = await withTimeout(
+    const began = Date.now();
+    const accepted = await withTimeout(
       service.start({
         title: options.notice.title,
         message: options.notice.message,
@@ -291,43 +321,112 @@ async function startWithService(
       FOREGROUND_SERVICE_TIMEOUTS.start,
       "WayBackTrack.start",
     );
-    // Разрешение на уведомления досматриваем после старта и не дожидаясь
-    // ответа: диалог человек читает секунды, а служба уже пишет путь. Без
-    // разрешения запись идёт, но её не видно — молчать об этом нельзя ни по
-    // политике Google, ни по-человечески.
-    if (!status.notifications) {
-      service
-        .requestNotifications()
-        .catch(() => status)
-        .then((next) => {
-          if (stopped || next.notifications) return;
-          window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
-          options.onIssue("notificationsBlocked", null);
-        });
+    trackLog("bg.start", `accepted in ${Date.now() - began} ms`);
+    // «Команду приняли» и «служба работает» — разные вещи, и вторую мы
+    // выясняем сами, переспрашивая службу. Это надёжнее ожидания внутри
+    // нативного метода: каждый вопрос имеет свой срок, поэтому исход у попытки
+    // есть всегда, даже когда ответ на start теряется по дороге.
+    const status = await confirmRunning(service, accepted);
+    if (!status.running) {
+      trackLog("bg.start", `service is not up — ${status.failure ?? "no reason given"}`);
+      throw {
+        code: "SERVICE_FAILED",
+        message: status.failure ?? "the recording service did not start",
+      };
     }
-    return () => {
-      stopped = true;
-      handle.remove().catch(() => {});
-      service.stop().catch(() => {});
-    };
+    trackLog("bg.started", `confirmed in ${Date.now() - began} ms`);
+    afterStart(service, status, options, () => stopped);
+    return stopper;
   } catch (error) {
     const failure = error as { code?: string; message?: string };
+    trackLog("bg.start", `no answer — ${failure?.code ?? ""} ${failure?.message ?? error}`.trim());
+    // Ответа на start нет — но это ещё не значит, что записи нет. Ответ мог
+    // потеряться по дороге: Capacitor вызывает метод плагина внутри try/catch,
+    // который на исключении только пишет в лог и промис не отклоняет. Истина о
+    // записи — у самой службы, а не у нашего промиса, поэтому спрашиваем её.
+    const state = await backgroundWatchState();
+    if (state?.running) {
+      trackLog("bg.start", "service is running anyway — adopted");
+      afterStart(service, state, options, () => stopped);
+      return stopper;
+    }
     service.removeAllListeners().catch(() => {});
-    // Служба могла всё-таки подняться (например мы не дождались ответа) —
-    // глушим, иначе GPS ест батарею ради записи, которой в JS нет.
+    // Служба могла подняться частично и держать GPS — глушим, иначе батарея
+    // тратится на запись, которой в JS нет.
     service.stop().catch(() => {});
-    options.onIssue(serviceIssue(failure), errorDetail(failure));
+    options.onIssue(serviceIssue(failure, state), errorDetail(failure));
     return null;
   }
 }
 
 /**
- * Коды отказа своей службы; в отличие от плагина, каждый значит ровно одно.
- * NOT_AUTHORIZED здесь — «геолокация не разрешена совсем», а не «разрешена
- * приблизительно»: службе хватает и грубого разрешения.
+ * Переспрашивает службу, встала ли она. Между командой и подъёмом проходит
+ * доля секунды, поэтому первый ответ обычно отрицательный, и это нормально.
+ * Правило вынесено в отдельный модуль, чтобы проверяться без телефона.
  */
-function serviceIssue(error: { code?: string; message?: string }): BackgroundIssue {
-  return error.code === "NOT_AUTHORIZED" ? "locationDenied" : "failed";
+function confirmRunning(
+  service: ForegroundServicePlugin,
+  first: ForegroundServiceStatus,
+): Promise<ForegroundServiceStatus> {
+  return confirmServiceStart(
+    first,
+    async () => {
+      try {
+        return await withTimeout(
+          service.status(),
+          FOREGROUND_SERVICE_TIMEOUTS.call,
+          "WayBackTrack.status",
+        );
+      } catch {
+        return null;
+      }
+    },
+    (ms) => new Promise((done) => setTimeout(done, ms)),
+  ) as Promise<ForegroundServiceStatus>;
+}
+
+/**
+ * Разрешение на уведомления досматривается после старта и без ожидания ответа:
+ * диалог человек читает секунды, а служба уже пишет путь. Без разрешения запись
+ * идёт, но её не видно — молчать об этом нельзя ни по политике Google, ни
+ * по-человечески.
+ */
+function afterStart(
+  service: ForegroundServicePlugin,
+  status: { notifications: boolean; precise: boolean },
+  options: BackgroundWatchOptions,
+  stopped: () => boolean,
+): void {
+  if (!status.precise) trackLog("bg.precise", "approximate location only");
+  if (status.notifications) return;
+  service
+    .requestNotifications()
+    .catch(() => status)
+    .then((next) => {
+      if (stopped() || next.notifications) return;
+      window.dispatchEvent(new Event(BACKGROUND_NOTICE_BLOCKED_EVENT));
+      options.onIssue("notificationsBlocked", null);
+    });
+}
+
+/**
+ * Коды отказа своей службы; в отличие от плагина, каждый значит ровно одно.
+ * NOT_AUTHORIZED — «геолокация не разрешена совсем».
+ *
+ * Отдельный случай — «разрешено приблизительно». По документации службе
+ * переднего плана типа location хватает и грубого разрешения, но проверить это
+ * на всех оболочках мы не можем, а разница между эмулятором с полными правами и
+ * телефоном человека объясняется этим лучше всего. Поэтому если старт не удался
+ * и при этом точное местоположение не выдано — называем причиной именно его:
+ * она хотя бы поправима одним переключателем, в отличие от «не получилось».
+ */
+function serviceIssue(
+  error: { code?: string; message?: string },
+  state: { location: boolean; precise: boolean } | null,
+): BackgroundIssue {
+  if (error.code === "NOT_AUTHORIZED" || state?.location === false) return "locationDenied";
+  if (state && !state.precise) return "preciseLocation";
+  return "failed";
 }
 
 async function startWithPlugin(
@@ -386,7 +485,7 @@ async function startWithPlugin(
   }
 
   try {
-    await run();
+    await withTimeout(run(), FOREGROUND_SERVICE_TIMEOUTS.start, "BackgroundGeolocation.start");
   } catch {
     // Сюда попадают только отказы самого моста; отказ службы приходит колбэком.
     options.onIssue("failed", null);
@@ -419,7 +518,7 @@ export async function stopBackgroundWatch(): Promise<void> {
   const api = await plugin();
   if (!api) return;
   try {
-    await api.stop();
+    await withTimeout(api.stop(), FOREGROUND_SERVICE_TIMEOUTS.call, "BackgroundGeolocation.stop");
   } catch {
     /* службы нет — останавливать нечего */
   }

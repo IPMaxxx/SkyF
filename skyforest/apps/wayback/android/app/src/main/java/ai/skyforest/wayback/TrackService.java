@@ -100,21 +100,24 @@ public class TrackService extends Service {
         String message = intent != null ? intent.getStringExtra(EXTRA_MESSAGE) : null;
         float distance = intent != null ? intent.getFloatExtra(EXTRA_DISTANCE, 10f) : 10f;
 
-        // Уведомление — первым делом: с момента startForegroundService у службы
-        // пять секунд, иначе система убивает приложение.
+        // Всё тело под охраной: исключение, выпущенное из onStartCommand,
+        // роняет процесс, а плагин к этому моменту уже ответил в JS — то есть
+        // человек остался бы и без записи, и без причины. Здесь причина
+        // сохраняется, и её забирает status().
         lastFailure = null;
         try {
+            // Уведомление — первым делом: с момента startForegroundService у
+            // службы пять секунд, иначе система убивает приложение.
             promoteToForeground(title, message);
+            running = true;
+            acquireWakeLock();
+            requestUpdates(distance);
         } catch (Exception e) {
-            lastFailure = "startForeground: " + e.getClass().getSimpleName() + ": " + e.getMessage();
-            Log.e(TAG, "Could not show the ongoing notification", e);
+            lastFailure = e.getClass().getSimpleName() + ": " + e.getMessage();
+            Log.e(TAG, "Could not start recording", e);
             stopSelf();
             return START_NOT_STICKY;
         }
-
-        acquireWakeLock();
-        requestUpdates(distance);
-        running = true;
         // Повторный старт (перезагрузка страницы посреди похода) сюда же и
         // приходит: уведомление обновляется, подписка переставляется, второй
         // службы не появляется.
@@ -162,6 +165,7 @@ public class TrackService extends Service {
         } catch (SecurityException e) {
             // Разрешение проверяет плагин до старта; сюда попадаем, только если
             // его отозвали на ходу — тогда записи нет и держать службу незачем.
+            lastFailure = "requestLocationUpdates: " + e.getMessage();
             Log.e(TAG, "Location permission revoked while recording", e);
             stopSelf();
         }

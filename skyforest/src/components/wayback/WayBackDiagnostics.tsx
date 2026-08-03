@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
+import { backgroundWatchState } from "@/lib/track/backgroundWatch";
 import { clearTrackLog, formatTrackLog, readTrackLog } from "@/lib/track/trackLog";
 import { trackWatchStatus } from "@/lib/trackRecorder";
 
@@ -25,9 +26,12 @@ export function WayBackDiagnostics({ open, onClose }: { open: boolean; onClose: 
   useEffect(() => {
     if (!open) return;
     let alive = true;
-    void nativeBuild().then((info) => {
+    // Состояние спрашиваем у самой службы, а не берём из памяти страницы: когда
+    // человек открывает журнал, интересует именно то, что происходит на
+    // телефоне сейчас, включая точность выданной геолокации.
+    void Promise.all([nativeBuild(), backgroundWatchState()]).then(([info, native]) => {
       if (!alive) return;
-      setText(formatTrackLog(header(formatNativeBuild(info)), readTrackLog()));
+      setText(formatTrackLog(header(formatNativeBuild(info), native), readTrackLog()));
     });
     return () => {
       alive = false;
@@ -80,13 +84,19 @@ export function WayBackDiagnostics({ open, onClose }: { open: boolean; onClose: 
 }
 
 /** Шапка выписки: без неё строчки журнала не с чем соотнести. */
-function header(shell: string | null): string[] {
+function header(
+  shell: string | null,
+  native: { running: boolean; location: boolean; precise: boolean; notifications: boolean } | null,
+): string[] {
   const status = trackWatchStatus();
   return [
     `web ${process.env.NEXT_PUBLIC_APP_VERSION} · app ${shell ?? "browser"}`,
     `now ${new Date().toISOString()}`,
     `track=${status.hasTrack} recording=${status.recording} plain=${status.plain} background=${status.background}`,
     `starting=${status.backgroundStarting} issue=${status.backgroundIssue ?? "-"} detail=${status.backgroundDetail ?? "-"}`,
+    native
+      ? `service running=${native.running} location=${native.location} precise=${native.precise} notifications=${native.notifications}`
+      : "service absent (no native part in this build)",
     `ua ${typeof navigator === "undefined" ? "-" : navigator.userAgent}`,
   ];
 }

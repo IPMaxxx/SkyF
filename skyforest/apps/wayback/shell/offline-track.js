@@ -140,6 +140,7 @@
         WayBackTrack: {
           start: function (o) { return call("WayBackTrack", "start", o); },
           stop: function () { return call("WayBackTrack", "stop", {}); },
+          status: function () { return call("WayBackTrack", "status", {}); },
           requestNotifications: function () { return call("WayBackTrack", "requestNotifications", {}); },
           onLocation: function (cb) {
             return watch("WayBackTrack", "addListener", { eventName: "location" }, cb);
@@ -502,10 +503,20 @@
   }
 
   /**
-   * Своя служба, если она есть в этой оболочке. В отличие от плагина, start
-   * отклоняется, когда службу поднять не удалось, — поэтому здесь можно
-   * честно вернуть «не вышло» и остаться на обычном watch.
+   * Своя служба, если она есть в этой оболочке. В отличие от плагина, здесь
+   * можно честно узнать, поднялась ли она, и остаться на обычном watch, если
+   * нет: start подтверждает лишь приём команды, а работает служба или нет,
+   * спрашиваем у неё самой.
    */
+  function confirmService(svc, status, left) {
+    if (status && (status.running || status.failure)) return Promise.resolve(status);
+    if (left <= 0) return Promise.resolve(status || {});
+    return new Promise(function (done) { setTimeout(done, 300); })
+      .then(function () { return svc.status(); })
+      .catch(function () { return status; })
+      .then(function (next) { return confirmService(svc, next, left - 1); });
+  }
+
   function launchService(onPos) {
     var svc = trackService();
     if (!svc) return Promise.resolve(false);
@@ -523,11 +534,16 @@
           distanceFilter: BACKGROUND_DISTANCE_FILTER_M,
         });
       })
+      .then(function (accepted) { return confirmService(svc, accepted, 12); })
       .then(function (status) {
+        if (!status || !status.running) {
+          svc.stop().catch(function () {});
+          return false;
+        }
         backgroundOn = true;
         // Разрешение на уведомления спрашиваем после старта и не дожидаясь
         // ответа: служба уже пишет путь, а диалог человек читает секунды.
-        if (status && status.notifications === false) {
+        if (status.notifications === false) {
           svc.requestNotifications().catch(function () {});
         }
         return true;

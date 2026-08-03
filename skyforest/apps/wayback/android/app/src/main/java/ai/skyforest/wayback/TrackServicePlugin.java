@@ -4,8 +4,6 @@ import android.Manifest;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
@@ -20,20 +18,25 @@ import com.getcapacitor.annotation.PermissionCallback;
 /**
  * Мост в JS для TrackService.
  *
- * Два правила, и оба выстраданы.
+ * Три правила, и все выстраданы.
  *
- * Первое: start() возвращает честный промис. Он отклоняется с кодом, если
- * службу поднять не удалось, и разрешается только после того, как служба
- * действительно встала. У плагина фоновой геолокации «фоновая запись включена»
- * означало лишь то, что вызов зарегистрировали.
+ * Первое: ни один вызов не остаётся без ответа. Capacitor вызывает метод
+ * плагина внутри try/catch, который на исключении только пишет в лог («Serious
+ * error executing plugin», Bridge.callPluginMethod) и НЕ отклоняет вызов —
+ * промис в JS висит навсегда, а экран показывает вечное «настраиваем запись».
+ * Поэтому обёрнуто тело каждого метода И каждого колбэка разрешений: колбэк
+ * система зовёт позже и уже вне того try/catch.
  *
- * Второе: ни один метод не выпускает наружу исключение. Capacitor вызывает
- * метод плагина внутри try/catch, который на исключении только пишет в лог
- * («Serious error executing plugin», Bridge.callPluginMethod) и НЕ отклоняет
- * вызов — промис в JS остаётся висеть навсегда, а экран показывает вечное
- * «настраиваем запись». Поэтому тело каждого метода обёрнуто, и текст
- * исключения уезжает в JS кодом отказа: пусть человек увидит причину, а не
- * бесконечное ожидание.
+ * Второе: start() не ждёт. Раньше он держал вызов, пока служба не поднимет
+ * флаг, — и любая заминка внутри службы превращалась в отсутствие ответа.
+ * Теперь он отвечает по факту вызова startForegroundService: успех значит
+ * «команда принята системой», не более. Поднялась ли служба на самом деле,
+ * спрашивают отдельно у status() — тот отвечает мгновенно, потому что читает
+ * флаг, а не ждёт события. Так «нет ответа» перестаёт быть возможным исходом.
+ *
+ * Третье: причина отказа доезжает до JS. Служба, упавшая на startForeground,
+ * оставляет текст в TrackService.lastFailure(), и status() отдаёт его полем
+ * failure — иначе человеку остаётся «не получилось», а нам гадание.
  *
  * Системные диалоги внутри start() тоже под запретом сверх необходимого:
  * разрешение на уведомления спрашивается отдельным вызовом уже после старта,
@@ -55,10 +58,6 @@ public class TrackServicePlugin extends Plugin {
     static final String LOCATION = "location";
     static final String PRECISE = "precise";
     static final String NOTIFICATION = "notification";
-
-    /** Сколько ждём подтверждения, что служба встала, прежде чем считать отказом. */
-    private static final long START_TIMEOUT_MS = 4_000;
-    private static final long START_POLL_MS = 100;
 
     @Override
     public void load() {
@@ -131,7 +130,11 @@ public class TrackServicePlugin extends Plugin {
 
     @PermissionCallback
     private void afterNotifications(PluginCall call) {
-        call.resolve(status());
+        try {
+            call.resolve(status());
+        } catch (Exception e) {
+            failed(call, e);
+        }
     }
 
     @PluginMethod
@@ -188,29 +191,11 @@ public class TrackServicePlugin extends Plugin {
             call.reject("Could not start the recording service: " + e.getClass().getSimpleName(), "SERVICE_BLOCKED", e, status());
             return;
         }
-        awaitRunning(call, 0);
-    }
-
-    /**
-     * startForegroundService() возвращает управление до того, как служба
-     * успевает подняться, поэтому ждём флаг самой службы. Так «включилась» и
-     * «вызов зарегистрирован» перестают быть одним и тем же.
-     */
-    private void awaitRunning(PluginCall call, long waited) {
-        if (TrackService.isRunning()) {
-            call.resolve(status());
-            return;
-        }
-        if (waited >= START_TIMEOUT_MS) {
-            String reason = TrackService.lastFailure();
-            call.reject(
-                reason == null ? "The recording service did not start" : reason,
-                "SERVICE_FAILED",
-                status()
-            );
-            return;
-        }
-        new Handler(Looper.getMainLooper()).postDelayed(() -> awaitRunning(call, waited + START_POLL_MS), START_POLL_MS);
+        // Ответ сразу. Служба к этому моменту, скорее всего, ещё не встала —
+        // и это нормально: поднялась она или нет, JS узнаёт у status(), а не из
+        // ожидания здесь. Ожидание было единственным местом, где вызов мог
+        // остаться без ответа, и его больше нет.
+        call.resolve(status());
     }
 
     /** Исключение наружу выпускать нельзя, поэтому превращаем его в отказ с текстом. */
@@ -224,6 +209,9 @@ public class TrackServicePlugin extends Plugin {
         data.put("precise", getPermissionState(PRECISE) == PermissionState.GRANTED);
         data.put("location", getPermissionState(LOCATION) == PermissionState.GRANTED);
         data.put("notifications", notificationsAllowed());
+        // Последний отказ самой службы. Она падает уже после того, как метод
+        // плагина вернулся, поэтому иначе о причине не узнать никак.
+        data.put("failure", TrackService.lastFailure());
         return data;
     }
 

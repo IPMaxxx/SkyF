@@ -22,6 +22,7 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import { trackLog } from "@/lib/track/trackLog";
 
 /**
  * Сколько ждём ответа моста, прежде чем считать вызов провалившимся.
@@ -32,8 +33,13 @@ import { isNativeApp } from "@/lib/native/capacitor";
  * вызов: промис в JS остаётся висеть навсегда. Любая нативная осечка без
  * таймаута превращается в вечное «настраиваем запись» на экране — ровно то,
  * что человек и увидел.
+ *
+ * Четыре секунды на проверку, а не одна: где нативной части нет, мост отвечает
+ * UNIMPLEMENTED сразу, и срок не расходуется вовсе. Расходуется он там, где мост
+ * ещё просыпается на холодном старте, и поспешный вывод «службы нет» стоил бы
+ * похода без фоновой записи.
  */
-const DETECT_TIMEOUT_MS = 2_000;
+const DETECT_TIMEOUT_MS = 4_000;
 /**
  * Нативная часть отвечает за секунды: разрешение на уведомления спрашивается
  * отдельным вызовом уже после старта, а сама служба подтверждает подъём за
@@ -42,6 +48,14 @@ const DETECT_TIMEOUT_MS = 2_000;
  */
 const START_TIMEOUT_MS = 8_000;
 const CALL_TIMEOUT_MS = 4_000;
+/**
+ * Загрузка модуля плагина — это сетевой запрос за куском бандла, и он тоже
+ * обязан иметь срок. Без него «включаем запись…» висело на телефоне, где
+ * связи нет: import() за недостающим куском не отваливается по ошибке, он
+ * просто не завершается, и сторож ловил уже пустоту через двадцать секунд.
+ * В лесу связи нет по определению — то есть это не редкий случай, а обычный.
+ */
+const IMPORT_TIMEOUT_MS = 5_000;
 
 export interface NativeCallFailure {
   code: string;
@@ -78,6 +92,7 @@ export const FOREGROUND_SERVICE_TIMEOUTS = {
   detect: DETECT_TIMEOUT_MS,
   start: START_TIMEOUT_MS,
   call: CALL_TIMEOUT_MS,
+  load: IMPORT_TIMEOUT_MS,
 };
 
 export interface ForegroundServiceStatus {
@@ -88,6 +103,13 @@ export interface ForegroundServiceStatus {
   location: boolean;
   /** Видно ли постоянное уведомление (Android 13+ спрашивает отдельно). */
   notifications: boolean;
+  /**
+   * Почему служба не поднялась, словами самой службы. Она падает уже после
+   * того, как метод плагина вернул управление, поэтому в отказ вызова эта
+   * причина попасть не может — только сюда. В оболочках до versionCode 11 поля
+   * нет, и это не отличается от «причина неизвестна».
+   */
+  failure?: string | null;
 }
 
 interface ServicePosition {
@@ -124,16 +146,27 @@ let pending: Promise<ForegroundServicePlugin | null> | null = null;
 
 async function load(): Promise<ForegroundServicePlugin | null> {
   if (!isNativeApp()) return null;
+  const began = Date.now();
   try {
-    const { registerPlugin } = await import("@capacitor/core");
+    const { registerPlugin } = await withTimeout(
+      import("@capacitor/core"),
+      IMPORT_TIMEOUT_MS,
+      "import @capacitor/core",
+    );
     const api = registerPlugin<ForegroundServicePlugin>("WayBackTrack");
     // Прокси создаётся всегда, поэтому отсутствие нативной части видно только
     // по вызову: без неё мост отвечает UNIMPLEMENTED. С таймаутом, потому что
     // «нативной части нет» — штатное положение дел для сборок из Play, и
     // зависнуть на этой проверке приложение права не имеет.
     await withTimeout(api.status(), DETECT_TIMEOUT_MS, "WayBackTrack.status");
+    trackLog("bg.detect", `WayBackTrack in ${Date.now() - began} ms`);
     return api;
-  } catch {
+  } catch (error) {
+    const failure = error as { code?: string; message?: string };
+    trackLog(
+      "bg.detect",
+      `no WayBackTrack in ${Date.now() - began} ms — ${failure?.code ?? ""} ${failure?.message ?? error}`.trim(),
+    );
     return null;
   }
 }
@@ -143,6 +176,15 @@ async function load(): Promise<ForegroundServicePlugin | null> {
  * случайности (мост ещё не поднят на первом обращении), а запомненный навсегда
  * отказ означал бы поход без фоновой записи до перезапуска приложения.
  */
+/**
+ * Нашлась ли своя служба — синхронно и без обращения к мосту. Нужно тем, кто
+ * опрашивает состояние по таймеру: там, где нативной части нет, спрашивать
+ * нечего и незачем.
+ */
+export function foregroundServiceFound(): boolean {
+  return cached !== null;
+}
+
 export function foregroundService(): Promise<ForegroundServicePlugin | null> {
   if (cached) return Promise.resolve(cached);
   pending ??= load().then((api) => {
