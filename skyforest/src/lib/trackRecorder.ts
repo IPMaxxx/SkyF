@@ -167,12 +167,37 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
   backgroundDetail = null;
   backgroundStarting = true;
   emitStatus();
+  const attempt = launchBackground(current);
   try {
-    return await launchBackground(current);
+    const stop = await Promise.race([attempt, watchdog()]);
+    if (stop !== WATCHDOG) return stop;
+    // Сроки есть у каждого нативного вызова, но появиться может и новый путь,
+    // на котором мы кого-то не дождёмся. «Настраиваем запись…» без конца и без
+    // кода отказа человек уже видел — больше это состояние невозможно: попытка
+    // всегда чем-то оканчивается, и причина всегда названа.
+    backgroundIssue = "failed";
+    backgroundDetail = `WATCHDOG: background start gave no answer in ${BACKGROUND_START_WATCHDOG_MS} ms`;
+    controller.markStopped("background");
+    // Служба могла всё-таки подняться, просто позже — снимаем, иначе GPS ест
+    // батарею ради записи, о которой JS не знает. Следующая сверка поднимет.
+    void attempt.then((late) => late?.());
+    return null;
   } finally {
     backgroundStarting = false;
     emitStatus();
   }
+}
+
+/**
+ * Сколько всего может занять честная попытка: определение нативной части (2 с),
+ * два вызова моста (по 4 с) и подтверждение старта службы (8 с). Сторож — на
+ * случай, если появится путь без своего срока.
+ */
+const BACKGROUND_START_WATCHDOG_MS = 20_000;
+const WATCHDOG = Symbol("watchdog");
+
+function watchdog(): Promise<typeof WATCHDOG> {
+  return new Promise((resolve) => setTimeout(() => resolve(WATCHDOG), BACKGROUND_START_WATCHDOG_MS));
 }
 
 async function launchBackground(notice: BackgroundNotice): Promise<(() => void) | null> {

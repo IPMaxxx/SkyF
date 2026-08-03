@@ -67,6 +67,22 @@ export function createWatchController(
       ? inputs.hasTrack && inputs.appForeground
       : inputs.hasTrack && inputs.backgroundAllowed;
 
+  /**
+   * Можно ли поднимать источник ПРЯМО СЕЙЧАС. Не то же самое, что «нужен»:
+   * фоновая служба нужна весь поход, но поднять её можно только пока
+   * приложение на переднем плане.
+   *
+   * С Android 12 запуск службы переднего плана из фона запрещён и падает с
+   * ForegroundServiceStartNotAllowedException. А сверка слотов запускается в
+   * том числе по уходу в фон и гашению экрана — то есть если первая попытка
+   * почему-то не удалась, все следующие приходились ровно на тот момент,
+   * когда система гарантированно откажет. Служба поднимается в момент «ухожу
+   * в поход», пока человек смотрит на экран; гашение экрана после этого не
+   * запускает ничего — служба уже работает.
+   */
+  const canStart = (slot: WatchSlot): boolean =>
+    slot === "plain" ? true : inputs.appForeground;
+
   function stopSlot(slot: WatchSlot): void {
     const stop = stops[slot];
     if (!stop) return;
@@ -81,6 +97,8 @@ export function createWatchController(
       return;
     }
     if (stops[slot]) return;
+    // Не «отказ», а «не сейчас»: попытку повторит возвращение в приложение.
+    if (!canStart(slot)) return;
     const stop = await starters[slot]();
     // Не поднялся — следующее событие попробует снова. Молчаливого «навсегда
     // без записи» здесь быть не должно.

@@ -94,7 +94,9 @@ async function scenarioBackgroundFails() {
   c.update({ appForeground: true });
   await c.settled();
   check("вернулись — запись снова идёт", state(c), { plain: true, background: false });
-  check("фон пробовали поднять на каждом событии, а не один раз", log.bgStarts >= 3, true);
+  // Повторяем, но только когда приложение на переднем плане: из фона службу
+  // переднего плана Android поднять не даст. Здесь это два события из трёх.
+  check("фон пробовали поднять снова, а не сдались после первого отказа", log.bgStarts, 2);
 }
 
 async function scenarioNoBackgroundSupport() {
@@ -390,9 +392,88 @@ async function scenarioEnvironments() {
   check("и тон спокойный, а не красный", hidden.tone, "calm");
 }
 
+/**
+ * Момент запуска службы относительно жизненного цикла приложения.
+ *
+ * С Android 12 поднять службу переднего плана из фона нельзя — система бросает
+ * ForegroundServiceStartNotAllowedException. А сверка слотов запускается в том
+ * числе по уходу в фон, поэтому неудачная первая попытка тянула за собой
+ * вторую ровно там, где отказ гарантирован. В Node этот класс дефекта раньше
+ * не ловился: жизненный цикл в проверке не моделировался вовсе.
+ */
+async function scenarioStartMoment() {
+  console.log("\n— когда именно поднимается служба —");
+
+  const attempts = [];
+  let allow = true;
+  let live = false;
+  const make = () =>
+    createWatchController({
+      plain: async () => () => {},
+      background: async () => {
+        attempts.push(foregroundNow);
+        if (!allow) return null;
+        live = true;
+        return () => {
+          live = false;
+        };
+      },
+    });
+
+  let foregroundNow = true;
+  const c = make();
+
+  // Поход начинается, пока человек смотрит на экран — единственный момент,
+  // когда систему устраивает запуск службы.
+  c.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+  await c.settled();
+  check("поход начат при активном приложении — попытка была", attempts.length, 1);
+  check("и именно на переднем плане", attempts[0], true);
+  check("служба работает", live, true);
+
+  // Дальше — сворачивание и гашение экрана. Запускать уже нечего.
+  foregroundNow = false;
+  c.update({ appForeground: false });
+  await c.settled();
+  check("свернули приложение — новой попытки нет", attempts.length, 1);
+  check("служба продолжает работать", c.running("background"), true);
+  check("а обычный watch снят, он в фоне бесполезен", c.running("plain"), false);
+
+  foregroundNow = true;
+  c.update({ appForeground: true });
+  await c.settled();
+  check("вернулись — службу не поднимают заново", attempts.length, 1);
+
+  c.stopAll();
+  check("поход завершён — служба снята", live, false);
+
+  // Первая попытка не удалась: повтор должен ждать возвращения в приложение.
+  attempts.length = 0;
+  allow = false;
+  foregroundNow = true;
+  const failed = make();
+  failed.update({ hasTrack: true, appForeground: true, backgroundAllowed: true });
+  await failed.settled();
+  check("отказ на переднем плане — попытка была одна", attempts.length, 1);
+
+  foregroundNow = false;
+  failed.update({ appForeground: false });
+  await failed.settled();
+  check("ушли в фон — из фона поднимать не пробуем", attempts.length, 1);
+
+  allow = true;
+  foregroundNow = true;
+  failed.update({ appForeground: true });
+  await failed.settled();
+  check("вернулись — вот теперь повтор", attempts.length, 2);
+  check("и на этот раз служба встала", failed.running("background"), true);
+  failed.stopAll();
+}
+
 await scenarioOldLogic();
 await scenarioMessages();
 await scenarioEnvironments();
+await scenarioStartMoment();
 await scenarioForegroundService();
 await scenarioHappyPath();
 await scenarioBackgroundFails();

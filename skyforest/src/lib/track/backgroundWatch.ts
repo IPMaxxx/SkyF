@@ -302,7 +302,6 @@ async function startWithPlugin(
     options.onIssue("unsupported", null);
     return null;
   }
-  const notificationsOk = await ensureNotificationPermission(api);
 
   let stopped = false;
   let retried = false;
@@ -358,7 +357,12 @@ async function startWithPlugin(
     return null;
   }
 
-  if (!notificationsOk) options.onIssue("notificationsBlocked", null);
+  // Разрешение на уведомления — рядом со стартом, а не до него: внутри может
+  // открыться системный диалог, и человек отвечает на него секунды. Ждать его
+  // на пути запуска значит держать поход без записи всё это время.
+  void ensureNotificationPermission(api).then((ok) => {
+    if (!ok && !stopped) options.onIssue("notificationsBlocked", null);
+  });
 
   return () => {
     stopped = true;

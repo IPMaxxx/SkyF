@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
 import { openAppSettings } from "@/lib/track/backgroundWatch";
 import { recordingStatusView } from "@/lib/track/recordingStatusView";
 import {
@@ -26,11 +27,13 @@ import {
 export function WayBackRecordingStatus() {
   const t = useTranslations("wayback.active.recordingStatus");
   const [status, setStatus] = useState<TrackWatchStatus | null>(null);
+  const [shell, setShell] = useState<string | null>(null);
 
   useEffect(() => {
     const read = () => setStatus(trackWatchStatus());
     read();
     window.addEventListener(TRACK_WATCH_STATUS_EVENT, read);
+    void nativeBuild().then((info) => setShell(formatNativeBuild(info)));
     return () => window.removeEventListener(TRACK_WATCH_STATUS_EVENT, read);
   }, []);
 
@@ -59,13 +62,15 @@ export function WayBackRecordingStatus() {
         <span className="text-[15px] font-bold text-wb-ink">{t(view.title)}</span>
       </div>
       <p className="pl-[21px] text-[13.5px] leading-[1.5] text-wb-body">{t(view.body)}</p>
-      {status.backgroundDetail && (
+      {/* Версия оболочки рядом с кодом отказа: один скриншот — и видно, какой
+          JS работает поверх какого бинарника. Раньше это выяснялось перепиской. */}
+      {(status.backgroundDetail || shell) && (
         <button
           type="button"
-          onClick={() => void copyDetail(status.backgroundDetail!, t("copied"))}
+          onClick={() => void copyDetail(technical(status.backgroundDetail, shell), t("copied"))}
           className="wb-mono pl-[21px] text-left text-[11.5px] leading-[1.5] text-wb-muted-2 underline decoration-dotted underline-offset-2"
         >
-          {status.backgroundDetail} · {t("copy")}
+          {technical(status.backgroundDetail, shell)} · {t("copy")}
         </button>
       )}
       {fixable && (
@@ -79,6 +84,12 @@ export function WayBackRecordingStatus() {
       )}
     </div>
   );
+}
+
+function technical(detail: string | null, shell: string | null): string {
+  return [shell ? `app ${shell}` : null, `web ${process.env.NEXT_PUBLIC_APP_VERSION}`, detail]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 async function copyDetail(detail: string, done: string): Promise<void> {

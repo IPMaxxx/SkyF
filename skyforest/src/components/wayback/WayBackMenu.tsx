@@ -31,6 +31,7 @@ import {
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
 import { cn } from "@/lib/utils";
+import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
 import { WbLabel } from "@/components/wayback/primitives";
 
 export function WayBackMenu({
@@ -49,6 +50,11 @@ export function WayBackMenu({
   const { email, signedIn, subscription, trialDaysLeft } = useWaybackAccount();
   const [loggingOut, setLoggingOut] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
+  const [shellVersion, setShellVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    void nativeBuild().then((info) => setShellVersion(formatNativeBuild(info)));
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -287,8 +293,12 @@ export function WayBackMenu({
             </button>
           )}
 
+          {/* Версия сайта и версия оболочки рядом: сайт обновляется сам, а
+              оболочка — только переустановкой, и без второй цифры разбор любой
+              поломки начинался с гадания, что у человека стоит. */}
           <span className="wb-mono mt-1 text-center text-[10px] tracking-[0.12em] text-wb-muted-3">
-            V {process.env.NEXT_PUBLIC_APP_VERSION} · BY SKYFOREST
+            V {process.env.NEXT_PUBLIC_APP_VERSION}
+            {shellVersion ? ` · APP ${shellVersion}` : ""} · BY SKYFOREST
           </span>
         </div>
       </div>
