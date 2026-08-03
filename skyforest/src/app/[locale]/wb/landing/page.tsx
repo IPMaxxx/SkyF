@@ -20,13 +20,13 @@ export default async function WaybackLanding({
   const en = locale === "en";
   const t = en
     ? {
-        tagline: "Always find your way back out of the forest",
+        tagline: "Always find your way back to where you started",
         text: "Mark your entry point — the arrow and offline map will lead you back even with no internet and no mobile signal. Download the map of your area in advance.",
         cta: "Open the map",
         full: "Powered by SkyForest",
       }
     : {
-        tagline: "Всегда выведет из леса к точке входа",
+        tagline: "Всегда выведет обратно к точке входа",
         text: "Отметьте точку входа — стрелка и офлайн-карта выведут обратно даже без интернета и связи. Карту своего района можно скачать заранее.",
         cta: "Открыть карту",
         full: "Работает на технологиях SkyForest",

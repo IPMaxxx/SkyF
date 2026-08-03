@@ -1,1 +1,1 @@
-offline map,forest,compass,mushroom,foraging,hiking,gps,trail,woods,berries,waypoint
+offline map,outdoors,compass,mushroom,foraging,hiking,gps,trail,mountains,berries,waypoint

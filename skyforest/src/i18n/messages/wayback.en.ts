@@ -4,7 +4,7 @@
  * Отдельный неймспейс: экраны флейвора переписаны целиком, а старые ключи
  * (`track.*`, `auth.*`, `account.*`) продолжают обслуживать SkyForest и
  * Checker без изменений. Копирайт короче прежнего — так задумано в дизайне:
- * тексты читают на ходу, в лесу, одной рукой.
+ * тексты читают на ходу, в походе, одной рукой.
  */
 export default {
   /** Нижнее меню: четыре пункта, подписи должны быть короткими. */
@@ -41,11 +41,11 @@ export default {
   home: {
     /** Слово на главной кнопке. Капс задаёт CSS (.wb-start-word). */
     start: "Start",
-    startButton: "I'm entering the forest",
+    startButton: "I'm heading outdoors",
     startingButton: "Getting your location…",
     pickOnMap: "Set entry point on the map",
     howTitle: "How it works",
-    how1: "Tap at the forest edge — we drop an anchor by GPS",
+    how1: "Tap where you set off — we drop an anchor by GPS",
     how2: "Points are dropped as you walk — battery-friendly",
     how3: "Arrow and distance lead you back — no internet needed",
     localOnly: "The walk is recorded on this device; finished walks are saved to your account.",
@@ -83,9 +83,9 @@ export default {
   },
 
   active: {
-    title: "In the forest",
+    title: "On the way",
     toEntry: "to entry",
-    inForest: "in forest",
+    onTheWalk: "on the walk",
     atTheEntry: "at the entry",
     since: "since {time}",
     directionText: "Entry point: {dir}, {dist}",
@@ -124,7 +124,7 @@ export default {
       "{count, plural, one {# area} other {# areas}} · {radius} km around the anchor",
     offlineMapNone: "no areas around the anchor",
     offlineMapManage: "Manage",
-    finish: "I'm out of the forest",
+    finish: "I'm back from outdoors",
   },
 
   finish: {
@@ -234,8 +234,8 @@ export default {
       "Walks marked “on this device” live only here. Sign in to keep them if you change phones.",
     emptyTitle: "No walks saved yet",
     emptyBody:
-      "Finish your first walk and it will appear here — with the map, distance and time in the forest.",
-    emptyAction: "I'm entering the forest",
+      "Finish your first walk and it will appear here — with the map, distance and time on the way.",
+    emptyAction: "I'm heading outdoors",
   },
 
   auth: {
@@ -349,7 +349,7 @@ export default {
     switchAccount: "Use another account",
     offlineTitle: "No connection",
     offlineBody:
-      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works in the forest with no signal.",
+      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works out there with no signal at all.",
     offlineRestore: "Already subscribed? Restore purchases",
     retry: "Try again",
     checking: "Checking your subscription…",
@@ -406,7 +406,7 @@ export default {
   },
 
   splash: {
-    tagline: "Remembers where you entered the forest",
+    tagline: "Remembers where you started",
     footer: "works offline · no account needed",
   },
 } as const;

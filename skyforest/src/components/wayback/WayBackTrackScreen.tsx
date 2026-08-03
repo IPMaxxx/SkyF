@@ -465,7 +465,7 @@ function ActiveHike({
 
   const distanceText =
     c.distanceM != null ? units.fmtDistanceM(c.distanceM) : "—";
-  // Значение и единицу разводим визуально: в лесу читают число, не подпись.
+  // Значение и единицу разводим визуально: в походе читают число, не подпись.
   const [distValue, distUnit] = (() => {
     const m = distanceText.match(/^([\d\s.,]+)\s*(.*)$/);
     return m ? [m[1].trim(), m[2]] : [distanceText, ""];
@@ -486,7 +486,7 @@ function ActiveHike({
           }
         />
         <WbStatTile
-          label={t("inForest")}
+          label={t("onTheWalk")}
           value={c.durationLabel ?? "0:00"}
           footnote={t("since", {
             time: new Date(c.track.startedAt).toLocaleTimeString(locale, {

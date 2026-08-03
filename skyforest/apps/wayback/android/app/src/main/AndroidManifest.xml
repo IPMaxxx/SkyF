@@ -82,7 +82,7 @@
          ACCESS_BACKGROUND_LOCATION здесь нет и добавлять его не нужно: службе
          переднего плана оно не требуется, а с ним пришлось бы проходить
          отдельную анкету Google с видео-обоснованием. Запись идёт только между
-         «начал поход» и «вышел из леса», уведомление при этом висит на виду. -->
+         «ушёл в поход» и «вернулся из похода», уведомление при этом висит на виду. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

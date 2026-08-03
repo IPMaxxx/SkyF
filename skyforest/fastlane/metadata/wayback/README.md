@@ -63,7 +63,7 @@ Release notes в Play живут не в листинге, а у релиза в
 | Policy → App content → **Content rating** | анкета IARC, ответы ниже |
 | Policy → App content → **Target audience and content** | возрастная группа только «18 and over»; «appeal to children» — No |
 | Policy → App content → **Data safety** | отправлено через API, глазами сверить сводку |
-| Policy → App content → **Foreground service permissions** | с версии 1.1 обязательна: манифест объявляет `FOREGROUND_SERVICE_LOCATION`. Назначение — запись пути между «начал поход» и «вышел из леса», служба видна постоянным уведомлением. Google просит короткое видео с демонстрацией: экран старта похода, погашенный экран, уведомление в статус-баре, карта с непрерывным путём после возврата. **Пока не заполнено, релиз не выложить вообще**: `edits:validate` и `edits:commit` с этим бинарником отвечают 403 «You must let us know whether your app uses any Foreground Service permissions», причём в любом треке, включая internal. Правки листинга без бинарника проходят |
+| Policy → App content → **Foreground service permissions** | с версии 1.1 обязательна: манифест объявляет `FOREGROUND_SERVICE_LOCATION`. Назначение — запись пути между «ушёл в поход» и «вернулся из похода», служба видна постоянным уведомлением. Google просит короткое видео с демонстрацией: экран старта похода, погашенный экран, уведомление в статус-баре, карта с непрерывным путём после возврата. **Пока не заполнено, релиз не выложить вообще**: `edits:validate` и `edits:commit` с этим бинарником отвечают 403 «You must let us know whether your app uses any Foreground Service permissions», причём в любом треке, включая internal. Правки листинга без бинарника проходят |
 | Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
 | Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
 | Policy → App content → **Government apps** | «No, it is not a government app» |
@@ -104,8 +104,8 @@ policy, а WayBack под них не проектировался.
 
 Чего в текстах быть не должно:
 
-- **записи вне похода.** Она идёт только между START («I'm entering the forest»)
-  и «I'm out of the forest». Формулировки вроде «always tracking» или «keeps an
+- **записи вне похода.** Она идёт только между START («I'm heading outdoors»)
+  и «I'm back from outdoors». Формулировки вроде «always tracking» или «keeps an
   eye on you» обещают чужое поведение;
 - **намёка на передачу координат.** Активный поход лежит в localStorage и
   Capacitor Preferences, завершённый уезжает только в аккаунт самого
