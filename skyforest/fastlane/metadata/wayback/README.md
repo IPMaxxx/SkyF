@@ -70,6 +70,11 @@ Release notes в Play живут не в листинге, а у релиза в
 | Policy → App content → **Advertising ID** | «No»: с versionCode 7 разрешения `com.google.android.gms.permission.AD_ID` в бандле нет — оно вырезано `tools:node="remove"` в `apps/wayback/android/app/src/main/AndroidManifest.xml` (приезжало из facebook-core, который тянет за собой `@capgo/capacitor-social-login`; рекламы у нас нет, Facebook-провайдер не инициализируется). В 1.0 разрешение было, поэтому артефакты versionCode 3–6 ему противоречат: пока они активны хоть в одном треке, Play будет ругаться на ответ «No» — их надо перекрыть версией 7 или деактивировать в App Bundle Explorer |
 | Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
 
+**Демо-видео для Foreground service permissions.** В форму декларации даётся
+ссылка `https://pqffvnlrsnkgjgdjwrki.supabase.co/storage/v1/object/public/public-media/wayback/foreground-service-demo.mp4`
+— файл лежит в публичном бакете Supabase Storage `public-media`, открывается без
+авторизации и играется прямо в браузере ревьюера (mp4 h264/aac, 74 c, faststart).
+
 **App access.** Приложение без подписки не открывается с первого экрана, поэтому
 ревьюеру нужен готовый аккаунт. Логин `appreview@skyforest.ai`, пароль лежит в
 `review-notes.txt`-обвязке скриптов и в самой консоли; менять его нельзя, он
