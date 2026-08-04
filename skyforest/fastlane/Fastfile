@@ -11,7 +11,16 @@
 # запущен из окружения без локали (LANG пуст или "C"), Ruby считает поток
 # US-ASCII и падает на первом не-ASCII байте: "invalid byte sequence in
 # US-ASCII" — а не-ASCII в логах есть всегда (пути, имена, тексты Apple).
-# Ставим UTF-8 здесь, чтобы лейн работал одинаково из любой оболочки.
+#
+# Одних ENV["LANG"]/["LC_ALL"] для этого мало: свою внешнюю кодировку Ruby
+# определяет по локали ОДИН РАЗ, при старте процесса, поэтому переменная,
+# выставленная уже внутри Fastfile, на Encoding.default_external не влияет —
+# она достаётся только дочерним процессам (xcodebuild, gym, xcpretty), которые
+# fastlane запустит позже. Кодировку самого процесса приходится ставить прямо.
+Encoding.default_external = Encoding::UTF_8 unless Encoding.default_external == Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8 unless Encoding.default_internal == Encoding::UTF_8
+
+# А это — для дочерних процессов, им переменные окружения нужны по-прежнему.
 ENV["LANG"] = "en_US.UTF-8" unless ENV["LANG"].to_s.include?("UTF-8")
 ENV["LC_ALL"] = "en_US.UTF-8" unless ENV["LC_ALL"].to_s.include?("UTF-8")
 
