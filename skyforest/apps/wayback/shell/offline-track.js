@@ -106,10 +106,65 @@
     };
   }
 
+  /**
+   * Срок на ожидание. На этой странице ответа может не быть вовсе, и это не
+   * теория: androidShimTransport ждёт ответ по callbackId, и если нативная
+   * сторона его не пришлёт (плагина нет в оболочке, служба умерла, мост ещё не
+   * поднят), промис не отклонится никогда. Снаружи такое ожидание выглядит не
+   * ошибкой, а пустым экраном — ровно тот класс дефекта, из-за которого
+   * фоновая запись искалась полтора дня. Поэтому у каждого ожидания здесь есть
+   * исход: значение, отказ или срок.
+   */
+  function withDeadline(work, ms, onLate) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        if (typeof onLate === "function") resolve(onLate());
+        else reject(new Error("timeout"));
+      }, ms);
+      Promise.resolve(work).then(
+        function (value) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        },
+        function (error) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
+  }
+
+  /**
+   * Срок на один вызов моста. Нативная сторона здесь либо отвечает сразу, либо
+   * не ответит уже никогда, поэтому пяти секунд с запасом хватает, а истёкший
+   * срок уходит отказом — его разбирают те же `catch`, что и обычную ошибку
+   * плагина.
+   */
+  var BRIDGE_MS = 5000;
+  function bridgeCall(work) {
+    return withDeadline(work, BRIDGE_MS);
+  }
+
   function createBridge() {
     var t = injectedBridgeTransport() || androidShimTransport();
     if (!t) return null;
-    var call = t.callMethod;
+    // Срок навешивается здесь, а не у каждого вызывающего: тогда его нельзя
+    // забыть, а разбирать истёкший срок можно тем же `catch`, что и отказ
+    // плагина. Исключение одно — getCurrentPosition: у него свой таймаут на
+    // холодный GPS, и обрывать его раньше нельзя.
+    var call = function (pluginId, methodName, options) {
+      return bridgeCall(t.callMethod(pluginId, methodName, options));
+    };
+    var slowCall = function (pluginId, methodName, options, ms) {
+      return withDeadline(t.callMethod(pluginId, methodName, options), ms);
+    };
     var watch = t.callWatch;
     return {
       convertFileSrc: t.convertFileSrc,
@@ -128,7 +183,11 @@
           writeFile: function (o) { return call("Filesystem", "writeFile", o); },
         },
         Geolocation: {
-          getCurrentPosition: function (o) { return call("Geolocation", "getCurrentPosition", o); },
+          // Свой таймаут замера + запас на дорогу до моста: холодный GPS
+          // отвечает десятки секунд, и своим сроком его глушить нельзя.
+          getCurrentPosition: function (o) {
+            return slowCall("Geolocation", "getCurrentPosition", o, ((o && o.timeout) || 30000) + 5000);
+          },
           requestPermissions: function () { return call("Geolocation", "requestPermissions", {}); },
           watchPosition: function (o, cb) { return watch("Geolocation", "watchPosition", o, cb); },
           clearWatch: function (o) { return call("Geolocation", "clearWatch", o); },
@@ -363,9 +422,32 @@
     });
   }
 
+  /**
+   * Срок на скачивание одного тайла. `navigator.onLine` в лесу врёт чаще, чем
+   * говорит правду: сеть «есть» (регистрация в соте), а данные не идут — и
+   * тогда `fetch` не отваливается сам, а висит, пока держится сокет. Тайл,
+   * который ждёт этого, не показывает ни картинки, ни родителя: у Leaflet он
+   * так и остаётся незавершённым, и на карте вместо местности серая клетка.
+   */
+  var TILE_FETCH_MS = 8000;
+
+  function fetchWithDeadline(url, ms) {
+    var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    var request = fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    // Срок и обрывает запрос (чтобы не держал сокет), и отвечает за исход —
+    // отмена в старых WebView может не отклонить промис.
+    return withDeadline(request, ms).catch(function (e) {
+      if (ctrl) { try { ctrl.abort(); } catch (ignored) {} }
+      throw e;
+    });
+  }
+
   // Автокеш: скачивает тайл, сохраняет в Filesystem и отдаёт локальный URL.
+  // Любой сбой — сети, срока, записи — откатывает на прямую ссылку: показать
+  // тайл из сети всё ещё лучше, чем не показать ничего, а следующий заход
+  // попробует закешировать его снова.
   function cacheAndResolve(path, remote) {
-    return fetch(remote)
+    return fetchWithDeadline(remote, TILE_FETCH_MS)
       .then(function (resp) { if (!resp.ok) throw 0; return resp.blob(); })
       .then(function (blob) {
         return base64FromBlob(blob).then(function (b64) {
@@ -670,7 +752,9 @@
         resolveParentTile(source, coords)
           .then(function (hit) {
             if (!hit) { show(BLANK_TILE); return null; }
-            return upscaleFromParent(coords, hit).then(show);
+            // Срок и здесь: пока фрагмент родителя не вырезан, тайл у Leaflet
+            // остаётся незавершённым, а незавершённые тайлы он не заменяет.
+            return withDeadline(upscaleFromParent(coords, hit), BRIDGE_MS).then(show);
           })
           .catch(function () { show(BLANK_TILE); });
       }

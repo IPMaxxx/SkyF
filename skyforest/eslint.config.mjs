@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import skyforest from "./eslint-rules/index.mjs";
 
 /**
  * Код, принадлежащий Mushroom Checker (см. .cursor/rules/flavors.mdc).
@@ -33,6 +34,17 @@ const BRIDGES = [
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Прокси плагина Capacitor, отданный через промис, вешает ожидание навсегда —
+  // молча, без ошибки и без таймаута. Класс дефекта уже стоил полутора дней в
+  // WayBack и молчащей кнопки «Поделиться» в Checker, поэтому его стережёт
+  // правило, а не память (см. eslint-rules/no-plugin-proxy-in-promise.mjs).
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { skyforest },
+    rules: {
+      "skyforest/no-plugin-proxy-in-promise": "error",
+    },
+  },
   // Границы приложений: правки Mushroom Checker не должны утекать в SkyForest
   // и WayBack, а Checker — зависеть от их интерфейса.
   {
