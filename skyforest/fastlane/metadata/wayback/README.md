@@ -52,6 +52,14 @@ Release notes в Play живут не в листинге, а у релиза в
 403 `Third party app store RPC called for non-third party app store app`, то есть
 прочитать через неё свои же настройки нельзя.
 
+У самого `applications.dataSafety` только POST: GET на тот же URL отвечает 404, в
+discovery-документе метода нет. Значит записанную декларацию обратно не прочитать
+— подтверждение отправки только по коду ответа (Google валидирует CSV целиком),
+а увидеть содержимое можно в консоли и на публичной странице
+`https://play.google.com/store/apps/datasafety?id=ai.skyforest.wayback`, но там
+показано **опубликованное**, то есть уже прошедшее ревью. Метода «Send changes for
+review» в API нет тоже: отправка на рассмотрение — только руками.
+
 Значит, руками в Play Console заполняется всё перечисленное ниже. Порядок —
 по тому, что раньше упрётся в публикацию.
 
@@ -62,13 +70,29 @@ Release notes в Play живут не в листинге, а у релиза в
 | Policy → App content → **Ads** | «No, my app does not contain ads» |
 | Policy → App content → **Content rating** | анкета IARC, ответы ниже |
 | Policy → App content → **Target audience and content** | возрастная группа только «18 and over»; «appeal to children» — No |
-| Policy → App content → **Data safety** | отправлено через API, глазами сверить сводку |
+| Policy → App content → **Data safety** | отправлено через API, глазами сверить сводку. Заявлены **оба** типа местоположения: точное и приблизительное |
 | Policy → App content → **Foreground service permissions** | с версии 1.1 обязательна: манифест объявляет `FOREGROUND_SERVICE_LOCATION`. Назначение — запись пути между «ушёл в поход» и «вернулся из похода», служба видна постоянным уведомлением. Google просит короткое видео с демонстрацией: экран старта похода, погашенный экран, уведомление в статус-баре, карта с непрерывным путём после возврата. **Пока не заполнено, релиз не выложить вообще**: `edits:validate` и `edits:commit` с этим бинарником отвечают 403 «You must let us know whether your app uses any Foreground Service permissions», причём в любом треке, включая internal. Правки листинга без бинарника проходят |
 | Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
 | Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
 | Policy → App content → **Government apps** | «No, it is not a government app» |
 | Policy → App content → **Advertising ID** | «No»: с versionCode 7 разрешения `com.google.android.gms.permission.AD_ID` в бандле нет — оно вырезано `tools:node="remove"` в `apps/wayback/android/app/src/main/AndroidManifest.xml` (приезжало из facebook-core, который тянет за собой `@capgo/capacitor-social-login`; рекламы у нас нет, Facebook-провайдер не инициализируется). В 1.0 разрешение было, поэтому артефакты versionCode 3–6 ему противоречат: пока они активны хоть в одном треке, Play будет ругаться на ответ «No» — их надо перекрыть версией 7 или деактивировать в App Bundle Explorer |
 | Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
+
+**Отказ по Data safety, август 2026.** Google отклонил публикацию с «Invalid Data
+safety form … Version code 6: Location Data Type - Approximate Location»: в форме
+стояло только точное местоположение. Претензия по делу, а не формальность —
+`ACCESS_COARSE_LOCATION` есть в манифесте и доезжает до бандла (видно в
+`bundletool dump manifest`), а `TrackServicePlugin` считает обязательным именно
+его: при отказе от «точного» запись идёт по грубым координатам fused-провайдера,
+и такой трек так же уходит в `tracks`. Убрать разрешение нельзя — с targetSdk 31+
+запрос `ACCESS_FINE_LOCATION` без него система игнорирует. Декларация теперь
+включает оба типа с одинаковыми ответами (собирается, не передаётся, нужно для
+работы приложения); отправлена `node fastlane/play-data-safety.mjs --apply --pkg
+ai.skyforest.wayback`. Чтобы то же не повторилось молча, есть
+`node fastlane/play-data-safety-check.mjs`: он падает, если разрешение в манифесте
+есть, а типа данных в декларации нет. **После правки формы изменения надо
+отправить на рассмотрение руками:** Play Console → Publishing overview → Send
+changes for review. Через API этого не сделать.
 
 **Демо-видео для Foreground service permissions.** В форму декларации даётся
 ссылка `https://pqffvnlrsnkgjgdjwrki.supabase.co/storage/v1/object/public/public-media/wayback/foreground-service-demo.mp4`

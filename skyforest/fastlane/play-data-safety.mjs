@@ -24,6 +24,16 @@
  *     обязателен, поэтому точное местоположение объявлено как собираемое.
  *     Раньше здесь стояло обратное — это была ошибка декларации, а не
  *     следствие фоновой записи.
+ *   - вместе с точным WayBack объявляет и приблизительное местоположение.
+ *     Заявлять только точное было ошибкой, и Google отклонил публикацию
+ *     versionCode 6 с формулировкой «Location Data Type - Approximate
+ *     Location». Основание — не формальность: `ACCESS_COARSE_LOCATION` стоит
+ *     в манифесте (apps/wayback/android/.../AndroidManifest.xml) и доезжает до
+ *     бандла, а `TrackServicePlugin` считает обязательным именно его — при
+ *     отказе от «точного» запись продолжается по грубым координатам fused-
+ *     провайдера, и такой трек так же уходит в `tracks`. Убрать разрешение
+ *     нельзя: с targetSdk 31+ запрос ACCESS_FINE_LOCATION без ACCESS_COARSE_
+ *     LOCATION система игнорирует.
  *
  * Запуск из каталога skyforest:
  *   node fastlane/play-data-safety.mjs            — показать сводку и CSV-диф
@@ -36,6 +46,7 @@
  */
 import { readFileSync } from "node:fs";
 import { createSign } from "node:crypto";
+import { pathToFileURL } from "node:url";
 
 const APPLY = process.argv.includes("--apply");
 const PKG_ARG = process.argv[process.argv.indexOf("--pkg") + 1];
@@ -88,7 +99,7 @@ const SHARED_TYPES = [
   },
 ];
 
-const DECLARATIONS = {
+export const DECLARATIONS = {
   "ai.skyforest.wayback": {
     name: "WayBack",
     // Данные шифруются в транзите (весь трафик — HTTPS), удаление аккаунта
@@ -104,6 +115,15 @@ const DECLARATIONS = {
           "Точки пути по GPS: запись идёт между «начал поход» и «вышел из леса»," +
           " в том числе со свёрнутым приложением, а завершённый поход попадает" +
           " в историю на сервере",
+        required: true,
+        purposes: [FUNCTIONALITY],
+      },
+      {
+        type: "PSL_APPROX_LOCATION",
+        what:
+          "Тот же путь, когда человек выдал только «примерное» местоположение:" +
+          " fused-провайдер отдаёт грубые координаты, запись не отменяется" +
+          " и трек так же уходит в историю",
         required: true,
         purposes: [FUNCTIONALITY],
       },
@@ -131,7 +151,7 @@ const DECLARATIONS = {
  * декларация приложения это утверждает. Всё, что не перечислено, остаётся
  * пустым — то есть «нет».
  */
-function buildCsv(decl) {
+export function buildCsv(decl) {
   const template = readFileSync(new URL("./metadata/play-data-safety-template.csv", HERE), "utf8")
     .replace(/\r/g, "")
     .split("\n")
@@ -217,10 +237,12 @@ function buildCsv(decl) {
   return { csv: `${rows.join("\n")}\n`, filled, total: rows.length - 1 };
 }
 
-const sa = JSON.parse(readFileSync(new URL("./play-service-account.json", HERE), "utf8"));
 const b64url = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64url");
 
 async function accessToken() {
+  // Ключ читаем здесь, а не при загрузке модуля: декларацию импортирует
+  // play-data-safety-check.mjs, а ему сервисный аккаунт не нужен.
+  const sa = JSON.parse(readFileSync(new URL("./play-service-account.json", HERE), "utf8"));
   const now = Math.floor(Date.now() / 1000);
   const header = b64url({ alg: "RS256", typ: "JWT" });
   const claims = b64url({
@@ -246,8 +268,15 @@ async function accessToken() {
   return data.access_token;
 }
 
+/**
+ * Модуль ещё и импортируют (play-data-safety-check.mjs берёт отсюда
+ * DECLARATIONS и buildCsv), поэтому отправка живёт под этой проверкой: иначе
+ * проверка на пустом месте слала бы CSV в Google и завершала свой процесс.
+ */
+const RUN_AS_CLI = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
 let failed = false;
-for (const [pkg, decl] of Object.entries(DECLARATIONS)) {
+for (const [pkg, decl] of RUN_AS_CLI ? Object.entries(DECLARATIONS) : []) {
   if (ONLY_PKG && pkg !== ONLY_PKG) continue;
   console.log(`\n===== ${decl.name} (${pkg}) =====`);
   const { csv, filled, total } = buildCsv(decl);
@@ -278,9 +307,13 @@ for (const [pkg, decl] of Object.entries(DECLARATIONS)) {
   }
 }
 
-if (!APPLY) {
+if (RUN_AS_CLI && !APPLY) {
   console.log("\n(сухой прогон — запустите с --apply)");
 }
 // Прочитать декларацию обратно API не даёт: у ресурса dataSafety есть только
-// POST. Итог смотреть в Play Console → Policy → App content → Data safety.
-process.exit(failed ? 1 : 0);
+// POST (GET на тот же URL отвечает 404, в discovery-документе androidpublisher
+// v3 метода нет). Итог смотреть в Play Console → Policy → App content →
+// Data safety. Подтверждение со стороны API — сам код 200: Google валидирует
+// присланный CSV целиком и отвечает ошибкой с перечнем строк, если тип данных
+// отмечен без своих уточняющих ответов или наоборот.
+if (RUN_AS_CLI) process.exit(failed ? 1 : 0);
