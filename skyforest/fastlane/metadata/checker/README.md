@@ -44,6 +44,43 @@
 - **Apple EULA.** Пользуемся стандартным лицензионным соглашением Apple, а
   ссылки на оферту и политику даны в конце описания.
 
+## Data safety и Advertising ID
+
+Декларация Data safety лежит в `fastlane/play-data-safety.mjs` и отправляется
+`node fastlane/play-data-safety.mjs --apply --pkg ai.skyforest.mushroomchecker`.
+Общие правила — в `metadata/wayback/README.md`: у ресурса только POST, прочитать
+записанное нельзя, а отправка на рассмотрение делается руками через Publishing
+overview → Send changes for review.
+
+Заявлено: имя, почта, идентификатор пользователя, покупки, взаимодействия с
+приложением, идентификатор устройства, фотография гриба и диагностика ошибок
+покупки. Фотография уходит на наш сервер, тот срезает EXIF (включая GPS,
+`src/lib/checker/exif.ts`) и передаёт снимок в Kindwise как обработчику — это
+сбор, а не передача третьему лицу. Местоположение приложение не запрашивает и
+не получает: в оболочке нет ни разрешения, ни плагина геолокации, и в коде
+`src/components/checker/**` вызовов геолокации нет.
+
+**AD_ID.** В исходном манифесте оболочки рекламы не было никогда, но в бандле
+versionCode 5 лежит `com.google.android.gms.permission.AD_ID` вместе с четвёркой
+`ACCESS_ADSERVICES_*` — их доливает facebook-core, который тянет за собой
+`@capgo/capacitor-social-login` (Facebook-провайдер мы не инициализируем, вход
+только Google и Apple). Проверить: `bundletool dump manifest --bundle
+apps/mushroom-checker/android/app/build/outputs/bundle/release/app-release.aab`.
+
+Рекламный идентификатор приложение не читает, поэтому разрешение вырезано
+`tools:node="remove"` в
+`apps/mushroom-checker/android/app/src/main/AndroidManifest.xml` — так же, как в
+WayBack и SkyForest. **Правка манифеста сама по себе ничего не меняет: в Play
+лежит versionCode 5, собранный до неё.** Пока новая сборка не выложена, Play
+Console → App content → **Advertising ID** должен отвечать «Yes» (иначе ответ
+противоречит активному артефакту), а на «No» его можно переводить только после
+того, как versionCode 6 перекроет пятый во всех треках или пятый будет
+деактивирован в App Bundle Explorer. Ту же историю WayBack прошёл на versionCode
+7 — см. таблицу в его README.
+
+В Data safety от этого ничего не меняется: «Device or other IDs» и так заявлен —
+идентификаторы собирают счётчики аналитики.
+
 ## Про тексты
 
 Определение грибов — тема про здоровье, поэтому листинг **не обещает
