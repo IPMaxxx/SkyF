@@ -26,6 +26,7 @@
 
 import { routing } from "@/i18n/routing";
 import { isNativeApp } from "@/lib/native/capacitor";
+import { plainApi } from "@/lib/native/plainApi";
 
 export type SharePayload =
   | { kind: "find"; speciesKey: string; date: string }
@@ -337,11 +338,15 @@ function hasNativeShare(): boolean {
  * веб-часть пакета нам не нужна (её заменяет `navigator.share` ниже), а
  * нативная приезжает из оболочки `apps/mushroom-checker`. Так пакет не
  * приходится тянуть в зависимости сайта ради одного вызова.
+ *
+ * Наружу уходит не прокси, а обычный объект с его методами: прокси отвечает
+ * вызовом нативного метода и на обращение к `then`, а его спрашивает движок у
+ * каждого значения, которым разрешается промис. Подробно — в native/plainApi.
  */
 async function nativeShare(): Promise<SharePlugin> {
   if (!sharePlugin) {
     const { registerPlugin } = await import("@capacitor/core");
-    sharePlugin = registerPlugin<SharePlugin>(SHARE_PLUGIN);
+    sharePlugin = plainApi(registerPlugin<SharePlugin>(SHARE_PLUGIN), ["share"]);
   }
   return sharePlugin;
 }
