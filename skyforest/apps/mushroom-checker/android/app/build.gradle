@@ -15,8 +15,14 @@ android {
         applicationId "ai.skyforest.mushroomchecker"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.0"
+        // 1.0.1 (6): пользовательских изменений нет. Сборка нужна ради манифеста:
+        // из него вырезаны AD_ID и ACCESS_ADSERVICES_*, которые доливал
+        // facebook-core (см. metadata/checker/README.md). Пока в Play активен
+        // versionCode 5, собранный до правки, ответ App content → Advertising ID
+        // обязан оставаться «Yes» — перевести его на «No» можно только после
+        // того, как шестой номер перекроет пятый во всех треках.
+        versionCode 6
+        versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

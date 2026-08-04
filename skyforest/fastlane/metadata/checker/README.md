@@ -70,13 +70,30 @@ apps/mushroom-checker/android/app/build/outputs/bundle/release/app-release.aab`.
 Рекламный идентификатор приложение не читает, поэтому разрешение вырезано
 `tools:node="remove"` в
 `apps/mushroom-checker/android/app/src/main/AndroidManifest.xml` — так же, как в
-WayBack и SkyForest. **Правка манифеста сама по себе ничего не меняет: в Play
-лежит versionCode 5, собранный до неё.** Пока новая сборка не выложена, Play
-Console → App content → **Advertising ID** должен отвечать «Yes» (иначе ответ
-противоречит активному артефакту), а на «No» его можно переводить только после
-того, как versionCode 6 перекроет пятый во всех треках или пятый будет
-деактивирован в App Bundle Explorer. Ту же историю WayBack прошёл на versionCode
-7 — см. таблицу в его README.
+WayBack и SkyForest. **Правка манифеста сама по себе ничего не меняет: бандл
+собирается заново.** Ту же историю WayBack прошёл на versionCode 7 — см. таблицу
+в его README.
+
+**Что выложено.** 1.0.1 (versionCode 6) — техническая сборка ровно под это:
+пользовательских изменений нет, в манифесте бандла нет ни `AD_ID`, ни четвёрки
+`ACCESS_ADSERVICES_*`, остальные девять разрешений те же, что в пятом номере
+(интернет, состояние сети, камера, биллинг, install referrer, биометрия с
+`USE_CREDENTIALS`, внутреннее `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`).
+Соц-вход цел: вырезано разрешение, а не зависимость — `SocialLoginPlugin`,
+классы Google Play Services и Play Billing в dex на месте. Выложено в
+production и internal на 100% (`node fastlane/.checker-play-6.mjs --apply`,
+скрипт по образцу `.wayback-play-12.mjs`).
+
+**Порядок ответа Advertising ID.** Пока versionCode 5 активен хоть в одном
+треке, Play Console → App content → **Advertising ID** обязан отвечать «Yes»:
+иначе ответ противоречит активному артефакту, и `edits:validate` отвечает 400
+«This release includes the com.google.android.gms.permission.AD_ID permission,
+but your declaration says your app doesn't use advertising ID». Переводить на
+«No» — только после того, как шестой номер перекроет пятый во всех треках
+(релиз 1.0.1 это и делает; раскатка Play занимает несколько часов) или пятый
+будет деактивирован в App Bundle Explorer. Смену ответа, как и любую правку
+раздела App content, нужно отдельно отправить: Publishing overview → **Send
+changes for review**.
 
 В Data safety от этого ничего не меняется: «Device or other IDs» и так заявлен —
 идентификаторы собирают счётчики аналитики.
