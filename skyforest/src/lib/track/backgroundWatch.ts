@@ -36,6 +36,7 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import { plainApi } from "@/lib/native/plainApi";
 import { trackLog } from "@/lib/track/trackLog";
 import { loadChunk } from "@/lib/offline/deadline";
 import {
@@ -104,7 +105,17 @@ async function loadPlugin(): Promise<BackgroundGeolocationPlugin | null> {
       FOREGROUND_SERVICE_TIMEOUTS.detect,
       "BackgroundGeolocation.getPluginVersion",
     );
-    return BackgroundGeolocation;
+    // Не сам прокси, а обычный объект с его методами: прокси плагина отвечает
+    // и на обращение к `then`, а его спрашивает движок у каждого значения,
+    // которым разрешается промис. Подробно — в native/plainApi.
+    return plainApi(BackgroundGeolocation, [
+      "getPluginVersion",
+      "checkPermissions",
+      "requestPermissions",
+      "openSettings",
+      "start",
+      "stop",
+    ]);
   } catch (error) {
     const failure = error as { code?: string; message?: string };
     trackLog("bg.plugin", `unavailable — ${failure?.code ?? ""} ${failure?.message ?? error}`.trim());

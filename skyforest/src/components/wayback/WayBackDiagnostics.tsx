@@ -33,7 +33,7 @@ function DiagnosticsSheet({ onClose }: { onClose: () => void }) {
   // из них не ответил, и человек увидел пустоту вместо тех самых строк, ради
   // которых журнал и заводился. Ответ на «что случилось» не имеет права
   // зависеть от того, отвечает ли мост.
-  const [text, setText] = useState(() => formatTrackLog(header(null, null), readTrackLog()));
+  const [text, setText] = useState(() => formatTrackLog(header(null, null, false), readTrackLog()));
 
   useEffect(() => {
     let alive = true;
@@ -44,7 +44,7 @@ function DiagnosticsSheet({ onClose }: { onClose: () => void }) {
       if (!alive) return;
       const info = build.status === "fulfilled" ? build.value : null;
       const native = state.status === "fulfilled" ? state.value : null;
-      setText(formatTrackLog(header(formatNativeBuild(info), native), readTrackLog()));
+      setText(formatTrackLog(header(formatNativeBuild(info), native, true), readTrackLog()));
     });
     return () => {
       alive = false;
@@ -85,7 +85,7 @@ function DiagnosticsSheet({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => {
               clearTrackLog();
-              setText(formatTrackLog(header(null, null), []));
+              setText(formatTrackLog(header(null, null, false), []));
             }}
             className="rounded-2xl bg-wb-surface-2 px-5 py-[15px] text-[15px] font-extrabold text-wb-muted-2"
           >
@@ -97,20 +97,30 @@ function DiagnosticsSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Шапка выписки: без неё строчки журнала не с чем соотнести. */
+/**
+ * Шапка выписки: без неё строчки журнала не с чем соотнести.
+ *
+ * `asked` отличает «спросили оболочку, и там ничего нет» от «ещё не спросили».
+ * Разница не косметическая: первая же выписка, которую прислал человек,
+ * говорила «нативной части нет» просто потому, что ответы ещё не приехали, —
+ * и увела разбор в сторону на добрых полчаса.
+ */
 function header(
   shell: string | null,
   native: { running: boolean; location: boolean; precise: boolean; notifications: boolean } | null,
+  asked: boolean,
 ): string[] {
   const status = trackWatchStatus();
   return [
-    `web ${process.env.NEXT_PUBLIC_APP_VERSION} · app ${shell ?? "browser"}`,
+    `web ${process.env.NEXT_PUBLIC_APP_VERSION} · app ${shell ?? (asked ? "browser" : "asking…")}`,
     `now ${new Date().toISOString()}`,
     `track=${status.hasTrack} recording=${status.recording} plain=${status.plain} background=${status.background}`,
     `starting=${status.backgroundStarting} issue=${status.backgroundIssue ?? "-"} detail=${status.backgroundDetail ?? "-"}`,
     native
       ? `service running=${native.running} location=${native.location} precise=${native.precise} notifications=${native.notifications}`
-      : "service absent (no native part in this build)",
+      : asked
+        ? "service absent (no native part in this build)"
+        : "service — asking the shell…",
     `ua ${typeof navigator === "undefined" ? "-" : navigator.userAgent}`,
   ];
 }

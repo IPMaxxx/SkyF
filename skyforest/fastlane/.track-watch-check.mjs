@@ -15,6 +15,7 @@ import { createWatchController } from "../src/lib/track/watchController.ts";
 import { watchMessage } from "../src/lib/track/watchMessage.ts";
 import { recordingStatusView } from "../src/lib/track/recordingStatusView.ts";
 import { confirmServiceStart } from "../src/lib/track/serviceStartup.ts";
+import { looksThenable, plainApi } from "../src/lib/native/plainApi.ts";
 import {
   CHUNK_TIMEOUT_MS,
   chunkArrived,
@@ -579,6 +580,69 @@ async function scenarioLostAnswer() {
 }
 
 /**
+ * Прокси плагина Capacitor притворяется обещанием.
+ *
+ * Тот самый дефект, из-за которого фоновая запись не включалась ни разу ни на
+ * телефоне, ни на эмуляторе: `registerPlugin` отдаёт Proxy, отвечающий вызовом
+ * нативного метода на ЛЮБОЕ свойство, включая `then`. Движок спрашивает `then`
+ * у каждого значения, которым разрешается промис, — и `return api` из
+ * async-функции уходит в никуда навсегда. Ни ошибки, ни отказа: журнал
+ * обрывался на строке «служба найдена», а через минуту сторож сообщал, что
+ * ждать было нечего.
+ *
+ * Проверяем на подделке, ведущей себя ровно как прокси Capacitor.
+ */
+async function scenarioThenableProxy() {
+  console.log("\n— прокси плагина притворяется обещанием —");
+
+  let calls = [];
+  const proxy = new Proxy(
+    {},
+    {
+      get(_, prop) {
+        if (prop === "$$typeof" || prop === "toJSON") return undefined;
+        return (...args) => {
+          calls.push(String(prop));
+          // Мост отвечает отказом на неизвестный метод — и `then` для него
+          // такой же неизвестный метод, как любой другой.
+          if (prop === "then") {
+            const refused = Promise.reject(new Error(`${String(prop)}() is not implemented`));
+            // В браузере этот отказ всплывает как «Uncaught (in promise)» — по
+            // нему дефект в итоге и нашёлся. Здесь он нам мешает, гасим.
+            refused.catch(() => {});
+            return refused;
+          }
+          return Promise.resolve({ ok: true, args });
+        };
+      },
+    },
+  );
+
+  check("прокси и правда выглядит обещанием", looksThenable(proxy), true);
+
+  // Так выглядел наш загрузчик: `return proxy` из async-функции.
+  const hung = await Promise.race([
+    (async () => proxy)().then(() => "ответ"),
+    new Promise((done) => setTimeout(() => done("зависло"), 50)),
+  ]);
+  check("прокси, отданный из async-функции, не возвращается никогда", hung, "зависло");
+
+  calls = [];
+  const plain = plainApi(proxy, ["status", "start"]);
+  check("у обычного объекта обещанием не пахнет", looksThenable(plain), false);
+
+  const answered = await Promise.race([
+    (async () => plain)().then(() => "ответ"),
+    new Promise((done) => setTimeout(() => done("зависло"), 50)),
+  ]);
+  check("обычный объект отдаётся сразу", answered, "ответ");
+
+  const result = await plain.status();
+  check("и методы работают по-прежнему", result.ok, true);
+  check("на мост ушёл только вызов метода", calls.join(","), "status");
+}
+
+/**
  * Кусок бандла не приезжает.
  *
  * Оболочка грузит веб с сайта, поэтому `import()` за ещё не скачанным куском —
@@ -708,6 +772,7 @@ async function scenarioOfflinePaths() {
   check("и запрос за куском был один", attempts, 1);
 }
 
+await scenarioThenableProxy();
 await scenarioMissingChunk();
 await scenarioOfflinePaths();
 await scenarioLostAnswer();

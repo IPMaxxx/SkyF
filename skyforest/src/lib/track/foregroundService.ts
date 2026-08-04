@@ -22,6 +22,7 @@
  */
 
 import { isNativeApp } from "@/lib/native/capacitor";
+import { plainApi } from "@/lib/native/plainApi";
 import { trackLog } from "@/lib/track/trackLog";
 import {
   CHUNK_TIMEOUT_MS,
@@ -128,6 +129,20 @@ export interface ForegroundServicePlugin {
 let cached: ForegroundServicePlugin | null = null;
 let pending: Promise<ForegroundServicePlugin | null> | null = null;
 
+/**
+ * Методы, которые нам нужны от службы. Список нужен, чтобы отдать наружу
+ * обычный объект вместо прокси: почему это обязательно — в native/plainApi.
+ */
+const METHODS = [
+  "start",
+  "stop",
+  "status",
+  "requestNotifications",
+  "openSettings",
+  "addListener",
+  "removeAllListeners",
+] as const;
+
 async function load(): Promise<ForegroundServicePlugin | null> {
   if (!isNativeApp()) return null;
   const began = Date.now();
@@ -140,7 +155,7 @@ async function load(): Promise<ForegroundServicePlugin | null> {
     // зависнуть на этой проверке приложение права не имеет.
     await withTimeout(api.status(), DETECT_TIMEOUT_MS, "WayBackTrack.status");
     trackLog("bg.detect", `WayBackTrack in ${Date.now() - began} ms`);
-    return api;
+    return plainApi(api, METHODS);
   } catch (error) {
     const failure = error as { code?: string; message?: string };
     trackLog(
