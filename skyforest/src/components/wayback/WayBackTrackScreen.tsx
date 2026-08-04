@@ -21,6 +21,7 @@ import { listRegions } from "@/lib/offline/tileStore";
 import { preloadChunk } from "@/lib/offline/deadline";
 import { loadTrackHistory } from "@/lib/trackHistory";
 import { useWaybackAccount } from "@/lib/wayback/useWaybackAccount";
+import { useRecordingCopy } from "@/lib/wayback/useRecordingCopy";
 import type { TrackController } from "@/lib/track/useTrackController";
 import type { Coords } from "@/lib/native/geolocation";
 import { Link } from "@/i18n/navigation";
@@ -479,6 +480,9 @@ function ActiveHike({
   const t = useTranslations("wayback.active");
   const locale = useLocale();
   const units = useUnits();
+  // Легенда пунктира зависит от того, умеет ли ЭТА сборка писать путь в фоне:
+  // без своей службы разрыв — это уход в фон, с ней — потеря спутников.
+  const copy = useRecordingCopy();
 
   if (!c.track) return null;
 
@@ -592,7 +596,7 @@ function ActiveHike({
           course={c.course}
         />
         <p className="wb-mono px-2 pt-2.5 text-[11.5px] leading-[1.5] text-wb-body">
-          {t("gapHint")}
+          {t(copy.gapHint)}
         </p>
       </WbTile>
 

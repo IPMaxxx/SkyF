@@ -46,7 +46,14 @@ export default {
     pickOnMap: "Set entry point on the map",
     howTitle: "How it works",
     how1: "Tap where you set off — we drop an anchor by GPS",
+    /**
+     * Про запись — два варианта. Нейтральный верен везде, включая сборки без
+     * фоновой службы и браузер; сильный показывается только там, где своя
+     * служба переднего плана действительно есть. Выбор — lib/wayback/recordingCopy.
+     */
     how2: "Points are dropped as you walk — battery-friendly",
+    how2Background:
+      "Points are dropped as you walk — recording keeps going with the screen off and the app in the background",
     how3: "Arrow and distance lead you back — no internet needed",
     localOnly: "The walk is recorded on this device; finished walks are saved to your account.",
     mapLocating: "finding your position…",
@@ -118,10 +125,13 @@ export default {
     layerSatellite: "Satellite",
     expandMap: "Open the map full screen",
     /**
-     * Причину разрыва не называем: карта её не знает, а в сборках без фоновой
-     * записи и с ней она разная (фон против отсутствия спутников).
+     * Причина разрыва зависит от сборки, поэтому строк две. Без фоновой службы
+     * пунктир — это уход в фон, и называть причину нечестно: карта её не знает.
+     * Со службой запись фон переживает, и остаётся ровно одна причина —
+     * телефон не видел спутников. Выбор — lib/wayback/recordingCopy.
      */
     gapHint: "dashed — stretches with no recording",
+    gapHintBackground: "dashed — stretches where the phone could not see satellites",
     /**
      * Постоянное уведомление Android, пока идёт запись. Android показывает его
      * всё время похода, поэтому текст должен объяснять, почему оно тут, и не

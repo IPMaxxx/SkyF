@@ -30,6 +30,7 @@ import {
   initialsFrom,
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
+import { useRecordingCopy } from "@/lib/wayback/useRecordingCopy";
 import { cn } from "@/lib/utils";
 import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
 import { WayBackDiagnostics } from "@/components/wayback/WayBackDiagnostics";
@@ -49,6 +50,9 @@ export function WayBackMenu({
   const pathname = usePathname();
   const unitSystem = useUnitSystem();
   const { email, signedIn, subscription, trialDaysLeft } = useWaybackAccount();
+  // «Как это работает» обещает запись с погашенным экраном только там, где
+  // нативная часть для неё действительно есть.
+  const copy = useRecordingCopy();
   const [loggingOut, setLoggingOut] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [shellVersion, setShellVersion] = useState<string | null>(null);
@@ -192,7 +196,7 @@ export function WayBackMenu({
             {howOpen && (
               <div className="flex flex-col gap-3 px-5 pb-[18px]">
                 <ol className="flex flex-col gap-3">
-                  {[tHow("how1"), tHow("how2"), tHow("how3")].map((step, i) => (
+                  {[tHow("how1"), tHow(copy.how2), tHow("how3")].map((step, i) => (
                     <li key={i} className="flex gap-3">
                       <span className="wb-mono flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] bg-wb-primary-tint text-[12px] font-semibold text-wb-primary">
                         {i + 1}
