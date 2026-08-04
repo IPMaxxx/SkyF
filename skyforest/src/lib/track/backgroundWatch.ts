@@ -374,8 +374,8 @@ function confirmRunning(
       try {
         return await withTimeout(
           service.status(),
-          FOREGROUND_SERVICE_TIMEOUTS.call,
-          "WayBackTrack.status",
+          FOREGROUND_SERVICE_TIMEOUTS.confirm,
+          "WayBackTrack.status (confirm)",
         );
       } catch {
         return null;

@@ -23,6 +23,13 @@ export interface ServiceSnapshot {
 
 export const CONFIRM_STEPS = 12;
 export const CONFIRM_STEP_MS = 300;
+/**
+ * Потолок по часам, а не только по числу вопросов. Вопрос со сроком в две
+ * секунды, заданный двенадцать раз, — это почти полминуты ожидания там, где
+ * человек ждёт ответа «пишется путь или нет». Считать надо по часам: сколько
+ * бы вопросов ни осталось, дольше этого мы не выясняем.
+ */
+export const CONFIRM_BUDGET_MS = 6_000;
 
 /**
  * Переспрашивает службу, пока она не скажет «работаю» или «не смогла».
@@ -35,10 +42,13 @@ export async function confirmServiceStart(
   wait: (ms: number) => Promise<void>,
   steps: number = CONFIRM_STEPS,
   stepMs: number = CONFIRM_STEP_MS,
+  budgetMs: number = CONFIRM_BUDGET_MS,
 ): Promise<ServiceSnapshot> {
+  const began = Date.now();
   let status = first;
   for (let step = 0; step < steps; step += 1) {
     if (status.running || status.failure) return status;
+    if (Date.now() - began >= budgetMs) return status;
     await wait(stepMs);
     const next = await ask();
     // Ответа на этот вопрос нет — спросим на следующем шаге, прежний ответ

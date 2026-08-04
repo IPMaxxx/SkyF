@@ -21,7 +21,7 @@
 
 import { getCurrentPosition, type Coords } from "@/lib/native/geolocation";
 import { geolocationPlugin } from "@/lib/native/plugins";
-import { withTimeout } from "@/lib/offline/deadline";
+import { waitingOn, withTimeout } from "@/lib/offline/deadline";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { rememberPosition } from "@/lib/lastKnownPosition";
 import { loadTrack, appendPoint, type ActiveTrack } from "@/lib/trackState";
@@ -245,11 +245,21 @@ async function startBackgroundSlot(): Promise<(() => void) | null> {
 }
 
 /**
- * Сколько всего может занять честная попытка: определение нативной части (2 с),
- * два вызова моста (по 4 с) и подтверждение старта службы (8 с). Сторож — на
- * случай, если появится путь без своего срока.
+ * Сторож — последняя черта, а не судья. Он обязан быть длиннее суммы всех
+ * сроков внутри попытки, иначе судит о том, чего не дождался сам.
+ *
+ * Двадцати секунд не хватало, и это стоило нам дня отладки: попытка честно шла
+ * по шагам (кусок бандла 5 с, определение 4 с, два вызова моста, старт,
+ * подтверждение подъёма службы), а сторож обрывал её на середине и сообщал
+ * «ответа нет» — самое бесполезное из возможных сообщений. Человек присылал
+ * его трижды, и трижды оно не называло ни шага, ни причины.
+ *
+ * Сумма сроков сейчас — около сорока секунд в самом дурном случае; сторож
+ * должен её пережить. Ждать так долго не придётся: каждый шаг заканчивается
+ * своим исходом с именем, а опрос службы раз в пять секунд подхватывает запись
+ * раньше, чем сюда дойдёт дело.
  */
-const BACKGROUND_START_WATCHDOG_MS = 20_000;
+const BACKGROUND_START_WATCHDOG_MS = 60_000;
 const WATCHDOG = Symbol("watchdog");
 /** Начало текущей попытки; нужно, чтобы судить о ней по часам, а не по таймеру. */
 let startedAt = 0;
@@ -269,8 +279,11 @@ function watchdog(): Promise<typeof WATCHDOG> {
  */
 function concludeStalled(reason: string): void {
   const waited = Date.now() - startedAt;
+  // Шаг называем обязательно. «Ответа нет за 20 002 мс» — это отчёт ни о чём:
+  // он не отличает мёртвый мост от медленного и не подсказывает, куда смотреть.
+  const step = waitingOn() ?? "nothing (the wait had already ended)";
   backgroundIssue = "failed";
-  backgroundDetail = `STALLED (${reason}): background start gave no answer in ${waited} ms`;
+  backgroundDetail = `STALLED (${reason}) after ${waited} ms, waiting on ${step}`;
   controller.markStopped("background");
   trackLog("bg.stalled", backgroundDetail);
 }

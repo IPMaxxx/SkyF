@@ -86,7 +86,7 @@ export default {
   // который её присылает.
   diagnostics: {
     title: "Recording log",
-    hint: "Technical notes about this hike's recording. Copy them and send them to support — that is usually enough for us to see what went wrong.",
+    hint: "Technical notes about the last recording events — they are kept whether or not a hike is under way. Copy them and send them to support: that is usually enough for us to see what went wrong.",
     empty: "Nothing recorded yet.",
     copy: "Copy the log",
     copied: "Log copied",

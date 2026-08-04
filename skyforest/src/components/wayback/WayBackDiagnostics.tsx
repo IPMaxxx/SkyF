@@ -20,30 +20,44 @@ import { clearTrackLog, formatTrackLog, readTrackLog } from "@/lib/track/trackLo
 import { trackWatchStatus } from "@/lib/trackRecorder";
 
 export function WayBackDiagnostics({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Панель — отдельный компонент, живущий только пока открыта: так выписка
+  // собирается заново на каждое открытие, а её первое состояние берётся прямо
+  // при отрисовке, без ожиданий.
+  return open ? <DiagnosticsSheet onClose={onClose} /> : null;
+}
+
+function DiagnosticsSheet({ onClose }: { onClose: () => void }) {
   const t = useTranslations("wayback.diagnostics");
-  const [text, setText] = useState("");
+  // Сразу то, что уже лежит в хранилище. Панель однажды показала «записей пока
+  // нет» при полном журнале: текст собирался после двух нативных запросов, один
+  // из них не ответил, и человек увидел пустоту вместо тех самых строк, ради
+  // которых журнал и заводился. Ответ на «что случилось» не имеет права
+  // зависеть от того, отвечает ли мост.
+  const [text, setText] = useState(() => formatTrackLog(header(null, null), readTrackLog()));
 
   useEffect(() => {
-    if (!open) return;
     let alive = true;
-    // Состояние спрашиваем у самой службы, а не берём из памяти страницы: когда
-    // человек открывает журнал, интересует именно то, что происходит на
-    // телефоне сейчас, включая точность выданной геолокации.
-    void Promise.all([nativeBuild(), backgroundWatchState()]).then(([info, native]) => {
+    // Дальше — то, что можно узнать только у оболочки: версия сборки и
+    // состояние службы прямо сейчас, включая точность выданной геолокации.
+    // Дополняют выписку, но не задерживают её.
+    void Promise.allSettled([nativeBuild(), backgroundWatchState()]).then(([build, state]) => {
       if (!alive) return;
+      const info = build.status === "fulfilled" ? build.value : null;
+      const native = state.status === "fulfilled" ? state.value : null;
       setText(formatTrackLog(header(formatNativeBuild(info), native), readTrackLog()));
     });
     return () => {
       alive = false;
     };
-  }, [open]);
-
-  if (!open) return null;
+  }, []);
 
   return (
     <>
-      <div className="fixed inset-0 z-[70] bg-black/45" onClick={onClose} aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-[71] flex max-h-[85vh] flex-col gap-3 rounded-t-[26px] bg-wb-surface px-5 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-5">
+      <div className="fixed inset-0 z-[1290] bg-black/45" onClick={onClose} aria-hidden="true" />
+      {/* Выше нижнего меню (z-1250), иначе оно перекрывает кнопки: на скриншоте
+          от человека «Скопировать» пряталась за вкладками, виден был только
+          верхний край. Панель модальная, вкладки под ней и не нужны. */}
+      <div className="fixed inset-x-0 bottom-0 z-[1291] flex max-h-[85vh] flex-col gap-3 rounded-t-[26px] bg-wb-surface px-5 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-5">
         <div className="flex items-center justify-between">
           <span className="text-[17px] font-extrabold text-wb-ink">{t("title")}</span>
           <button
@@ -71,7 +85,7 @@ export function WayBackDiagnostics({ open, onClose }: { open: boolean; onClose: 
             type="button"
             onClick={() => {
               clearTrackLog();
-              setText("");
+              setText(formatTrackLog(header(null, null), []));
             }}
             className="rounded-2xl bg-wb-surface-2 px-5 py-[15px] text-[15px] font-extrabold text-wb-muted-2"
           >

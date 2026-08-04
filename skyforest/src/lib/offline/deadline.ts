@@ -64,8 +64,10 @@ export interface NativeCallFailure {
  * ждать их приходится ровно так же.
  */
 export function withTimeout<T>(work: PromiseLike<T>, ms: number, what: string): Promise<T> {
+  const step = beginStep(what);
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
+      endStep(step);
       const failure: NativeCallFailure = {
         code: "TIMEOUT",
         message: `${what} did not answer in ${ms} ms`,
@@ -75,14 +77,50 @@ export function withTimeout<T>(work: PromiseLike<T>, ms: number, what: string): 
     work.then(
       (value) => {
         clearTimeout(timer);
+        endStep(step);
         resolve(value);
       },
       (error) => {
         clearTimeout(timer);
+        endStep(step);
         reject(error);
       },
     );
   });
+}
+
+/**
+ * Что мы ждём прямо сейчас.
+ *
+ * Появилось после отчёта, в котором приложение сообщило «ответа нет за 20 002
+ * мс» — и это всё, что мы узнали. Такое сообщение не называет ни шага, ни
+ * причины, а без них следующий шаг отладки приходится угадывать. Теперь любое
+ * ожидание со сроком отмечается здесь, и тот, кто подводит итог, называет шаг.
+ */
+interface Step {
+  what: string;
+  since: number;
+}
+
+const inFlight = new Set<Step>();
+
+function beginStep(what: string): Step {
+  const step: Step = { what, since: Date.now() };
+  inFlight.add(step);
+  return step;
+}
+
+function endStep(step: Step): void {
+  inFlight.delete(step);
+}
+
+/** Самое давнее незавершённое ожидание — обычно оно и есть виновник. */
+export function waitingOn(): string | null {
+  let oldest: Step | null = null;
+  for (const step of inFlight) {
+    if (!oldest || step.since < oldest.since) oldest = step;
+  }
+  return oldest ? `${oldest.what} (${Date.now() - oldest.since} ms)` : null;
 }
 
 /** Приехавшие куски бандла: модуль остаётся модулем, перезагружать его незачем. */
