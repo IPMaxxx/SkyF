@@ -75,7 +75,7 @@ review» в API нет тоже: отправка на рассмотрение 
 | Policy → App content → **Financial features** | «My app doesn't provide any financial features» |
 | Policy → App content → **Health apps** | не медицинское приложение, все пункты — No |
 | Policy → App content → **Government apps** | «No, it is not a government app» |
-| Policy → App content → **Advertising ID** | «No»: с versionCode 7 разрешения `com.google.android.gms.permission.AD_ID` в бандле нет — оно вырезано `tools:node="remove"` в `apps/wayback/android/app/src/main/AndroidManifest.xml` (приезжало из facebook-core, который тянет за собой `@capgo/capacitor-social-login`; рекламы у нас нет, Facebook-провайдер не инициализируется). В 1.0 разрешение было, поэтому артефакты versionCode 3–6 ему противоречат: пока они активны хоть в одном треке, Play будет ругаться на ответ «No» — их надо перекрыть версией 7 или деактивировать в App Bundle Explorer |
+| Policy → App content → **Advertising ID** | «No»: с versionCode 7 разрешения `com.google.android.gms.permission.AD_ID` в бандле нет — оно вырезано `tools:node="remove"` в `apps/wayback/android/app/src/main/AndroidManifest.xml` (приезжало из facebook-core, который тянет за собой `@capgo/capacitor-social-login`; рекламы у нас нет, Facebook-провайдер не инициализируется). В 1.0 разрешение было, поэтому артефакты versionCode 3–6 ему противоречат: пока они активны хоть в одном треке, Play будет ругаться на ответ «No» — их надо перекрыть версией 7 или деактивировать в App Bundle Explorer. С versionCode 13 из бандла ушла и четвёрка `ACCESS_ADSERVICES_*` (её доливал тот же facebook-core): в 12 она ещё была, хотя в SkyForest и Checker её вырезали раньше |
 | Grow → Store settings → **App category** | Apps → «Maps & Navigation» |
 
 **Отказ по Data safety, август 2026.** Google отклонил публикацию с «Invalid Data
@@ -93,6 +93,17 @@ ai.skyforest.wayback`. Чтобы то же не повторилось молч
 есть, а типа данных в декларации нет. **После правки формы изменения надо
 отправить на рассмотрение руками:** Play Console → Publishing overview → Send
 changes for review. Через API этого не сделать.
+
+**Что выложено сейчас.** 1.1.6 (versionCode 13) в production и internal на 100%
+(`node fastlane/.wayback-play-13.mjs --apply`, скрипт по образцу
+`.wayback-play-12.mjs`). Он перекрыл 12: в том офлайн-экран не показывал ни
+своего места, ни скачанной карты. В бандле 13 те же разрешения, что в 12, минус
+четвёрка `ACCESS_ADSERVICES_*`; `ACCESS_BACKGROUND_LOCATION`,
+`RECEIVE_BOOT_COMPLETED` и `AD_ID` в нём отсутствуют, `TrackService` объявлена
+`exported="false"` с `foregroundServiceType` location. Ревью политики, начатое на
+12, к номеру бинарника не привязано и продолжается на 13; отдельно ждёт отправки
+форма Data safety — до Send changes for review снаружи по-прежнему видна старая
+сводка.
 
 ## Data safety: одна памятка на три приложения
 

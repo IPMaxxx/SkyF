@@ -118,6 +118,13 @@
          идентификатор нужен facebook-core для атрибуции рекламы, в коде плагина
          обращений к нему нет вовсе. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <!-- Тем же слиянием приезжает четвёрка Privacy Sandbox: facebook-core
+         объявляет её на случай атрибуции через Ad Services. Нам она не нужна по
+         той же причине, и в бандлах SkyForest и Checker её уже нет. -->
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE" tools:node="remove" />
 
     <!-- Плагин объявляет GPS обязательным; оставляем своё «не обязателен»,
          иначе Play молча сузит список поддерживаемых устройств. -->
