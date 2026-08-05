@@ -152,6 +152,19 @@
     return withDeadline(work, BRIDGE_MS);
   }
 
+  /**
+   * Отдельный срок на чтение из Filesystem, и он намного больше общего.
+   *
+   * Общий срок сторожит вызовы, у которых на другом конце может не быть никого.
+   * У чтения тайла на другом конце диск, и он ответит — просто не за пять
+   * секунд: вид на экране просит два-три десятка тайлов сразу, каждый — stat и
+   * getUri, а не найденный тайл тянет за собой ещё до шести stat вверх по
+   * пирамиде. Все они идут очередью через один мост. Срок, рассчитанный на
+   * «либо сразу, либо никогда», обрывал бы здесь ровно то, что мы и пришли
+   * прочитать, — и без сети это выглядело бы пустой картой.
+   */
+  var FS_MS = 30000;
+
   function createBridge() {
     var t = injectedBridgeTransport() || androidShimTransport();
     if (!t) return null;
@@ -178,9 +191,9 @@
           remove: function (o) { return call("Preferences", "remove", o); },
         },
         Filesystem: {
-          stat: function (o) { return call("Filesystem", "stat", o); },
-          getUri: function (o) { return call("Filesystem", "getUri", o); },
-          writeFile: function (o) { return call("Filesystem", "writeFile", o); },
+          stat: function (o) { return slowCall("Filesystem", "stat", o, FS_MS); },
+          getUri: function (o) { return slowCall("Filesystem", "getUri", o, FS_MS); },
+          writeFile: function (o) { return slowCall("Filesystem", "writeFile", o, FS_MS); },
         },
         Geolocation: {
           // Свой таймаут замера + запас на дорогу до моста: холодный GPS
@@ -231,6 +244,18 @@
   window.addEventListener("error", hideNativeSplash);
 
   var ACTIVE_TRACK_KEY = "sf_active_track";
+  /**
+   * Последняя известная позиция и список скачанных областей.
+   *
+   * Оба ключа приходится читать из Preferences, и это не перестраховка. Эта
+   * страница живёт на https://localhost, а сайт — на https://wayback.skyforest.ai:
+   * источники разные, и всё, что сайт положил в свой localStorage, здесь
+   * недоступно в принципе. Общее хранилище у двух источников одно — нативное.
+   */
+  var LAST_POSITION_KEY = "sf_last_position";
+  var REGIONS_KEY = "sf_tile_regions";
+  /** Позиция старше двух недель центром карты быть не может — как на сайте. */
+  var LAST_POSITION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
   var TILE_DIR = "sf-tiles";
   // Источники тайлов — те же id и шаблоны, что в src/lib/offline/tileStore.ts:
   // регион скачивается сайтом в оба слоя (тропы + спутник).
@@ -280,6 +305,8 @@
         openApp: "Открыть приложение",
         waiting: "Определяем местоположение…",
         move: "Пройдите несколько шагов — направление определится по GPS.",
+        noFix: "Ждём спутники. Без сети первый замер занимает до нескольких минут.",
+        stalePosition: "Кольцо — последнее известное место. Ждём спутники, чтобы уточнить.",
         course: "По GPS: стрелка вверх — идти прямо, вбок — повернуть туда.",
         compass: "Направление по компасу телефона — держите его ровно.",
         enableCompass: "Включить компас",
@@ -304,6 +331,8 @@
         openApp: "Open the app",
         waiting: "Determining your location…",
         move: "Walk a few steps — we'll detect your direction from GPS.",
+        noFix: "Waiting for satellites. Without a network the first fix takes minutes.",
+        stalePosition: "The ring is your last known place. Waiting for satellites to refine it.",
         course: "From GPS: arrow up means go straight, sideways means turn that way.",
         compass: "Direction from the phone compass — hold the phone flat.",
         enableCompass: "Enable compass",
@@ -406,6 +435,75 @@
       Cap.Plugins.Preferences.remove({ key: ACTIVE_TRACK_KEY }).catch(function () {});
     }
     try { localStorage.removeItem(ACTIVE_TRACK_KEY); } catch (e) {}
+  }
+
+  /** Значение ключа из нативного хранилища, с откатом на localStorage. */
+  function readStored(key) {
+    return new Promise(function (resolve) {
+      function local() {
+        try { resolve(localStorage.getItem(key)); } catch (e) { resolve(null); }
+      }
+      if (Cap && Cap.Plugins && Cap.Plugins.Preferences) {
+        Cap.Plugins.Preferences.get({ key: key })
+          .then(function (r) { if (r && r.value) resolve(r.value); else local(); })
+          .catch(local);
+      } else {
+        local();
+      }
+    });
+  }
+
+  /**
+   * Последняя известная позиция устройства: её пишет сайт при каждом замере
+   * (см. src/lib/lastKnownPosition.ts). Нужна как первое «вы здесь» — до того,
+   * как холодный GPS без сети даст фикс, а это минуты, и всё это время человек
+   * иначе не видит на карте ни себя, ни своей местности.
+   */
+  function loadLastPosition() {
+    return readStored(LAST_POSITION_KEY).then(function (raw) {
+      if (!raw) return null;
+      var p;
+      try { p = JSON.parse(raw); } catch (e) { return null; }
+      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") return null;
+      if (!p.t || Date.now() - p.t > LAST_POSITION_MAX_AGE_MS) return null;
+      return { lat: p.lat, lng: p.lng, t: p.t };
+    });
+  }
+
+  /** Скачанные области (индекс сайта). Нужны, чтобы открыть карту там, где она есть. */
+  function loadRegions() {
+    return readStored(REGIONS_KEY).then(function (raw) {
+      if (!raw) return [];
+      var list;
+      try { list = JSON.parse(raw); } catch (e) { return []; }
+      return Array.isArray(list) ? list : [];
+    });
+  }
+
+  /** Центр области: явный, либо середина её рамки. */
+  function regionCenter(region) {
+    if (region.center && typeof region.center.lat === "number") return region.center;
+    var b = region.bbox;
+    if (!b || typeof b.north !== "number") return null;
+    return { lat: (b.north + b.south) / 2, lng: (b.east + b.west) / 2 };
+  }
+
+  /**
+   * Куда смотреть, если своей позиции нет вовсе: на скачанную область. Если их
+   * несколько — на ближайшую к последней известной позиции, иначе на свежую.
+   * Пустой мировой обзор в этом месте был обманом: карта у человека скачана, а
+   * экран показывал пустоту в другой части планеты.
+   */
+  function pickRegion(regions, near) {
+    var best = null;
+    var bestScore = Infinity;
+    for (var i = 0; i < regions.length; i++) {
+      var c = regionCenter(regions[i]);
+      if (!c) continue;
+      var score = near ? haversineM(near, c) : i;
+      if (score < bestScore) { bestScore = score; best = regions[i]; }
+    }
+    return best;
   }
 
   function remoteUrl(source, coords) {
@@ -549,14 +647,16 @@
     if (geo) {
       try {
         plainWatchId = geo.watchPosition({ enableHighAccuracy: true }, function (pos) {
-          if (pos && pos.coords) onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          if (pos && pos.coords) {
+            onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+          }
         });
         return;
       } catch (e) {}
     }
     if (navigator.geolocation) {
       browserWatchId = navigator.geolocation.watchPosition(
-        function (p) { onPos({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+        function (p) { onPos({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); },
         function () {},
         { enableHighAccuracy: true, maximumAge: 5000 },
       );
@@ -607,7 +707,7 @@
       .then(function () {
         svc.onLocation(function (loc) {
           if (loc && typeof loc.latitude === "number") {
-            onPos({ lat: loc.latitude, lng: loc.longitude });
+            onPos({ lat: loc.latitude, lng: loc.longitude, accuracy: loc.accuracy });
           }
         });
         return svc.start({
@@ -665,7 +765,7 @@
         },
         function (loc) {
           if (loc && typeof loc.latitude === "number") {
-            onPos({ lat: loc.latitude, lng: loc.longitude });
+            onPos({ lat: loc.latitude, lng: loc.longitude, accuracy: loc.accuracy });
             return;
           }
           // Ошибка старта. Самая частая — служба уже поднята приложением, а её
@@ -766,8 +866,114 @@
     },
   });
 
+  /* ---------------- Схематичная подложка (сетка координат) ---------------- */
+
+  /**
+   * Самый нижний слой: сетка широт и долгот, нарисованная на canvas.
+   *
+   * Нужна потому, что «нет тайлов» и «нет карты» — разные вещи, а выглядели
+   * одинаково. Зашитые обзорные тайлы кончаются на z5, и на пешеходном зуме
+   * Leaflet растягивал один такой тайл в тысячу раз: экран заливало ровным
+   * цветом, неотличимым от пустоты. Здесь же на любом зуме видно, где север,
+   * какой масштаб и куда сместилась точка, — этого хватает, чтобы идти по
+   * стрелке и по своему треку.
+   *
+   * Ни одного обращения ни к сети, ни к файлам: только canvas.
+   */
+  var GRID_STEPS = [
+    30, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002,
+  ];
+  /** Ближе этого подписи сливаются в кашу и мешают вместо того, чтобы помогать. */
+  var GRID_MIN_LABEL_PX = 90;
+
+  /**
+   * Шаг сетки в градусах — по расстоянию на экране, а не по номеру зума.
+   * Считать от зума нельзя: один и тот же шаг даёт на пешеходных зумах линии в
+   * десяток пикселей друг от друга, и подписи широты с долготой наезжают одна
+   * на другую.
+   */
+  function gridStep(z, tilePx) {
+    var degPerPx = 360 / (Math.pow(2, z) * tilePx);
+    var least = GRID_MIN_LABEL_PX * degPerPx;
+    for (var i = GRID_STEPS.length - 1; i >= 0; i--) {
+      if (GRID_STEPS[i] >= least) return GRID_STEPS[i];
+    }
+    return GRID_STEPS[0];
+  }
+
+  /** Широта верхнего края тайлового ряда y при 2^z рядах (обратный Меркатор). */
+  function tileRowLat(y, n) {
+    var t = Math.PI * (1 - (2 * y) / n);
+    return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(t) - Math.exp(-t)));
+  }
+
+  /** Позиция широты в тайловых рядах — прямой Меркатор. */
+  function latToRow(lat, n) {
+    var rad = (lat * Math.PI) / 180;
+    return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
+  }
+
+  function fmtDeg(value, step) {
+    var digits = step >= 1 ? 0 : step >= 0.1 ? 1 : step >= 0.01 ? 2 : step >= 0.001 ? 3 : 4;
+    return value.toFixed(digits) + "°";
+  }
+
+  var GraticuleLayer = L.GridLayer.extend({
+    createTile: function (coords) {
+      var size = this.getTileSize();
+      var canvas = document.createElement("canvas");
+      canvas.width = size.x;
+      canvas.height = size.y;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return canvas;
+
+      // Холст приложения: подложка должна читаться как часть экрана, а не как
+      // дырка в нём.
+      ctx.fillStyle = "#101b13";
+      ctx.fillRect(0, 0, size.x, size.y);
+
+      var n = Math.pow(2, coords.z);
+      var west = (coords.x / n) * 360 - 180;
+      var east = ((coords.x + 1) / n) * 360 - 180;
+      var north = tileRowLat(coords.y, n);
+      var south = tileRowLat(coords.y + 1, n);
+      var step = gridStep(coords.z, size.x);
+
+      ctx.strokeStyle = "rgba(95, 181, 115, 0.28)";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "rgba(216, 232, 219, 0.55)";
+      ctx.font = "10px system-ui, -apple-system, sans-serif";
+      ctx.textBaseline = "top";
+
+      // Меридианы.
+      var lng = Math.ceil(west / step) * step;
+      for (; lng < east; lng += step) {
+        var px = Math.round(((lng - west) / (east - west)) * size.x) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, size.y);
+        ctx.stroke();
+        ctx.fillText(fmtDeg(lng, step), px + 4, 4);
+      }
+
+      // Параллели: по тайловым рядам, иначе на больших тайлах сетка «плывёт».
+      var lat = Math.floor(north / step) * step;
+      for (; lat > south; lat -= step) {
+        var py = Math.round((latToRow(lat, n) - coords.y) * size.y) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, py);
+        ctx.lineTo(size.x, py);
+        ctx.stroke();
+        ctx.fillText(fmtDeg(lat, step), 4, py + 4);
+      }
+
+      return canvas;
+    },
+  });
+
   // Базовый слой: обзорные тайлы, зашитые в приложение (./basemap, z0–5).
-  // Leaflet растягивает их на все зумы — карта никогда не пустая.
+  // Выше z9 он не показывается: растянутый в 16 раз и более обзорный тайл
+  // перестаёт быть картой и только закрывает сетку координат под ним.
   var BaseLayer = L.TileLayer.extend({
     createTile: function (coords, done) {
       var tile = document.createElement("img");
@@ -794,6 +1000,14 @@
     html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #0b120d;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.55)"></div>',
     iconSize: [20, 20], iconAnchor: [10, 10],
   });
+  // Последняя известная позиция: тот же синий, но полым кольцом. Человек должен
+  // видеть, что это его место «по памяти», а не свежий фикс, — и при этом
+  // видеть его сразу, а не через минуты ожидания спутников.
+  var staleIcon = L.divIcon({
+    className: "",
+    html: '<div style="width:20px;height:20px;border:3px solid #3b82f6;background:rgba(59,130,246,.22);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.55)"></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10],
+  });
 
   /* ------------------------- Состояние ------------------------- */
 
@@ -802,13 +1016,17 @@
   var pathLine = null;
   var returnLine = null;
   var currentMarker = null;
+  var accuracyRing = null;
   var anchorMarker = null;
   var current = null;
+  /** Позиция «по памяти»: показана, пока GPS не дал первый фикс. */
+  var currentIsStale = false;
+  /** Пока человек сам не двинул карту, держим его точку в виду. */
+  var followUser = true;
   var course = null;
   var heading = null;
   var samples = [];
   var lastCourseAt = 0;
-  var centeredOnUser = false;
   var picked = null;
   var pickMarker = null;
 
@@ -821,12 +1039,26 @@
 
   function onPosition(pos) {
     var now = Date.now();
-    current = { lat: pos.lat, lng: pos.lng, t: now };
+    var first = currentIsStale || !current;
+    current = { lat: pos.lat, lng: pos.lng, t: now, accuracy: pos.accuracy };
+    currentIsStale = false;
 
-    // Пока похода нет — активируем Way Back и один раз центрируем карту.
+    // Точка «вы здесь» рисуется прежде всего остального и ни от чего не
+    // зависит: ни от похода, ни от тайлов, ни от готовности карты. Раньше она
+    // жила внутри render(), а тот выходил первой строкой, если похода нет, — и
+    // на стартовом экране кружка не было никогда, даже когда координаты уже
+    // пришли.
+    renderPosition();
+    // Первый живой фикс подводим под глаза: до него вид стоял там, где мы
+    // угадали (память, скачанная область, трек), и это может быть не здесь.
+    if (first && map) {
+      map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 15));
+    }
+
+    // Пока похода нет — активируем Way Back и ждём кнопки.
     if (!track) {
       updateStartButton();
-      if (map && !centeredOnUser) { centeredOnUser = true; map.setView([pos.lat, pos.lng], 15); }
+      updateHint();
       return;
     }
 
@@ -848,20 +1080,79 @@
     render();
   }
 
-  function render() {
-    if (!map || !track || !current) return;
+  /**
+   * Точка «вы здесь» и её точность. Отдельно от всего прочего, потому что это
+   * то самое, что обязано быть на экране всегда: без карты, без тайлов, без
+   * похода и без сети. Рисуется поверх любой подложки — маркеры и круги живут
+   * в слоях Leaflet выше тайловых.
+   */
+  function renderPosition() {
+    if (!map || !current) return;
+    var at = [current.lat, current.lng];
+    var icon = currentIsStale ? staleIcon : currentIcon;
 
-    if (!currentMarker) currentMarker = L.marker([current.lat, current.lng], { icon: currentIcon }).addTo(map);
-    else currentMarker.setLatLng([current.lat, current.lng]);
+    if (!currentMarker) currentMarker = L.marker(at, { icon: icon, zIndexOffset: 1000 }).addTo(map);
+    else { currentMarker.setLatLng(at); currentMarker.setIcon(icon); }
 
+    // Круг точности: без него кружок «вы здесь» обещает больше, чем знает.
+    // Рисуем только осмысленные значения — комнатные единицы метров и
+    // километровые оценки по сети одинаково бесполезны.
+    var acc = typeof current.accuracy === "number" && current.accuracy > 10 && current.accuracy < 5000
+      ? current.accuracy
+      : null;
+    if (acc == null) {
+      if (accuracyRing) { map.removeLayer(accuracyRing); accuracyRing = null; }
+    } else if (!accuracyRing) {
+      accuracyRing = L.circle(at, {
+        radius: acc, color: "#3b82f6", weight: 1, opacity: 0.5,
+        fillColor: "#3b82f6", fillOpacity: 0.12, interactive: false,
+      }).addTo(map);
+    } else {
+      accuracyRing.setLatLng(at);
+      accuracyRing.setRadius(acc);
+    }
+
+    keepInView(at);
+  }
+
+  /**
+   * Держит точку в виду, пока человек не начал листать карту сам. Маркер,
+   * который есть в разметке, но лежит за краем контейнера, для человека не
+   * существует — именно так «синего кружка не видно» и выглядело: вид был
+   * подогнан по записанному треку, а точка оказывалась ниже нижнего края.
+   */
+  function keepInView(at) {
+    if (!followUser || !map) return;
+    var bounds = map.getBounds();
+    if (bounds.pad(-0.15).contains(L.latLng(at))) return;
+    map.panTo(at, { animate: false });
+  }
+
+  function updateHint() {
+    if (!current) { $("hint").textContent = T.noFix; return; }
+    if (currentIsStale) { $("hint").textContent = T.stalePosition; return; }
+    $("hint").textContent = course != null ? T.course : heading != null ? T.compass : T.move;
+  }
+
+  /** Записанный путь и точка входа: видны и без своей позиции. */
+  function renderTrack() {
+    if (!map || !track) return;
     // Пройденный путь — синий, как маркер «вы здесь»; пунктир напрямую к
     // точке входа — зелёный, как её маркер.
     if (!pathLine) pathLine = L.polyline(pathLatLngs(), { color: "#3b82f6", weight: 5, opacity: 0.95, lineCap: "round" }).addTo(map);
     else pathLine.setLatLngs(pathLatLngs());
 
+    if (!current) return;
     var rl = [[current.lat, current.lng], [track.anchor.lat, track.anchor.lng]];
     if (!returnLine) returnLine = L.polyline(rl, { color: "#5fb573", weight: 4, opacity: 0.9, dashArray: "8 10" }).addTo(map);
     else returnLine.setLatLngs(rl);
+  }
+
+  function render() {
+    renderPosition();
+    renderTrack();
+    updateHint();
+    if (!map || !track || !current) return;
 
     var dist = haversineM(current, track.anchor);
     var bearing = bearingDeg(current, track.anchor);
@@ -869,7 +1160,6 @@
 
     $("distance").textContent = fmtDist(dist);
     $("dir").textContent = T.dirText(DIRS[compassDir(bearing)], fmtDist(dist));
-    $("hint").textContent = course != null ? T.course : heading != null ? T.compass : T.move;
 
     if (ref != null) {
       $("arrow").style.transform = "rotate(" + (bearing - ref) + "deg)";
@@ -907,9 +1197,42 @@
     refreshMapSize();
   }
 
-  /** Way Back активна, когда есть точка старта: своя геолокация или тап по карте. */
+  /**
+   * Way Back активна, когда есть точка старта: свежий фикс или тап по карте.
+   * Позиция «по памяти» здесь не годится: ей до двух недель, и якорь похода она
+   * поставила бы там, где человека давно нет. Показать её на карте — польза,
+   * начать от неё поход — обман.
+   */
+  function startPoint() {
+    return picked || (current && !currentIsStale ? current : null);
+  }
   function updateStartButton() {
-    $("startBtn").disabled = !(picked || current);
+    $("startBtn").disabled = !startPoint();
+  }
+
+  /**
+   * Дальше этого от точки входа позиция «по памяти» в рамку не берётся. Она
+   * бывает двухнедельной давности и совсем из другого места: включив её в
+   * рамку, мы отдали бы человеку вид размером с область, где не видно ни
+   * тропинки. Ближняя — наоборот, обязана попасть в кадр, иначе повторяется
+   * та же беда: точка есть, а за краем экрана.
+   */
+  var FIT_POSITION_LIMIT_M = 100000;
+
+  /** Рамка по записанному пути; своё место включаем, если оно рядом. */
+  function fitToTrack() {
+    if (!map || !track) return;
+    var pts = [[track.anchor.lat, track.anchor.lng]];
+    for (var i = 0; i < track.points.length; i++) {
+      pts.push([track.points[i].lat, track.points[i].lng]);
+    }
+    var near = current && haversineM(current, track.anchor) < FIT_POSITION_LIMIT_M;
+    if (near) pts.push([current.lat, current.lng]);
+    // Далёкая позиция «по памяти» — не повод уезжать от похода: вид остаётся на
+    // тропе, а первый живой фикс сам подведёт карту к человеку.
+    if (current && !near) followUser = false;
+    if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+    else map.setView(pts[0], 16);
   }
 
   function drawAnchor() {
@@ -943,7 +1266,7 @@
    * осознанно, например уже потерявшись) либо от своей геолокации.
    */
   function startWayback() {
-    var pos = picked || current;
+    var pos = startPoint();
     if (!pos) return;
     var fromGps = !picked;
     if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
@@ -964,13 +1287,20 @@
   /* --------------------- Центрирование по геолокации --------------------- */
 
   function locateMe() {
-    if (current) { map.setView([current.lat, current.lng], 16); return; }
+    // Кнопка снова включает слежение: человек её и нажимает за тем, чтобы
+    // вернуться к себе.
+    followUser = true;
+    if (current && !currentIsStale) { map.setView([current.lat, current.lng], 16); return; }
+    if (current) map.setView([current.lat, current.lng], 16);
     var btn = $("locateBtn");
     btn.disabled = true;
     getCurrentPositionOnce()
       .then(function (p) {
-        current = { lat: p.lat, lng: p.lng, t: Date.now() };
+        current = { lat: p.lat, lng: p.lng, t: Date.now(), accuracy: p.accuracy };
+        currentIsStale = false;
         updateStartButton();
+        renderPosition();
+        updateHint();
         map.setView([p.lat, p.lng], 16);
         btn.disabled = false;
       })
@@ -983,18 +1313,17 @@
   function finishWayback() {
     clearTrackStore();
     track = null;
-    current = null;
     course = null;
     heading = null;
     samples = [];
-    centeredOnUser = false;
     if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
     if (returnLine) { map.removeLayer(returnLine); returnLine = null; }
-    if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
     if (anchorMarker) { map.removeLayer(anchorMarker); anchorMarker = null; }
     if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
     picked = null;
     showStartMode();
+    // Точку «вы здесь» не убираем: поход закончен, а человек всё ещё на карте.
+    render();
     $("distance").textContent = "—";
     $("duration").textContent = "0:00";
     // Поход закрыт — глушим фоновую службу и снимаем постоянное уведомление.
@@ -1005,7 +1334,7 @@
     return new Promise(function (resolve, reject) {
       if (!navigator.geolocation) { reject(new Error("no geolocation")); return; }
       navigator.geolocation.getCurrentPosition(
-        function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+        function (p) { resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); },
         reject,
         { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
       );
@@ -1021,7 +1350,9 @@
         .then(function () {
           return geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 });
         })
-        .then(function (p) { return { lat: p.coords.latitude, lng: p.coords.longitude }; })
+        .then(function (p) {
+          return { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
+        })
         .catch(function () { return browserPositionOnce(); });
     }
     return browserPositionOnce();
@@ -1056,17 +1387,27 @@
       center || [20, 0],
       center ? 15 : 2,
     );
-    // Базовый обзорный слой (всегда виден) + детальный поверх. Детальный при
-    // онлайне и приближении подгружает нативные тайлы до z18 (все дорожки).
-    new BaseLayer("", { maxNativeZoom: 5, maxZoom: 19 }).addTo(map);
+    // Три слоя снизу вверх: схематичная сетка (есть всегда), обзорные тайлы из
+    // приложения (пока они остаются картой, то есть до z9), детальный слой со
+    // скачанным. Порядок именно такой, чтобы «нет тайлов» выглядело схемой с
+    // масштабом, а не ровной заливкой.
+    new GraticuleLayer({ maxZoom: 19 }).addTo(map);
+    new BaseLayer("", { maxNativeZoom: 5, maxZoom: 9 }).addTo(map);
     detailLayers.outdoor = new OfflineLayer("", {
       maxNativeZoom: 18, maxZoom: 19, sfSource: SOURCES.outdoor,
     }).addTo(map);
     detailLayers.satellite = new OfflineLayer("", {
       maxNativeZoom: 18, maxZoom: 19, sfSource: SOURCES.satellite,
     });
+    // Масштаб: на схематичной подложке это единственный способ понять
+    // расстояние на глаз. Свой у Leaflet, без картинок и без сети.
+    L.control.scale({ imperial: false, metric: true, position: "bottomleft" }).addTo(map);
     // Тап по карте ставит стартовую точку (пока поход не начат).
     map.on("click", onMapClick);
+    // Человек листает карту сам — перестаём подводить вид под его точку, иначе
+    // мы отнимали бы у него карту как раз тогда, когда он её разглядывает.
+    map.on("dragstart", function () { followUser = false; });
+    map.on("zoomstart", function () { followUser = false; });
   }
 
   /* --------------- Переключатель слоя: Тропы / Спутник --------------- */
@@ -1097,21 +1438,41 @@
     $("layerSatellite").addEventListener("click", function () { setLayer("satellite"); });
     $("finishBtn").addEventListener("click", finishWayback);
 
-    loadTrack().then(function (loaded) {
+    // Всё, что нужно для первого кадра, читаем разом: поход, последнюю
+    // известную позицию и скачанные области. Ни одно из трёх чтений не
+    // обязательно удаться — у каждого свой срок и свой пустой ответ.
+    Promise.all([loadTrack(), loadLastPosition(), loadRegions()]).then(function (r) {
+      var loaded = r[0];
+      var remembered = r[1];
+      var regions = r[2];
       var hasTrack = loaded && loaded.anchor;
+
+      // Позиция «по памяти» — сразу, ещё до первого фикса: и как маркер, и как
+      // центр карты. Живой фикс её заменит, когда придёт.
+      if (remembered) {
+        current = { lat: remembered.lat, lng: remembered.lng, t: remembered.t };
+        currentIsStale = true;
+      }
+
       if (hasTrack) {
         track = loaded;
         if (!Array.isArray(track.points)) track.points = [];
         initMap([track.anchor.lat, track.anchor.lng]);
         showActiveMode();
         drawAnchor();
-        var pts = pathLatLngs();
-        if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
+        fitToTrack();
         render();
         tickDuration();
       } else {
-        initMap(null);
+        // Без похода центр выбираем по тому, что знаем: своё место, иначе
+        // скачанная область, иначе мировой обзор.
+        var seed = current || null;
+        var region = seed ? null : pickRegion(regions, null);
+        var regionAt = region ? regionCenter(region) : null;
+        initMap(seed ? [seed.lat, seed.lng] : regionAt ? [regionAt.lat, regionAt.lng] : null);
+        if (!seed && regionAt) map.setView([regionAt.lat, regionAt.lng], 13);
         showStartMode();
+        render();
       }
       setInterval(tickDuration, 30000);
       syncWatch(onPosition);
