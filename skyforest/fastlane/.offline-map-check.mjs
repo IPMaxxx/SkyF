@@ -23,8 +23,11 @@
  * префиксе, разделителях или расширении даёт ровно симптом «скачали, а офлайн
  * не находит», и заметить его чтением двух файлов подряд не получается.
  *
- * Проверка обязана падать на версии страницы из гита — правило, которое ничего
- * не ловит, хуже отсутствующего.
+ * Проверка обязана падать на версии страницы ДО правки — правило, которое
+ * ничего не ловит, хуже отсутствующего. Прежняя версия берётся не из `HEAD`
+ * (после коммита правки там уже лежит исправленный файл, и такая проверка
+ * начинает хвалить себя), а поиском по истории самого файла: берём ближайшую
+ * версию, в которой ещё нет отдельной отрисовки точки «вы здесь».
  *
  * Запуск из каталога skyforest:
  *   node fastlane/.offline-map-check.mjs
@@ -33,8 +36,13 @@ import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import vm from "node:vm";
 
+const REPO = new URL("../../", import.meta.url).pathname;
+/** Путь страницы от корня репозитория — им же его знает git. */
+const SHELL_REL = "skyforest/apps/wayback/shell/offline-track.js";
 const SHELL = new URL("../apps/wayback/shell/offline-track.js", import.meta.url);
 const TILE_STORE = new URL("../src/lib/offline/tileStore.ts", import.meta.url);
+/** Признак правки: точка «вы здесь» рисуется отдельно от похода. */
+const FIX_MARKER = "function renderPosition";
 /** Сколько ждём, пока страница построит первый кадр. Больше срока моста (5 с). */
 const BUDGET_MS = 9000;
 
@@ -69,6 +77,34 @@ function writerTilePath(sourceId, z, x, y) {
     .replace("${coord.y}", String(y));
   if (template.includes("${")) throw new Error(`шаблон пути разобран не весь: ${template}`);
   return template;
+}
+
+/* ------------------------------------------------------------------ */
+/* Прежняя версия страницы                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Ближайшая версия страницы, в которой дефект ещё есть. Идём по истории самого
+ * файла от `HEAD` вниз и берём первую, где нет признака правки: привязка к
+ * `HEAD` работала бы ровно до коммита самой правки, а дальше сравнивала бы файл
+ * сам с собой.
+ */
+function sourceBeforeFix() {
+  const revs = execFileSync("git", ["rev-list", "HEAD", "--", SHELL_REL], {
+    encoding: "utf8",
+    cwd: REPO,
+  })
+    .trim()
+    .split("\n")
+    .filter(Boolean);
+  for (const rev of revs) {
+    const text = execFileSync("git", ["show", `${rev}:${SHELL_REL}`], {
+      encoding: "utf8",
+      cwd: REPO,
+    });
+    if (!text.includes(FIX_MARKER)) return { rev, text };
+  }
+  throw new Error(`в истории ${SHELL_REL} нет версии без «${FIX_MARKER}» — сверьте признак правки`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -411,11 +447,15 @@ const REGIONS = [
   },
 ];
 
+/** Отказ, который проверка обязана увидеть на версии страницы до правки. */
+const noMarker = (state) => !hasMarker(state, "current") && !hasMarker(state, "stale");
+
 const CASES = [
   {
     id: "тайлы есть",
     title: "сети нет, тайлы в Filesystem есть",
     opts: { tiles: PRESENT, lastPosition: null, gps: HERE, track: null, regions: REGIONS },
+    regression: noMarker,
     verify(state) {
       const local = state.tileSrc.filter((s) => s.includes("_capacitor_file_"));
       check(
@@ -431,6 +471,8 @@ const CASES = [
     id: "тайлов нет",
     title: "сети нет, тайлов нет",
     opts: { tiles: new Set(), lastPosition: null, gps: HERE, track: null, regions: [] },
+    regression: (state) =>
+      noMarker(state) || !(state.graticule > 0 && state.layers.some((l) => l.kind === "grid")),
     verify(state) {
       check(`${this.id}: схематичная подложка нарисована (${state.graticule} эл.)`, state.graticule > 0);
       check(
@@ -452,6 +494,7 @@ const CASES = [
       track: null,
       regions: REGIONS,
     },
+    regression: noMarker,
     verify(state) {
       check(`${this.id}: маркер появился сразу, не дожидаясь спутников`, hasMarker(state, "stale"), markerReport(state));
       check(`${this.id}: ни одного сетевого обращения`, state.network.length === 0, state.network.slice(0, 3).join(", "));
@@ -509,22 +552,20 @@ for (const c of CASES) {
   c.verify(state);
 }
 
-console.log("\n— как было до правки (обязана падать) —");
-const before = execFileSync("git", ["show", "HEAD:skyforest/apps/wayback/shell/offline-track.js"], {
-  encoding: "utf8",
-  cwd: "..",
-});
+const before = sourceBeforeFix();
+console.log(`\n— как было до правки (${before.rev.slice(0, 7)}, обязана падать) —`);
 let regressions = 0;
 for (const c of CASES) {
-  const { state } = await run(before, c.opts);
-  const marker = hasMarker(state, "current") || hasMarker(state, "stale");
-  const grid = state.graticule > 0 && state.layers.some((l) => l.kind === "grid");
-  const broken = !marker || (c.id === "тайлов нет" && !grid);
+  const { state } = await run(before.text, c.opts);
+  const broken = c.regression(state);
   if (broken) regressions += 1;
+  const local = state.tileSrc.filter((s) => s.includes("_capacitor_file_")).length;
   console.log(
     `  ${broken ? "ok  " : "FAIL"} ${c.id}: до правки ${
       broken ? "отказ воспроизводится" : "проверка ничего не ловит"
-    } — ${markerReport(state)}, подложка ${state.graticule} эл.`,
+    } — карта ${state.mapCreated ? "построена" : "НЕ построена"}, ${markerReport(state)}, подложка ${
+      state.graticule
+    } эл., локальных тайлов ${local}`,
   );
 }
 check(
