@@ -10,7 +10,7 @@
 | `en-US/keywords.txt` | ASC → версия → Keywords | 100 |
 | `en-US/promotional_text.txt` | ASC → версия → Promotional Text | 170 |
 | `en-US/description.txt` | ASC → версия → Description | 4000 |
-| `en-US/release_notes.txt` | ASC → версия → What's New | 4000 |
+| `en-US/release_notes.txt` | ASC → версия → What's New и Play → release notes трека | 500 |
 | `en-US/support_url.txt` | ASC → версия → Support URL | — |
 | `en-US/marketing_url.txt` | ASC → версия → Marketing URL | — |
 | `en-US/privacy_url.txt` | ASC → App Information → Privacy Policy URL | — |
@@ -29,7 +29,12 @@ Connect стороной — он нужен, пока версия висит �
 релизы, подписки, офферы. Скрипт ничего не меняет.
 
 Release notes в Play живут не в листинге, а у релиза в треке; их пишет туда всё
-тот же `wayback-listings.mjs` из `en-US/release_notes.txt`.
+тот же `wayback-listings.mjs` из `en-US/release_notes.txt`. Потолок в 500 знаков
+у этого файла — от Play: App Store принял бы 4000, а Play отвечает на коммит
+edit'а 403 «notes … too long (max: 500)», причём уже после записи листинга.
+В App Store у **первой** версии раздела What's New нет вовсе: пока ни одна
+версия не вышла, Apple отвечает на запись поля 409 STATE_ERROR, и скрипт
+сохраняет остальные поля без него — так и должно быть.
 
 Графика листинга Play:
 
@@ -40,6 +45,51 @@ Release notes в Play живут не в листинге, а у релиза в
   `node fastlane/play-screenshots.mjs ai.skyforest.wayback en-US featureGraphic <файл>`;
 - скриншоты — `docs/store-shots/wayback/{apple,play}/`, съёмка
   `node scripts/capture-wayback-store-shots.mjs`.
+
+## Повторная подача в App Store после отказа
+
+Проверено на отказе 1.0 (build 7) по 2.1(a) в августе 2026. Порядок в API
+неочевиден, поэтому записан по шагам — все запросы через `fastlane/asc.mjs`.
+
+1. **Запись версии переиспользуется, а не создаётся заново.** Пока ни одна
+   версия не вышла, отклонённая запись остаётся единственной редактируемой:
+   `PATCH /v1/appStoreVersions/{id}` меняет `versionString` (1.0 → 1.1) и
+   `releaseType` прямо в состоянии `REJECTED`. Описание, ключевые слова,
+   скриншоты и App Review Information остаются на месте — заводить новую
+   запись значит перезаливать их руками.
+2. **Свежая сборка возвращает версию в `PREPARE_FOR_SUBMISSION`.**
+   `PATCH /v1/appStoreVersions/{id}/relationships/build` — состояние
+   переключается само, отдельного действия не нужно. Export compliance живёт
+   у сборки (`usesNonExemptEncryption`), а не у версии.
+3. **Старая подача не отпускает элементы.** Она остаётся в
+   `UNRESOLVED_ISSUES`, её элемент версии — в `REJECTED`, и на нём висит всё
+   остальное: `DELETE` элемента отвечает 409 «Item was already submitted»,
+   `PATCH submitted=true` — 409 «Version is not ready to be submitted yet»
+   (сколько ни ждать), а добавление версии в новую подачу — 409
+   «Item is already present in another reviewSubmission». Развязывает только
+   `PATCH /v1/reviewSubmissions/{id}` с `canceled: true`: подача уходит в
+   `CANCELING`, через минуту становится `COMPLETE`, и версия с подпиской
+   освобождаются.
+4. **Новая подача собирается из трёх элементов.** `POST /v1/reviewSubmissions`
+   (app + platform), затем `POST /v1/reviewSubmissionItems` на каждый:
+   `appStoreVersion`, `subscriptionVersion` и `subscriptionGroupVersion`.
+   Подписку прикладывать обязательно, пока группа не одобрена, иначе Apple
+   отвечает «New subscription groups must be submitted with an auto-renewable
+   subscription from within that group». Идентификаторы версий подписки и
+   группы просто так не найти: `/v1/subscriptions/{id}/subscriptionVersions`
+   не существует, а прямой GET на `/v1/subscriptionVersions/{id}` отвечает 404
+   — они видны только через `?include=subscriptionVersion,subscriptionGroupVersion`
+   на элементах прошлой подачи.
+5. **Отправка** — `PATCH /v1/reviewSubmissions/{id}` с `submitted: true`.
+   Старого `appStoreVersionSubmissions` у этого приложения нет вовсе (404).
+
+Пустую подачу без элементов ни удалить, ни отменить нельзя (403 на `DELETE`,
+409 «not in cancellable state»), поэтому `POST /v1/reviewSubmissions` делайте
+последним шагом — когда уже известно, что элементы свободны.
+
+Сообщение в Resolution Center через API не отправить: ресурса для переписки с
+ревью в App Store Connect API нет. Ответ ревьюеру пишется руками в
+App Store Connect → App Review → Resolution Center.
 
 ## Чего в API нет
 

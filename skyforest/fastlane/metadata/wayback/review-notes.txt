@@ -1,11 +1,14 @@
 WayBack marks the spot where you set off and shows you the way back to it: an arrow and a distance, calculated on the phone, so they keep working with no signal.
 
+WHAT WE FIXED AFTER THE PREVIOUS REVIEW (guideline 2.1(a), submission bb648626-0f43-4711-84ce-ee0b2ffbaf43)
+The app kept you on the payment screen after a successful purchase. The cause was on our server: it checked receipts against the Sandbox endpoint only for a short list of accounts, and App Review purchases are always Sandbox, so your receipt was never found and the paywall never let go. That list is gone. Every receipt is now checked against the production endpoint first and against Sandbox after that, so a Sandbox purchase is accepted whichever account you use - the demo account below or one you create yourself - and the entitlement is applied at once, with no restart.
+
 ACCESSING THE APP (a subscription is required from the first launch)
 1. The first screen is "Sign in to start". Tap "Continue with email" and use the demo account - please sign in with email and password, not with Google or Apple:
    Email: {email}
    Password: {password}
 2. This demo account already holds an active WayBack entitlement on our side, so the app opens right after sign-in.
-3. You do not have to use the demo account. Signing up with any address works too: tap "Start 3 free days" and confirm with a Sandbox Apple Account. Our production server verifies the receipt against the App Store production endpoint first and then against the Sandbox endpoint, so a Sandbox purchase is accepted for every account and the app opens as soon as the receipt is confirmed.
+3. You do not have to use the demo account: signing up with any address works too. Tap "Start 3 free days" and confirm with a Sandbox Apple Account - see the paragraph above.
 4. "Restore purchases" is on the same screen if the entitlement has to be read again. It reports the outcome either way, so it never leaves the screen in an undefined state.
 
 WHY THE SUBSCRIPTION SCREEN COMES FIRST
@@ -16,19 +19,17 @@ SUBSCRIPTION INFO (guideline 3.1.2)
 - The purchase screen shows the plan title, its length and its price, states that it renews automatically unless cancelled at least 24 hours before the period ends, and carries functional links to the Terms of Use (EULA) and the Privacy Policy.
 - Terms of Use (EULA): https://wayback.skyforest.ai/offer
 - Privacy Policy: https://wayback.skyforest.ai/privacy
-- The same links are in the App Description.
 
 WHAT TO TRY AFTER THE APP OPENS
 - Tap START ("I'm heading outdoors") to drop the anchor at the current GPS position. If the device has no fix, use "Set entry point on the map" and place the point by hand.
 - The Track screen then shows the direction and the distance back to that point. In the simulator the position can be moved with Features > Location.
 - Offline tab > Download saves a map area. With the area saved, the anchor, the arrow, the compass and the map keep working in Airplane Mode - please try it, this is the main promise of the app.
-- History keeps every finished walk with its track on the map, the distance and the time.
+- History keeps every finished walk with its track, distance and time.
 
 LOCATION, INCLUDING THE BACKGROUND MODE (guideline 2.5.4)
-The binary declares the location background mode, and it is used for the one thing this app does. The phone spends the walk in a pocket with the screen off; if recording stopped there, the path would break exactly where the person was walking, and the trail back to the entry point would be missing the part they need.
-- Recording runs only between two explicit user actions: START ("I'm heading outdoors") and "I'm back from outdoors". Until START is tapped there is no walk, and location is not used in the background at any other time.
+The binary declares the location background mode, and it is used for the one thing this app does. The phone spends the walk in a pocket with the screen off; if recording stopped there, the path would break exactly where the person was walking.
+- Recording runs only between two explicit user actions: START ("I'm heading outdoors") and "I'm back from outdoors". Outside a walk location is not used in the background at all.
 - On iOS "When In Use" is enough, and the blue location indicator stays visible for the whole walk. The plugin may additionally offer "Always"; declining it does not break recording.
-- On Android, from the same codebase, the walk is held by a foreground service of type location with a permanent notification. ACCESS_BACKGROUND_LOCATION is neither requested nor declared.
-- Coordinates stay on the device while it records: the walk in progress goes to local storage, nothing is streamed anywhere. A finished walk is saved to the user's own account so their history survives a new phone, and that is the only place a track ever goes - no third party, no ad network, nothing shared with other users. The plugin can also post positions to a URL of our choosing; we do not use that.
+- Coordinates stay on the device while it records. A finished walk is saved to the user's own account so their history survives a new phone, and that is the only place a track ever goes - no third party, no ad network.
 
 Contact: support@skyforest.ai

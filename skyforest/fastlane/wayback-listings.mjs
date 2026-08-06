@@ -42,7 +42,9 @@ const TEXTS = {
   keywords: { value: read("en-US/keywords.txt"), limit: 100 },
   promotionalText: { value: read("en-US/promotional_text.txt"), limit: 170 },
   description: { value: read("en-US/description.txt"), limit: 4000 },
-  whatsNew: { value: read("en-US/release_notes.txt"), limit: 4000 },
+  // App Store даёт 4000, но тот же файл едет в release notes Google Play, где
+  // потолок 500 и коммит edit'а падает 403 уже после записи листинга.
+  whatsNew: { value: read("en-US/release_notes.txt"), limit: 500 },
   supportUrl: { value: read("en-US/support_url.txt"), limit: 255 },
   marketingUrl: { value: read("en-US/marketing_url.txt"), limit: 255 },
   privacyPolicyUrl: { value: read("en-US/privacy_url.txt"), limit: 255 },

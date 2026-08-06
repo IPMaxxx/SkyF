@@ -1,1 +1,5 @@
-Offline map fixes. Without a network the screen now opens where you are: it starts from your last known position instead of a blank world view while GPS is still looking for satellites. Your location is always on the map - a filled dot once there is a fix, a hollow ring for the last known spot. And where you have not downloaded tiles, the map draws a coordinate grid with a scale bar instead of an empty field, so you can still tell where you stand and how far you have walked.
+Recording keeps going with the screen off: tap "I'm heading outdoors", put the phone in your pocket, and the path stays whole until you tap "I'm back from outdoors".
+
+The offline map works with no network at all - it opens where you are, always draws your position, and puts a coordinate grid with a scale bar where tiles are missing.
+
+Subscriptions are fixed: a completed purchase opens the app straight away, and "Restore purchases" says what it found.

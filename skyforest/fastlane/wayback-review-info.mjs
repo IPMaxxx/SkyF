@@ -51,7 +51,13 @@ if (/[А-Яа-яЁё]/.test(NOTES)) {
   console.error("КИРИЛЛИЦА в заметках — ревьюер читает по-английски");
   process.exit(1);
 }
-console.log(`заметки: ${[...NOTES].length} симв.`);
+/** Потолок поля Review Notes: длиннее — 409 TOO_LONG уже после раскрытия пароля. */
+const NOTES_LIMIT = 4000;
+if ([...NOTES].length > NOTES_LIMIT) {
+  console.error(`заметки: ${[...NOTES].length} / ${NOTES_LIMIT} — не влезут в App Store Connect`);
+  process.exit(1);
+}
+console.log(`заметки: ${[...NOTES].length} / ${NOTES_LIMIT} симв.`);
 
 const KEY_ID = "TRS8NZAGX5";
 const ISSUER_ID = "31303d35-0acc-4d1a-89d4-872e31f2b28f";
