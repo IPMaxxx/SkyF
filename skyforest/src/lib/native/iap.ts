@@ -162,7 +162,20 @@ const flow = createPurchaseFlow({
   verify: verifyOnServer,
   log: logIapError,
   tokensFor: tokensForProduct,
+  isSubscription: isSubscriptionProduct,
 });
+
+/**
+ * Право на приложение подтверждено сервером — пора перечитать статус подписки.
+ *
+ * Событие приходит и без нажатия кнопки: approved-транзакции StoreKit
+ * доставляет из своей очереди при запуске приложения и при восстановлении
+ * покупок. Гейт и пейволл подписаны на него, поэтому оплаченная подписка
+ * снимает экран оплаты сама, без перезапуска.
+ */
+export function onIapEntitlement(cb: (productId: string) => void): () => void {
+  return flow.onEntitlement(cb);
+}
 
 /** Текущие цены товаров из стора: packId → форматированная цена (например "$2.99"). */
 export function getStorePrices(): Record<string, string> {
@@ -289,6 +302,10 @@ const IAP_ERRORS = {
       "Предыдущая покупка этого пакета ещё не проведена до конца. Перезапустите приложение — она зачислится автоматически, после чего пакет снова можно купить.",
     storeTimeout:
       "Магазин не ответил. Если оплата прошла, токены или подписка будут зачислены автоматически — перезапустите приложение.",
+    verifyRetry:
+      "Оплата прошла, но подтвердить её у нас не получилось — похоже, нет связи. Повторите попытку: повторно с вас не спишут.",
+    verifyRejected:
+      "Оплата прошла, но магазин не подтвердил покупку. Попробуйте «Восстановить покупки»; если не поможет — напишите на support@skyforest.ai, мы включим доступ вручную.",
   },
   en: {
     nativeOnly: "In-app purchases are only available in the app",
@@ -300,6 +317,10 @@ const IAP_ERRORS = {
       "A previous purchase of this pack has not been fully processed yet. Restart the app — it will be credited automatically, then you can buy this pack again.",
     storeTimeout:
       "Store did not respond. If you were charged, tokens/subscription will be credited automatically — restart the app.",
+    verifyRetry:
+      "The payment went through, but we could not confirm it — the connection seems to be down. Please try again: you will not be charged twice.",
+    verifyRejected:
+      "The payment went through, but the store did not confirm the purchase. Try \u201cRestore purchases\u201d; if that does not help, write to support@skyforest.ai and we will unlock access manually.",
   },
 } as const;
 
@@ -380,10 +401,27 @@ export async function purchaseSubscription(
 }
 
 /**
+ * Сколько ждём восстановленный чек после restorePurchases().
+ *
+ * Плагин доставляет чеки асинхронно, и `restorePurchases()` возвращается
+ * раньше, чем приходит первая approved-транзакция; к ней ещё добавляется
+ * серверная проверка. Ждём подтверждения права, а не фиксированную паузу:
+ * прежние 2.5 секунды были догадкой, которая на медленной связи истекала до
+ * ответа сервера — и восстановление выглядело неудачным при живой подписке.
+ *
+ * Срок всё равно нужен: ожидание обязано кончаться исходом (offline/deadline.ts
+ * о том же). «Не дождались» — это ответ, с ним экран покажет, что ничего не
+ * нашлось, и предложит повторить.
+ */
+const RESTORE_WAIT_MS = 15_000;
+
+/**
  * Восстановить покупки (кнопка «Restore» на пейволле — требование
  * App Review 3.1.1). Плагин переотправляет чеки как approved-транзакции,
- * которые проходят обычную верификацию на сервере; после паузы вызывающий
- * код перечитывает /api/subscription и видит восстановленную подписку.
+ * которые проходят обычную верификацию на сервере.
+ *
+ * true — право подтверждено сервером, статус подписки уже можно перечитывать.
+ * false — восстанавливать было нечего либо стор не ответил в срок.
  */
 export async function restorePurchases(): Promise<boolean> {
   if (!isNativeApp()) return false;
@@ -391,9 +429,10 @@ export async function restorePurchases(): Promise<boolean> {
   if (!CdvPurchase) return false;
   await initIap();
   await refreshUserId();
+  // Подписываемся ДО запроса: чек может доехать быстрее, чем вернётся вызов.
+  const entitled = flow.waitForEntitlement(RESTORE_WAIT_MS);
   try {
     await CdvPurchase.store.restorePurchases();
-    return true;
   } catch (e: any) {
     logIapError("restore_failed", {
       code: e?.code,
@@ -401,6 +440,7 @@ export async function restorePurchases(): Promise<boolean> {
     });
     return false;
   }
+  return entitled;
 }
 
 /** Открыть управление подписками стора (App Store / Google Play). */

@@ -23,17 +23,14 @@
  * `children` как есть.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Loader2, WifiOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { storeName } from "@/lib/native/capacitor";
 import { useWaybackGate } from "@/lib/wayback/entitlement";
-import {
-  useWaybackPurchase,
-  WAYBACK_PLAN,
-} from "@/lib/wayback/useWaybackPurchase";
+import { useWaybackPurchase } from "@/lib/wayback/useWaybackPurchase";
 import { waybackSignOut } from "@/lib/wayback/signOut";
 import { WayBackTrialTerms } from "@/components/wayback/WayBackTrialTerms";
 import {
@@ -99,18 +96,16 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
   const tp = useTranslations("wayback.paywall");
   const { status, email, recheck } = useWaybackGate(native);
 
-  const { price, trialDays, purchasing, restoring, error, subscribe, restore } =
-    useWaybackPurchase(recheck, tp("cta", { days: WAYBACK_PLAN.trialDays }));
-
-  // Восстановление, которое ничего не нашло, иначе выглядит как поломка:
-  // спиннер погас, экран тот же, объяснения нет. Чаще всего причина простая —
-  // человек вошёл не в тот аккаунт стора, и об этом надо сказать.
-  const [restoreTried, setRestoreTried] = useState(false);
-  const tryRestore = useCallback(async () => {
-    setRestoreTried(true);
-    await restore();
-  }, [restore]);
-  const restoreFailed = restoreTried && !restoring;
+  const {
+    price,
+    trialDays,
+    purchasing,
+    restoring,
+    error,
+    nothingRestored,
+    subscribe,
+    restore,
+  } = useWaybackPurchase(recheck, tp("purchaseFailed"));
 
   const store = native
     ? storeName()
@@ -186,7 +181,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
             </WbPrimaryButton>
             <button
               type="button"
-              onClick={() => void tryRestore()}
+              onClick={() => void restore()}
               disabled={restoring}
               className="mx-auto flex w-fit items-center gap-2 py-1 text-[12.5px] font-extrabold text-wb-primary disabled:opacity-55"
             >
@@ -212,7 +207,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
             </p>
           </WbTile>
 
-          {restoreFailed && (
+          {nothingRestored && (
             <WbTile
               tone="quiet"
               className="px-5 py-4 text-[13px] font-medium leading-[1.5] text-wb-body"
@@ -249,7 +244,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
             {tp("renewNote", { price, period: tp("perYear"), store })}{" "}
             <button
               type="button"
-              onClick={() => void tryRestore()}
+              onClick={() => void restore()}
               disabled={restoring}
               className="font-extrabold text-wb-primary disabled:opacity-55"
             >
@@ -303,7 +298,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
           </WbTile>
         )}
 
-        {restoreFailed && !error && (
+        {nothingRestored && !error && (
           <WbTile
             tone="quiet"
             className="px-5 py-4 text-[13px] font-medium leading-[1.5] text-wb-body"

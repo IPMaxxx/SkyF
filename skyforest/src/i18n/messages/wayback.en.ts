@@ -387,6 +387,16 @@ export default {
     terms: "Terms of Use (EULA)",
     privacy: "Privacy Policy",
     restore: "Restore",
+    /**
+     * Отказ, причину которого не назвал ни стор, ни наш сервер. Здесь обязан
+     * стоять именно текст ошибки: раньше на это место подставлялась подпись
+     * кнопки («Start 3 free days»), и человек с оплаченной подпиской читал в
+     * красной рамке приглашение начать пробный период.
+     */
+    purchaseFailed:
+      "The purchase did not complete. Please try again, or use “Restore” if you have already paid.",
+    nothingRestored:
+      "No subscription found in this {store} account. Check that you are signed in with the account that paid for it.",
     webNote:
       "Subscriptions are purchased in the mobile app — open WayBack on your phone.",
     activeBadge: "Active",

@@ -28,25 +28,6 @@ export const runtime = "nodejs";
  */
 
 /**
- * Sandbox-фолбэк Apple: вне продакшена всегда; в проде — по allowlist.
- * Демо-аккаунт App Review разрешён всегда: ревьюеры Apple тестируют IAP
- * исключительно в песочнице (guideline 2.1(b)).
- */
-const REVIEW_SANDBOX_EMAILS = ["appreview@skyforest.ai"];
-
-function sandboxAllowed(userEmail: string | undefined): boolean {
-  if (process.env.NODE_ENV !== "production") return true;
-  const allowlist = [
-    ...REVIEW_SANDBOX_EMAILS,
-    ...(process.env.IAP_SANDBOX_ALLOWLIST ?? "")
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  ];
-  return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
-}
-
-/**
  * Дата на длину периода раньше заданной.
  *
  * Разбор union'а полный намеренно: фолбэк «всё, что не месяц — год» однажды
@@ -128,12 +109,7 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      state = await getAppleSubscription(
-        transactionId,
-        sandboxAllowed(user.email),
-        productId,
-        product.bundleId,
-      );
+      state = await getAppleSubscription(transactionId, productId, product.bundleId);
       if (!state || state.productId !== productId) {
         console.error(
           `Sub verify: Apple state not found or product mismatch (tx ${transactionId}, want ${productId}, got ${state?.productId ?? "none"}, user ${user.id})`,

@@ -25,9 +25,10 @@ const HERE = new URL("./", import.meta.url);
 const BUNDLE = "ai.skyforest.wayback";
 
 /**
- * Демо-аккаунт ревью. Учётная запись разрешена в серверной проверке чеков
- * (`REVIEW_SANDBOX_EMAILS` в src/app/api/native/iap/verify-subscription),
- * поэтому sandbox-покупка ревьюера принимается и в продакшене.
+ * Демо-аккаунт ревью: у него уже есть право на приложение, поэтому после входа
+ * экран оплаты не показывается вовсе. Ревьюер вправе и не пользоваться им —
+ * sandbox-покупка любой учётной записи проверяется в продакшене (см. appleHosts
+ * в src/lib/iap-store.ts), так что обычный путь покупки тоже открыт.
  */
 const DEMO_EMAIL = process.env.WB_REVIEW_EMAIL || "appreview@skyforest.ai";
 const DEMO_PASSWORD =

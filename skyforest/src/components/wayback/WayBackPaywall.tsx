@@ -27,10 +27,7 @@ import {
   formatWaybackDate,
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
-import {
-  useWaybackPurchase,
-  WAYBACK_PLAN,
-} from "@/lib/wayback/useWaybackPurchase";
+import { useWaybackPurchase } from "@/lib/wayback/useWaybackPurchase";
 import { WayBackTrialTerms } from "@/components/wayback/WayBackTrialTerms";
 import {
   WbLabel,
@@ -64,9 +61,10 @@ export function WayBackPaywall() {
     purchasing,
     restoring,
     error,
+    nothingRestored,
     subscribe,
     restore,
-  } = useWaybackPurchase(refresh, t("cta", { days: WAYBACK_PLAN.trialDays }));
+  } = useWaybackPurchase(refresh, t("purchaseFailed"));
 
   const store = native
     ? storeName()
@@ -232,6 +230,15 @@ export function WayBackPaywall() {
             className="px-5 py-4 text-[14px] font-bold text-wb-danger"
           >
             {error}
+          </WbTile>
+        )}
+
+        {nothingRestored && !error && (
+          <WbTile
+            tone="quiet"
+            className="px-5 py-4 text-[13px] font-medium leading-[1.5] text-wb-body"
+          >
+            {t("nothingRestored", { store })}
           </WbTile>
         )}
       </div>

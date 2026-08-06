@@ -45,33 +45,15 @@ function appleToken(bundleId: string): string | null {
 }
 
 /**
- * Разрешён ли sandbox-фолбэк Apple для данного пользователя.
- * Вне продакшена — всегда; в продакшене — только для email из
- * IAP_SANDBOX_ALLOWLIST (тестировщики), иначе 404 от production-хоста = отказ.
- * Демо-аккаунт App Review разрешён всегда: ревьюеры Apple тестируют IAP
- * исключительно в песочнице (guideline 2.1(b)).
- */
-const REVIEW_SANDBOX_EMAILS = ["appreview@skyforest.ai"];
-
-function sandboxAllowed(userEmail: string | undefined): boolean {
-  if (process.env.NODE_ENV !== "production") return true;
-  const allowlist = [
-    ...REVIEW_SANDBOX_EMAILS,
-    ...(process.env.IAP_SANDBOX_ALLOWLIST ?? "")
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  ];
-  return Boolean(userEmail && allowlist.includes(userEmail.toLowerCase()));
-}
-
-/**
  * Проверяет транзакцию через App Store Server API.
  * Возвращает productId и appAccountToken (привязка к пользователю) или null.
+ *
+ * Хосты опрашиваются в порядке «продакшен, затем песочница» — предписание
+ * Apple и единственный способ принять чек ревьюера: покупки App Review всегда
+ * идут в песочнице. Разбор — в src/lib/iap-store.ts (appleHosts).
  */
 async function verifyApple(
   transactionId: string,
-  allowSandbox: boolean,
   bundleId: string,
 ): Promise<{ productId: string; appAccountToken: string | null } | null> {
   const token = appleToken(bundleId);
@@ -80,12 +62,10 @@ async function verifyApple(
   const hosts =
     process.env.APPLE_IAP_ENV === "sandbox"
       ? ["https://api.storekit-sandbox.itunes.apple.com"]
-      : allowSandbox
-        ? [
-            "https://api.storekit.itunes.apple.com",
-            "https://api.storekit-sandbox.itunes.apple.com",
-          ]
-        : ["https://api.storekit.itunes.apple.com"];
+      : [
+          "https://api.storekit.itunes.apple.com",
+          "https://api.storekit-sandbox.itunes.apple.com",
+        ];
 
   for (const host of hosts) {
     const res = await fetch(`${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`, {
@@ -241,7 +221,7 @@ export async function POST(req: NextRequest) {
       if (!transactionId) {
         return NextResponse.json({ ok: false, error: "transactionId required" }, { status: 400 });
       }
-      const result = await verifyApple(transactionId, sandboxAllowed(user.email), productBundle);
+      const result = await verifyApple(transactionId, productBundle);
       if (!result || result.productId !== productId) {
         return NextResponse.json({ ok: false, error: "Verification failed" }, { status: 402 });
       }

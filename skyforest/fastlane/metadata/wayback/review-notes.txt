@@ -5,8 +5,8 @@ ACCESSING THE APP (a subscription is required from the first launch)
    Email: {email}
    Password: {password}
 2. This demo account already holds an active WayBack entitlement on our side, so the app opens right after sign-in.
-3. If the "Start your free trial" screen appears anyway, tap "Start 3 free days" and confirm the purchase with a Sandbox Apple Account. Sandbox transactions are accepted by our production server for this account only ({email} is on a server-side allowlist), so the purchase completes and the app opens.
-4. "Restore purchases" is on the same screen if the entitlement has to be read again.
+3. You do not have to use the demo account. Signing up with any address works too: tap "Start 3 free days" and confirm with a Sandbox Apple Account. Our production server verifies the receipt against the App Store production endpoint first and then against the Sandbox endpoint, so a Sandbox purchase is accepted for every account and the app opens as soon as the receipt is confirmed.
+4. "Restore purchases" is on the same screen if the entitlement has to be read again. It reports the outcome either way, so it never leaves the screen in an undefined state.
 
 WHY THE SUBSCRIPTION SCREEN COMES FIRST
 WayBack has no free tier - the whole app is the subscription, so please expect the paywall before any other screen. A connection is needed once, while the trial is being set up, because the App Store needs the network for it. After that the app is meant to be used with no signal at all: that is the point of the product.

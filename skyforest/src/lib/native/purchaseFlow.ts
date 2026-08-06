@@ -40,6 +40,14 @@ export interface PurchaseMessages {
   cancelled: string;
   alreadyOwned: string;
   storeTimeout: string;
+  /**
+   * Стор подтвердил оплату, а наша проверка чека её не приняла окончательно.
+   * Без этой подписи человек видел на экране оплаты подпись кнопки вместо
+   * причины — см. комментарий к settle().
+   */
+  verifyRejected: string;
+  /** Проверку чека не удалось выполнить (сеть, сервер) — имеет смысл повторить. */
+  verifyRetry: string;
 }
 
 export interface PurchaseFlowPorts {
@@ -49,6 +57,8 @@ export interface PurchaseFlowPorts {
   log(stage: string, details: { productId?: string; code?: string | number; message?: string }): void;
   /** Сколько токенов даёт товар; null — подписка (токенов не даёт). */
   tokensFor(productId: string): number | null;
+  /** Подписка ли это: только она даёт право на приложение. */
+  isSubscription(productId: string): boolean;
 }
 
 export interface OrderRequest {
@@ -74,6 +84,16 @@ export interface PurchaseFlow {
   order(request: OrderRequest): Promise<PurchaseOutcome>;
   /** Кому сообщать о «фоновом» начислении токенов (допроведённая покупка). */
   setBackgroundCredit(cb: ((tokens: number) => void) | null): void;
+  /**
+   * Право на приложение подтверждено сервером: подписаться и перечитать статус.
+   * Возвращает функцию отписки.
+   */
+  onEntitlement(cb: (productId: string) => void): () => void;
+  /**
+   * Дождаться подтверждения права не дольше срока. false — не дождались; это
+   * ответ, а не повод ждать дальше (см. offline/deadline.ts о том же).
+   */
+  waitForEntitlement(ms: number): Promise<boolean>;
 }
 
 /** productId транзакции: у плагина он лежит в двух разных местах. */
@@ -90,18 +110,45 @@ function finishQuietly(transaction: PurchaseTransaction): void {
   }
 }
 
+interface Waiting {
+  settle: (outcome: PurchaseOutcome) => void;
+  /** Подписи того, кто ждёт: исход объясняем на его языке. */
+  messages: PurchaseMessages;
+}
+
 export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
   /** Кто ждёт покупку прямо сейчас: productId → как ему ответить. */
-  const pending = new Map<string, (outcome: PurchaseOutcome) => void>();
+  const pending = new Map<string, Waiting>();
   let onBackgroundCredit: ((tokens: number) => void) | null = null;
+  /** Кому сообщить, что право на приложение подтверждено сервером. */
+  const entitlementListeners = new Set<(productId: string) => void>();
 
-  function settle(productId: string | undefined, outcome: PurchaseOutcome): boolean {
+  function settle(productId: string | undefined, outcome: (messages: PurchaseMessages) => PurchaseOutcome): boolean {
     if (!productId) return false;
     const waiting = pending.get(productId);
     if (!waiting) return false;
     pending.delete(productId);
-    waiting(outcome);
+    waiting.settle(outcome(waiting.messages));
     return true;
+  }
+
+  /**
+   * Право появилось. Сообщать обязательно, и не только тому, кто нажал кнопку:
+   * approved-транзакция приходит и при запуске приложения — StoreKit
+   * доставляет её из своей очереди, когда покупку прервали, когда её
+   * подтвердили после перезапуска и при «Восстановить покупки». В такие
+   * мгновения кнопку никто не нажимал, ждущего нет, и без этого события экран
+   * оплаты оставался бы на месте с уже оплаченной подпиской: гейт свою
+   * проверку к тому моменту уже закончил и сам её не повторяет.
+   */
+  function announceEntitlement(productId: string): void {
+    for (const cb of [...entitlementListeners]) {
+      try {
+        cb(productId);
+      } catch {
+        /* подписчик не должен ломать цикл покупки */
+      }
+    }
   }
 
   async function approved(transaction: PurchaseTransaction): Promise<void> {
@@ -116,8 +163,9 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
       // ждать события finished незачем. На iOS finished после finish() иногда
       // не приходит (cordova-plugin-purchase 13.x), и спиннер покупки крутился
       // бесконечно при успешной оплате.
-      settle(productId, { ok: true });
+      settle(productId, () => ({ ok: true }));
       finishQuietly(transaction);
+      if (productId && ports.isSubscription(productId)) announceEntitlement(productId);
       if (!wasPending && productId) {
         // Фоновое допроведение (прерванная ранее покупка) — сообщаем UI.
         const tokens = ports.tokensFor(productId);
@@ -133,7 +181,18 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
     });
     // Сначала отвечаем ждущему отказом: finish() ниже породил бы событие
     // finished, которое резолвит ожидание успехом.
-    if (wasPending) settle(productId, { ok: false });
+    //
+    // Отказ обязан быть назван. Прежде здесь уходило пустое `{ ok: false }`, и
+    // экран оплаты подставлял вместо причины единственное, что у него было, —
+    // подпись кнопки («Начать 3 бесплатных дня») в красной рамке. Человек
+    // видел, что стор оплату принял, а приложение отвечает бессмыслицей и не
+    // пускает внутрь.
+    if (wasPending) {
+      settle(productId, (messages) => ({
+        ok: false,
+        error: result.permanent ? messages.verifyRejected : messages.verifyRetry,
+      }));
+    }
     // Окончательно отклонённые транзакции (402/403) закрываем — и подписки,
     // и consumable-токены:
     //  - подписки: истёкшие sandbox-транзакции висят в очереди StoreKit,
@@ -147,7 +206,7 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
   }
 
   function finished(transaction: PurchaseTransaction): void {
-    settle(productIdOf(transaction), { ok: true });
+    settle(productIdOf(transaction), () => ({ ok: true }));
   }
 
   function order(request: OrderRequest): Promise<PurchaseOutcome> {
@@ -166,9 +225,12 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
         resolve({ ok: false, error: messages.storeTimeout });
       }, request.timeoutMs);
 
-      pending.set(productId, (outcome) => {
-        clearTimeout(timer);
-        resolve(outcome);
+      pending.set(productId, {
+        messages,
+        settle: (outcome) => {
+          clearTimeout(timer);
+          resolve(outcome);
+        },
       });
 
       request.place().catch((e: unknown) => {
@@ -186,6 +248,23 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
     });
   }
 
+  function onEntitlement(cb: (productId: string) => void): () => void {
+    entitlementListeners.add(cb);
+    return () => entitlementListeners.delete(cb);
+  }
+
+  function waitForEntitlement(ms: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const done = (value: boolean) => {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve(value);
+      };
+      const timer = setTimeout(() => done(false), ms);
+      const unsubscribe = onEntitlement(() => done(true));
+    });
+  }
+
   return {
     approved,
     finished,
@@ -193,5 +272,7 @@ export function createPurchaseFlow(ports: PurchaseFlowPorts): PurchaseFlow {
     setBackgroundCredit(cb) {
       onBackgroundCredit = cb;
     },
+    onEntitlement,
+    waitForEntitlement,
   };
 }
