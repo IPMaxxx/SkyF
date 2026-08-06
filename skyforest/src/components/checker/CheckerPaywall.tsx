@@ -6,26 +6,22 @@
  * /api/subscription.
  *
  * Покупка возможна только в нативной оболочке (App Store / Google Play),
- * на вебе показываем карточку «оформите в приложении».
+ * на вебе показываем карточку «оформите в приложении». Сама покупка и её исходы
+ * живут в `useCheckerPurchase`: экран лишь показывает то, чем кончилось дело —
+ * причину отказа, «нечего восстанавливать» или карточку активной подписки.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Crown, Loader2 } from "lucide-react";
-import { isNativeApp, storeName } from "@/lib/native/capacitor";
-import {
-  getSubscriptionPrices,
-  initIap,
-  manageSubscriptions,
-  purchaseSubscription,
-  restorePurchases,
-  subscribeSubscriptionPrices,
-} from "@/lib/native/iap";
+import { storeName } from "@/lib/native/capacitor";
+import { manageSubscriptions } from "@/lib/native/iap";
 import {
   checkerProduct,
   WEEKS_PER_YEAR,
   type CheckerPeriod,
 } from "@/lib/checker/subscriptionProducts";
+import { useCheckerPurchase } from "@/lib/checker/useCheckerPurchase";
 import {
   CHECKER_PLAN,
   formatFullDate,
@@ -92,32 +88,17 @@ export function CheckerPaywall() {
   const { subscription, left, limit, isTrial, unlimited, loading, refresh } =
     useCheckerSubscription();
 
-  const [native, setNative] = useState(false);
   const [period, setPeriod] = useState<CheckerPeriod>("yearly");
-  const [prices, setPrices] = useState<Record<string, string>>({});
-  const [purchasing, setPurchasing] = useState(false);
-  const [restoring, setRestoring] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setNative(isNativeApp());
-  }, []);
-
-  useEffect(() => {
-    if (!native) return;
-    let unsub: (() => void) | undefined;
-    let cancelled = false;
-    (async () => {
-      await initIap();
-      if (cancelled) return;
-      setPrices(getSubscriptionPrices());
-      unsub = subscribeSubscriptionPrices(setPrices);
-    })();
-    return () => {
-      cancelled = true;
-      unsub?.();
-    };
-  }, [native]);
+  const {
+    native,
+    prices,
+    purchasing,
+    restoring,
+    error,
+    nothingRestored,
+    subscribe,
+    restore,
+  } = useCheckerPurchase(t("purchaseError"));
 
   const store = native ? storeName() : "App Store / Google Play";
 
@@ -151,32 +132,18 @@ export function CheckerPaywall() {
   const perWeek = perWeekLabel(yearlyPrice, locale);
   const discount = yearlyDiscount(yearlyPrice, weeklyPrice);
 
-  const subscribe = async () => {
-    if (purchasing) return;
-    setPurchasing(true);
-    setError("");
-    try {
-      const r = await purchaseSubscription(product.productId, locale);
-      if (r.ok) await refresh();
-      else setError(r.error || t("purchaseError"));
-    } finally {
-      setPurchasing(false);
-    }
+  /* Право, принятое сервером, само перечитывает статус — на этот сигнал
+     подписан useCheckerSubscription. Здесь статус перечитывается ещё раз, чтобы
+     карточка активной подписки встала на место пейволла даже в том случае, если
+     сигнал до экрана не дошёл: держать человека на экране оплаты после принятой
+     оплаты нельзя ни при каком исходе. */
+  const buy = async () => {
+    if (await subscribe(product.productId)) await refresh();
   };
 
-  const restore = useCallback(async () => {
-    if (restoring) return;
-    setRestoring(true);
-    setError("");
-    try {
-      await restorePurchases();
-      // Плагин доставляет чеки асинхронно: даём серверу время записать статус.
-      await new Promise((r) => setTimeout(r, 2500));
-      await refresh();
-    } finally {
-      setRestoring(false);
-    }
-  }, [refresh, restoring]);
+  const tryRestore = async () => {
+    if (await restore()) await refresh();
+  };
 
   /* ---------------- 11 · Активная подписка ---------------- */
 
@@ -295,7 +262,7 @@ export function CheckerPaywall() {
         <div className="flex flex-col gap-2.5">
           {native ? (
             <>
-              <CkPrimaryButton onClick={subscribe} disabled={purchasing}>
+              <CkPrimaryButton onClick={() => void buy()} disabled={purchasing}>
                 {purchasing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -310,7 +277,7 @@ export function CheckerPaywall() {
                 {t("billed", { store })}{" "}
                 <button
                   type="button"
-                  onClick={restore}
+                  onClick={() => void tryRestore()}
                   disabled={restoring}
                   className="font-extrabold text-ck-primary-text disabled:opacity-55"
                 >
@@ -439,6 +406,13 @@ export function CheckerPaywall() {
         </div>
 
         {error && <CkStatusCard variant="error" icon="!" title={error} />}
+
+        {/* Восстановление, которое ничего не нашло, иначе выглядит как
+            поломка: спиннер погас, экран тот же, объяснения нет. Чаще всего
+            причина простая — человек вошёл не в тот аккаунт стора. */}
+        {nothingRestored && !error && (
+          <CkStatusCard variant="neutral" icon="i" title={t("restoreFailed")} />
+        )}
       </div>
     </CkScreen>
   );

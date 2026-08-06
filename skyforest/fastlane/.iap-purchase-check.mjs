@@ -38,11 +38,22 @@
  *  6. Восстанавливать нечего: об этом надо сказать прямо.
  *  7. Изоляция: право Mushroom Checker не открывает WayBack.
  *
+ * Положения 1–3, 5 и 6 проверяются дважды: у WayBack и у Mushroom Checker. Общий
+ * путь покупки у них один, а связан он с экраном у каждого свой, и разъехаться
+ * этой связке ничто не мешает — Checker и разъехался, оставшись со слепой паузой
+ * на восстановлении и без подписки на сигнал о праве. Тупика, как в WayBack, у
+ * него нет (приложение работает и без подписки), но купивший подписку человек
+ * мог остаться без неё до перезапуска.
+ *
  * Оба плеча обязательны: правило, которое ничего не ловит, хуже отсутствующего.
  * Прежние версии берутся не из `HEAD`, а поиском по истории самого файла — как
- * в .offline-map-skyforest-check.mjs. Плеч два, по файлу на причину:
+ * в .offline-map-skyforest-check.mjs. Плеч три, по файлу на причину:
  *   A) прежний src/lib/iap-store.ts — песочница по списку адресов;
- *   B) прежний src/lib/native/purchaseFlow.ts — цикл без сигнала о праве.
+ *   B) прежний src/lib/native/purchaseFlow.ts — цикл без сигнала о праве;
+ *   C) прежний экран оплаты Checker — слепая пауза на восстановлении и никакой
+ *      подписки на сигнал о праве. Плечо C берёт не модуль, а исходники экрана
+ *      на той же ревизии: связка экрана с общим циклом видна только в них,
+ *      и модель поведения экрана собирается из них же (см. checkerWiring).
  *
  * Запуск из каталога skyforest:
  *   node fastlane/.iap-purchase-check.mjs
@@ -61,9 +72,31 @@ const SRC = new URL("../src/", import.meta.url);
 const FLOW_REL = "skyforest/src/lib/native/purchaseFlow.ts";
 const STORE_REL = "skyforest/src/lib/iap-store.ts";
 
+/**
+ * Экран оплаты Mushroom Checker: компонент, его путь покупки и состояние
+ * подписки. Три файла, потому что связка живёт в трёх: кнопка — в компоненте,
+ * исход покупки и восстановления — в хуке, перечитывание статуса по сигналу о
+ * праве — в состоянии подписки (оно живёт на всех экранах приложения, а
+ * транзакция из очереди StoreKit приезжает неизвестно на каком).
+ */
+const CK_SCREEN_REL = "skyforest/src/components/checker/CheckerPaywall.tsx";
+const CK_HOOK_REL = "skyforest/src/lib/checker/useCheckerPurchase.ts";
+const CK_STATE_REL = "skyforest/src/lib/checker/useSubscription.ts";
+
 /** Признаки правки: по ним ищется прежняя версия каждого файла. */
 const FLOW_FIX = "function announceEntitlement";
 const STORE_FIX = "function appleHosts";
+const CK_SCREEN_FIX = "useCheckerPurchase";
+
+/**
+ * Масштаб проверки: прежняя слепая пауза восстановления (2.5 с) превращается в
+ * 60 мс, а поддельный Apple отвечает за 120 мс. Это ровно тот случай, из-за
+ * которого угаданная пауза и негодна: на медленной связи она истекала до ответа
+ * сервера, и восстановление выглядело неудачным при живой подписке.
+ */
+const SCREEN_SCALE = 2500 / 60;
+const RESTORE_LATENCY_MS = 120;
+const scaledPause = (ms) => Math.max(1, Math.round(ms / SCREEN_SCALE));
 
 const APPLE_SANDBOX = "https://api.storekit-sandbox.itunes.apple.com";
 
@@ -78,6 +111,15 @@ const check = (name, ok, detail) => {
 /* ================================================================== */
 
 const read = (rel) => readFileSync(new URL(rel, SRC), "utf8");
+
+/** То же, но «файла нет» — это пустота: связка от этого станет неполной, и швы это скажут. */
+const readOrEmpty = (rel) => {
+  try {
+    return read(rel);
+  } catch {
+    return "";
+  }
+};
 
 /**
  * Каталог подписок — из самого каталога. Списанная сюда копия разошлась бы с
@@ -109,10 +151,42 @@ function tierFlavors() {
   return Object.fromEntries([...block[1].matchAll(/(\w+):\s*"([^"]+)"/g)].map((m) => [m[1], m[2]]));
 }
 
+/**
+ * Чем связан путь покупки Checker с общим циклом — по его же исходникам.
+ *
+ * Модель экрана обязана быть моделью того экрана, который стоит в приложении, а
+ * не того, каким его хочется видеть. React-компонент в Node не загрузить, зато
+ * связка с общим циклом — это несколько мест, каждое из которых либо есть, либо
+ * нет; их и вычитываем. Переименование любого из них ломает проверку, а не
+ * проходит молча: это шов, и он обязан быть жёстким.
+ */
+function checkerWiring(text) {
+  const blind = text.match(/restorePurchases\(\)[\s\S]{0,240}?setTimeout\([^,]+,\s*(\d+)\)/);
+  return {
+    /** Статус перечитывается по сигналу о праве, а не только по нажатию кнопки. */
+    entitlementSignal: /onIapEntitlement\(\(\) =>/.test(text),
+    /** Восстановление возвращает исход, и экран этот исход показывает. */
+    restoreOutcome:
+      /const found = await restorePurchases\(\)/.test(text) &&
+      /setNothingRestored\(!found\)/.test(text) &&
+      /nothingRestored && !error/.test(text),
+    /** Слепая пауза вместо ожидания подтверждения — прежнее поведение. */
+    blindPauseMs: blind ? Number(blind[1]) : null,
+  };
+}
+
 const CATALOGUE = subscriptionCatalogue();
 const TIER_FLAVOR = tierFlavors();
 const WAYBACK = CATALOGUE.find((p) => p.tier === "wayback");
 const CHECKER = CATALOGUE.find((p) => p.tier === "checker" && p.period === "yearly");
+
+/** Путь от корня репозитория — в путь от `src/`, которым читает read(). */
+const fromSrc = (rel) => rel.replace("skyforest/src/", "");
+
+/** Экран оплаты Checker, каким он стоит в рабочем дереве. */
+const CK_WIRING = checkerWiring(
+  [CK_SCREEN_REL, CK_HOOK_REL, CK_STATE_REL].map((rel) => readOrEmpty(fromSrc(rel))).join("\n"),
+);
 
 const tiersForFlavor = (flavor) =>
   Object.keys(TIER_FLAVOR).filter((tier) => TIER_FLAVOR[tier] === flavor);
@@ -162,6 +236,31 @@ check(
   );
 }
 {
+  // То же самое у Mushroom Checker: связка своя, и её слабость видна здесь.
+  check(
+    "экран Checker подписан на появление права (onIapEntitlement)",
+    CK_WIRING.entitlementSignal,
+    "статус подписки не перечитывается по сигналу — транзакция из очереди StoreKit до экрана не дойдёт",
+  );
+  check(
+    "восстановление Checker сообщает исход, слепой паузы нет",
+    CK_WIRING.restoreOutcome && CK_WIRING.blindPauseMs === null,
+    CK_WIRING.blindPauseMs !== null
+      ? `на восстановлении слепая пауза ${CK_WIRING.blindPauseMs} мс`
+      : "исход восстановления не доходит до экрана",
+  );
+  check(
+    "«нечего восстанавливать» у Checker названо своей строкой копии",
+    /t\("restoreFailed"\)/.test(read("components/checker/CheckerPaywall.tsx")) &&
+      /^\s{4}restoreFailed:/m.test(read("i18n/messages/checker.en.ts")) &&
+      /^\s{4}restoreFailed:/m.test(read("i18n/messages/checker.ru.ts")),
+  );
+  check(
+    "запасной текст отказа у Checker — сообщение об ошибке, а не подпись кнопки",
+    /useCheckerPurchase\(t\("purchaseError"\)\)/.test(read("components/checker/CheckerPaywall.tsx")),
+  );
+}
+{
   // Роут проверки чека: модель отвечает 402 там же, где он.
   const route = read("app/api/native/iap/verify-subscription/route.ts");
   check(
@@ -185,21 +284,49 @@ check(
 
 const TEMP = mkdtempSync(join(tmpdir(), "iap-check-"));
 
-/** Ближайшая версия файла по его истории, в которой ещё нет признака правки. */
-function loadBeforeFix(rel, marker, name) {
-  const revs = execFileSync("git", ["rev-list", "HEAD", "--", rel], { encoding: "utf8", cwd: REPO })
-    .trim()
-    .split("\n")
-    .filter(Boolean);
+const git = (args) => execFileSync("git", args, { encoding: "utf8", cwd: REPO });
+
+/** Файл на заданной ревизии; «его там не было» — это пустота, а не ошибка. */
+function showOrEmpty(rev, rel) {
+  try {
+    return execFileSync("git", ["show", `${rev}:${rel}`], {
+      encoding: "utf8",
+      cwd: REPO,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return "";
+  }
+}
+
+/** Ближайшая ревизия по истории файла, в которой ещё нет признака правки. */
+function revBeforeFix(rel, marker) {
+  const revs = git(["rev-list", "HEAD", "--", rel]).trim().split("\n").filter(Boolean);
   for (const rev of revs) {
-    const text = execFileSync("git", ["show", `${rev}:${rel}`], { encoding: "utf8", cwd: REPO });
-    if (!text.includes(marker)) {
-      const file = join(TEMP, `${name}-${rev.slice(0, 7)}.ts`);
-      writeFileSync(file, text);
-      return { rev, file, text };
-    }
+    if (!git(["show", `${rev}:${rel}`]).includes(marker)) return rev;
   }
   throw new Error(`в истории ${rel} нет версии без «${marker}» — сверьте признак правки`);
+}
+
+/** Прежняя версия модуля, положенная в файл: из него её и импортируем. */
+function loadBeforeFix(rel, marker, name) {
+  const rev = revBeforeFix(rel, marker);
+  const file = join(TEMP, `${name}-${rev.slice(0, 7)}.ts`);
+  writeFileSync(file, git(["show", `${rev}:${rel}`]));
+  return { rev, file };
+}
+
+/**
+ * Прежний экран оплаты Checker: связка с общим циклом на той ревизии, где
+ * компонент ещё не знал о `useCheckerPurchase`. Хука на ней могло не быть вовсе —
+ * тогда его текст пуст, и связка честно оказывается неполной.
+ */
+function checkerWiringBeforeFix() {
+  const rev = revBeforeFix(CK_SCREEN_REL, CK_SCREEN_FIX);
+  const text = [CK_SCREEN_REL, CK_HOOK_REL, CK_STATE_REL]
+    .map((rel) => showOrEmpty(rev, rel))
+    .join("\n");
+  return { rev, wiring: checkerWiring(text) };
 }
 
 /* ================================================================== */
@@ -385,6 +512,11 @@ function fakeStore({ productId, orderTx = "tx-1", orderRejects = null, silent = 
  * Гейт WayBack, каким его видит человек: «подписки нет» → экран оплаты,
  * «право есть» → приложение. Решение — по current_period_end из
  * /api/subscription, как в lib/wayback/entitlement.ts.
+ *
+ * У Checker гейта нет — приложение работает и без подписки, — но экран оплаты
+ * ведёт себя так же: пока права нет, показан пейволл, как только оно появилось,
+ * на его месте карточка активной подписки. Решение принимается по тому же
+ * ответу /api/subscription, поэтому модель одна.
  */
 function fakeGate(server, flavor = "wayback") {
   const gate = {
@@ -401,8 +533,20 @@ function fakeGate(server, flavor = "wayback") {
 /**
  * Приложение целиком: стор + цикл покупки + сервер + гейт, связанные так же,
  * как их связывают iap.ts и useWaybackPurchase.
+ *
+ * `wiring` — связка экрана, вычитанная из его исходников (checkerWiring). Она
+ * задана только у Checker: у WayBack связка проверена утверждениями в разделе
+ * «швы», а плечо B меняет сам цикл, поэтому подменять экран там нечем.
  */
-function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId, flavor = "wayback" }) {
+function app({
+  createPurchaseFlow,
+  server,
+  store,
+  productId = WAYBACK.productId,
+  flavor = "wayback",
+  wiring = null,
+  fallbackError = null,
+}) {
   const log = [];
   const flow = createPurchaseFlow({
     verify: async (id, tx) => {
@@ -421,9 +565,10 @@ function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId,
   const gate = fakeGate(server, flavor);
   const screen = { error: "", nothingRestored: false, purchasing: false };
 
-  // Ровно то, что делает useWaybackPurchase: право, подтверждённое сервером,
-  // перечитывает статус — от кнопки оно пришло или из очереди StoreKit.
-  if (typeof flow.onEntitlement === "function") {
+  // Ровно то, что делает useWaybackPurchase (и useCheckerSubscription): право,
+  // подтверждённое сервером, перечитывает статус — от кнопки оно пришло или из
+  // очереди StoreKit. Экран, который на сигнал не подписан, об оплате не узнает.
+  if (typeof flow.onEntitlement === "function" && (!wiring || wiring.entitlementSignal)) {
     flow.onEntitlement(() => {
       screen.error = "";
       screen.nothingRestored = false;
@@ -440,6 +585,13 @@ function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId,
   };
   /** Подпись кнопки: она НЕ должна оказаться текстом ошибки. */
   const CTA = "Начать 3 бесплатных дня";
+  /**
+   * Чем экран заполняет пустоту, если исход не назван. У WayBack на этом месте
+   * стояла подпись кнопки — отсюда «Начать 3 бесплатных дня» в красной рамке у
+   * человека с оплаченной подпиской. У Checker там общая фраза: не бессмыслица,
+   * но и не причина, по которой можно решить, что делать дальше.
+   */
+  const fallback = fallbackError ?? CTA;
 
   return {
     flow,
@@ -448,6 +600,7 @@ function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId,
     log,
     messages,
     CTA,
+    fallback,
     /** Нажатие «Начать пробный период». */
     async subscribe({ timeoutMs = 400 } = {}) {
       screen.purchasing = true;
@@ -459,33 +612,72 @@ function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId,
       });
       screen.purchasing = false;
       if (outcome.ok) await gate.recheck();
-      else screen.error = outcome.error || CTA;
+      else screen.error = outcome.error || fallback;
       return outcome;
     },
-    /** Нажатие «Восстановить покупки», как его делает restorePurchases(). */
+    /**
+     * Нажатие «Восстановить покупки», как его делает restorePurchases().
+     *
+     * `legacySettleMs` — прежнее поведение: слепая пауза, затем перечитывание
+     * статуса. Исход восстановления коду при этом неизвестен вовсе (плагин лишь
+     * не бросил исключение), поэтому сказать «в этом аккаунте подписки нет»
+     * такому экрану нечем — он молча остаётся прежним.
+     */
     async restore({ waitMs = 6000, legacySettleMs = null } = {}) {
       let found;
+      let reportsOutcome;
       if (legacySettleMs != null) {
-        // Как было: слепая пауза, затем перечитывание статуса, а сам исход
-        // восстановления коду неизвестен — плагин лишь не бросил исключение.
         await store.restorePurchases();
         await new Promise((done) => setTimeout(done, legacySettleMs));
         found = true;
+        reportsOutcome = false;
       } else {
         const entitled = flow.waitForEntitlement(waitMs);
         await store.restorePurchases();
         found = await entitled;
+        reportsOutcome = true;
       }
       await gate.recheck();
-      screen.nothingRestored = !server.subscription(flavor);
+      screen.nothingRestored = reportsOutcome ? !found : false;
       return found;
     },
   };
 }
 
+/**
+ * Слепая пауза прежнего экрана в масштабе проверки — либо null, если экран
+ * дожидается исхода. Число берётся из исходников, а не выдумано здесь: вырастет
+ * пауза в коде — вырастет и в модели.
+ */
+const legacySettle = (wiring) =>
+  wiring.restoreOutcome ? null : scaledPause(wiring.blindPauseMs ?? 2500);
+
 /* ================================================================== */
 /* Положения                                                          */
 /* ================================================================== */
+
+/** Строка копии Checker — из самой копии: списанная сюда разошлась бы молча. */
+function checkerCopy(key) {
+  const source = read("i18n/messages/checker.ru.ts");
+  const found = source.match(new RegExp(`^\\s{4}${key}:\\s*\\n?\\s*"((?:[^"\\\\]|\\\\.)*)"`, "m"));
+  if (!found) throw new Error(`не нашёл строку ${key} в i18n/messages/checker.ru.ts — копия переехала`);
+  return found[1];
+}
+
+/** Чем Checker заполняет пустоту, когда причину отказа не назвал никто. */
+const CK_FALLBACK = checkerCopy("purchaseError");
+
+/** Приложение Mushroom Checker: свой товар, своё право, своя связка экрана. */
+const checkerApp = (deps, server, store) =>
+  app({
+    ...deps,
+    server,
+    store,
+    productId: CHECKER.productId,
+    flavor: "checker",
+    wiring: deps.checkerWiring,
+    fallbackError: CK_FALLBACK,
+  });
 
 /**
  * @param {object} deps
@@ -493,6 +685,7 @@ function app({ createPurchaseFlow, server, store, productId = WAYBACK.productId,
  * @param {Function} deps.getAppleSubscription опрос Apple (текущий или прежний)
  * @param {boolean} deps.legacyStoreArgs у прежнего iap-store была подпись с allowSandbox
  * @param {boolean} deps.legacyRestore у прежнего цикла не было сигнала о праве
+ * @param {object} deps.checkerWiring связка экрана Checker (текущая или прежняя)
  */
 const CASES = [
   {
@@ -670,6 +863,151 @@ const CASES = [
     report: ({ found, a }) => `восстановление вернуло ${found}, «ничего не нашлось» ${a.screen.nothingRestored}`,
   },
   {
+    id: "checker: покупка",
+    title: "подписку Checker купили в приложении (чек из песочницы) — пейволл сменился активной подпиской",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      const server = fakeServer({ ...deps, apple });
+      const store = fakeStore({ productId: CHECKER.productId });
+      const a = checkerApp(deps, server, store);
+      await a.gate.recheck();
+      const before = a.gate.status;
+      apple.put("tx-1", { productId: CHECKER.productId, bundleId: CHECKER.bundleId, accountRef: "user-1" });
+      const outcome = await a.subscribe();
+      return { a, outcome, before, apple, store };
+    },
+    verify({ a, outcome, before, apple, store }) {
+      check(`${this.id}: до покупки показан пейволл («${before}»)`, before === "needSubscription");
+      check(`${this.id}: покупка завершилась успехом`, outcome.ok === true, JSON.stringify(outcome));
+      check(`${this.id}: пейволл снят без перезапуска («${a.gate.status}»)`, a.gate.status === "allowed");
+      check(`${this.id}: транзакция закрыта через finish()`, store.state.finished.length === 1);
+      check(
+        `${this.id}: Apple опрошен в порядке продакшен → песочница (${apple.asked.join(" → ")})`,
+        apple.asked[0] === "production" && apple.asked.includes("sandbox"),
+      );
+    },
+    // Чек из песочницы отвергался серверной проверкой — общая причина обоих
+    // приложений; связка экрана здесь ни при чём, кнопку нажали.
+    regressionIn: ["iap-store"],
+    broken: ({ a, outcome }) => a.gate.status !== "allowed" || outcome.ok !== true,
+    report: ({ a, outcome }) =>
+      `исход покупки ok=${outcome.ok}, пейволл «${a.gate.status}», сообщение «${a.screen.error || "нет"}»`,
+  },
+  {
+    id: "checker: транзакция при старте",
+    title: "транзакция Checker приезжает уже одобренной при инициализации, статус подписки прочитан раньше",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      const server = fakeServer({ ...deps, apple });
+      apple.put("queued-1", { productId: CHECKER.productId, bundleId: CHECKER.bundleId, accountRef: "user-1" });
+      const store = fakeStore({ productId: CHECKER.productId, queued: ["queued-1"] });
+      const a = checkerApp(deps, server, store);
+      await a.gate.recheck();
+      const before = a.gate.status;
+      await store.initialize();
+      await new Promise((done) => setTimeout(done, 50));
+      return { a, before, store };
+    },
+    verify({ a, before, store }) {
+      check(`${this.id}: статус успели прочитать до очереди («${before}»)`, before === "needSubscription");
+      check(`${this.id}: транзакция из очереди доставлена`, store.state.approvedDelivered === 1);
+      check(
+        `${this.id}: подписка применилась без перезапуска («${a.gate.status}»)`,
+        a.gate.status === "allowed",
+        `перечитываний статуса: ${a.gate.rechecks}`,
+      );
+      check(`${this.id}: транзакция закрыта через finish()`, store.state.finished.length === 1);
+    },
+    // Все три причины сходятся здесь: чек отвергался, цикл о праве не сообщал, а
+    // экран Checker его и не слушал.
+    regressionIn: ["iap-store", "purchaseFlow", "checker-screen"],
+    broken: ({ a }) => a.gate.status !== "allowed",
+    report: ({ a }) => `пейволл «${a.gate.status}», перечитываний статуса ${a.gate.rechecks}`,
+  },
+  {
+    id: "checker: проверка чека упала",
+    title: "серверная проверка отвечает ошибкой — Checker называет причину и даёт повторить",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      apple.put("tx-1", { productId: CHECKER.productId, bundleId: CHECKER.bundleId, accountRef: "user-1" });
+      const server = fakeServer({ ...deps, apple, failWith: 500 });
+      const store = fakeStore({ productId: CHECKER.productId });
+      const a = checkerApp(deps, server, store);
+      await a.gate.recheck();
+      const first = await a.subscribe();
+      const message = a.screen.error;
+      const healthy = fakeServer({ ...deps, apple });
+      const b = checkerApp(deps, healthy, fakeStore({ productId: CHECKER.productId }));
+      const second = await b.subscribe();
+      return { a, b, first, second, message };
+    },
+    verify({ a, b, first, second, message }) {
+      check(`${this.id}: покупка кончилась отказом`, first.ok === false, JSON.stringify(first));
+      check(`${this.id}: спиннер погашен`, a.screen.purchasing === false);
+      check(`${this.id}: причина названа («${message}»)`, Boolean(first.error) && message === a.messages.verifyRetry);
+      check(
+        `${this.id}: общая фраза не подставлена вместо причины`,
+        message !== a.fallback,
+        `на экране «${message}»`,
+      );
+      check(`${this.id}: повтор проходит и снимает пейволл («${b.gate.status}»)`, second.ok === true && b.gate.status === "allowed");
+    },
+    // Отказ без причины — свойство самого цикла, общее для обоих приложений.
+    regressionIn: ["purchaseFlow"],
+    broken: ({ first, message, a }) => !first.error || message === a.fallback,
+    report: ({ first, message }) =>
+      `исход ok=${first.ok}, error=${first.error === undefined ? "не задан" : `«${first.error}»`}, на экране «${message}»`,
+  },
+  {
+    id: "checker: восстановление",
+    title: "«Восстановить покупку» в Checker возвращает право, даже когда сервер отвечает медленно",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox", latencyMs: RESTORE_LATENCY_MS });
+      apple.put("owned-1", { productId: CHECKER.productId, bundleId: CHECKER.bundleId, accountRef: "user-1" });
+      const server = fakeServer({ ...deps, apple });
+      const store = fakeStore({ productId: CHECKER.productId, owned: ["owned-1"] });
+      const a = checkerApp(deps, server, store);
+      await a.gate.recheck();
+      const before = a.gate.status;
+      const settle = legacySettle(deps.checkerWiring);
+      const found = settle != null ? await a.restore({ legacySettleMs: settle }) : await a.restore({ waitMs: 3000 });
+      return { a, found, before, settle };
+    },
+    verify({ a, found, before }) {
+      check(`${this.id}: до восстановления показан пейволл («${before}»)`, before === "needSubscription");
+      check(`${this.id}: восстановление сообщило об успехе`, found === true);
+      check(`${this.id}: право вернулось, пейволл снят («${a.gate.status}»)`, a.gate.status === "allowed");
+      check(`${this.id}: «нечего восстанавливать» не показано`, a.screen.nothingRestored === false);
+    },
+    regressionIn: ["iap-store", "purchaseFlow", "checker-screen"],
+    broken: ({ a, found }) => a.gate.status !== "allowed" || found !== true,
+    report: ({ a, found, settle }) =>
+      `восстановление вернуло ${found}${settle == null ? "" : ` (слепая пауза ${settle} мс против ответа за ${RESTORE_LATENCY_MS} мс)`}, пейволл «${a.gate.status}»`,
+  },
+  {
+    id: "checker: нечего восстанавливать",
+    title: "в этом аккаунте стора подписки Checker нет — об этом сказано прямо",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      const server = fakeServer({ ...deps, apple });
+      const store = fakeStore({ productId: CHECKER.productId, owned: [] });
+      const a = checkerApp(deps, server, store);
+      await a.gate.recheck();
+      const settle = legacySettle(deps.checkerWiring);
+      const found = settle != null ? await a.restore({ legacySettleMs: settle }) : await a.restore({ waitMs: 150 });
+      return { a, found };
+    },
+    verify({ a, found }) {
+      check(`${this.id}: восстановление ответило «не нашлось»`, found === false);
+      check(`${this.id}: экран сказал об этом`, a.screen.nothingRestored === true);
+      check(`${this.id}: пейволл на месте`, a.gate.status === "needSubscription");
+    },
+    // Прежний экран считал успехом любой возврат плагина и молчал об исходе.
+    regressionIn: ["purchaseFlow", "checker-screen"],
+    broken: ({ found, a }) => found !== false || a.screen.nothingRestored !== true,
+    report: ({ found, a }) => `восстановление вернуло ${found}, «ничего не нашлось» ${a.screen.nothingRestored}`,
+  },
+  {
     id: "изоляция",
     title: "право Mushroom Checker не открывает WayBack (и наоборот)",
     async run(deps) {
@@ -678,7 +1016,7 @@ const CASES = [
       const server = fakeServer({ ...deps, apple });
       // Подписка куплена в Checker — той же учётной записью.
       const ckStore = fakeStore({ productId: CHECKER.productId, orderTx: "ck-1" });
-      const ck = app({ ...deps, server, store: ckStore, productId: CHECKER.productId, flavor: "checker" });
+      const ck = checkerApp(deps, server, ckStore);
       const bought = await ck.subscribe();
       // WayBack смотрит на ту же учётную запись.
       const wbStore = fakeStore({ productId: WAYBACK.productId });
@@ -717,6 +1055,7 @@ const current = {
   getAppleSubscription: (await import(new URL("lib/iap-store.ts", SRC).href)).getAppleSubscription,
   legacyStoreArgs: false,
   legacyRestore: false,
+  checkerWiring: CK_WIRING,
 };
 
 console.log("\n— как есть сейчас —");
@@ -732,11 +1071,9 @@ for (const c of CASES) {
  * содержал (`regressionIn`). Иначе плечо пришлось бы мерить по слабейшему
  * положению, и правка одной причины замаскировала бы вторую.
  */
-async function arm(name, rel, marker, deps) {
-  const before = loadBeforeFix(rel, marker, name);
-  const loaded = await import(pathToFileURL(before.file).href);
-  console.log(`\n— плечо «${name}»: ${rel.replace("skyforest/", "")} @ ${before.rev.slice(0, 7)} —`);
-  const withOld = { ...current, ...deps(loaded) };
+async function arm(name, rel, rev, deps) {
+  console.log(`\n— плечо «${name}»: ${rel.replace("skyforest/", "")} @ ${rev.slice(0, 7)} —`);
+  const withOld = { ...current, ...deps };
   let caught = 0;
   let expected = 0;
   for (const c of CASES) {
@@ -764,15 +1101,16 @@ async function arm(name, rel, marker, deps) {
       `  ${broken ? "ok  " : "FAIL"} ${c.id}: до правки ${broken ? "отказ воспроизводится" : "проверка ничего не ловит"} — ${c.report(result)}`,
     );
   }
-  return { caught, expected, rev: before.rev };
+  return { caught, expected };
 }
 
 // A) Прежний iap-store.ts: песочница разрешалась по списку адресов, поэтому чек
 //    ревьюера отвергался с 402 — на нём валится всё, что требует покупки.
-const armA = await arm("iap-store", STORE_REL, STORE_FIX, (loaded) => ({
-  getAppleSubscription: loaded.getAppleSubscription,
+const beforeStore = loadBeforeFix(STORE_REL, STORE_FIX, "iap-store");
+const armA = await arm("iap-store", STORE_REL, beforeStore.rev, {
+  getAppleSubscription: (await import(pathToFileURL(beforeStore.file).href)).getAppleSubscription,
   legacyStoreArgs: true,
-}));
+});
 check(
   `песочница по списку адресов: отказ воспроизводится (${armA.caught}/${armA.expected})`,
   armA.caught === armA.expected,
@@ -780,13 +1118,26 @@ check(
 
 // B) Прежний purchaseFlow.ts: цикл не сообщал о появлении права и отвечал
 //    отказом без причины.
-const armB = await arm("purchaseFlow", FLOW_REL, FLOW_FIX, (loaded) => ({
-  createPurchaseFlow: loaded.createPurchaseFlow,
+const beforeFlow = loadBeforeFix(FLOW_REL, FLOW_FIX, "purchaseFlow");
+const armB = await arm("purchaseFlow", FLOW_REL, beforeFlow.rev, {
+  createPurchaseFlow: (await import(pathToFileURL(beforeFlow.file).href)).createPurchaseFlow,
   legacyRestore: true,
-}));
+});
 check(
   `цикл без сигнала о праве: отказ воспроизводится (${armB.caught}/${armB.expected})`,
   armB.caught === armB.expected,
+);
+
+// C) Прежний экран оплаты Checker: слепая пауза на восстановлении, «успех» на
+//    любой ответ плагина и никакой подписки на сигнал о праве. Общий цикл при
+//    этом уже исправлен — плечо показывает ровно цену несвязанного экрана.
+const beforeScreen = checkerWiringBeforeFix();
+const armC = await arm("checker-screen", CK_SCREEN_REL, beforeScreen.rev, {
+  checkerWiring: beforeScreen.wiring,
+});
+check(
+  `экран Checker без исхода восстановления и сигнала о праве: отказ воспроизводится (${armC.caught}/${armC.expected})`,
+  armC.caught === armC.expected,
 );
 
 console.log(failures === 0 ? "\nвсе проверки прошли" : `\nпровалено проверок: ${failures}`);
