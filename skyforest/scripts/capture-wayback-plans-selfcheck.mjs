@@ -226,6 +226,29 @@ for (const arm of ARMS) {
       "после выбора недели продление названо недельным",
     );
     await page.screenshot({ path: join(OUT, `${arm.name}-weekly-selected.png`), fullPage: true });
+
+    // Тот же экран в размере, который принимает App Store Connect как кадр для
+    // ревьюера подписки: 1290×2796, то есть 430×932 при трёхкратной плотности
+    // (iPhone 6.7″). Другие размеры ASC отклоняет с IMAGE_INCORRECT_DIMENSIONS,
+    // а кадр обязателен — без него недельный товар не подать на ревью.
+    const review = await browser.newContext({
+      viewport: { width: 430, height: 932 },
+      locale: "en-US",
+      deviceScaleFactor: 3,
+      storageState: await context.storageState(),
+    });
+    await review.addInitScript(FAKE_NATIVE, arm.available);
+    await review.route("**/api/subscription", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: '{"subscription":null}' }),
+    );
+    const reviewPage = await review.newPage();
+    await reviewPage.goto(`${ORIGIN}/en/payment`, { waitUntil: "networkidle" });
+    await reviewPage.waitForTimeout(1500);
+    await reviewPage.getByRole("radiogroup").getByRole("radio").first().click();
+    await reviewPage.waitForTimeout(400);
+    // Без fullPage: кадр обязан быть ровно в размер вида.
+    await reviewPage.screenshot({ path: join(OUT, "asc-review-weekly.png") });
+    await review.close();
   }
 
   await context.close();

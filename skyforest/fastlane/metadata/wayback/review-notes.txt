@@ -15,8 +15,9 @@ WHY THE SUBSCRIPTION SCREEN COMES FIRST
 WayBack has no free tier - the whole app is the subscription, so please expect the paywall before any other screen. A connection is needed once, while the trial is being set up, because the App Store needs the network for it. After that the app is meant to be used with no signal at all: that is the point of the product.
 
 SUBSCRIPTION INFO (guideline 3.1.2)
-- WayBack Premium (Yearly): one year, USD 3.99, starting with a 3-day free trial.
-- The purchase screen shows the plan title, its length and its price, states that it renews automatically unless cancelled at least 24 hours before the period ends, and carries functional links to the Terms of Use (EULA) and the Privacy Policy.
+- WayBack Premium (Weekly): one week, USD 1.99, starting with a 3-day free trial.
+- WayBack Premium (Yearly): one year, USD 19.99, starting with a 3-day free trial.
+- The purchase screen lists every plan the App Store reports as available and lets you pick one; until the weekly plan is approved, only the yearly one appears, which is the same screen you saw before. Whichever is selected, the screen shows the plan title, its length and its price, states that it renews automatically unless cancelled at least 24 hours before the period ends, and carries functional links to the Terms of Use (EULA) and the Privacy Policy.
 - Terms of Use (EULA): https://wayback.skyforest.ai/offer
 - Privacy Policy: https://wayback.skyforest.ai/privacy
 
