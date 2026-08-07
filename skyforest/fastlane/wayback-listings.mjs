@@ -75,6 +75,9 @@ function textsFor({ asc: locale, play }) {
     supportUrl: { value: read(`${locale}/support_url.txt`), limit: 255 },
     marketingUrl: { value: read(`${locale}/marketing_url.txt`), limit: 255 },
     privacyPolicyUrl: { value: read(`${locale}/privacy_url.txt`), limit: 255 },
+    // Одна строка на оба стора: App name в Play и имя приложения в App Store.
+    // Карточка не должна называться в двух местах по-разному, а лимит у обоих
+    // одинаковый — 30.
     title: { value: read(`android/${play}/title.txt`), limit: 30 },
     shortDescription: { value: read(`android/${play}/short_description.txt`), limit: 80 },
     fullDescription: { value: read(`android/${play}/full_description.txt`), limit: 4000 },
@@ -183,6 +186,7 @@ for (const loc of LOCALES) {
   ascPlan.push({ loc, infoLoc, verLoc });
   console.log(`\n  [${loc.asc}] ${verLoc ? "локализация есть" : "локализации НЕТ"}`);
   if (infoLoc) {
+    console.log(`    name: ${infoLoc.attributes.name ?? "(пусто)"}`);
     console.log(`    subtitle: ${brief(infoLoc.attributes.subtitle)}`);
     console.log(`    privacyPolicyUrl: ${infoLoc.attributes.privacyPolicyUrl ?? "(пусто)"}`);
   }
@@ -223,18 +227,22 @@ if (APPLY && !PLAY_ONLY) {
           type: "appInfoLocalizations",
           id: infoLoc.id,
           attributes: {
+            name: texts.title.value,
             subtitle: texts.subtitle.value,
             privacyPolicyUrl: texts.privacyPolicyUrl.value,
           },
         },
       });
-      console.log(`  [${loc.asc}] записал subtitle + privacyPolicyUrl`);
+      console.log(`  [${loc.asc}] записал name + subtitle + privacyPolicyUrl`);
     } else {
+      // `name` у новой локали обязателен: без него ASC отвечает 409
+      // ENTITY_ERROR.ATTRIBUTE.REQUIRED и локаль не заводится вовсе.
       await asc("POST", "/v1/appInfoLocalizations", {
         data: {
           type: "appInfoLocalizations",
           attributes: {
             locale: loc.asc,
+            name: texts.title.value,
             subtitle: texts.subtitle.value,
             privacyPolicyUrl: texts.privacyPolicyUrl.value,
           },
@@ -252,10 +260,19 @@ if (APPLY && !PLAY_ONLY) {
       marketingUrl: texts.marketingUrl.value,
       whatsNew: texts.whatsNew.value,
     };
+    // Локализацию версии перечитываем прямо здесь: заведение локали
+    // App Information создаёт её заодно, и список, снятый до записи, об этом
+    // не знает — POST на уже существующую локаль отвечает 409 DUPLICATE.
+    const fresh = await asc(
+      "GET",
+      `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations?limit=50`,
+    );
+    const target = fresh.data.find((l) => l.attributes.locale === loc.asc);
+
     const write = async (attrs) =>
-      verLoc
-        ? asc("PATCH", `/v1/appStoreVersionLocalizations/${verLoc.id}`, {
-            data: { type: "appStoreVersionLocalizations", id: verLoc.id, attributes: attrs },
+      target
+        ? asc("PATCH", `/v1/appStoreVersionLocalizations/${target.id}`, {
+            data: { type: "appStoreVersionLocalizations", id: target.id, attributes: attrs },
           })
         : asc("POST", "/v1/appStoreVersionLocalizations", {
             data: {
@@ -447,6 +464,7 @@ if (!PLAY_ONLY) {
       continue;
     }
     if (infoLoc2) {
+      cmp(`ASC [${loc.asc}] name`, infoLoc2.attributes.name, texts.title.value);
       cmp(`ASC [${loc.asc}] subtitle`, infoLoc2.attributes.subtitle, texts.subtitle.value);
       cmp(
         `ASC [${loc.asc}] privacyPolicyUrl`,
