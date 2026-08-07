@@ -177,7 +177,13 @@ function checkerWiring(text) {
 
 const CATALOGUE = subscriptionCatalogue();
 const TIER_FLAVOR = tierFlavors();
-const WAYBACK = CATALOGUE.find((p) => p.tier === "wayback");
+/**
+ * У WayBack с августа 2026 два тарифа, и оба обязаны работать. `WAYBACK` —
+ * годовой: он продаётся с первой версии, на нём написаны прежние положения, и
+ * менять их под новый товар незачем. Недельный проверяется своими.
+ */
+const WAYBACK = CATALOGUE.find((p) => p.tier === "wayback" && p.period === "yearly");
+const WAYBACK_WEEKLY = CATALOGUE.find((p) => p.tier === "wayback" && p.period === "weekly");
 const CHECKER = CATALOGUE.find((p) => p.tier === "checker" && p.period === "yearly");
 
 /** Путь от корня репозитория — в путь от `src/`, которым читает read(). */
@@ -193,10 +199,44 @@ const tiersForFlavor = (flavor) =>
 
 console.log("— швы: модель говорит о том же, о чём источники —");
 check(
-  `товар WayBack есть в каталоге: ${WAYBACK?.productId} (${WAYBACK?.bundleId})`,
-  Boolean(WAYBACK) && WAYBACK.bundleId === "ai.skyforest.wayback" && WAYBACK.period === "yearly",
+  `оба товара WayBack есть в каталоге: ${WAYBACK_WEEKLY?.productId}, ${WAYBACK?.productId}`,
+  Boolean(WAYBACK) &&
+    Boolean(WAYBACK_WEEKLY) &&
+    WAYBACK.bundleId === "ai.skyforest.wayback" &&
+    WAYBACK_WEEKLY.bundleId === "ai.skyforest.wayback",
   `разобрано товаров: ${CATALOGUE.length}`,
 );
+check(
+  "оба тарифа WayBack дают один тир — право не зависит от того, каким купили",
+  WAYBACK?.tier === "wayback" && WAYBACK_WEEKLY?.tier === "wayback",
+  `${WAYBACK?.tier} / ${WAYBACK_WEEKLY?.tier}`,
+);
+{
+  // Экран оплаты строится из ответа стора, а не из каталога и не из флага.
+  // Товар, который стор не подтвердил, показывать нельзя: кнопка упёрлась бы
+  // в «товар недоступен». Это ровно то, чем недельный тариф отличается от
+  // годового в первые дни — в App Store он появится позже, чем в Play.
+  const iap = read("lib/native/iap.ts");
+  const plans = read("lib/wayback/subscriptionProducts.ts");
+  const hook = read("lib/wayback/useWaybackPurchase.ts");
+  check(
+    "стор спрашивают о готовности товара к заказу (offer), а не о его наличии",
+    /export function getPurchasableSubscriptions\(\)/.test(iap) &&
+      /\.filter\(\(p\) => Boolean\(store\.get\(p\.productId, platform\)\?\.getOffer\?\.\(\)\)\)/.test(iap),
+  );
+  check(
+    "список тарифов на экране — пересечение каталога с ответом стора",
+    /export function waybackPlansFor\(/.test(plans) &&
+      /purchasable\.includes\(p\.productId\)/.test(plans) &&
+      /waybackPlansFor\(purchasable\)/.test(hook),
+  );
+  check(
+    "флага «показать недельный» в коде нет — тариф появляется вместе с одобрением стора",
+    !/WEEKLY_ENABLED|SHOW_WEEKLY|ENABLE_WEEKLY|NEXT_PUBLIC_WAYBACK_WEEKLY/.test(
+      [iap, plans, hook, read("components/wayback/WayBackPaywall.tsx"), read("components/wayback/WayBackPlanPicker.tsx")].join("\n"),
+    ),
+  );
+}
 check(
   `тир wayback действует только в WayBack: ${tiersForFlavor("wayback").join(", ")}`,
   tiersForFlavor("wayback").join(",") === "wayback" && TIER_FLAVOR.checker === "checker",
@@ -428,16 +468,43 @@ function fakeServer({ apple, getAppleSubscription, legacyStoreArgs = false, user
       else rows.push(row);
       return { status: 200, ok: true };
     },
-    /** Что вернёт GET /api/subscription на домене этого приложения. */
+    /**
+     * Что вернёт GET /api/subscription на домене этого приложения.
+     *
+     * Наружу уходит ОДНА подписка, даже когда строк несколько: право — это
+     * факт, а не количество. Из нескольких берётся та, что кончается позже, —
+     * так же, как в getActiveSubscription. Строк бывает две после смены
+     * тарифа: на Android новый тариф приезжает новым purchaseToken, и прежняя
+     * запись живёт до конца оплаченного периода.
+     */
     subscription(flavor) {
       const allowed = tiersForFlavor(flavor);
-      const found = rows.find(
+      const active = rows
+        .filter(
+          (r) =>
+            r.user_id === userId &&
+            allowed.includes(r.tier) &&
+            new Date(r.current_period_end).getTime() > Date.now(),
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.current_period_end).getTime() -
+            new Date(a.current_period_end).getTime(),
+        );
+      const found = active[0];
+      return found
+        ? { current_period_end: found.current_period_end, product_id: found.product_id }
+        : null;
+    },
+    /** Сколько строк действующего права у приложения — для проверки «не удвоилось». */
+    activeRows(flavor) {
+      const allowed = tiersForFlavor(flavor);
+      return rows.filter(
         (r) =>
           r.user_id === userId &&
           allowed.includes(r.tier) &&
           new Date(r.current_period_end).getTime() > Date.now(),
       );
-      return found ? { current_period_end: found.current_period_end } : null;
     },
     /** Право, выданное вручную (демо-аккаунт ревью или подписка другого приложения). */
     grant(tier) {
@@ -861,6 +928,100 @@ const CASES = [
     regressionIn: ["purchaseFlow"],
     broken: ({ found }) => found !== false,
     report: ({ found, a }) => `восстановление вернуло ${found}, «ничего не нашлось» ${a.screen.nothingRestored}`,
+  },
+  {
+    id: "недельный тариф",
+    title: "подписку купили недельным тарифом — право такое же, как у годового",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      const server = fakeServer({ ...deps, apple });
+      const store = fakeStore({ productId: WAYBACK_WEEKLY.productId, orderTx: "tx-w1" });
+      const a = app({ ...deps, server, store, productId: WAYBACK_WEEKLY.productId });
+      await a.gate.recheck();
+      const before = a.gate.status;
+      apple.put("tx-w1", {
+        productId: WAYBACK_WEEKLY.productId,
+        bundleId: WAYBACK_WEEKLY.bundleId,
+        accountRef: "user-1",
+        expiresInMs: 7 * 86_400_000,
+      });
+      const outcome = await a.subscribe();
+      return { a, outcome, before, store, server };
+    },
+    verify({ a, outcome, before, store, server }) {
+      check(`${this.id}: до покупки экран оплаты («${before}»)`, before === "needSubscription");
+      check(`${this.id}: покупка завершилась успехом`, outcome.ok === true, JSON.stringify(outcome));
+      check(`${this.id}: экран оплаты снят («${a.gate.status}»)`, a.gate.status === "allowed");
+      check(`${this.id}: транзакция закрыта через finish()`, store.state.finished.length === 1);
+      check(
+        `${this.id}: право записано тем же тиром, что у годового (wayback)`,
+        server.rows.length === 1 && server.rows[0].tier === "wayback",
+        `строки: ${JSON.stringify(server.rows)}`,
+      );
+    },
+    // Чек из песочницы отвергался серверной проверкой — причина общая.
+    regressionIn: ["iap-store"],
+    broken: ({ a, outcome }) => a.gate.status !== "allowed" || outcome.ok !== true,
+    report: ({ a, outcome }) => `исход ok=${outcome.ok}, гейт «${a.gate.status}»`,
+  },
+  {
+    id: "смена тарифа",
+    title: "с недельного перешли на годовой — право одно, и оно годовое",
+    async run(deps) {
+      const apple = fakeApple({ environment: "sandbox" });
+      const server = fakeServer({ ...deps, apple });
+
+      // Сначала неделя.
+      apple.put("tx-w1", {
+        productId: WAYBACK_WEEKLY.productId,
+        bundleId: WAYBACK_WEEKLY.bundleId,
+        accountRef: "user-1",
+        expiresInMs: 7 * 86_400_000,
+      });
+      const weekStore = fakeStore({ productId: WAYBACK_WEEKLY.productId, orderTx: "tx-w1" });
+      const week = app({ ...deps, server, store: weekStore, productId: WAYBACK_WEEKLY.productId });
+      const boughtWeek = await week.subscribe();
+      const afterWeek = server.subscription("wayback");
+
+      // Затем год — прежняя недельная запись ещё не истекла (так это выглядит
+      // на Android: новый purchaseToken, старая строка доживает свой период).
+      apple.put("tx-y1", {
+        productId: WAYBACK.productId,
+        bundleId: WAYBACK.bundleId,
+        accountRef: "user-1",
+        expiresInMs: 365 * 86_400_000,
+      });
+      const yearStore = fakeStore({ productId: WAYBACK.productId, orderTx: "tx-y1" });
+      const year = app({ ...deps, server, store: yearStore, productId: WAYBACK.productId });
+      const boughtYear = await year.subscribe();
+
+      return { week, year, boughtWeek, boughtYear, afterWeek, server };
+    },
+    verify({ week, year, boughtWeek, boughtYear, afterWeek, server }) {
+      check(`${this.id}: недельная подписка куплена и открыла приложение`, boughtWeek.ok === true && week.gate.status === "allowed");
+      check(
+        `${this.id}: до перехода право названо недельным товаром`,
+        afterWeek?.product_id === WAYBACK_WEEKLY.productId,
+        JSON.stringify(afterWeek),
+      );
+      check(`${this.id}: годовая подписка куплена`, boughtYear.ok === true);
+      check(`${this.id}: приложение открыто и после перехода («${year.gate.status}»)`, year.gate.status === "allowed");
+      const active = server.activeRows("wayback");
+      check(
+        `${this.id}: наружу уходит одно право, а не два (строк ${active.length})`,
+        server.subscription("wayback") !== null && active.every((r) => r.tier === "wayback"),
+        JSON.stringify(active),
+      );
+      check(
+        `${this.id}: право названо годовым — тем, по которому теперь списывают`,
+        server.subscription("wayback")?.product_id === WAYBACK.productId,
+        `выбрано ${JSON.stringify(server.subscription("wayback"))}`,
+      );
+    },
+    regressionIn: ["iap-store"],
+    broken: ({ boughtYear, year }) => boughtYear.ok !== true || year.gate.status !== "allowed",
+    report: ({ server }) =>
+      `действующих строк ${server.activeRows("wayback").length}, наружу «${server.subscription("wayback")?.product_id ?? "нет"}»`,
   },
   {
     id: "checker: покупка",
