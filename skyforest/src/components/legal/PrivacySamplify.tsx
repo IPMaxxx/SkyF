@@ -9,19 +9,24 @@ import type { AppFlavor } from "@/lib/appFlavor";
  */
 const PRODUCT_COPY: Record<
   AppFlavor,
-  { content: string; payments: string }
+  { content: string; payments: string; extra?: string; processors?: string }
 > = {
   skyforest: {
-    content: "User content: coordinates, notes, photos, mushroom day records",
+    content:
+      "User content: coordinates, notes, photos, mushroom day records, the path of a walk you finish, and the marketplace listings and messages you send to other users",
+    extra:
+      "A push notification token, if you allow notifications in the mobile app",
     payments: "Processing token purchases and account management",
   },
   checker: {
     content: "User content: photos you submit for mushroom identification",
+    processors:
+      "A photo you submit for identification is sent to an external recognition provider on our behalf; we strip its metadata, including any GPS coordinates, before it leaves our server.",
     payments: "Processing subscription payments and account management",
   },
   wayback: {
     content:
-      "User content: coordinates of your entry point and the path you walk. The path is recorded only between the moment you start a walk and the moment you finish it, including while the app is in the background with the screen off. While you walk it is kept on your device; a finished walk is saved to your own account so that your history is still there on your next phone. Tracks are never shared with other users or with third parties",
+      "User content: coordinates of your entry point and the path you walk, precise or approximate depending on the location permission you grant — if you allow approximate location only, recording continues at lower accuracy. The path is recorded only between the moment you start a walk and the moment you finish it, including while the app is in the background with the screen off. While you walk it is kept on your device; a finished walk is saved to your own account so that your history is still there on your next phone. Tracks are never shared with other users or with third parties",
     payments: "Processing subscription payments and account management",
   },
 };
@@ -53,6 +58,7 @@ export async function PrivacySamplify() {
           Level 1). We do not store card numbers.
         </li>
         <li>{copy.content}</li>
+        {copy.extra && <li>{copy.extra}</li>}
         <li>
           Technical data: IP address, browser, device type, session information
         </li>
@@ -74,6 +80,7 @@ export async function PrivacySamplify() {
         Data may be processed in the EU, US, or other regions where these
         providers operate.
       </p>
+      {copy.processors && <p>{copy.processors}</p>}
 
       <h2 className="text-xl font-semibold">5. Retention and rights</h2>
       <p>

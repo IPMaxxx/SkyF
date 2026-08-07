@@ -34,6 +34,11 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Свой плагин записи пути живёт в оболочке, а не в npm-пакете, поэтому
+        // автоматическая регистрация из capacitor.plugins.json его не видит.
+        // Регистрировать нужно до super.onCreate: мост собирает список плагинов
+        // при создании.
+        registerPlugin(TrackServicePlugin.class);
         super.onCreate(savedInstanceState);
         if (bridge != null) {
             bridge.setWebViewClient(new OfflineShellWebViewClient(bridge));

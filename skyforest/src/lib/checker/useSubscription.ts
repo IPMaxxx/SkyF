@@ -10,10 +10,20 @@
  * Источник состояния — GET /api/subscription (тот же, что у пейволла). Пока
  * запрос идёт, `loading = true`, и экраны не показывают карточку квоты, чтобы
  * не мигать неверным числом.
+ *
+ * Состояние перечитывается само, когда сервер принял чек внутренней покупки
+ * (`onIapEntitlement`). Сигнал приходит не только от кнопки на пейволле:
+ * approved-транзакции StoreKit доставляет из своей очереди при запуске
+ * приложения — после прерванной покупки, после перезапуска, при восстановлении
+ * покупок. Кто в такой момент показан на экране, заранее неизвестно, поэтому
+ * подписка живёт здесь, в состоянии подписки, а не на пейволле: иначе
+ * оплаченная подписка не доходила бы ни до распознавания, ни до кабинета до
+ * следующего перезапуска.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { FLAVORS } from "@/lib/appFlavor";
+import { onIapEntitlement } from "@/lib/native/iap";
 
 /** Параметры подписки приложения: триал, лимит триала, цены. */
 export const CHECKER_PLAN = FLAVORS.checker.subscriptionPlan!;
@@ -74,6 +84,8 @@ export function useCheckerSubscription(): CheckerSubscriptionState {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => onIapEntitlement(() => void refresh()), [refresh]);
 
   const limit = subscription?.identify_limit ?? null;
   const unlimited = Boolean(subscription) && limit === null;

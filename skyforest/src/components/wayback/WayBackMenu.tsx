@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { useFlavorLocales } from "@/lib/useFlavorLocales";
 import { waybackSignOut } from "@/lib/wayback/signOut";
 import {
   CHECKER_SITE,
@@ -30,7 +30,10 @@ import {
   initialsFrom,
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
+import { useRecordingCopy } from "@/lib/wayback/useRecordingCopy";
 import { cn } from "@/lib/utils";
+import { formatNativeBuild, nativeBuild } from "@/lib/native/appBuild";
+import { WayBackDiagnostics } from "@/components/wayback/WayBackDiagnostics";
 import { WbLabel } from "@/components/wayback/primitives";
 
 export function WayBackMenu({
@@ -43,12 +46,22 @@ export function WayBackMenu({
   const t = useTranslations("wayback.menu");
   const tHow = useTranslations("wayback.home");
   const locale = useLocale();
+  const locales = useFlavorLocales();
   const router = useRouter();
   const pathname = usePathname();
   const unitSystem = useUnitSystem();
   const { email, signedIn, subscription, trialDaysLeft } = useWaybackAccount();
+  // «Как это работает» обещает запись с погашенным экраном только там, где
+  // нативная часть для неё действительно есть.
+  const copy = useRecordingCopy();
   const [loggingOut, setLoggingOut] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
+  const [shellVersion, setShellVersion] = useState<string | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
+
+  useEffect(() => {
+    void nativeBuild().then((info) => setShellVersion(formatNativeBuild(info)));
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -184,7 +197,7 @@ export function WayBackMenu({
             {howOpen && (
               <div className="flex flex-col gap-3 px-5 pb-[18px]">
                 <ol className="flex flex-col gap-3">
-                  {[tHow("how1"), tHow("how2"), tHow("how3")].map((step, i) => (
+                  {[tHow("how1"), tHow(copy.how2), tHow("how3")].map((step, i) => (
                     <li key={i} className="flex gap-3">
                       <span className="wb-mono flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] bg-wb-primary-tint text-[12px] font-semibold text-wb-primary">
                         {i + 1}
@@ -205,8 +218,16 @@ export function WayBackMenu({
           <div className="grid grid-cols-2 gap-2.5">
             <div className="wb-tile flex flex-col gap-2 px-4 py-4">
               <WbLabel>{t("language")}</WbLabel>
-              <div className="grid grid-cols-2 gap-1.5">
-                {routing.locales.map((loc) => (
+              {/* Плитка узкая (половина листа), поэтому языков в ряду не
+                  больше трёх: с пятью в один ряд кнопка становится уже своей
+                  подписи. Пара языков остаётся в два столбца, как было. */}
+              <div
+                className={cn(
+                  "grid gap-1.5",
+                  locales.length > 2 ? "grid-cols-3" : "grid-cols-2",
+                )}
+              >
+                {locales.map((loc) => (
                   <button
                     key={loc}
                     type="button"
@@ -287,9 +308,20 @@ export function WayBackMenu({
             </button>
           )}
 
-          <span className="wb-mono mt-1 text-center text-[10px] tracking-[0.12em] text-wb-muted-3">
-            V {process.env.NEXT_PUBLIC_APP_VERSION} · BY SKYFOREST
-          </span>
+          {/* Версия сайта и версия оболочки рядом: сайт обновляется сам, а
+              оболочка — только переустановкой, и без второй цифры разбор любой
+              поломки начинался с гадания, что у человека стоит. По нажатию —
+              журнал записи: спрятан здесь, чтобы не попадаться на глаза, но
+              путь к нему объясняется одной фразой. */}
+          <button
+            type="button"
+            onClick={() => setLogOpen(true)}
+            className="wb-mono mt-1 text-center text-[10px] tracking-[0.12em] text-wb-muted-3"
+          >
+            V {process.env.NEXT_PUBLIC_APP_VERSION}
+            {shellVersion ? ` · APP ${shellVersion}` : ""} · BY SKYFOREST
+          </button>
+          <WayBackDiagnostics open={logOpen} onClose={() => setLogOpen(false)} />
         </div>
       </div>
     </>

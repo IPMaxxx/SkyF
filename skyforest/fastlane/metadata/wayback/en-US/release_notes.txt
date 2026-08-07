@@ -1,1 +1,3 @@
-1.1 - your walk is now recorded with the screen off. Tap "I'm entering the forest", put the phone in your pocket, and WayBack keeps recording the path in the background until you tap "I'm out of the forest", so the line back to your entry point no longer breaks while you are not looking at the app. Recording never runs outside a walk, and the phone keeps a visible location indicator while it does. A dashed stretch on the map now means one thing only: no satellites in view there.
+WayBack now speaks Spanish, Polish and French alongside English and Russian, and follows the language your phone is set to.
+
+Two subscription plans instead of one: USD 1.99 per week or USD 19.99 per year, each starting with the same 3 free days. The purchase screen lets you pick, and states the length and the price of whichever plan you choose.

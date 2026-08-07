@@ -53,9 +53,9 @@
 	  Отказ от «always» запись не ломает.
 	-->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>WayBack uses your location to mark the point where you entered the forest and to record the path you walk, so it can show the direction and distance back to your entry point.</string>
+	<string>WayBack uses your location to mark the point where you set off and to record the path you walk, so it can show the direction and distance back to your entry point.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>WayBack records the path you walk so it can lead you back to the point where you entered the forest, even when there is no mobile signal. Recording continues while your phone is in your pocket with the screen off, which is why WayBack keeps using your location in the background during a walk. Recording only runs between the moment you start a walk and the moment you finish it, and your path stays on this device.</string>
+	<string>WayBack records the path you walk so it can lead you back to the point where you set off, even when there is no mobile signal. Recording continues while your phone is in your pocket with the screen off, which is why WayBack keeps using your location in the background during a walk. Recording only runs between the moment you start a walk and the moment you finish it, and your path stays on this device.</string>
 	<!-- Стрелка возврата работает по компасу телефона, когда курса GPS ещё нет. -->
 	<key>NSMotionUsageDescription</key>
 	<string>WayBack uses the compass to point the arrow toward your entry point while you are standing still.</string>

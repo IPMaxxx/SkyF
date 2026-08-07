@@ -28,6 +28,11 @@ import {
   tokensForProduct,
   isSubscriptionProduct,
 } from "./iapProducts";
+import {
+  createPurchaseFlow,
+  type PurchaseTransaction,
+  type VerifyOutcome,
+} from "./purchaseFlow";
 
 /**
  * Bundle id активной оболочки: во флейворах Mushroom Checker / WayBack
@@ -57,19 +62,12 @@ function activeSubscriptions() {
 type AnyStore = any;
 
 let initialized = false;
-const pending = new Map<string, { resolve: (ok: boolean) => void; reject: (e: unknown) => void }>();
 
 /** Watchdog покупки: не даём спиннеру крутиться вечно, если события плагина не пришли. */
 const PURCHASE_TIMEOUT_MS = 90_000;
 
 /** Кэш id пользователя для store.applicationUsername (getter вызывается синхронно). */
 let currentUserId: string | undefined;
-
-/**
- * Уведомление о начислении «фоновой» покупки — approved-транзакции,
- * допроведённой при старте приложения (без активного вызова purchasePack).
- */
-let onBackgroundCredit: ((tokens: number) => void) | null = null;
 
 /** Подписчики на обновление цен товаров из стора. */
 type PricesListener = (prices: Record<string, string>) => void;
@@ -102,12 +100,6 @@ async function refreshUserId(): Promise<string | undefined> {
   return currentUserId;
 }
 
-interface VerifyResult {
-  ok: boolean;
-  /** Стор окончательно отверг чек (402/403) — повторная верификация не поможет. */
-  permanent: boolean;
-}
-
 /**
  * Телеметрия ошибок IAP: шлёт событие на сервер (/api/native/iap/log),
  * где оно попадает в pm2-лог. Клиентские StoreKit-ошибки (товар не
@@ -135,7 +127,7 @@ function logIapError(
   }
 }
 
-async function verifyOnServer(productId: string, transaction: any): Promise<VerifyResult> {
+async function verifyOnServer(productId: string, transaction: any): Promise<VerifyOutcome> {
   // Подписки верифицируются отдельным роутом (App Store Server API /
   // purchases.subscriptionsv2.get), consumable-токены — прежним verify.
   const endpoint = isSubscriptionProduct(productId)
@@ -159,6 +151,30 @@ async function verifyOnServer(productId: string, transaction: any): Promise<Veri
   } catch {
     return { ok: false, permanent: false };
   }
+}
+
+/**
+ * Цикл транзакции: кто ждёт покупку, что делать с одобренной транзакцией и
+ * когда её закрывать. Логика — в purchaseFlow, здесь только порты к сети,
+ * каталогу товаров и телеметрии.
+ */
+const flow = createPurchaseFlow({
+  verify: verifyOnServer,
+  log: logIapError,
+  tokensFor: tokensForProduct,
+  isSubscription: isSubscriptionProduct,
+});
+
+/**
+ * Право на приложение подтверждено сервером — пора перечитать статус подписки.
+ *
+ * Событие приходит и без нажатия кнопки: approved-транзакции StoreKit
+ * доставляет из своей очереди при запуске приложения и при восстановлении
+ * покупок. Гейт и пейволл подписаны на него, поэтому оплаченная подписка
+ * снимает экран оплаты сама, без перезапуска.
+ */
+export function onIapEntitlement(cb: (productId: string) => void): () => void {
+  return flow.onEntitlement(cb);
 }
 
 /** Текущие цены товаров из стора: packId → форматированная цена (например "$2.99"). */
@@ -196,6 +212,28 @@ export function getSubscriptionPrices(): Record<string, string> {
   return prices;
 }
 
+/**
+ * Подписки активной оболочки, которые стор отдал готовыми к заказу.
+ *
+ * Условие ровно то, которое `purchaseSubscription` проверяет перед order():
+ * товар загружен и у него есть offer. По этому ответу экран оплаты строит
+ * список тарифов — не по каталогу. Каталог знает все товары приложения, в том
+ * числе те, которые в этом сторе ещё не одобрены или сняты с продажи; предложи
+ * их человеку, и кнопка упрётся в «товар недоступен».
+ *
+ * Пустой ответ означает «стор ещё не ответил»: до инициализации плагина здесь
+ * нечему быть. Что показывать в это мгновение, решает сам экран.
+ */
+export function getPurchasableSubscriptions(): string[] {
+  const CdvPurchase = cdv();
+  if (!CdvPurchase || !initialized) return [];
+  const store: AnyStore = CdvPurchase.store;
+  const platform = platformConst();
+  return activeSubscriptions()
+    .filter((p) => Boolean(store.get(p.productId, platform)?.getOffer?.()))
+    .map((p) => p.productId);
+}
+
 /** Подписка на обновление цен из стора. Возвращает функцию отписки. */
 export function subscribeStorePrices(cb: PricesListener): () => void {
   priceListeners.add(cb);
@@ -219,7 +257,7 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
   if (!isNativeApp()) return false;
   const CdvPurchase = cdv();
   if (!CdvPurchase) return false;
-  if (opts?.onBackgroundCredit) onBackgroundCredit = opts.onBackgroundCredit;
+  if (opts?.onBackgroundCredit) flow.setBackgroundCredit(opts.onBackgroundCredit);
   if (initialized) return true;
 
   const store: AnyStore = CdvPurchase.store;
@@ -261,75 +299,8 @@ export async function initIap(opts?: { onBackgroundCredit?: (tokens: number) => 
       const subPrices = getSubscriptionPrices();
       subPriceListeners.forEach((cb) => cb(subPrices));
     })
-    .approved(async (transaction: any) => {
-      const productId = transaction?.products?.[0]?.id ?? transaction?.productId;
-      const wasPending = Boolean(productId && pending.has(productId));
-      const result: VerifyResult = productId
-        ? await verifyOnServer(productId, transaction)
-        : { ok: false, permanent: false };
-      if (result.ok) {
-        // Резолвим pending сразу после серверной верификации: покупка
-        // зачислена, ждать события finished незачем. На iOS finished после
-        // finish() иногда не приходит (cordova-plugin-purchase 13.x), и
-        // спиннер покупки крутился бесконечно при успешной оплате.
-        const p = productId && pending.get(productId);
-        if (p) {
-          pending.delete(productId);
-          p.resolve(true);
-        }
-        try {
-          transaction.finish();
-        } catch {
-          /* транзакция допроведётся при следующем запуске */
-        }
-        if (!wasPending) {
-          // Фоновое допроведение (прерванная ранее покупка) — сообщаем UI.
-          const tokens = tokensForProduct(productId);
-          if (tokens && onBackgroundCredit) onBackgroundCredit(tokens);
-        }
-      } else {
-        logIapError("verify_failed", {
-          productId,
-          code: result.permanent ? "permanent" : "transient",
-          message: wasPending ? "active purchase" : "background transaction",
-        });
-        // Сначала резолвим pending ошибкой (finish() ниже породил бы событие
-        // finished, которое резолвит pending успехом).
-        const p = productId && pending.get(productId);
-        if (p && wasPending) {
-          pending.delete(productId);
-          p.resolve(false);
-        }
-        // Окончательно отклонённые транзакции (402/403) закрываем — и подписки,
-        // и consumable-токены:
-        //  - подписки: истёкшие sandbox-транзакции висят в очереди StoreKit,
-        //    повторно доставляются как approved и «съедают» pending новой
-        //    покупки; право на подписку от finish() не теряется — статус
-        //    всегда перепроверяется у стора;
-        //  - consumable: незакрытая (unconsumed) покупка НАВСЕГДА блокирует
-        //    повторную покупку того же товара в Google Play
-        //    (ITEM_ALREADY_OWNED — окно оплаты даже не открывается). 402 стор
-        //    вернул для отменённой/невалидной покупки, а чек чужого аккаунта
-        //    (mismatch) сервер теперь начисляет владельцу из чека и отвечает
-        //    ok, так что сюда он не попадает. Pending-платежи сервер помечает
-        //    409 (НЕ permanent) — их не финишируем.
-        if (result.permanent && productId) {
-          try {
-            transaction.finish();
-          } catch {
-            /* очередь очистится при следующем запуске */
-          }
-        }
-      }
-    })
-    .finished((transaction: any) => {
-      const productId = transaction?.products?.[0]?.id ?? transaction?.productId;
-      const p = productId && pending.get(productId);
-      if (p) {
-        pending.delete(productId);
-        p.resolve(true);
-      }
-    });
+    .approved((transaction: PurchaseTransaction) => void flow.approved(transaction))
+    .finished((transaction: PurchaseTransaction) => flow.finished(transaction));
 
   try {
     await store.initialize([platform]);
@@ -353,6 +324,10 @@ const IAP_ERRORS = {
       "Предыдущая покупка этого пакета ещё не проведена до конца. Перезапустите приложение — она зачислится автоматически, после чего пакет снова можно купить.",
     storeTimeout:
       "Магазин не ответил. Если оплата прошла, токены или подписка будут зачислены автоматически — перезапустите приложение.",
+    verifyRetry:
+      "Оплата прошла, но подтвердить её у нас не получилось — похоже, нет связи. Повторите попытку: повторно с вас не спишут.",
+    verifyRejected:
+      "Оплата прошла, но магазин не подтвердил покупку. Попробуйте «Восстановить покупки»; если не поможет — напишите на support@skyforest.ai, мы включим доступ вручную.",
   },
   en: {
     nativeOnly: "In-app purchases are only available in the app",
@@ -364,6 +339,10 @@ const IAP_ERRORS = {
       "A previous purchase of this pack has not been fully processed yet. Restart the app — it will be credited automatically, then you can buy this pack again.",
     storeTimeout:
       "Store did not respond. If you were charged, tokens/subscription will be credited automatically — restart the app.",
+    verifyRetry:
+      "The payment went through, but we could not confirm it — the connection seems to be down. Please try again: you will not be charged twice.",
+    verifyRejected:
+      "The payment went through, but the store did not confirm the purchase. Try \u201cRestore purchases\u201d; if that does not help, write to support@skyforest.ai and we will unlock access manually.",
   },
 } as const;
 
@@ -394,44 +373,15 @@ export async function purchasePack(packId: string, locale?: string): Promise<{ o
     return { ok: false, error: msg.productUnavailable };
   }
 
-  return new Promise((resolve) => {
-    // Watchdog: если события approved/finished так и не пришли (зависшая
-    // транзакция StoreKit/Billing), не крутим спиннер вечно. Реальная
-    // оплата не теряется: approved допроведётся при следующем запуске.
-    const timer = window.setTimeout(() => {
-      if (pending.get(product.productId)) {
-        pending.delete(product.productId);
-        logIapError("timeout", {
-          productId: product.productId,
-          message: `no purchase event within ${PURCHASE_TIMEOUT_MS / 1000}s`,
-        });
-        resolve({ ok: false, error: msg.storeTimeout });
-      }
-    }, PURCHASE_TIMEOUT_MS);
-    pending.set(product.productId, {
-      resolve: (ok) => {
-        window.clearTimeout(timer);
-        resolve({ ok });
-      },
-      reject: () => {
-        window.clearTimeout(timer);
-        resolve({ ok: false });
-      },
-    });
-    offer.order().catch((e: any) => {
-      window.clearTimeout(timer);
-      pending.delete(product.productId);
-      logIapError("order_rejected", {
-        productId: product.productId,
-        code: e?.code,
-        message: e?.message ?? String(e),
-      });
-      // ITEM_ALREADY_OWNED: незакрытая consumable-покупка блокирует повторную
-      // (Google Play не показывает окно оплаты) — подсказываем перезапуск,
-      // при котором approved допроведётся и товар разблокируется.
-      const alreadyOwned = /already.?own/i.test(String(e?.message ?? ""));
-      resolve({ ok: false, error: alreadyOwned ? msg.alreadyOwned : e?.message || msg.cancelled });
-    });
+  // ITEM_ALREADY_OWNED: незакрытая consumable-покупка блокирует повторную
+  // (Google Play не показывает окно оплаты) — подсказываем перезапуск, при
+  // котором approved допроведётся и товар разблокируется.
+  return flow.order({
+    productId: product.productId,
+    place: () => offer.order(),
+    timeoutMs: PURCHASE_TIMEOUT_MS,
+    messages: msg,
+    explainAlreadyOwned: true,
   });
 }
 
@@ -463,46 +413,37 @@ export async function purchaseSubscription(
     return { ok: false, error: msg.productUnavailable };
   }
 
-  return new Promise((resolve) => {
-    // Watchdog — см. purchasePack: спиннер не должен крутиться вечно.
-    const timer = window.setTimeout(() => {
-      if (pending.get(productId)) {
-        pending.delete(productId);
-        logIapError("sub_timeout", {
-          productId,
-          message: `no purchase event within ${PURCHASE_TIMEOUT_MS / 1000}s`,
-        });
-        resolve({ ok: false, error: msg.storeTimeout });
-      }
-    }, PURCHASE_TIMEOUT_MS);
-    pending.set(productId, {
-      resolve: (ok) => {
-        window.clearTimeout(timer);
-        resolve({ ok });
-      },
-      reject: () => {
-        window.clearTimeout(timer);
-        resolve({ ok: false });
-      },
-    });
-    offer.order().catch((e: any) => {
-      window.clearTimeout(timer);
-      pending.delete(productId);
-      logIapError("sub_order_rejected", {
-        productId,
-        code: e?.code,
-        message: e?.message ?? String(e),
-      });
-      resolve({ ok: false, error: e?.message || msg.cancelled });
-    });
+  // Watchdog — см. purchasePack: спиннер не должен крутиться вечно.
+  return flow.order({
+    productId,
+    place: () => offer.order(),
+    timeoutMs: PURCHASE_TIMEOUT_MS,
+    messages: msg,
   });
 }
 
 /**
+ * Сколько ждём восстановленный чек после restorePurchases().
+ *
+ * Плагин доставляет чеки асинхронно, и `restorePurchases()` возвращается
+ * раньше, чем приходит первая approved-транзакция; к ней ещё добавляется
+ * серверная проверка. Ждём подтверждения права, а не фиксированную паузу:
+ * прежние 2.5 секунды были догадкой, которая на медленной связи истекала до
+ * ответа сервера — и восстановление выглядело неудачным при живой подписке.
+ *
+ * Срок всё равно нужен: ожидание обязано кончаться исходом (offline/deadline.ts
+ * о том же). «Не дождались» — это ответ, с ним экран покажет, что ничего не
+ * нашлось, и предложит повторить.
+ */
+const RESTORE_WAIT_MS = 15_000;
+
+/**
  * Восстановить покупки (кнопка «Restore» на пейволле — требование
  * App Review 3.1.1). Плагин переотправляет чеки как approved-транзакции,
- * которые проходят обычную верификацию на сервере; после паузы вызывающий
- * код перечитывает /api/subscription и видит восстановленную подписку.
+ * которые проходят обычную верификацию на сервере.
+ *
+ * true — право подтверждено сервером, статус подписки уже можно перечитывать.
+ * false — восстанавливать было нечего либо стор не ответил в срок.
  */
 export async function restorePurchases(): Promise<boolean> {
   if (!isNativeApp()) return false;
@@ -510,9 +451,10 @@ export async function restorePurchases(): Promise<boolean> {
   if (!CdvPurchase) return false;
   await initIap();
   await refreshUserId();
+  // Подписываемся ДО запроса: чек может доехать быстрее, чем вернётся вызов.
+  const entitled = flow.waitForEntitlement(RESTORE_WAIT_MS);
   try {
     await CdvPurchase.store.restorePurchases();
-    return true;
   } catch (e: any) {
     logIapError("restore_failed", {
       code: e?.code,
@@ -520,6 +462,7 @@ export async function restorePurchases(): Promise<boolean> {
     });
     return false;
   }
+  return entitled;
 }
 
 /** Открыть управление подписками стора (App Store / Google Play). */

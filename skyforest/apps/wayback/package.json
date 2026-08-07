@@ -5,7 +5,9 @@
   "description": "Нативная Capacitor-оболочка WayBack (WebView -> wayback.skyforest.ai, офлайн-ядро mobile/shell)",
   "scripts": {
     "sync:shell": "node sync-shell.mjs",
-    "sync": "npm run sync:shell && npx cap sync",
+    "sync": "npm run sync:shell && npx cap sync && node patch-native.mjs",
+    "postinstall": "node patch-native.mjs",
+    "android:release": "node patch-native.mjs && bash ../../scripts/android-release.sh",
     "icons": "npx @capacitor/assets generate --iconBackgroundColor '#141a15' --iconBackgroundColorDark '#141a15' --splashBackgroundColor '#0b120d' --splashBackgroundColorDark '#0b120d'"
   },
   "dependencies": {

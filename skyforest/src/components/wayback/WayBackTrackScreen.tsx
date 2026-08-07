@@ -18,8 +18,10 @@ import { Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useUnits } from "@/lib/units";
 import { listRegions } from "@/lib/offline/tileStore";
+import { preloadChunk } from "@/lib/offline/deadline";
 import { loadTrackHistory } from "@/lib/trackHistory";
 import { useWaybackAccount } from "@/lib/wayback/useWaybackAccount";
+import { useRecordingCopy } from "@/lib/wayback/useRecordingCopy";
 import type { TrackController } from "@/lib/track/useTrackController";
 import type { Coords } from "@/lib/native/geolocation";
 import { Link } from "@/i18n/navigation";
@@ -38,6 +40,7 @@ import { WayBackMenu } from "@/components/wayback/WayBackMenu";
 import { WayBackTabBar } from "@/components/wayback/WayBackTabBar";
 import { WayBackOfflineScreen } from "@/components/wayback/WayBackOfflineScreen";
 import { WayBackHistoryScreen } from "@/components/wayback/WayBackHistoryScreen";
+import { WayBackRecordingStatus } from "@/components/wayback/WayBackRecordingStatus";
 
 const TrackMap = dynamic(
   () => import("@/components/app/TrackMap").then((m) => m.TrackMap),
@@ -49,6 +52,21 @@ const WayBackPicker = dynamic(
     import("@/components/wayback/WayBackPicker").then((m) => m.WayBackPicker),
   { ssr: false },
 );
+
+/**
+ * Обе карты нужны там, где связи уже нет: карта похода рисуется, как только
+ * поход начался, а выбор точки входа открывается ровно тогда, когда GPS не
+ * дался, — и то и другое случается в лесу. Кусок бандла в этот момент по сети
+ * не приедет и, хуже того, не откажет: `next/dynamic` останется на скелете
+ * навсегда (у выбора точки скелета нет вовсе — был бы пустой экран).
+ *
+ * Поэтому тянем их сразу при открытии экрана: он открывается на старте
+ * приложения, когда человек чаще всего ещё дома или у машины.
+ */
+function preloadHikeMaps(): void {
+  preloadChunk("components/TrackMap", () => import("@/components/app/TrackMap"));
+  preloadChunk("components/WayBackPicker", () => import("@/components/wayback/WayBackPicker"));
+}
 
 /**
  * Карта «где я сейчас» на главной. Скелет повторяет её размеры один в один
@@ -121,6 +139,8 @@ export function WayBackTrackScreen({ c }: { c: TrackController }) {
     void listRegions().then((list) => setRegionCount(list.length));
     void loadTrackHistory().then((list) => setHistoryCount(list.length));
   }, [hasActiveTrack]);
+
+  useEffect(preloadHikeMaps, []);
 
   // Системная кнопка «назад» должна закрывать подэкран, а не выкидывать из
   // приложения: подэкраны кладём в history.state. Переход между подэкранами
@@ -460,12 +480,15 @@ function ActiveHike({
   const t = useTranslations("wayback.active");
   const locale = useLocale();
   const units = useUnits();
+  // Легенда пунктира зависит от того, умеет ли ЭТА сборка писать путь в фоне:
+  // без своей службы разрыв — это уход в фон, с ней — потеря спутников.
+  const copy = useRecordingCopy();
 
   if (!c.track) return null;
 
   const distanceText =
     c.distanceM != null ? units.fmtDistanceM(c.distanceM) : "—";
-  // Значение и единицу разводим визуально: в лесу читают число, не подпись.
+  // Значение и единицу разводим визуально: в походе читают число, не подпись.
   const [distValue, distUnit] = (() => {
     const m = distanceText.match(/^([\d\s.,]+)\s*(.*)$/);
     return m ? [m[1].trim(), m[2]] : [distanceText, ""];
@@ -486,7 +509,7 @@ function ActiveHike({
           }
         />
         <WbStatTile
-          label={t("inForest")}
+          label={t("onTheWalk")}
           value={c.durationLabel ?? "0:00"}
           footnote={t("since", {
             time: new Date(c.track.startedAt).toLocaleTimeString(locale, {
@@ -573,9 +596,13 @@ function ActiveHike({
           course={c.course}
         />
         <p className="wb-mono px-2 pt-2.5 text-[11.5px] leading-[1.5] text-wb-body">
-          {t("gapHint")}
+          {t(copy.gapHint)}
         </p>
       </WbTile>
+
+      {/* Под картой, а не над стрелкой: в походе главное — направление, но
+          состояние записи должно быть видно без поиска по меню. */}
+      <WayBackRecordingStatus />
 
       <button
         type="button"

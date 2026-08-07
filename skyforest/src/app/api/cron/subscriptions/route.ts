@@ -45,9 +45,7 @@ async function recheckWithStore(sub: SubRow): Promise<StoreSubscriptionState | n
   // Bundle/package приложения-владельца подписки (флейворы — свои).
   const bundleId = subscriptionProductFor(sub.product_id)?.bundleId;
   if (sub.platform === "ios" && sub.original_transaction_id) {
-    // Sandbox-фолбэк разрешён: продовые originalTransactionId в песочнице
-    // не существуют, а sandbox-подписки тестировщиков продолжают работать.
-    return getAppleSubscription(sub.original_transaction_id, true, sub.product_id, bundleId);
+    return getAppleSubscription(sub.original_transaction_id, sub.product_id, bundleId);
   }
   if (sub.platform === "android" && sub.purchase_token) {
     return getGoogleSubscription(sub.purchase_token, bundleId);

@@ -23,18 +23,17 @@
  * `children` как есть.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Loader2, WifiOff } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useIsNative } from "@/lib/native/useIsNative";
 import { storeName } from "@/lib/native/capacitor";
 import { useWaybackGate } from "@/lib/wayback/entitlement";
-import {
-  useWaybackPurchase,
-  WAYBACK_PLAN,
-} from "@/lib/wayback/useWaybackPurchase";
+import { useWaybackPurchase } from "@/lib/wayback/useWaybackPurchase";
+import { useWaybackSelectedPlan } from "@/lib/wayback/useWaybackSelectedPlan";
 import { waybackSignOut } from "@/lib/wayback/signOut";
+import { WayBackPlanPicker } from "@/components/wayback/WayBackPlanPicker";
 import { WayBackTrialTerms } from "@/components/wayback/WayBackTrialTerms";
 import {
   WayBackAuthDivider,
@@ -95,26 +94,28 @@ function GateScreen({
 export function WayBackStartGate({ children }: { children: React.ReactNode }) {
   const native = useIsNative();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("wayback.gate");
   const tp = useTranslations("wayback.paywall");
   const { status, email, recheck } = useWaybackGate(native);
 
-  const { price, trialDays, purchasing, restoring, error, subscribe, restore } =
-    useWaybackPurchase(recheck, tp("cta", { days: WAYBACK_PLAN.trialDays }));
-
-  // Восстановление, которое ничего не нашло, иначе выглядит как поломка:
-  // спиннер погас, экран тот же, объяснения нет. Чаще всего причина простая —
-  // человек вошёл не в тот аккаунт стора, и об этом надо сказать.
-  const [restoreTried, setRestoreTried] = useState(false);
-  const tryRestore = useCallback(async () => {
-    setRestoreTried(true);
-    await restore();
-  }, [restore]);
-  const restoreFailed = restoreTried && !restoring;
+  const {
+    plans,
+    priceOf,
+    trialDays,
+    purchasing,
+    restoring,
+    error,
+    nothingRestored,
+    subscribe,
+    restore,
+  } = useWaybackPurchase(recheck, tp("purchaseFailed"));
+  const { selected, select } = useWaybackSelectedPlan(plans);
 
   const store = native
     ? storeName()
     : `${tp("storeApple")} / ${tp("storeGoogle")}`;
+  const price = priceOf(selected);
 
   const signOut = useCallback(async () => {
     await waybackSignOut();
@@ -167,6 +168,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
           <WayBackTrialTerms
             trialDays={trialDays}
             price={price}
+            period={selected.period}
             store={store}
           />
         </div>
@@ -186,7 +188,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
             </WbPrimaryButton>
             <button
               type="button"
-              onClick={() => void tryRestore()}
+              onClick={() => void restore()}
               disabled={restoring}
               className="mx-auto flex w-fit items-center gap-2 py-1 text-[12.5px] font-extrabold text-wb-primary disabled:opacity-55"
             >
@@ -212,7 +214,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
             </p>
           </WbTile>
 
-          {restoreFailed && (
+          {nothingRestored && (
             <WbTile
               tone="quiet"
               className="px-5 py-4 text-[13px] font-medium leading-[1.5] text-wb-body"
@@ -239,17 +241,22 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
       footer={
         <>
           <WbPrimaryButton
-            onClick={() => void subscribe()}
+            onClick={() => void subscribe(selected.productId)}
             disabled={purchasing}
           >
             {purchasing && <Loader2 className="h-4 w-4 animate-spin" />}
             {tp("cta", { days: trialDays })}
           </WbPrimaryButton>
           <p className="text-center text-[12px] font-medium leading-[1.45] text-wb-muted">
-            {tp("renewNote", { price, period: tp("perYear"), store })}{" "}
+            {tp("renewNote", {
+              price,
+              period:
+                selected.period === "weekly" ? tp("perWeek") : tp("perYear"),
+              store,
+            })}{" "}
             <button
               type="button"
-              onClick={() => void tryRestore()}
+              onClick={() => void restore()}
               disabled={restoring}
               className="font-extrabold text-wb-primary disabled:opacity-55"
             >
@@ -262,23 +269,20 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
       <WbTopBar title={t("subTitle")} eyebrow={t("eyebrow")} />
 
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-end justify-between gap-3 rounded-[22px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
-          <div className="flex flex-col gap-1">
-            <span className="wb-mono text-[10.5px] tracking-[0.14em] text-wb-primary-soft uppercase">
-              {tp("trialBadge", { days: trialDays })}
-            </span>
-            <span className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">
-              {price}
-            </span>
-          </div>
-          <span className="pb-1 text-[13px] font-semibold text-wb-primary-soft">
-            {tp("perYear")}
-          </span>
-        </div>
+        <WayBackPlanPicker
+          plans={plans}
+          selected={selected}
+          onSelect={select}
+          priceOf={priceOf}
+          trialDays={trialDays}
+          locale={locale}
+        />
 
         <WbTile className="flex flex-col gap-2.5 px-5 py-[18px]">
           <p className="text-[13.5px] font-medium leading-[1.5] text-wb-body">
-            {t("subBody", { days: trialDays })}
+            {t(plans.length > 1 ? "subBodyChoice" : "subBody", {
+              days: trialDays,
+            })}
           </p>
           <div className="flex flex-col gap-1">
             {[tp("f1"), tp("f2"), tp("f3")].map((line) => (
@@ -292,7 +296,12 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
           </div>
         </WbTile>
 
-        <WayBackTrialTerms trialDays={trialDays} price={price} store={store} />
+        <WayBackTrialTerms
+          trialDays={trialDays}
+          price={price}
+          period={selected.period}
+          store={store}
+        />
 
         {error && (
           <WbTile
@@ -303,7 +312,7 @@ export function WayBackStartGate({ children }: { children: React.ReactNode }) {
           </WbTile>
         )}
 
-        {restoreFailed && !error && (
+        {nothingRestored && !error && (
           <WbTile
             tone="quiet"
             className="px-5 py-4 text-[13px] font-medium leading-[1.5] text-wb-body"

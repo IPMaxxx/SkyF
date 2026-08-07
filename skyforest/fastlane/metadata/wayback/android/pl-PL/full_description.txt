@@ -1,0 +1,37 @@
+WayBack pamięta twój punkt wejścia w teren — w górach czy nad jeziorami — i pokazuje drogę powrotną do tego punktu. Gdy wyprawa jest przygotowana, działa bez zasięgu.
+
+WayBack to aplikacja w subskrypcji. Zaczyna od 3 dni za darmo, potem kosztuje 1,99 USD tygodniowo albo 19,99 USD rocznie — do wyboru. Logujesz się, uruchamiasz okres próbny w Google Play i masz całą aplikację: nie ma okrojonej wersji darmowej ani funkcji odłożonych na wyższy plan.
+
+Zanim zejdziesz z drogi, dotknij „Wychodzę w teren”. Aplikacja stawia kotwicę w twojej pozycji GPS i zaczyna nagrywać wyprawę. Od tej chwili ekran pokazuje dwie rzeczy, które się liczą: kierunek do punktu wejścia i odległość do niego. Obie liczone są w telefonie, więc działają bez internetu i bez zasięgu.
+
+JAK TO DZIAŁA
+- Dotknij raz tam, gdzie schodzisz z drogi, żeby postawić kotwicę, albo ustaw punkt wejścia ręcznie na mapie, jeśli GPS się ociąga.
+- Idź. Punkt zapisuje się co dwie minuty, więc bateria tego nie odczuje.
+- Wracaj, kiedy chcesz: strzałka wskazuje punkt wejścia, a pod nią jest odległość.
+- Dotknij „Jestem z powrotem”, żeby zakończyć. Wyprawa trafia do historii razem z mapą, dystansem i czasem.
+
+KIERUNEK NAWET BEZ KOMPASU
+W ruchu kierunek bierze się z kursu GPS. W bezruchu możesz włączyć kompas telefonu. A jeśli urządzenie w ogóle nie ma czujnika kompasu, aplikacja poda stronę świata: „północny zachód, 850 m” — tyle wystarczy, żeby ruszyć we właściwą stronę.
+
+MAPY, KTÓRE DZIAŁAJĄ OFFLINE
+- Zapisz obszary mapy przed wyjściem: dotknij mapy, żeby ustawić obszar, i zoomem zdecyduj, ile obejmuje, albo wybierz promień i poziom szczegółowości.
+- Zapisują się obie warstwy — szlaki i zdjęcia satelitarne.
+- Ekran główny pokazuje twoją pozycję na mapie, więc widzisz, gdzie jesteś, i zapisujesz ten obszar jednym dotknięciem.
+- Otwórz aplikację zupełnie bez połączenia, a przejmie wbudowany ekran offline: kotwica, strzałka, kompas i zapisana mapa dalej działają.
+
+TWOJE WYPRAWY
+Historia trzyma każdą zakończoną wyprawę razem ze śladem na mapie, pokonanym dystansem i czasem spędzonym w terenie. Wyprawy należą do twojego konta, więc będą też w następnym telefonie.
+
+CZEGO SIĘ SPODZIEWAĆ
+- Nagrywanie idzie dalej z telefonem w kieszeni i wygaszonym ekranem, więc po zawróceniu ślad jest cały. Działa wyłącznie między „Wychodzę w teren” a „Jestem z powrotem”, nigdy poza wyprawą, a na pasku stanu wisi przy tym powiadomienie. Odcinki bez nagrywania rysowane są na mapie linią przerywaną.
+- Okres próbny włącza się raz, jeszcze przy zasięgu, bo Google Play potrzebuje do tego sieci. Potem WayBack działa w terenie zupełnie bez zasięgu.
+- WayBack to prosta pomoc w powrocie, a nie zamiennik papierowej mapy, kompasu ani uprzedzenia kogoś, dokąd idziesz.
+
+SUBSKRYPCJA
+- WayBack Premium (tygodniowa): tydzień, 1,99 USD, na start 3 dni za darmo.
+- WayBack Premium (roczna): rok, 19,99 USD, na start 3 dni za darmo.
+- Okres próbny jest bezpłatny. Po jego końcu subskrypcja odnawia się automatycznie w cenie wybranego planu, chyba że anulujesz ją co najmniej 24 godziny przed końcem bieżącego okresu.
+- Opłata pobierana jest z twojego konta Google Play. Subskrypcją możesz zarządzać i anulować ją w każdej chwili w Google Play.
+
+Warunki korzystania (EULA): https://wayback.skyforest.ai/offer
+Polityka prywatności: https://wayback.skyforest.ai/privacy

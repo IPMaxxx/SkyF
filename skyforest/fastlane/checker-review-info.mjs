@@ -26,10 +26,9 @@ const HERE = new URL("./", import.meta.url);
 const BUNDLE = "ai.skyforest.mushroomchecker";
 
 /**
- * Демо-аккаунт ревью — общий для всех приложений SkyForest. Учётная запись
- * разрешена в серверной проверке чеков (`REVIEW_SANDBOX_EMAILS` в
- * src/app/api/native/iap/verify-subscription), поэтому sandbox-покупка
- * ревьюера принимается и в продакшене.
+ * Демо-аккаунт ревью — общий для всех приложений SkyForest. Sandbox-покупка
+ * ревьюера принимается в продакшене независимо от учётной записи (см. appleHosts
+ * в src/lib/iap-store.ts), поэтому демо-аккаунт — удобство, а не условие.
  */
 const DEMO_EMAIL = process.env.CK_REVIEW_EMAIL || "appreview@skyforest.ai";
 const DEMO_PASSWORD =

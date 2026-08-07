@@ -25,9 +25,10 @@ const HERE = new URL("./", import.meta.url);
 const BUNDLE = "ai.skyforest.wayback";
 
 /**
- * Демо-аккаунт ревью. Учётная запись разрешена в серверной проверке чеков
- * (`REVIEW_SANDBOX_EMAILS` в src/app/api/native/iap/verify-subscription),
- * поэтому sandbox-покупка ревьюера принимается и в продакшене.
+ * Демо-аккаунт ревью: у него уже есть право на приложение, поэтому после входа
+ * экран оплаты не показывается вовсе. Ревьюер вправе и не пользоваться им —
+ * sandbox-покупка любой учётной записи проверяется в продакшене (см. appleHosts
+ * в src/lib/iap-store.ts), так что обычный путь покупки тоже открыт.
  */
 const DEMO_EMAIL = process.env.WB_REVIEW_EMAIL || "appreview@skyforest.ai";
 const DEMO_PASSWORD =
@@ -50,7 +51,13 @@ if (/[А-Яа-яЁё]/.test(NOTES)) {
   console.error("КИРИЛЛИЦА в заметках — ревьюер читает по-английски");
   process.exit(1);
 }
-console.log(`заметки: ${[...NOTES].length} симв.`);
+/** Потолок поля Review Notes: длиннее — 409 TOO_LONG уже после раскрытия пароля. */
+const NOTES_LIMIT = 4000;
+if ([...NOTES].length > NOTES_LIMIT) {
+  console.error(`заметки: ${[...NOTES].length} / ${NOTES_LIMIT} — не влезут в App Store Connect`);
+  process.exit(1);
+}
+console.log(`заметки: ${[...NOTES].length} / ${NOTES_LIMIT} симв.`);
 
 const KEY_ID = "TRS8NZAGX5";
 const ISSUER_ID = "31303d35-0acc-4d1a-89d4-872e31f2b28f";

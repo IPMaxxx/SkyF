@@ -146,9 +146,14 @@ export async function nativeGoogleSignIn(): Promise<void> {
       },
     });
 
+    // scopes здесь не передаём. Плагин сам запрашивает email, profile и openid,
+    // а любой переданный список считает дополнительным: на Android для таких
+    // scopes нужен MainActivity, реализующий его интерфейс, иначе вход падает с
+    // «You CANNOT use scopes without modifying the main activity». На iOS
+    // отсутствие списка даёт ровно те же три scope по умолчанию.
     const { result } = await SocialLogin.login({
       provider: "google",
-      options: { scopes: ["email", "profile"], nonce: nonceDigest },
+      options: { nonce: nonceDigest },
     });
 
     if (result.responseType !== "online" || !result.idToken) {

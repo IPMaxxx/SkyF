@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { useFlavorLocales } from "@/lib/useFlavorLocales";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -172,6 +172,7 @@ export function CheckerMoreSheet({
   const t = useTranslations("checker.menu");
   const tLegal = useTranslations("checker.paywall");
   const locale = useLocale();
+  const locales = useFlavorLocales();
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useCheckerTheme();
@@ -298,7 +299,7 @@ export function CheckerMoreSheet({
             middleware по одному адресу не отличил бы «выбрал этот язык» от
             «языка не выбирал» и снова показал бы английский. */}
         <SettingRow label={t("language")}>
-          {routing.locales.map((loc) => (
+          {locales.map((loc) => (
             <Link
               key={loc}
               href={pathname}

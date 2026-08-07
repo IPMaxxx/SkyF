@@ -4,8 +4,13 @@
 // цена в USA), локализации, вводные офферы, скриншот для ревью, доступность.
 // Google Play: продукты, базовые планы, цена в US, офферы, листинги.
 //
-// У приложения должен быть ровно один активный товар —
-// ai.skyforest.wayback.sub.yearly за 3.99 USD с триалом 3 дня.
+// У приложения два активных тарифа, у обоих триал 3 дня:
+// ai.skyforest.wayback.sub.weekly за 1.99 USD и .sub.yearly за 19.99 USD.
+//
+// Цен у территории бывает несколько: подняв цену одобренного товара, Apple
+// оставляет действующим подписчикам прежнюю (`preserved`) и назначает новую с
+// даты (`startDate`). Поэтому здесь печатаются все строки территории — по
+// одной было бы видно только половину картины.
 //
 // Запуск из каталога skyforest: node fastlane/wayback-subs-status.mjs
 import { readFileSync } from 'node:fs';
@@ -115,16 +120,28 @@ for (const g of groups.json.data || []) {
       const points = new Map(
         prices.included.filter((i) => i.type === 'subscriptionPricePoints').map((i) => [i.id, i.attributes]),
       );
-      const priceIn = (code) => {
-        const row = prices.data.find((p) => p.relationships?.territory?.data?.id === code);
-        return row ? points.get(row.relationships?.subscriptionPricePoint?.data?.id) : null;
-      };
-      const usa = priceIn('USA');
+      /** Все строки цены территории: действующая и запланированная смена. */
+      const rowsIn = (code) =>
+        prices.data
+          .filter((p) => p.relationships?.territory?.data?.id === code)
+          .map((p) => ({
+            point: points.get(p.relationships?.subscriptionPricePoint?.data?.id),
+            startDate: p.attributes.startDate,
+            preserved: p.attributes.preserved,
+          }));
+      const describe = (r) =>
+        `${r.point?.customerPrice ?? '—'}${r.startDate ? ` с ${r.startDate}` : ''}${r.preserved ? ' (действующим)' : ''}`;
+
+      const usa = rowsIn('USA');
       console.log(
-        `    цены: территорий ${prices.data.length} | USA ${usa ? `${usa.customerPrice} USD (proceeds ${usa.proceeds})` : 'НЕ ЗАДАНА'}`,
+        `    цены: строк ${prices.data.length} | USA ${
+          usa.length
+            ? usa.map((r) => `${describe(r)}${r.point ? ` (proceeds ${r.point.proceeds})` : ''}`).join(' | ')
+            : 'НЕ ЗАДАНА'
+        }`,
       );
       const spot = ['DEU', 'GBR', 'JPN', 'RUS', 'BLR']
-        .map((c) => `${c} ${priceIn(c)?.customerPrice ?? '—'}`)
+        .map((c) => `${c} ${rowsIn(c).map(describe).join(' | ') || '—'}`)
         .join(', ');
       console.log(`      выборочно: ${spot}`);
     }

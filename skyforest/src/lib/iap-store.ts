@@ -74,6 +74,32 @@ function appleToken(bundleId: string): string | null {
 }
 
 /**
+ * Хосты App Store Server API в порядке опроса: продакшен, затем песочница.
+ *
+ * Порядок и сам фолбэк — предписание Apple: у транзакции нет признака
+ * окружения, который сервер мог бы прочитать заранее, поэтому чек проверяют в
+ * продакшене, а «не найдено» считают указанием повторить в песочнице.
+ *
+ * Раньше песочница была доступна только аккаунтам из списка (демо-аккаунт App
+ * Review плюс IAP_SANDBOX_ALLOWLIST). Это и стало отказом 2.1(a) 6 августа
+ * 2026: ревьюер завёл свою учётную запись вместо демо-аккаунта и купил
+ * подписку сам — а покупки App Review ВСЕГДА идут в песочнице. Продакшен-хост
+ * ответил 404, проверка вернула «чек недействителен», и приложение осталось на
+ * экране оплаты навсегда: ни повторная покупка, ни восстановление помочь не
+ * могли. Списком адресов эту дыру не закрыть — почту ревьюера знать неоткуда.
+ *
+ * Открытость песочницы ничего не разменивает: покупка в ней требует
+ * Sandbox Apple Account, а такие учётные записи создаём в App Store Connect
+ * только мы, и в сборке из App Store StoreKit ими не пользуется.
+ */
+function appleHosts(): string[] {
+  const production = "https://api.storekit.itunes.apple.com";
+  const sandbox = "https://api.storekit-sandbox.itunes.apple.com";
+  if (process.env.APPLE_IAP_ENV === "sandbox") return [sandbox];
+  return [production, sandbox];
+}
+
+/**
  * Статус авто-возобновляемой подписки через App Store Server API
  * (Get All Subscription Statuses). transactionId — любой transactionId
  * подписки (в т.ч. originalTransactionId).
@@ -86,24 +112,13 @@ function appleToken(bundleId: string): string | null {
  */
 export async function getAppleSubscription(
   transactionId: string,
-  allowSandbox: boolean,
   expectedProductId?: string,
   bundleId: string = BUNDLE_ID,
 ): Promise<StoreSubscriptionState | null> {
   const token = appleToken(bundleId);
   if (!token) throw new Error("apple_not_configured");
 
-  const hosts =
-    process.env.APPLE_IAP_ENV === "sandbox"
-      ? ["https://api.storekit-sandbox.itunes.apple.com"]
-      : allowSandbox
-        ? [
-            "https://api.storekit.itunes.apple.com",
-            "https://api.storekit-sandbox.itunes.apple.com",
-          ]
-        : ["https://api.storekit.itunes.apple.com"];
-
-  for (const host of hosts) {
+  for (const host of appleHosts()) {
     const res = await fetch(
       `${host}/inApps/v1/subscriptions/${encodeURIComponent(transactionId)}`,
       { headers: { Authorization: `Bearer ${token}` } },

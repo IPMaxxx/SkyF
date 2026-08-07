@@ -8,6 +8,7 @@
  * В обычном браузере/PWA все функции — no-op (замок недоступен).
  */
 import { isNativeApp } from "./capacitor";
+import { plainApi } from "./plainApi";
 
 const PREF_KEY = "biometric_lock_enabled";
 
@@ -42,16 +43,14 @@ function hasNativeBiometry(): boolean {
 
 /**
  * Прокси плагина нельзя возвращать из async-функции напрямую: движок проверяет
- * у результата `.then` (thenable), а прокси Capacitor трактует это как вызов
- * метода плагина и падает («Preferences.then() is not implemented»). Поэтому
- * оборачиваем в объект.
+ * у результата `.then`, а прокси Capacitor трактует это как вызов метода
+ * плагина, которого нет, — и промис не разрешается никогда. Обычный объект
+ * собирает `plainApi`: способ на весь проект один, чтобы новое место нельзя
+ * было закрыть «почти так же» (подробно — в native/plainApi).
  */
 async function prefs() {
   const { Preferences } = await import("@capacitor/preferences");
-  return {
-    get: (options: { key: string }) => Preferences.get(options),
-    set: (options: { key: string; value: string }) => Preferences.set(options),
-  };
+  return plainApi(Preferences, ["get", "set"]);
 }
 
 /** Доступна ли биометрия на устройстве. */

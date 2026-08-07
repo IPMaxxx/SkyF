@@ -1,6 +1,6 @@
 {
   "name": "skyforest",
-  "version": "1.62.0",
+  "version": "1.75.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "cap:sync": "cap sync",
+    "android:release": "bash scripts/android-release.sh",
     "icons": "npx @capacitor/assets generate --iconBackgroundColor '#0e1710' --iconBackgroundColorDark '#0e1710' --splashBackgroundColor '#0e1710' --splashBackgroundColorDark '#0e1710'",
     "cap:ios": "cap open ios",
     "cap:android": "cap open android"

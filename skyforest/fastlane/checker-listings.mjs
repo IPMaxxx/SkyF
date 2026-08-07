@@ -7,6 +7,7 @@
  * Запуск из каталога skyforest:
  *   node fastlane/checker-listings.mjs            — показать, что в сторах сейчас
  *   node fastlane/checker-listings.mjs --apply    — записать и перечитать
+ *   node fastlane/checker-listings.mjs --apply --play-only — только Google Play
  *
  * Рядом лежит `wayback-listings.mjs` — тот же скрипт для WayBack. Приложения
  * держим отдельными файлами намеренно: у каждого свои bundle id, домен и
@@ -25,6 +26,7 @@ import { readFileSync } from "node:fs";
 import { createSign } from "node:crypto";
 
 const APPLY = process.argv.includes("--apply");
+const PLAY_ONLY = process.argv.includes("--play-only");
 
 const HERE = new URL("./", import.meta.url);
 const META = new URL("./metadata/checker/", HERE);
@@ -123,7 +125,24 @@ const versions = await asc("GET", `/v1/apps/${app.id}/appStoreVersions?limit=5`)
 const version =
   versions.data.find((v) => (v.attributes.appVersionState || v.attributes.appStoreState) === "PREPARE_FOR_SUBMISSION") ||
   versions.data[0];
-console.log(`версия ${version.attributes.versionString} [${version.attributes.appVersionState || version.attributes.appStoreState}]`);
+const versionState = version.attributes.appVersionState || version.attributes.appStoreState;
+console.log(`версия ${version.attributes.versionString} [${versionState}]`);
+
+/**
+ * Можно ли править метаданные версии, выясняется ответом Apple, а не списком
+ * состояний. Списку верить нельзя: у выпущенной версии
+ * (`READY_FOR_DISTRIBUTION`) описание закрыто, а у поданной на ревью
+ * (`WAITING_FOR_REVIEW`) Apple ту же правку принимает и берёт её в то же ревью,
+ * — так и уехало исправление цен Checker. Поэтому скрипт пробует записать и
+ * разбирает отказ.
+ *
+ * Важно, что отказ Apple больше не обрывает прогон: Google Play принимает
+ * листинг в любой момент, и терять его заливку из-за закрытого App Store
+ * незачем. Тексты остаются в репозитории и уедут со следующей версией.
+ */
+const STATE_ERROR = /409|STATE_ERROR|INVALID_STATE|cannot be edited/i;
+/** Заполняется, если Apple отказала: влияет на строгость перечитывания. */
+let ascBlocked = false;
 const verLocs = await asc("GET", `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations`);
 const verLoc = verLocs.data.find((l) => l.attributes.locale === LOCALE);
 if (!verLoc) throw new Error(`нет локали ${LOCALE} у версии ${version.id}`);
@@ -137,18 +156,29 @@ for (const k of ["description", "keywords", "promotionalText", "whatsNew"]) {
 console.log(`  supportUrl: ${verLoc.attributes.supportUrl ?? "(пусто)"}`);
 console.log(`  marketingUrl: ${verLoc.attributes.marketingUrl ?? "(пусто)"}`);
 
-if (APPLY) {
-  await asc("PATCH", `/v1/appInfoLocalizations/${infoLoc.id}`, {
-    data: {
-      type: "appInfoLocalizations",
-      id: infoLoc.id,
-      attributes: {
-        subtitle: TEXTS.subtitle.value,
-        privacyPolicyUrl: TEXTS.privacyPolicyUrl.value,
+if (APPLY && PLAY_ONLY) {
+  ascBlocked = true;
+  console.log("  (--play-only: в App Store ничего не пишу)");
+}
+
+if (APPLY && !PLAY_ONLY) {
+  try {
+    await asc("PATCH", `/v1/appInfoLocalizations/${infoLoc.id}`, {
+      data: {
+        type: "appInfoLocalizations",
+        id: infoLoc.id,
+        attributes: {
+          subtitle: TEXTS.subtitle.value,
+          privacyPolicyUrl: TEXTS.privacyPolicyUrl.value,
+        },
       },
-    },
-  });
-  console.log("записал subtitle + privacyPolicyUrl");
+    });
+    console.log("записал subtitle + privacyPolicyUrl");
+  } catch (e) {
+    if (!STATE_ERROR.test(String(e))) throw e;
+    ascBlocked = true;
+    console.log(`subtitle/privacyPolicyUrl закрыты в состоянии ${versionState}`);
+  }
 
   const verAttrs = {
     description: TEXTS.description.value,
@@ -167,10 +197,21 @@ if (APPLY) {
     // Для первой версии Apple обычно не принимает whatsNew — тогда пишем без него.
     console.log(`с whatsNew не прошло: ${String(e).slice(0, 200)}`);
     delete verAttrs.whatsNew;
-    await asc("PATCH", `/v1/appStoreVersionLocalizations/${verLoc.id}`, {
-      data: { type: "appStoreVersionLocalizations", id: verLoc.id, attributes: verAttrs },
-    });
-    console.log("записал без whatsNew (для версии 1.0 поле недоступно)");
+    try {
+      await asc("PATCH", `/v1/appStoreVersionLocalizations/${verLoc.id}`, {
+        data: { type: "appStoreVersionLocalizations", id: verLoc.id, attributes: verAttrs },
+      });
+      console.log("записал без whatsNew (для версии 1.0 поле недоступно)");
+    } catch (e2) {
+      if (!STATE_ERROR.test(String(e2))) throw e2;
+      // Описание закрыто целиком — это состояние выпущенной версии. Прогон на
+      // этом не останавливается: Google Play ниже принимает листинг всегда.
+      ascBlocked = true;
+      console.log(
+        `App Store НЕ ПРИНЯЛ правку: версия ${version.attributes.versionString} в состоянии ${versionState}.` +
+          "\nТексты лежат в metadata/checker/ и уедут со следующей версией — см. чек-лист в README.",
+      );
+    }
   }
 }
 
@@ -308,23 +349,39 @@ const cmp = (label, got, want) => {
 };
 
 const infoLoc2 = await asc("GET", `/v1/appInfoLocalizations/${infoLoc.id}`);
-cmp("ASC subtitle", infoLoc2.data.attributes.subtitle, TEXTS.subtitle.value);
-cmp("ASC privacyPolicyUrl", infoLoc2.data.attributes.privacyPolicyUrl, TEXTS.privacyPolicyUrl.value);
-
 const verLoc2 = await asc("GET", `/v1/appStoreVersionLocalizations/${verLoc.id}`);
 const a = verLoc2.data.attributes;
-cmp("ASC description", a.description, TEXTS.description.value);
-cmp("ASC keywords", a.keywords, TEXTS.keywords.value);
-cmp("ASC promotionalText", a.promotionalText, TEXTS.promotionalText.value);
-if (a.whatsNew) {
-  cmp("ASC whatsNew", a.whatsNew, TEXTS.whatsNew.value);
+
+if (!ascBlocked) {
+  cmp("ASC subtitle", infoLoc2.data.attributes.subtitle, TEXTS.subtitle.value);
+  cmp("ASC privacyPolicyUrl", infoLoc2.data.attributes.privacyPolicyUrl, TEXTS.privacyPolicyUrl.value);
+  cmp("ASC description", a.description, TEXTS.description.value);
+  cmp("ASC keywords", a.keywords, TEXTS.keywords.value);
+  cmp("ASC promotionalText", a.promotionalText, TEXTS.promotionalText.value);
+  if (a.whatsNew) {
+    cmp("ASC whatsNew", a.whatsNew, TEXTS.whatsNew.value);
+  } else {
+    // У первой версии в App Store раздела «What's New» нет: API отвечает 409
+    // STATE_ERROR «Attribute 'whatsNew' cannot be edited at this time».
+    console.log("     ASC whatsNew: недоступно у первой версии — так и должно быть");
+  }
+  cmp("ASC supportUrl", a.supportUrl, TEXTS.supportUrl.value);
+  cmp("ASC marketingUrl", a.marketingUrl, TEXTS.marketingUrl.value);
 } else {
-  // У первой версии в App Store раздела «What's New» нет: API отвечает 409
-  // STATE_ERROR «Attribute 'whatsNew' cannot be edited at this time».
-  console.log("     ASC whatsNew: недоступно у первой версии — так и должно быть");
+  // Писать было нельзя, поэтому расхождение здесь — не поломка прогона, а
+  // известный долг. Он всё равно называется вслух: молчаливое «всё сошлось»
+  // при устаревшем описании в App Store — ровно то, из-за чего цены в карточке
+  // разъехались с товарами.
+  for (const [label, got, want] of [
+    ["description", a.description, TEXTS.description.value],
+    ["promotionalText", a.promotionalText, TEXTS.promotionalText.value],
+  ]) {
+    const same = (got ?? "") === want;
+    console.log(
+      `     ASC ${label}: ${same ? "совпадает" : "СТАРЫЙ ТЕКСТ — ждёт следующей версии"}`,
+    );
+  }
 }
-cmp("ASC supportUrl", a.supportUrl, TEXTS.supportUrl.value);
-cmp("ASC marketingUrl", a.marketingUrl, TEXTS.marketingUrl.value);
 
 const check = await play("POST", "/edits", {});
 try {

@@ -8,6 +8,7 @@ import {
   flavorConfig,
   internalRewrite,
   isAnonymousAllowed,
+  isFlavorLocale,
   isInternalPath,
   isPathAllowed,
 } from "./lib/appFlavor";
@@ -40,12 +41,29 @@ export async function middleware(request: NextRequest) {
   const urlLocale = routing.locales.find(
     (loc) => rawPathname === `/${loc}` || rawPathname.startsWith(`/${loc}/`),
   );
+
+  // Язык из URL, которого это приложение не знает. Маршруты испанского,
+  // польского и французского есть в сборке ради WayBack (src/i18n/locales.ts),
+  // но у SkyForest и Checker на этих языках нет ни строчки копии. Показать по
+  // такому адресу английскую заглушку под испанским префиксом — хуже, чем
+  // честно увести на тот же путь без префикса, где приложение говорит на своём
+  // языке. Проверка стоит до всего остального: дальше `locale` уже подставляют
+  // в редиректы и в rewrite.
+  if (urlLocale && !isFlavorLocale(flavor, urlLocale)) {
+    const withoutLocale = request.nextUrl.clone();
+    withoutLocale.pathname = flavorPathname;
+    return NextResponse.redirect(withoutLocale);
+  }
+
   const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
   const locale =
     urlLocale ??
     (flavor === "skyforest"
       ? routing.defaultLocale
-      : (routing.locales.find((loc) => loc === cookieLocale) ??
+      : // Кука переживает переход между приложениями на соседних поддоменах, и
+        // язык из неё может быть чужим: испанский из WayBack не должен всплыть
+        // в Mushroom Checker. Спрашиваем у приложения, а не у сборки.
+        (flavorCfg.locales.find((loc) => loc === cookieLocale) ??
         flavorCfg.defaultLocale));
   // Публичные URL остаются без префикса для локали по умолчанию (as-needed).
   const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;

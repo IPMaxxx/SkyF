@@ -4,4 +4,22 @@
     <string name="title_activity_main">WayBack</string>
     <string name="package_name">ai.skyforest.wayback</string>
     <string name="custom_url_scheme">ai.skyforest.wayback</string>
+
+    <!-- Постоянное уведомление записи пути: плагин фоновой геолокации читает
+         эти три строки по именам и без них берёт свои умолчания — канал
+         «Background Tracking» и цветную ic_launcher, которая в статус-баре
+         вырождается в белый квадрат. Имя канала человек видит в системных
+         настройках уведомлений, поэтому оно должно называть поход, а не
+         технологию. Текст самого уведомления сюда не попадает: он приходит из
+         словаря WayBack на языке интерфейса. -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Recording your way back</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_wayback</string>
+    <string name="capacitor_background_geolocation_notification_color">#5FB573</string>
+
+    <!-- Канал своей службы записи (TrackService). Имя и описание человек видит
+         в системных настройках уведомлений, поэтому они называют поход, а не
+         технологию. Текст самого уведомления приходит из словаря WayBack на
+         языке интерфейса, здесь только запасной вариант. -->
+    <string name="wayback_track_channel_name">Recording your way back</string>
+    <string name="wayback_track_channel_description">Shows while WayBack is recording a hike, so you always know the trail is being saved.</string>
 </resources>

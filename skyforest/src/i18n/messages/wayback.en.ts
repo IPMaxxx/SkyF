@@ -4,7 +4,7 @@
  * Отдельный неймспейс: экраны флейвора переписаны целиком, а старые ключи
  * (`track.*`, `auth.*`, `account.*`) продолжают обслуживать SkyForest и
  * Checker без изменений. Копирайт короче прежнего — так задумано в дизайне:
- * тексты читают на ходу, в лесу, одной рукой.
+ * тексты читают на ходу, в походе, одной рукой.
  */
 export default {
   /** Нижнее меню: четыре пункта, подписи должны быть короткими. */
@@ -41,12 +41,19 @@ export default {
   home: {
     /** Слово на главной кнопке. Капс задаёт CSS (.wb-start-word). */
     start: "Start",
-    startButton: "I'm entering the forest",
+    startButton: "I'm heading outdoors",
     startingButton: "Getting your location…",
     pickOnMap: "Set entry point on the map",
     howTitle: "How it works",
-    how1: "Tap at the forest edge — we drop an anchor by GPS",
-    how2: "Points as you walk — recording keeps going with the screen off",
+    how1: "Tap where you set off — we drop an anchor by GPS",
+    /**
+     * Про запись — два варианта. Нейтральный верен везде, включая сборки без
+     * фоновой службы и браузер; сильный показывается только там, где своя
+     * служба переднего плана действительно есть. Выбор — lib/wayback/recordingCopy.
+     */
+    how2: "Points are dropped as you walk — battery-friendly",
+    how2Background:
+      "Points are dropped as you walk — recording keeps going with the screen off and the app in the background",
     how3: "Arrow and distance lead you back — no internet needed",
     localOnly: "The walk is recorded on this device; finished walks are saved to your account.",
     mapLocating: "finding your position…",
@@ -82,10 +89,22 @@ export default {
     locate: "Use my location",
   },
 
+  // Журнал записи пути: техническая выписка для нас, подписи — для человека,
+  // который её присылает.
+  diagnostics: {
+    title: "Recording log",
+    hint: "Technical notes about the last recording events — they are kept whether or not a hike is under way. Copy them and send them to support: that is usually enough for us to see what went wrong.",
+    empty: "Nothing recorded yet.",
+    copy: "Copy the log",
+    copied: "Log copied",
+    clear: "Clear",
+    close: "Close",
+  },
+
   active: {
-    title: "In the forest",
+    title: "On the way",
     toEntry: "to entry",
-    inForest: "in forest",
+    onTheWalk: "on the walk",
     atTheEntry: "at the entry",
     since: "since {time}",
     directionText: "Entry point: {dir}, {dist}",
@@ -105,7 +124,14 @@ export default {
     layerTrails: "Trails",
     layerSatellite: "Satellite",
     expandMap: "Open the map full screen",
-    gapHint: "dashed — stretches with no recording (no satellites in view)",
+    /**
+     * Причина разрыва зависит от сборки, поэтому строк две. Без фоновой службы
+     * пунктир — это уход в фон, и называть причину нечестно: карта её не знает.
+     * Со службой запись фон переживает, и остаётся ровно одна причина —
+     * телефон не видел спутников. Выбор — lib/wayback/recordingCopy.
+     */
+    gapHint: "dashed — stretches with no recording",
+    gapHintBackground: "dashed — stretches where the phone could not see satellites",
     /**
      * Постоянное уведомление Android, пока идёт запись. Android показывает его
      * всё время похода, поэтому текст должен объяснять, почему оно тут, и не
@@ -114,13 +140,66 @@ export default {
     bgNotice: {
       title: "Recording your way back",
       message: "Keeps the trail to your entry point while the screen is off",
+      /**
+       * Уведомления выключены: запись идёт, но человек её не видит. Android
+       * второй раз диалог не покажет, поэтому единственный выход — настройки.
+       */
+      blockedTitle: "Notifications for WayBack are off",
+      blockedBody: "The walk is being recorded, but you won't see it on the lock screen.",
+      blockedAction: "Turn on",
+    },
+    /**
+     * Состояние записи словами. Молчать о том, что путь не пишется, нельзя:
+     * человек узнаёт об этом, только когда путь уже понадобился, — а именно
+     * так поломка записи и доехала однажды до всех установленных приложений.
+     */
+    recordingIssue: {
+      offTitle: "The trail is not being recorded",
+      offBody: "We can't reach location right now. Start the walk again.",
+      /**
+       * Спокойный тон намеренно: путь пишется, просто с погашенным экраном
+       * запись прервётся. Пугать тут нечем.
+       */
+      foregroundOnlyTitle: "Recording while the app is open",
+      foregroundOnlyBody: "With the screen off the trail may have gaps.",
+      updateBody: "Update WayBack so the trail keeps going with the screen off.",
+      preciseBody:
+        "Allow precise location so the trail keeps going with the screen off.",
+      locationDeniedBody:
+        "Allow WayBack to use location so the trail keeps going with the screen off.",
+      preciseAction: "Settings",
+    },
+    /**
+     * Строка состояния на экране похода. Тост человек пролистывает, а спросить
+     * его «что было написано» потом невозможно — значит состояние записи должно
+     * быть видно в любой момент, вместе с кодом отказа для пересылки.
+     */
+    recordingStatus: {
+      on: "Recording with the screen off",
+      foregroundOnly: "Recording while the app is open",
+      off: "The trail is not being recorded",
+      bodyOn: "The notification above stays until you finish the walk.",
+      bodyNoNotice:
+        "Recording works, but the notification is hidden — turn notifications on to see it on the lock screen.",
+      bodyStarting: "Setting up recording with the screen off…",
+      bodyForegroundOnly: "Screen-off recording is not running, so the trail may have gaps.",
+      bodyNothing: "We can't reach location right now.",
+      bodyUnsupported:
+        "This version keeps recording only while the app is open. Update WayBack for the screen-off trail.",
+      bodyLocationDenied: "WayBack has no access to location.",
+      bodyPrecise: "Precise location is off, so the screen-off trail can't start.",
+      bodyLocationOff: "Location is off on this phone.",
+      bodyFailed: "The phone did not let the recording service start.",
+      settings: "Open settings",
+      copy: "copy the code",
+      copied: "Code copied",
     },
     offlineMapTitle: "Offline map",
     offlineMapAround:
       "{count, plural, one {# area} other {# areas}} · {radius} km around the anchor",
     offlineMapNone: "no areas around the anchor",
     offlineMapManage: "Manage",
-    finish: "I'm out of the forest",
+    finish: "I'm back from outdoors",
   },
 
   finish: {
@@ -230,8 +309,8 @@ export default {
       "Walks marked “on this device” live only here. Sign in to keep them if you change phones.",
     emptyTitle: "No walks saved yet",
     emptyBody:
-      "Finish your first walk and it will appear here — with the map, distance and time in the forest.",
-    emptyAction: "I'm entering the forest",
+      "Finish your first walk and it will appear here — with the map, distance and time on the way.",
+    emptyAction: "I'm heading outdoors",
   },
 
   auth: {
@@ -285,21 +364,39 @@ export default {
    */
   paywall: {
     title: "WayBack Premium",
-    // Тариф один — годовой. Ключей месячного периода здесь нет намеренно.
+    /* Тарифа два — неделя и год. Месячного нет: см. FLAVORS.wayback. */
+    weekly: "Weekly",
     yearly: "Yearly",
+    /** Выбор тарифа для чтения с экрана: подписи «Weekly»/«Yearly» сами по себе не объясняют, что это группа. */
+    planPickerLabel: "Choose a plan",
     trialBadge: "{days, plural, one {# day free} other {# days free}}",
+    /**
+     * Выгода годового против 52 недельных списаний. Процент считает
+     * `yearlySavings` по ценам стора — числа в тексте нет намеренно, иначе
+     * оно разошлось бы с валютой покупателя.
+     */
+    saveBadge: "save {percent}%",
+    planHintYearly:
+      "{days, plural, one {# day free} other {# days free}} · {price} / week",
+    perWeek: "/ week",
     perYear: "/ year",
     f1: "Unlimited offline map areas",
     f2: "Full walk history, synced across phones",
     f3: "Satellite layer and maximum detail",
     cta: "{days, plural, one {Start # free day} other {Start # free days}}",
     renewNote:
-      "Then {price}{period}. Renews automatically, cancel any time in the {store}.",
-    /* Полное раскрытие условий — требование обоих сторов на экране покупки. */
+      "Then {price} {period}. Renews automatically, cancel any time in the {store}.",
+    /* Полное раскрытие условий — требование обоих сторов на экране покупки.
+       Периодичность списания называется по выбранному тарифу: «per week» и
+       «per year» — разные обещания, подставлять одно вместо другого нельзя. */
     termsTitle: "Before you subscribe",
-    termsTrial:
+    termsTrialWeek:
+      "{days, plural, one {# day free} other {# days free}}, then {price} per week.",
+    termsTrialYear:
       "{days, plural, one {# day free} other {# days free}}, then {price} per year.",
-    termsRenew:
+    termsRenewWeek:
+      "The subscription renews automatically every week until you cancel it.",
+    termsRenewYear:
       "The subscription renews automatically every year until you cancel it.",
     termsCancel:
       "Cancel any time in the {store}, at least 24 hours before the period ends.",
@@ -308,11 +405,22 @@ export default {
     terms: "Terms of Use (EULA)",
     privacy: "Privacy Policy",
     restore: "Restore",
+    /**
+     * Отказ, причину которого не назвал ни стор, ни наш сервер. Здесь обязан
+     * стоять именно текст ошибки: раньше на это место подставлялась подпись
+     * кнопки («Start 3 free days»), и человек с оплаченной подпиской читал в
+     * красной рамке приглашение начать пробный период.
+     */
+    purchaseFailed:
+      "The purchase did not complete. Please try again, or use “Restore” if you have already paid.",
+    nothingRestored:
+      "No subscription found in this {store} account. Check that you are signed in with the account that paid for it.",
     webNote:
       "Subscriptions are purchased in the mobile app — open WayBack on your phone.",
     activeBadge: "Active",
     activeTitle: "Premium until {date}",
     activeMeta: "{plan} · renews automatically · {price}",
+    planWeekly: "Weekly plan",
     planYearly: "Yearly plan",
     manage: "Manage subscription",
     unlockedTitle: "What's unlocked",
@@ -339,13 +447,19 @@ export default {
       "WayBack Premium is tied to your account: that is how the trial survives a new phone and how “Restore purchases” finds it again.",
     authEmail: "Continue with email",
     subTitle: "Start your free trial",
+    /**
+     * Две строки, потому что тарифов на экране бывает один или два — список
+     * приходит из стора. Обещать выбор там, где его нет, нельзя.
+     */
     subBody:
       "{days, plural, one {# day free, then the yearly plan} other {# days free, then the yearly plan}}. You can cancel before it ends and pay nothing.",
+    subBodyChoice:
+      "{days, plural, one {# day free on either plan} other {# days free on either plan}}. You can cancel before the trial ends and pay nothing.",
     signedInAs: "signed in as {email}",
     switchAccount: "Use another account",
     offlineTitle: "No connection",
     offlineBody:
-      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works in the forest with no signal.",
+      "The trial has to be set up once while online — the {store} needs the network. After that WayBack works out there with no signal at all.",
     offlineRestore: "Already subscribed? Restore purchases",
     retry: "Try again",
     checking: "Checking your subscription…",
@@ -402,7 +516,19 @@ export default {
   },
 
   splash: {
-    tagline: "Remembers where you entered the forest",
+    tagline: "Remembers where you started",
     footer: "works offline · no account needed",
+  },
+
+  /**
+   * Витрина wayback.skyforest.ai — единственный экран, который человек видит
+   * до установки. Копия жила прямо в разметке страницы двумя ветками `en ? …`,
+   * и с пятью языками такая ветка перестала помещаться в голову.
+   */
+  landing: {
+    tagline: "Always find your way back to where you started",
+    text: "Mark your entry point — the arrow and offline map will lead you back even with no internet and no mobile signal. Download the map of your area in advance.",
+    cta: "Open the map",
+    poweredBy: "Powered by SkyForest",
   },
 } as const;

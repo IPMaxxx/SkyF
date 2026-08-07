@@ -7,6 +7,9 @@ export const skyforestFlavor: FlavorConfig = {
   name: "SkyForest",
   // Язык сайта задаётся сборкой (.by — русский, .ai — английский).
   defaultLocale,
+  // Два языка: весь контент сайта — блог, посадочные, юридические страницы —
+  // написан только по-русски и по-английски. Языки WayBack сюда не приходят.
+  locales: ["ru", "en"],
   homePath: "/dashboard",
   allowedPaths: null,
   anonymousPaths: [],

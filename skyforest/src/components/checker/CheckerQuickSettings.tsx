@@ -21,7 +21,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { useFlavorLocales } from "@/lib/useFlavorLocales";
 import {
   CHECKER_LOCALE_LABELS,
   rememberCheckerLocale,
@@ -32,6 +32,7 @@ import { useCheckerTheme } from "@/components/checker/CheckerThemeProvider";
 export function CheckerQuickSettings() {
   const t = useTranslations("checker.menu");
   const locale = useLocale();
+  const locales = useFlavorLocales();
   const pathname = usePathname();
   const { theme, setTheme } = useCheckerTheme();
 
@@ -42,7 +43,7 @@ export function CheckerQuickSettings() {
         aria-label={t("language")}
         className="flex items-center gap-0.5 rounded-full border border-ck-border bg-ck-surface p-[3px]"
       >
-        {routing.locales.map((loc) => (
+        {locales.map((loc) => (
           <Link
             key={loc}
             href={pathname}

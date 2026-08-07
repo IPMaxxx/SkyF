@@ -145,9 +145,22 @@ export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
     fallbackPrice: usd(CHECKER_PLAN?.priceYearlyUsd),
     bundleId: CHECKER_BUNDLE_ID,
   },
-  // ---- WayBack: ЕДИНСТВЕННЫЙ товар — годовая подписка с триалом 3 дня,
-  // без токенов (подписка = полный доступ к приложению, тир "wayback").
-  // Месячного товара нет намеренно: см. FLAVORS.wayback.subscriptionPlan.
+  // ---- WayBack: два тарифа — неделя и год, у обоих триал 3 дня, без токенов
+  // (подписка = полный доступ к приложению, тир "wayback"). Месячного товара
+  // нет намеренно: см. FLAVORS.wayback.subscriptionPlan.
+  //
+  // Оба товара обязаны быть здесь независимо от того, что показывает экран
+  // оплаты: по этому списку плагин регистрирует товары в сторе, сервер
+  // опознаёт чек (isSubscriptionProduct → verify-subscription) и крон
+  // перепроверяет продления. Товар, которого тут нет, отправил бы чек в роут
+  // разовых покупок.
+  {
+    productId: "ai.skyforest.wayback.sub.weekly",
+    tier: "wayback",
+    period: "weekly",
+    fallbackPrice: usd(WAYBACK_PLAN?.priceWeeklyUsd),
+    bundleId: WAYBACK_BUNDLE_ID,
+  },
   {
     productId: "ai.skyforest.wayback.sub.yearly",
     tier: "wayback",

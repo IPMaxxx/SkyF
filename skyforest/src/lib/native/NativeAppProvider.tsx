@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { flavorConfig, getClientFlavor } from "@/lib/appFlavor";
 import { isNativeApp, getPlatform } from "./capacitor";
+import { appPlugin } from "./plugins";
+import { loadChunk } from "@/lib/offline/deadline";
 import { navigateToDeepLink, takeLaunchUrl } from "./deepLinks";
 
 /**
@@ -74,7 +76,13 @@ export function NativeAppProvider() {
       // только про тёмный бренд и перебивали бы этот выбор.
       if (!flavorConfig(getClientFlavor()).themeSwitch) {
         try {
-          const { StatusBar, Style } = await import("@capacitor/status-bar");
+          // Со сроком: дальше по этой же цепочке ставятся слушатели ссылок и
+          // аппаратной кнопки «назад». Кусок бандла со статус-баром, который
+          // не приехал, забирал с собой и их.
+          const { StatusBar, Style } = await loadChunk(
+            "@capacitor/status-bar",
+            () => import("@capacitor/status-bar"),
+          );
           await StatusBar.setStyle({ style: Style.Dark });
           if (platform === "android") {
             await StatusBar.setBackgroundColor({ color: "#0f1a12" });
@@ -86,7 +94,7 @@ export function NativeAppProvider() {
 
       // --- Deep links (OAuth callback, подтверждение почты, рефералы) ---
       try {
-        const { App } = await import("@capacitor/app");
+        const { App } = await appPlugin();
         const sub = await App.addListener("appUrlOpen", ({ url }) => {
           if (disposed) return;
           navigateToDeepLink(url, (path) => router.push(path));
