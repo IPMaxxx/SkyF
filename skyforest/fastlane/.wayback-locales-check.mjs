@@ -89,6 +89,47 @@ function readCatalog(locale) {
   );
 }
 
+/**
+ * Полное дерево сообщений языка — так же, как его собирает сборка.
+ *
+ * `en.ts` не самодостаточен: он сшивает области (`dashboard`, `account`,
+ * `payment` …) из соседних файлов. Резолвер идёт по его импортам и подставляет
+ * загруженные модули, поэтому «английский» здесь — то же самое дерево, которое
+ * увидит `next-intl`, а не половина от него.
+ */
+function loadMessageTree(file) {
+  const source = readFileSync(new URL(`i18n/messages/${file}.ts`, SRC), "utf8");
+  const names = [];
+  const values = [];
+  const body = source.replace(
+    /^import\s+(?:(\w+)\s*(?:,\s*)?)?(?:\{([^}]*)\})?\s*from\s+"\.\/([\w.]+)";?$/gm,
+    (_, def, named, mod) => {
+      const imported = loadCatalog(
+        readFileSync(new URL(`i18n/messages/${mod}.ts`, SRC), "utf8"),
+        `${mod}.ts`,
+      );
+      if (def) {
+        names.push(def);
+        values.push(imported.default);
+      }
+      for (const raw of (named ?? "").split(",")) {
+        const name = raw.trim();
+        if (!name) continue;
+        names.push(name);
+        values.push(imported[name]);
+      }
+      return "";
+    },
+  );
+
+  const js = body
+    .replace(/\bas const\b/g, "")
+    .replace(/^export default /m, "module.exports.default = ");
+  const mod = { exports: {} };
+  new Function("module", "exports", ...names, js)(mod, mod.exports, ...values);
+  return mod.exports.default;
+}
+
 /** Плоская карта «путь ключа → строка». Массивы разворачиваются по индексу. */
 function flatten(value, prefix = "", out = new Map()) {
   for (const [key, item] of Object.entries(value)) {
@@ -99,12 +140,19 @@ function flatten(value, prefix = "", out = new Map()) {
   return out;
 }
 
-/** Все части словаря приложения: экраны, брендинг и общие ключи. */
+/**
+ * Накладка языка в терминах общего дерева сообщений.
+ *
+ * Ключи именуются ровно так, как их спрашивает `useTranslations`: словарь
+ * экранов — `wayback.*`, карточка приложения — `flavor.wayback.*`, общие
+ * области (вход, пароль, 404) — своими именами. Благодаря этому накладку можно
+ * сравнивать с английским деревом ключ в ключ.
+ */
 function catalogParts(mod) {
   const parts = new Map();
   flatten(mod.default ?? {}, "wayback", parts);
-  if (mod.waybackBrand) flatten(mod.waybackBrand, "flavor.wayback", parts);
-  if (mod.waybackShared) flatten(mod.waybackShared, "shared", parts);
+  if (mod.waybackBrand) flatten({ wayback: mod.waybackBrand }, "flavor", parts);
+  if (mod.waybackShared) flatten(mod.waybackShared, "", parts);
   return parts;
 }
 
@@ -137,33 +185,63 @@ function buildLocales() {
 /* ------------------------------------------------------------------ */
 
 /**
- * Строки, которые обязаны совпадать с английскими во всех языках: знак
- * действия на главной кнопке (так задумано в дизайне и записано в словаре),
- * имена сторов и продуктов, обозначения единиц и биометрии.
+ * Слова, которые законно совпадают с английскими: имена продуктов и сторов,
+ * обозначения единиц и заимствования, живущие во всех пяти языках («offline»,
+ * «premium», «satellite», «GPS»). Список короткий намеренно — он про слова, а
+ * не про фразы.
  */
-const SHARED_WITH_ENGLISH = new Set([
-  "wayback.home.start",
-  "wayback.menu.skyforestName",
-  "wayback.menu.checkerName",
-  "wayback.menu.unitsKm",
-  "wayback.paywall.title",
-  "wayback.paywall.storeApple",
-  "wayback.paywall.storeGoogle",
-  "wayback.account.biometry",
-  "wayback.active.map",
-  "wayback.finish.stats",
-  "wayback.area.progress",
-  "wayback.offline.progress",
-  "wayback.history.meta",
-  "wayback.area.regionName",
-  "wayback.picker.accuracy",
-  "wayback.home.mapHere",
-  "wayback.offline.centre",
-]);
+const LOANWORDS = new Set(
+  `wayback skyforest mushroom checker app store apple google play premium
+   offline online satellite face id touch gps start stop km mi ft kb mb gb
+   zoom email e-mail direction point points max min ok centre center
+   maximum minimum standard total distance`
+    .split(/\s+/)
+    .filter(Boolean),
+);
 
-/** Строка без собственных слов: одни плейсхолдеры, числа и знаки. */
-const isSymbolsOnly = (text) =>
-  !/[A-Za-zА-Яа-яЁёÀ-ÿĄ-ſ]/.test(String(text).replace(/\{[^}]*\}/g, ""));
+/**
+ * Строку считаем забытой английской, если она дословно повторяет английскую и
+ * при этом похожа на фразу, а не на слово.
+ *
+ * Порог в три слова взят не из головы: односложные подписи вроде «Offline» или
+ * «Satellite» в испанском, польском и французском пишутся ровно так же, и
+ * требовать от них отличия — значит заставить переводчика испортить текст ради
+ * зелёной галочки. А вот целое предложение, совпавшее с английским до буквы, —
+ * это всегда недоделанный перевод.
+ */
+function looksUntranslated(text) {
+  const words = plainWords(text);
+  if (words.length === 0) return false; // одни плейсхолдеры, числа и знаки
+  if (words.length >= 3) return true; // фраза
+  return !words.every((word) => LOANWORDS.has(word.toLowerCase()));
+}
+
+/**
+ * Слова, которые человек прочитает на экране: имена аргументов и служебные
+ * слова ICU («plural», «one», «other») сюда не попадают. Отсюда и настоящий
+ * парсер вместо регулярного выражения — оно принимало ветку `other {# points}`
+ * за три английских слова и объявляло переведённую строку непереведённой.
+ */
+function plainWords(text) {
+  const literals = [];
+  const walk = (nodes) => {
+    for (const node of nodes) {
+      if (node.type === 0) literals.push(node.value);
+      if (node.options) for (const opt of Object.values(node.options)) walk(opt.value);
+      if (node.children) walk(node.children);
+    }
+  };
+  try {
+    walk(parse(String(text), { requiresOtherClause: false }));
+  } catch {
+    literals.push(String(text));
+  }
+  // Обозначения единиц («m», «km», «z» перед зумом) словами не считаем: они
+  // одинаковы во всех пяти языках и к переводу отношения не имеют.
+  return (literals.join(" ").match(/[A-Za-zÀ-ÿĄ-ſ][A-Za-zÀ-ÿĄ-ſ'’-]*/g) ?? []).filter(
+    (word) => word.length > 2,
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Разбор одного сообщения ICU                                         */
@@ -278,22 +356,67 @@ for (const file of [
 }
 
 console.log("\n— словари WayBack —");
-const english = catalogParts(loadCatalog(readFileSync(new URL("i18n/messages/wayback.en.ts", SRC), "utf8"), "wayback.en.ts"));
+/** Английское дерево целиком — эталон и для экранов, и для общих областей. */
+const english = flatten(loadMessageTree("en"));
+/** Собственная копия WayBack: её язык обязан покрыть до ключа. */
+const OWN = (key) => key.startsWith("wayback.") || key.startsWith("flavor.wayback.");
+
+/**
+ * Дерево сообщений языка — то самое, что отдаст `next-intl`.
+ *
+ * У русского и английского оно своё целиком (`ru.ts`, `en.ts`). У остальных
+ * это накладка поверх английского, ровно как её собирает `src/i18n/request.ts`:
+ * сравнивать нужно результат, а не исходники, иначе проверка ничего не скажет
+ * о том, что человек увидит на экране.
+ */
+function localeTree(locale) {
+  if (locale === "en" || locale === "ru") return flatten(loadMessageTree(locale));
+  const tree = new Map(english);
+  for (const [key, value] of catalogParts(readCatalog(locale))) tree.set(key, value);
+  return tree;
+}
+
+/**
+ * Строки, которые язык написал сам, — только их и имеет смысл придирчиво
+ * читать. Остальное в его дереве взято из английского осознанно (см.
+ * request.ts) и совпадать с английским обязано.
+ */
+function authored(locale) {
+  if (locale === "ru") {
+    return new Map([...flatten(loadMessageTree("ru"))].filter(([key]) => OWN(key)));
+  }
+  return catalogParts(readCatalog(locale));
+}
 
 for (const locale of WAYBACK_LOCALES.filter((l) => l !== "en")) {
-  const parts = catalogParts(readCatalog(locale));
-  const missing = [...english.keys()].filter((k) => !parts.has(k));
-  const extra = [...parts.keys()].filter((k) => !english.has(k));
+  const tree = localeTree(locale);
+  const parts = authored(locale);
+  const missing = [...english.keys()].filter((k) => OWN(k) && !tree.has(k));
+  const extra = [...tree.keys()].filter((k) => OWN(k) && !english.has(k));
   check(
-    `${locale}: набор ключей совпадает с английским (${parts.size})`,
+    `${locale}: копия WayBack переведена целиком (${[...tree.keys()].filter(OWN).length})`,
     missing.length === 0 && extra.length === 0,
     [
       missing.length ? `нет: ${missing.slice(0, 8).join(", ")}${missing.length > 8 ? " …" : ""}` : "",
-      extra.length ? `лишние: ${extra.slice(0, 8).join(", ")}${extra.length > 8 ? " …" : ""}` : "",
+      extra.length ? `лишние: ${extra.slice(0, 8).join(", ")}` : "",
     ]
       .filter(Boolean)
       .join("; "),
   );
+
+  // Общие области переводятся не целиком, а по факту показа (см. request.ts),
+  // поэтому ключ накладки, которого нет в английском дереве, — это опечатка или
+  // след переименования на стороне SkyForest: такая строка молча ложится в
+  // пустоту и на экран не попадает.
+  if (locale !== "ru") {
+    const written = [...catalogParts(readCatalog(locale)).keys()];
+    const orphans = written.filter((k) => !english.has(k));
+    check(
+      `${locale}: общие ключи существуют в английском дереве (${written.filter((k) => !OWN(k)).length})`,
+      orphans.length === 0,
+      `не существуют: ${orphans.slice(0, 8).join(", ")}${orphans.length > 8 ? " …" : ""}`,
+    );
+  }
 
   const empty = [...parts].filter(([, v]) => typeof v !== "string" || v.trim() === "");
   check(`${locale}: пустых строк нет`, empty.length === 0, empty.map(([k]) => k).join(", "));
@@ -334,10 +457,7 @@ for (const locale of WAYBACK_LOCALES.filter((l) => l !== "en")) {
   );
 
   const untranslated = [...parts].filter(
-    ([key, value]) =>
-      english.get(key) === value &&
-      !SHARED_WITH_ENGLISH.has(key) &&
-      !isSymbolsOnly(value),
+    ([key, value]) => english.get(key) === value && looksUntranslated(value),
   );
   check(
     `${locale}: английских строк не осталось`,
@@ -524,14 +644,16 @@ console.log("\n— как было до правки (обязана падат�
     "конфиг прежней версии неожиданно отдал список языков — проверка ничего не ловит",
   );
 
-  // Второе плечо: словарь без ключа. Ловится ли пропуск на самом деле.
-  const broken = catalogParts(readCatalog(WAYBACK_LOCALES.find((l) => l !== "en") ?? "ru"));
-  const victim = [...english.keys()][0];
+  // Второе плечо: словарь без одного ключа. Ровно этот случай проверка и
+  // существует, чтобы ловить, — next-intl вывел бы на экран имя ключа.
+  const victim = [...english.keys()].find(OWN);
+  const broken = localeTree(EXTRA_LOCALES[0] ?? "ru");
   broken.delete(victim);
-  const missing = [...english.keys()].filter((k) => !broken.has(k));
+  const missing = [...english.keys()].filter((k) => OWN(k) && !broken.has(k));
   check(
     `пропуск ключа «${victim}» проверка видит`,
     missing.length === 1 && missing[0] === victim,
+    `увидела: ${missing.join(", ") || "ничего"}`,
   );
 }
 

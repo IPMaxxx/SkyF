@@ -15,6 +15,6 @@
  *
  * Импортов здесь нет намеренно: файл читается из Edge-middleware.
  */
-export const ALL_LOCALES = ["ru", "en"] as const;
+export const ALL_LOCALES = ["ru", "en", "es", "pl", "fr"] as const;
 
 export type AppLocale = (typeof ALL_LOCALES)[number];

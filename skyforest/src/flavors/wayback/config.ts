@@ -14,8 +14,15 @@ export const waybackFlavor: FlavorConfig = {
   // Язык сайта (brand-locale) здесь не годится — деплой общий с skyforest.by,
   // и WayBack на нём отдавал бы русский всем.
   defaultLocale: "en",
-  // Порядок — порядок кнопок в переключателе меню.
-  locales: ["en", "ru"],
+  /**
+   * Пять языков — столько переведено целиком в `wayback.<locale>.ts` и столько
+   * же локализаций у карточек в App Store и Google Play. Порядок — порядок
+   * кнопок в переключателе меню.
+   *
+   * Испанский, польский и французский есть только здесь: SkyForest и Mushroom
+   * Checker на них не переведены, и middleware уводит с таких адресов.
+   */
+  locales: ["en", "ru", "es", "pl", "fr"],
   homePath: "/dashboard/track",
   // /payment и /offer нужны для пейволла подписки (требует логин).
   allowedPaths: [

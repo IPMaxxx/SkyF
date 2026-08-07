@@ -519,4 +519,16 @@ export default {
     tagline: "Remembers where you started",
     footer: "works offline · no account needed",
   },
+
+  /**
+   * Витрина wayback.skyforest.ai — единственный экран, который человек видит
+   * до установки. Копия жила прямо в разметке страницы двумя ветками `en ? …`,
+   * и с пятью языками такая ветка перестала помещаться в голову.
+   */
+  landing: {
+    tagline: "Always find your way back to where you started",
+    text: "Mark your entry point — the arrow and offline map will lead you back even with no internet and no mobile signal. Download the map of your area in advance.",
+    cta: "Open the map",
+    poweredBy: "Powered by SkyForest",
+  },
 } as const;
