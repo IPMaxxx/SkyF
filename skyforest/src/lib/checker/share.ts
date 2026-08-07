@@ -25,6 +25,7 @@
  */
 
 import { routing } from "@/i18n/routing";
+import { FLAVORS } from "@/lib/appFlavor";
 import { isNativeApp } from "@/lib/native/capacitor";
 import { plainApi } from "@/lib/native/plainApi";
 
@@ -237,9 +238,13 @@ export async function parseShareToken(
  * локали по умолчанию он бы ответил редиректом. На сборке доменов `.ai`
  * (её и обслуживает Checker) по умолчанию английский, поэтому русская
  * находка уезжает как `/ru/s/...` и у получателя откроется по-русски.
+ *
+ * Язык сверяется со списком Checker, а не сборки: маршруты остальных языков в
+ * сборке есть (src/i18n/locales.ts), но карточка на них не переведена, и
+ * middleware увёл бы получателя с такой ссылки на домашнюю.
  */
 export function shareUrlPath(token: string, locale: string): string {
-  const known = routing.locales.find((loc) => loc === locale);
+  const known = FLAVORS.checker.locales.find((loc) => loc === locale);
   const prefix = !known || known === routing.defaultLocale ? "" : `/${known}`;
   return `${prefix}${SHARE_SEGMENT}/${token}`;
 }

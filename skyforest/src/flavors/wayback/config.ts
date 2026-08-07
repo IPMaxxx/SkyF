@@ -14,6 +14,8 @@ export const waybackFlavor: FlavorConfig = {
   // Язык сайта (brand-locale) здесь не годится — деплой общий с skyforest.by,
   // и WayBack на нём отдавал бы русский всем.
   defaultLocale: "en",
+  // Порядок — порядок кнопок в переключателе меню.
+  locales: ["en", "ru"],
   homePath: "/dashboard/track",
   // /payment и /offer нужны для пейволла подписки (требует логин).
   allowedPaths: [

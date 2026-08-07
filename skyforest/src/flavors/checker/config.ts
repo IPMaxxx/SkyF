@@ -12,6 +12,9 @@ export const checkerFlavor: FlavorConfig = {
   name: "Mushroom Checker",
   // Приложение международное: основной язык английский, русский — по выбору.
   defaultLocale: "en",
+  // Два языка: столько переведено в checker.{en,ru}.ts, и столько же лежит в
+  // карточках сторов. Языки WayBack сюда не приходят.
+  locales: ["en", "ru"],
   homePath: "/dashboard/identify",
   allowedPaths: [
     ...COMMON_ALLOWED_PATHS,

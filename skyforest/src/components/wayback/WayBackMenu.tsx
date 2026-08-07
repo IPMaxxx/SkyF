@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { useFlavorLocales } from "@/lib/useFlavorLocales";
 import { waybackSignOut } from "@/lib/wayback/signOut";
 import {
   CHECKER_SITE,
@@ -46,6 +46,7 @@ export function WayBackMenu({
   const t = useTranslations("wayback.menu");
   const tHow = useTranslations("wayback.home");
   const locale = useLocale();
+  const locales = useFlavorLocales();
   const router = useRouter();
   const pathname = usePathname();
   const unitSystem = useUnitSystem();
@@ -217,8 +218,16 @@ export function WayBackMenu({
           <div className="grid grid-cols-2 gap-2.5">
             <div className="wb-tile flex flex-col gap-2 px-4 py-4">
               <WbLabel>{t("language")}</WbLabel>
-              <div className="grid grid-cols-2 gap-1.5">
-                {routing.locales.map((loc) => (
+              {/* Плитка узкая (половина листа), поэтому языков в ряду не
+                  больше трёх: с пятью в один ряд кнопка становится уже своей
+                  подписи. Пара языков остаётся в два столбца, как было. */}
+              <div
+                className={cn(
+                  "grid gap-1.5",
+                  locales.length > 2 ? "grid-cols-3" : "grid-cols-2",
+                )}
+              >
+                {locales.map((loc) => (
                   <button
                     key={loc}
                     type="button"

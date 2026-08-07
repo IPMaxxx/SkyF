@@ -18,9 +18,27 @@
 
 import { FLAVORS } from "../flavors/registry";
 import type { AppFlavor, FlavorConfig } from "../flavors/types";
+import type { AppLocale } from "../i18n/locales";
 
 export { FLAVORS };
 export type { AppFlavor, FlavorConfig };
+
+/** Языки приложения в порядке переключателя (см. FlavorConfig.locales). */
+export function flavorLocales(flavor: AppFlavor): readonly AppLocale[] {
+  return FLAVORS[flavor].locales;
+}
+
+/**
+ * Знает ли приложение этот язык. Маршруты всех языков сборки существуют
+ * (src/i18n/locales.ts), поэтому спрашивать нужно у приложения, а не у
+ * `routing.locales`.
+ */
+export function isFlavorLocale(
+  flavor: AppFlavor,
+  locale: string | null | undefined,
+): boolean {
+  return FLAVORS[flavor].locales.some((loc) => loc === locale);
+}
 
 /** Внутренние сегменты всех флейворов — их нельзя открыть по прямому URL. */
 const INTERNAL_SEGMENTS = Object.values(FLAVORS)

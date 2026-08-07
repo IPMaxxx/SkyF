@@ -4,11 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { Globe, Check, ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { useIsNative } from "@/lib/native/useIsNative";
+import { useFlavorLocales } from "@/lib/useFlavorLocales";
 
-const LABELS: Record<string, string> = { ru: "RU", en: "EN" };
+const LABELS: Record<string, string> = {
+  ru: "RU",
+  en: "EN",
+  es: "ES",
+  pl: "PL",
+  fr: "FR",
+};
 
 /**
  * Переключатель языка.
@@ -27,11 +33,13 @@ export function LocaleSwitcher({
   const locale = useLocale();
   const pathname = usePathname();
   const isNative = useIsNative();
+  const locales = useFlavorLocales();
 
   if (isNative) {
     return (
       <NativeLocaleDropdown
         locale={locale}
+        locales={locales}
         pathname={pathname}
         variant={variant}
         className={className}
@@ -51,7 +59,7 @@ export function LocaleSwitcher({
       role="group"
       aria-label="Language"
     >
-      {routing.locales.map((loc) => (
+      {locales.map((loc) => (
         <Link
           key={loc}
           href={pathname}
@@ -77,11 +85,13 @@ export function LocaleSwitcher({
 
 function NativeLocaleDropdown({
   locale,
+  locales,
   pathname,
   variant,
   className,
 }: {
   locale: string;
+  locales: readonly string[];
   pathname: string;
   variant: "dark" | "light";
   className?: string;
@@ -132,7 +142,7 @@ function NativeLocaleDropdown({
             role="menu"
             className="absolute right-0 top-full z-50 mt-1.5 w-28 overflow-hidden rounded-xl border border-white/10 bg-[#1a2e1f]/98 py-1 shadow-2xl backdrop-blur-xl"
           >
-            {routing.locales.map((loc) => (
+            {locales.map((loc) => (
               <Link
                 key={loc}
                 href={pathname}
