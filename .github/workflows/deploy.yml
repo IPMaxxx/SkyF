@@ -1,3 +1,9 @@
+# ОТКЛЮЧЁН 7 августа 2026 (Actions → Deploy to Production → disabled_manually).
+# Публичные сайты skyforest.by и skyforest.ai живут на Vercel и деплоятся из
+# AIG-33/skyforest, от этого контура они не зависят. Здесь последний успешный
+# выкат — 29 июля 2026 (v1.59.1), дальше запуски падали на `git fetch` с
+# "No space left on device". Зеркало выведено из эксплуатации; синхронизировать
+# его после пуша в origin больше не нужно.
 name: Deploy to Production
 on:
   push:
