@@ -1,5 +1,3 @@
-La grabación sigue con la pantalla apagada: toca «Me voy de ruta», guarda el teléfono en el bolsillo y el recorrido queda entero hasta que toques «Ya estoy de vuelta».
+WayBack ya habla español, polaco y francés, además de inglés y ruso, y sigue el idioma que tengas puesto en el teléfono.
 
-El mapa offline funciona sin nada de red: se abre donde estás, dibuja siempre tu posición y pone una cuadrícula de coordenadas con escala allí donde faltan teselas.
-
-Suscripciones arregladas: una compra completada abre la app al momento, y «Restaurar compras» dice qué ha encontrado.
+Dos planes de suscripción en lugar de uno: 1,99 USD a la semana o 19,99 USD al año, cada uno con los mismos 3 días gratis. La pantalla de compra te deja elegir e indica la duración y el precio del plan que escojas.

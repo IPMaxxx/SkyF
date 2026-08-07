@@ -1,5 +1,3 @@
-L'enregistrement continue écran éteint : touchez « Je pars dans la nature », rangez le téléphone dans la poche, et la trace reste entière jusqu'à « Je suis de retour ».
+WayBack parle désormais espagnol, polonais et français, en plus de l'anglais et du russe, et suit la langue réglée sur votre téléphone.
 
-La carte hors ligne fonctionne sans aucun réseau : elle s'ouvre là où vous êtes, dessine toujours votre position et pose une grille de coordonnées avec une échelle là où les tuiles manquent.
-
-Abonnements corrigés : un achat abouti ouvre l'app aussitôt, et « Restaurer les achats » dit ce qu'il a trouvé.
+Deux formules d'abonnement au lieu d'une : 1,99 USD par semaine ou 19,99 USD par an, chacune commençant par les mêmes 3 jours offerts. L'écran d'achat vous laisse choisir et annonce la durée et le prix de la formule retenue.

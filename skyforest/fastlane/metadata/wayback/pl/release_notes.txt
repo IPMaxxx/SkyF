@@ -1,5 +1,3 @@
-Nagrywanie idzie dalej przy wygaszonym ekranie: dotknij „Wychodzę w teren”, schowaj telefon do kieszeni, a ślad zostanie cały aż do dotknięcia „Jestem z powrotem”.
+WayBack mówi teraz po hiszpańsku, polsku i francusku, obok angielskiego i rosyjskiego, i podąża za językiem ustawionym w telefonie.
 
-Mapa offline działa zupełnie bez sieci: otwiera się tam, gdzie jesteś, zawsze rysuje twoją pozycję, a w miejscach bez kafelków stawia siatkę współrzędnych z podziałką.
-
-Subskrypcje naprawione: zakończony zakup od razu otwiera aplikację, a „Przywróć zakupy” mówi, co znalazło.
+Dwa plany subskrypcji zamiast jednego: 1,99 USD tygodniowo albo 19,99 USD rocznie, każdy z tymi samymi 3 dniami za darmo. Ekran zakupu pozwala wybrać i podaje długość oraz cenę wybranego planu.

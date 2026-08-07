@@ -1,5 +1,3 @@
-Recording keeps going with the screen off: tap "I'm heading outdoors", put the phone in your pocket, and the path stays whole until you tap "I'm back from outdoors".
+WayBack now speaks Spanish, Polish and French alongside English and Russian, and follows the language your phone is set to.
 
-The offline map works with no network at all - it opens where you are, always draws your position, and puts a coordinate grid with a scale bar where tiles are missing.
-
-Subscriptions are fixed: a completed purchase opens the app straight away, and "Restore purchases" says what it found.
+Two subscription plans instead of one: USD 1.99 per week or USD 19.99 per year, each starting with the same 3 free days. The purchase screen lets you pick, and states the length and the price of whichever plan you choose.
