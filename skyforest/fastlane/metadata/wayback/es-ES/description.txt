@@ -1,0 +1,37 @@
+WayBack recuerda por dónde entraste, en el monte o junto a los lagos, y te enseña el camino de vuelta a ese punto. Una vez preparada la salida, funciona sin cobertura.
+
+WayBack es una app de suscripción. Empieza con 3 días de prueba gratis y después cuesta 1,99 USD a la semana o 19,99 USD al año, tú eliges. Inicias sesión, activas la prueba en el App Store y la app es tuya entera: no hay una versión recortada ni funciones guardadas para un plan superior.
+
+Antes de dejar el camino, toca «Me voy de ruta». La app fija un ancla en tu posición GPS y empieza a grabar la salida. A partir de ahí la pantalla muestra las dos cosas que importan: la dirección a tu punto de entrada y a qué distancia está. Las dos se calculan en el teléfono, así que siguen funcionando sin datos y sin cobertura.
+
+CÓMO FUNCIONA
+- Toca una vez donde dejas el camino para fijar el ancla, o coloca el punto de entrada a mano en el mapa si el GPS tarda.
+- Camina. Se guarda un punto cada dos minutos, así que la batería apenas lo nota.
+- Vuelve cuando quieras: una flecha apunta al punto de entrada y debajo tienes la distancia.
+- Toca «Ya estoy de vuelta» para terminar. La salida se guarda en el historial con su mapa, su distancia y su tiempo.
+
+DIRECCIÓN AUNQUE NO HAYA BRÚJULA
+Mientras te mueves, la dirección sale de tu rumbo GPS. Parado puedes encender la brújula del teléfono. Y si el aparato no tiene sensor de brújula, la app te dice el punto cardinal: «noroeste, 850 m», suficiente para echar a andar hacia el lado correcto.
+
+MAPAS QUE FUNCIONAN SIN CONEXIÓN
+- Guarda zonas del mapa antes de salir: toca el mapa para colocar la zona y usa el zoom para decidir cuánto abarca, o elige un radio y un nivel de detalle.
+- Se guardan las dos capas: senderos e imagen de satélite.
+- La pantalla de inicio muestra tu posición en el mapa, así ves dónde estás y guardas esa zona de un toque.
+- Abre la app sin conexión de ningún tipo y entra la pantalla offline integrada: el ancla, la flecha, la brújula y el mapa guardado siguen funcionando.
+
+TUS SALIDAS
+El historial guarda cada salida terminada con su recorrido en el mapa, la distancia hecha y el tiempo que pasaste fuera. Las salidas van con tu cuenta, así que seguirán ahí en tu próximo teléfono.
+
+QUÉ ESPERAR
+- La grabación sigue con el teléfono en el bolsillo y la pantalla apagada, así el recorrido está entero cuando des la vuelta. Solo funciona entre «Me voy de ruta» y «Ya estoy de vuelta», nunca fuera de una salida, y mientras tanto iOS enseña su indicador azul de ubicación. Los tramos sin grabación se dibujan con línea discontinua en el mapa.
+- La prueba se activa una sola vez, con conexión, porque el App Store la necesita. Después WayBack funciona ahí fuera sin nada de cobertura.
+- WayBack es una ayuda sencilla para volver, no sustituye a un mapa de papel, a una brújula ni a avisar a alguien de dónde vas.
+
+SUSCRIPCIÓN
+- WayBack Premium (semanal): una semana, 1,99 USD, con 3 días de prueba gratis al empezar.
+- WayBack Premium (anual): un año, 19,99 USD, con 3 días de prueba gratis al empezar.
+- La prueba es gratuita. Al terminar, la suscripción se renueva automáticamente al precio del plan que hayas elegido, salvo que la canceles al menos 24 horas antes de que acabe el periodo en curso.
+- El cargo se hace en tu cuenta de Apple. Puedes gestionar o cancelar la suscripción cuando quieras en los ajustes de suscripciones de tu dispositivo.
+
+Condiciones de uso (EULA): https://wayback.skyforest.ai/offer
+Política de privacidad: https://wayback.skyforest.ai/privacy

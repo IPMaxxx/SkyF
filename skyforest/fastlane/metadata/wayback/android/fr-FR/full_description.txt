@@ -1,0 +1,37 @@
+WayBack retient par où vous êtes entré dans la nature, en montagne ou au bord des lacs, et vous montre le chemin du retour jusqu'à ce point. Une fois la sortie préparée, l'app fonctionne sans réseau.
+
+WayBack est une app sur abonnement. Elle commence par 3 jours offerts, puis coûte 1,99 USD par semaine ou 19,99 USD par an, au choix. Vous vous connectez, vous lancez l'essai dans Google Play et l'app est à vous en entier : pas de version gratuite bridée, rien mis de côté pour une formule supérieure.
+
+Avant de quitter le chemin, touchez « Je pars dans la nature ». L'app pose une ancre sur votre position GPS et commence à enregistrer la sortie. À partir de là, l'écran affiche les deux choses qui comptent : la direction de votre point d'entrée et la distance qui vous en sépare. Les deux sont calculées sur le téléphone, donc elles continuent sans données mobiles et sans couverture.
+
+COMMENT ÇA MARCHE
+- Touchez une fois là où vous quittez le chemin pour poser l'ancre, ou placez le point d'entrée à la main sur la carte si le GPS tarde.
+- Marchez. Un point est enregistré toutes les deux minutes, la batterie s'en aperçoit à peine.
+- Rentrez quand vous voulez : une flèche pointe le point d'entrée, la distance est juste en dessous.
+- Touchez « Je suis de retour » pour terminer. La sortie est enregistrée dans l'historique avec sa carte, sa distance et sa durée.
+
+LA DIRECTION MÊME SANS BOUSSOLE
+En marchant, la direction vient de votre cap GPS. À l'arrêt, vous pouvez activer la boussole du téléphone. Et si l'appareil n'a aucun capteur de boussole, l'app nomme le point cardinal : « nord-ouest, 850 m », de quoi partir du bon côté.
+
+DES CARTES QUI MARCHENT HORS LIGNE
+- Enregistrez des zones de carte avant de partir : touchez la carte pour poser la zone et servez-vous du zoom pour décider de son étendue, ou choisissez un rayon et un niveau de détail.
+- Les deux couches sont enregistrées : sentiers et vue satellite.
+- L'écran d'accueil montre votre position sur la carte : vous voyez où vous êtes et vous enregistrez cette zone d'un seul geste.
+- Ouvrez l'app sans la moindre connexion et l'écran hors ligne intégré prend le relais : l'ancre, la flèche, la boussole et la carte enregistrée fonctionnent toujours.
+
+VOS SORTIES
+L'historique garde chaque sortie terminée avec sa trace sur la carte, la distance parcourue et le temps passé dehors. Les sorties appartiennent à votre compte : elles seront encore là sur votre prochain téléphone.
+
+CE QU'IL FAUT SAVOIR
+- L'enregistrement continue avec le téléphone dans la poche et l'écran éteint : la trace est entière quand vous faites demi-tour. Il ne tourne qu'entre « Je pars dans la nature » et « Je suis de retour », jamais en dehors d'une sortie, et une notification reste dans la barre d'état pendant ce temps. Les portions non enregistrées sont tracées en pointillés sur la carte.
+- L'essai se met en place une seule fois, tant que vous avez du réseau, parce que Google Play en a besoin. Ensuite WayBack fonctionne dehors sans aucune couverture.
+- WayBack est une aide simple pour retrouver son chemin, pas un remplacement de la carte papier, de la boussole ou du fait de prévenir quelqu'un de votre itinéraire.
+
+ABONNEMENT
+- WayBack Premium (hebdomadaire) : une semaine, 1,99 USD, avec 3 jours offerts au départ.
+- WayBack Premium (annuel) : un an, 19,99 USD, avec 3 jours offerts au départ.
+- L'essai est gratuit. À la fin, l'abonnement se renouvelle automatiquement au tarif de la formule choisie, sauf annulation au moins 24 heures avant la fin de la période en cours.
+- Le paiement est débité sur votre compte Google Play. Vous pouvez gérer ou résilier l'abonnement à tout moment dans Google Play.
+
+Conditions d'utilisation (CLUF) : https://wayback.skyforest.ai/offer
+Politique de confidentialité : https://wayback.skyforest.ai/privacy

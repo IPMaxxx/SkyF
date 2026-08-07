@@ -1,0 +1,1 @@
+carte,foret,randonnee,champignons,cueillette,boussole,hors ligne,gps,montagne,sentier,trace,nature

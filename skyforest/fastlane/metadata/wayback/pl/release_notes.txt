@@ -1,0 +1,5 @@
+Nagrywanie idzie dalej przy wygaszonym ekranie: dotknij „Wychodzę w teren”, schowaj telefon do kieszeni, a ślad zostanie cały aż do dotknięcia „Jestem z powrotem”.
+
+Mapa offline działa zupełnie bez sieci: otwiera się tam, gdzie jesteś, zawsze rysuje twoją pozycję, a w miejscach bez kafelków stawia siatkę współrzędnych z podziałką.
+
+Subskrypcje naprawione: zakończony zakup od razu otwiera aplikację, a „Przywróć zakupy” mówi, co znalazło.

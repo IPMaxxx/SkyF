@@ -591,6 +591,62 @@ if (!existsSync(META)) {
   check("тексты карточек влезают в лимиты площадок", over.length === 0, over.slice(0, 8).join("\n     "));
   check("пустых файлов карточек нет", emptyFiles.length === 0, emptyFiles.join(", "));
 
+  // Карточка обещает то же, что показывает экран. Цены и длина пробного
+  // периода уезжают в стор текстом, а в приложении живут числами в
+  // FLAVORS.wayback.subscriptionPlan — разойтись им нельзя, это отказ на ревью.
+  const plan = readFileSync(new URL("flavors/wayback/config.ts", SRC), "utf8");
+  const num = (field) => plan.match(new RegExp(`${field}:\\s*([\\d.]+)`))?.[1];
+  const priceWeek = num("priceWeeklyUsd");
+  const priceYear = num("priceYearlyUsd");
+  const trial = num("trialDays");
+  const priceGaps = [];
+  for (const dir of [...ascLocales, ...playLocales.map((l) => `android/${l}`)]) {
+    const file = dir.startsWith("android/") ? "full_description.txt" : "description.txt";
+    const url = new URL(`${dir}/${file}`, META);
+    if (!existsSync(url)) continue;
+    const text = readFileSync(url, "utf8");
+    // Точка или запятая как разделитель дробной части — это язык, а не цена.
+    const has = (value) =>
+      text.includes(value) || text.includes(String(value).replace(".", ","));
+    const gaps = [
+      has(priceWeek) ? "" : `нет цены недели ${priceWeek}`,
+      has(priceYear) ? "" : `нет цены года ${priceYear}`,
+      new RegExp(`\\b${trial}\\b`).test(text) ? "" : `нет длины триала ${trial}`,
+    ].filter(Boolean);
+    if (gaps.length) priceGaps.push(`${dir}/${file}: ${gaps.join(", ")}`);
+  }
+  check(
+    `карточки называют те же цены и триал, что приложение (${priceWeek}/${priceYear}, ${trial} дн.)`,
+    priceGaps.length === 0,
+    priceGaps.slice(0, 8).join("\n     "),
+  );
+
+  // Французская типографика действует и в сторе: карточку читают те же люди.
+  const frBad = [];
+  for (const dir of ["fr-FR", "android/fr-FR"]) {
+    for (const file of readdirSync(new URL(`${dir}/`, META))) {
+      if (!file.endsWith(".txt") || file.endsWith("_url.txt")) continue;
+      const text = readFileSync(new URL(`${dir}/${file}`, META), "utf8");
+      if (/ [?!;:»]|« /.test(text)) frBad.push(`${dir}/${file}`);
+    }
+  }
+  check("fr: в карточке неразрывные пробелы при «?!;:» и кавычках", frBad.length === 0, frBad.join(", "));
+
+  // Локали площадок называются по-разному (App Store — «pl», Play — «pl-PL»),
+  // и перепутать их легко: скрипт заливки промолчит, а языка в сторе не будет.
+  const expectedAsc = ["en-US", "es-ES", "pl", "fr-FR"];
+  const expectedPlay = ["en-US", "es-ES", "pl-PL", "fr-FR"];
+  check(
+    "локали карточек App Store на месте",
+    expectedAsc.every((l) => ascLocales.includes(l)),
+    `нет: ${expectedAsc.filter((l) => !ascLocales.includes(l)).join(", ")}`,
+  );
+  check(
+    "локали карточек Google Play на месте",
+    expectedPlay.every((l) => playLocales.includes(l)),
+    `нет: ${expectedPlay.filter((l) => !playLocales.includes(l)).join(", ")}`,
+  );
+
   // Ключевые слова App Store переводить дословно нельзя: у каждого языка свои
   // поисковые запросы. Совпадение набора с английским — признак подстрочника.
   const enKeywords = existsSync(new URL("en-US/keywords.txt", META))

@@ -1,0 +1,5 @@
+La grabación sigue con la pantalla apagada: toca «Me voy de ruta», guarda el teléfono en el bolsillo y el recorrido queda entero hasta que toques «Ya estoy de vuelta».
+
+El mapa offline funciona sin nada de red: se abre donde estás, dibuja siempre tu posición y pone una cuadrícula de coordenadas con escala allí donde faltan teselas.
+
+Suscripciones arregladas: una compra completada abre la app al momento, y «Restaurar compras» dice qué ha encontrado.

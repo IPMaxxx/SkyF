@@ -1,28 +1,77 @@
-# Листинги WayBack (en-US)
+# Листинги WayBack
 
 Тексты сторов лежат файлами, чтобы их можно было читать и править в репозитории,
 а не в веб-консолях. Раскладка повторяет `fastlane/metadata` основного
 приложения.
 
+## Языки
+
+Четыре: английский, испанский, польский и французский — столько же, сколько
+знает само приложение (`src/flavors/wayback/config.ts`; русский в сторы не
+выкладывается). Карточка обязана говорить на языке первого экрана: человек
+ставит приложение по описанию и не должен открыть чужой язык.
+
+Коды локалей у площадок разные, и путать их нельзя — Play отвечает на
+неизвестный код 400, а ASC молча ничего не находит:
+
+| Язык | Каталог и код App Store | Код и каталог Google Play |
+| --- | --- | --- |
+| английский | `en-US/` | `en-US`, `android/en-US/` |
+| испанский | `es-ES/` | `es-ES`, `android/es-ES/` |
+| польский | `pl/` | `pl-PL`, `android/pl-PL/` |
+| французский | `fr-FR/` | `fr-FR`, `android/fr-FR/` |
+
+Скриншоты и feature graphic остаются английскими на всех языках: держать четыре
+набора картинок в актуальном состоянии при каждой правке экрана дороже, чем
+пользы от переведённой подписи на скриншоте.
+
+## Файлы одной локали
+
 | Файл | Куда уезжает | Лимит |
 | --- | --- | --- |
-| `en-US/subtitle.txt` | ASC → App Information → Subtitle | 30 |
-| `en-US/keywords.txt` | ASC → версия → Keywords | 100 |
-| `en-US/promotional_text.txt` | ASC → версия → Promotional Text | 170 |
-| `en-US/description.txt` | ASC → версия → Description | 4000 |
-| `en-US/release_notes.txt` | ASC → версия → What's New и Play → release notes трека | 500 |
-| `en-US/support_url.txt` | ASC → версия → Support URL | — |
-| `en-US/marketing_url.txt` | ASC → версия → Marketing URL | — |
-| `en-US/privacy_url.txt` | ASC → App Information → Privacy Policy URL | — |
-| `android/en-US/title.txt` | Play → Main store listing → App name | 30 |
-| `android/en-US/short_description.txt` | Play → Short description | 80 |
-| `android/en-US/full_description.txt` | Play → Full description | 4000 |
+| `<локаль>/subtitle.txt` | ASC → App Information → Subtitle | 30 |
+| `<локаль>/keywords.txt` | ASC → версия → Keywords | 100 |
+| `<локаль>/promotional_text.txt` | ASC → версия → Promotional Text | 170 |
+| `<локаль>/description.txt` | ASC → версия → Description | 4000 |
+| `<локаль>/release_notes.txt` | ASC → версия → What's New и Play → release notes трека | 500 |
+| `<локаль>/support_url.txt` | ASC → версия → Support URL | — |
+| `<локаль>/marketing_url.txt` | ASC → версия → Marketing URL | — |
+| `<локаль>/privacy_url.txt` | ASC → App Information → Privacy Policy URL | — |
+| `android/<локаль>/title.txt` | Play → Main store listing → App name | 30 |
+| `android/<локаль>/short_description.txt` | Play → Short description | 80 |
+| `android/<локаль>/full_description.txt` | Play → Full description | 4000 |
+
+Ключевые слова App Store у каждого языка свои: это не перевод английского
+списка, а поисковые запросы того рынка. Дословный перевод проверка отклоняет.
 
 Заливка и сверка: `node fastlane/wayback-listings.mjs` (сухой прогон) и
 `node fastlane/wayback-listings.mjs --apply`. Скрипт после записи перечитывает
 поля из API и сравнивает их с файлами. Флаг `--play-only` обходит App Store
 Connect стороной — он нужен, пока версия висит в WAITING_FOR_REVIEW и Apple
-отвечает на PATCH локализации 409.
+отвечает на PATCH локализации 409. Флаг `--only=<код App Store>` работает с
+одним языком: им удобно доливать новый язык, не трогая остальные.
+
+Длину, лимиты, пустые файлы и совпадение цен в карточке с
+`FLAVORS.wayback.subscriptionPlan` проверяет
+`node fastlane/.wayback-locales-check.mjs` — без сети, ещё до заливки.
+
+## Новый язык в App Store требует новой версии
+
+Проверено по API в августе 2026 на версии 1.1 `READY_FOR_DISTRIBUTION`.
+Локализации живут у **записи версии**, а не у приложения, и в состоянии
+вышедшей версии Apple не принимает ни `PATCH`, ни `POST`
+`appStoreVersionLocalizations` — отвечает 409 STATE_ERROR. Редактируемые
+состояния только `PREPARE_FOR_SUBMISSION`, `DEVELOPER_REJECTED`, `REJECTED`,
+`METADATA_REJECTED`, `INVALID_BINARY`.
+
+Значит, испанский, польский и французский уедут в App Store вместе со следующей
+версией: заводится запись версии, к ней прикладывается сборка, и всё уходит на
+ревью. Тексты уже лежат в каталогах и ждут — `wayback-listings.mjs` сам заведёт
+локализации через `POST`, как только версия станет редактируемой, и скажет об
+этом вслух, если она ещё нет.
+
+В Google Play такого ограничения нет: языки листинга добавляются в любой момент
+и без релиза.
 
 Что лежит в Google Play прямо сейчас, целиком и только через GET, показывает
 `node fastlane/wayback-play-audit.mjs` — листинг, графика с sha256, треки,
