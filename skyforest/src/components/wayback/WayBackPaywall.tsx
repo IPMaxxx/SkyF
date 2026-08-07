@@ -14,8 +14,10 @@
  * Покупка возможна только в нативной оболочке; на вебе показываем карточку
  * «оформите в приложении».
  *
- * Тариф ровно один — годовой (FLAVORS.wayback.subscriptionPlan). Выбора
- * периода на экране нет намеренно: месячного товара в сторах не существует.
+ * Тарифов два — неделя и год. Сколько их показать, решает не этот экран и не
+ * флаг в коде, а стор: список приходит из `useWaybackPurchase`, который берёт
+ * его из ответа плагина покупок. Пока стор отдал один товар, экран выглядит
+ * ровно так, как выглядел с единственным годовым тарифом.
  */
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -28,7 +30,10 @@ import {
   useWaybackAccount,
 } from "@/lib/wayback/useWaybackAccount";
 import { useWaybackPurchase } from "@/lib/wayback/useWaybackPurchase";
+import { WayBackPlanPicker } from "@/components/wayback/WayBackPlanPicker";
 import { WayBackTrialTerms } from "@/components/wayback/WayBackTrialTerms";
+import { useWaybackSelectedPlan } from "@/lib/wayback/useWaybackSelectedPlan";
+import { WAYBACK_PLANS } from "@/lib/wayback/subscriptionProducts";
 import {
   WbLabel,
   WbPrimaryButton,
@@ -56,7 +61,9 @@ export function WayBackPaywall() {
 
   const {
     native,
-    price,
+    plans,
+    priceOf,
+    priceOfProduct,
     trialDays,
     purchasing,
     restoring,
@@ -65,10 +72,12 @@ export function WayBackPaywall() {
     subscribe,
     restore,
   } = useWaybackPurchase(refresh, t("purchaseFailed"));
+  const { selected, select } = useWaybackSelectedPlan(plans);
 
   const store = native
     ? storeName()
     : `${t("storeApple")} / ${t("storeGoogle")}`;
+  const price = priceOf(selected);
 
   if (loading) {
     return (
@@ -87,6 +96,18 @@ export function WayBackPaywall() {
 
   if (subscription) {
     const renews = formatWaybackDate(subscription.current_period_end, locale);
+    // Карточка называет тот тариф, по которому идут списания, а не выбранный
+    // на пейволле: после перехода с недели на год они разные, и цена рядом
+    // должна быть ценой действующего товара. Период однозначно задаёт товар —
+    // у приложения по одному на каждый период.
+    const weeklyActive = subscription.period === "weekly";
+    const activePlan = weeklyActive ? t("planWeekly") : t("planYearly");
+    const activeProduct = WAYBACK_PLANS.find(
+      (p) => p.period === subscription.period,
+    );
+    const activePrice = activeProduct
+      ? priceOfProduct(activeProduct.productId)
+      : "";
 
     return (
       <WbScreen>
@@ -101,7 +122,7 @@ export function WayBackPaywall() {
               {t("activeTitle", { date: renews })}
             </span>
             <span className="wb-mono text-[12.5px] text-wb-muted">
-              {t("activeMeta", { plan: t("planYearly"), price })}
+              {t("activeMeta", { plan: activePlan, price: activePrice })}
             </span>
             {native && (
               <button
@@ -167,14 +188,19 @@ export function WayBackPaywall() {
         native ? (
           <div className="flex flex-col gap-2.5">
             <WbPrimaryButton
-              onClick={() => void subscribe()}
+              onClick={() => void subscribe(selected.productId)}
               disabled={purchasing}
             >
               {purchasing && <Loader2 className="h-4 w-4 animate-spin" />}
               {t("cta", { days: trialDays })}
             </WbPrimaryButton>
             <p className="text-center text-[12px] font-medium leading-[1.45] text-wb-muted">
-              {t("renewNote", { price, period: t("perYear"), store })}{" "}
+              {t("renewNote", {
+                price,
+                period:
+                  selected.period === "weekly" ? t("perWeek") : t("perYear"),
+                store,
+              })}{" "}
               <button
                 type="button"
                 onClick={restore}
@@ -197,21 +223,14 @@ export function WayBackPaywall() {
       <WbTopBar title={t("title")} onBack={() => router.back()} />
 
       <div className="flex flex-col gap-2.5">
-        {/* Тариф один, поэтому это не переключатель, а цена: крупная цифра
-            и период, без выбора, который нечего выбирать. */}
-        <div className="flex items-end justify-between gap-3 rounded-[22px] bg-wb-primary px-5 py-[18px] text-wb-on-primary">
-          <div className="flex flex-col gap-1">
-            <span className="wb-mono text-[10.5px] tracking-[0.14em] text-wb-primary-soft uppercase">
-              {t("yearly")}
-            </span>
-            <span className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">
-              {price}
-            </span>
-          </div>
-          <span className="pb-1 text-[13px] font-semibold text-wb-primary-soft">
-            {t("perYear")}
-          </span>
-        </div>
+        <WayBackPlanPicker
+          plans={plans}
+          selected={selected}
+          onSelect={select}
+          priceOf={priceOf}
+          trialDays={trialDays}
+          locale={locale}
+        />
 
         <WbTile className="flex flex-col gap-3 px-5 py-[18px]">
           <span className="w-fit rounded-full bg-wb-primary-soft px-3 py-1 text-[11px] font-extrabold tracking-[0.06em] text-wb-primary-deep uppercase">
@@ -222,7 +241,12 @@ export function WayBackPaywall() {
           <FeatureRow>{t("f3")}</FeatureRow>
         </WbTile>
 
-        <WayBackTrialTerms trialDays={trialDays} price={price} store={store} />
+        <WayBackTrialTerms
+          trialDays={trialDays}
+          price={price}
+          period={selected.period}
+          store={store}
+        />
 
         {error && (
           <WbTile

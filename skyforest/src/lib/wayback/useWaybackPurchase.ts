@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Покупка и восстановление годовой подписки WayBack.
+ * Покупка и восстановление подписки WayBack.
  *
  * Один хук на два экрана — пейволл (`/payment`) и стартовый гейт: логика у них
  * одна, и разъезжаться ей нельзя.
@@ -19,14 +19,21 @@
  *  - восстанавливать было нечего — `restore()` говорит об этом прямо, а не
  *    гасит спиннер на том же экране без объяснений.
  *
+ * Второе, за что отвечает хук, — какие тарифы вообще предлагать. Список
+ * строится из ответа стора (`getPurchasableSubscriptions`), а не из каталога:
+ * недельный товар одобряют в App Store и в Google Play в разное время, и до
+ * одобрения его не должно быть на экране. Флага для этого нет и не нужно —
+ * см. `waybackPlansFor`.
+ *
  * Покупка возможна только в нативной оболочке: в браузере плагина стора нет.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { FLAVORS } from "@/lib/appFlavor";
 import { isNativeApp } from "@/lib/native/capacitor";
 import {
+  getPurchasableSubscriptions,
   getSubscriptionPrices,
   initIap,
   onIapEntitlement,
@@ -35,26 +42,31 @@ import {
   subscribeSubscriptionPrices,
 } from "@/lib/native/iap";
 import {
-  subscriptionProductsForBundle,
-  WAYBACK_BUNDLE_ID,
-} from "@/lib/native/iapProducts";
+  WAYBACK_PLANS,
+  waybackPlansFor,
+  type WaybackPlan,
+} from "@/lib/wayback/subscriptionProducts";
 
 export const WAYBACK_PLAN = FLAVORS.wayback.subscriptionPlan!;
 
-/** Единственный товар приложения — годовая подписка. */
-export const WAYBACK_PRODUCT = subscriptionProductsForBundle(WAYBACK_BUNDLE_ID)[0];
-
 export interface WaybackPurchaseState {
   native: boolean;
-  /** Цена из стора, до её загрузки — из конфига флейвора. */
-  price: string;
+  /**
+   * Тарифы, которые можно купить прямо сейчас. Один — экран показывает цену
+   * без выбора, два — выбор из недели и года.
+   */
+  plans: WaybackPlan[];
+  /** Цена тарифа: из стора, а до его ответа — заглушка из конфига флейвора. */
+  priceOf: (plan: WaybackPlan) => string;
+  /** Цена по идентификатору товара: нужна карточке уже активной подписки. */
+  priceOfProduct: (productId: string) => string;
   trialDays: number;
   purchasing: boolean;
   restoring: boolean;
   error: string;
   /** Восстановление прошло и ничего не нашло — об этом надо сказать. */
   nothingRestored: boolean;
-  subscribe: () => Promise<boolean>;
+  subscribe: (productId: string) => Promise<boolean>;
   restore: () => Promise<boolean>;
 }
 
@@ -67,6 +79,7 @@ export function useWaybackPurchase(
   const locale = useLocale();
   const [native, setNative] = useState(false);
   const [prices, setPrices] = useState<Record<string, string>>({});
+  const [purchasable, setPurchasable] = useState<string[]>([]);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState("");
@@ -86,11 +99,18 @@ export function useWaybackPurchase(
     if (!native) return;
     let unsub: (() => void) | undefined;
     let cancelled = false;
+    // Цены и список заказуемых товаров приходят одним событием плагина
+    // (productUpdated), поэтому читаются вместе: разъехавшись, они дали бы
+    // тариф с ценой, но без кнопки, или наоборот.
+    const readStore = () => {
+      setPrices(getSubscriptionPrices());
+      setPurchasable(getPurchasableSubscriptions());
+    };
     (async () => {
       await initIap();
       if (cancelled) return;
-      setPrices(getSubscriptionPrices());
-      unsub = subscribeSubscriptionPrices(setPrices);
+      readStore();
+      unsub = subscribeSubscriptionPrices(readStore);
     })();
     return () => {
       cancelled = true;
@@ -109,23 +129,47 @@ export function useWaybackPurchase(
     });
   }, [native]);
 
-  const subscribe = useCallback(async () => {
-    if (purchasing) return false;
-    setPurchasing(true);
-    setError("");
-    setNothingRestored(false);
-    try {
-      const r = await purchaseSubscription(WAYBACK_PRODUCT.productId, locale);
-      if (r.ok) {
-        await onEntitled();
-        return true;
+  const plans = useMemo(
+    // В браузере стора нет вовсе, и спрашивать его не о чем: там экран не
+    // продаёт, а объясняет, что оформить подписку можно в приложении, —
+    // поэтому показывает полный прейскурант продукта.
+    () => (native ? waybackPlansFor(purchasable) : WAYBACK_PLANS),
+    [native, purchasable],
+  );
+
+  const priceOfProduct = useCallback(
+    (productId: string) =>
+      prices[productId] ||
+      WAYBACK_PLANS.find((p) => p.productId === productId)?.fallbackPrice ||
+      "",
+    [prices],
+  );
+
+  const priceOf = useCallback(
+    (plan: WaybackPlan) => prices[plan.productId] || plan.fallbackPrice,
+    [prices],
+  );
+
+  const subscribe = useCallback(
+    async (productId: string) => {
+      if (purchasing) return false;
+      setPurchasing(true);
+      setError("");
+      setNothingRestored(false);
+      try {
+        const r = await purchaseSubscription(productId, locale);
+        if (r.ok) {
+          await onEntitled();
+          return true;
+        }
+        setError(r.error || fallbackError);
+        return false;
+      } finally {
+        setPurchasing(false);
       }
-      setError(r.error || fallbackError);
-      return false;
-    } finally {
-      setPurchasing(false);
-    }
-  }, [fallbackError, locale, onEntitled, purchasing]);
+    },
+    [fallbackError, locale, onEntitled, purchasing],
+  );
 
   const restore = useCallback(async () => {
     if (restoring) return false;
@@ -147,7 +191,9 @@ export function useWaybackPurchase(
 
   return {
     native,
-    price: prices[WAYBACK_PRODUCT.productId] || WAYBACK_PRODUCT.fallbackPrice,
+    plans,
+    priceOf,
+    priceOfProduct,
     trialDays: WAYBACK_PLAN.trialDays,
     purchasing,
     restoring,

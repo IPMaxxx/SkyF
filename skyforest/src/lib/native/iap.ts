@@ -212,6 +212,28 @@ export function getSubscriptionPrices(): Record<string, string> {
   return prices;
 }
 
+/**
+ * Подписки активной оболочки, которые стор отдал готовыми к заказу.
+ *
+ * Условие ровно то, которое `purchaseSubscription` проверяет перед order():
+ * товар загружен и у него есть offer. По этому ответу экран оплаты строит
+ * список тарифов — не по каталогу. Каталог знает все товары приложения, в том
+ * числе те, которые в этом сторе ещё не одобрены или сняты с продажи; предложи
+ * их человеку, и кнопка упрётся в «товар недоступен».
+ *
+ * Пустой ответ означает «стор ещё не ответил»: до инициализации плагина здесь
+ * нечему быть. Что показывать в это мгновение, решает сам экран.
+ */
+export function getPurchasableSubscriptions(): string[] {
+  const CdvPurchase = cdv();
+  if (!CdvPurchase || !initialized) return [];
+  const store: AnyStore = CdvPurchase.store;
+  const platform = platformConst();
+  return activeSubscriptions()
+    .filter((p) => Boolean(store.get(p.productId, platform)?.getOffer?.()))
+    .map((p) => p.productId);
+}
+
 /** Подписка на обновление цен из стора. Возвращает функцию отписки. */
 export function subscribeStorePrices(cb: PricesListener): () => void {
   priceListeners.add(cb);

@@ -364,21 +364,39 @@ export default {
    */
   paywall: {
     title: "WayBack Premium",
-    // Тариф один — годовой. Ключей месячного периода здесь нет намеренно.
+    /* Тарифа два — неделя и год. Месячного нет: см. FLAVORS.wayback. */
+    weekly: "Weekly",
     yearly: "Yearly",
+    /** Выбор тарифа для чтения с экрана: подписи «Weekly»/«Yearly» сами по себе не объясняют, что это группа. */
+    planPickerLabel: "Choose a plan",
     trialBadge: "{days, plural, one {# day free} other {# days free}}",
+    /**
+     * Выгода годового против 52 недельных списаний. Процент считает
+     * `yearlySavings` по ценам стора — числа в тексте нет намеренно, иначе
+     * оно разошлось бы с валютой покупателя.
+     */
+    saveBadge: "save {percent}%",
+    planHintYearly:
+      "{days, plural, one {# day free} other {# days free}} · {price} / week",
+    perWeek: "/ week",
     perYear: "/ year",
     f1: "Unlimited offline map areas",
     f2: "Full walk history, synced across phones",
     f3: "Satellite layer and maximum detail",
     cta: "{days, plural, one {Start # free day} other {Start # free days}}",
     renewNote:
-      "Then {price}{period}. Renews automatically, cancel any time in the {store}.",
-    /* Полное раскрытие условий — требование обоих сторов на экране покупки. */
+      "Then {price} {period}. Renews automatically, cancel any time in the {store}.",
+    /* Полное раскрытие условий — требование обоих сторов на экране покупки.
+       Периодичность списания называется по выбранному тарифу: «per week» и
+       «per year» — разные обещания, подставлять одно вместо другого нельзя. */
     termsTitle: "Before you subscribe",
-    termsTrial:
+    termsTrialWeek:
+      "{days, plural, one {# day free} other {# days free}}, then {price} per week.",
+    termsTrialYear:
       "{days, plural, one {# day free} other {# days free}}, then {price} per year.",
-    termsRenew:
+    termsRenewWeek:
+      "The subscription renews automatically every week until you cancel it.",
+    termsRenewYear:
       "The subscription renews automatically every year until you cancel it.",
     termsCancel:
       "Cancel any time in the {store}, at least 24 hours before the period ends.",
@@ -402,6 +420,7 @@ export default {
     activeBadge: "Active",
     activeTitle: "Premium until {date}",
     activeMeta: "{plan} · renews automatically · {price}",
+    planWeekly: "Weekly plan",
     planYearly: "Yearly plan",
     manage: "Manage subscription",
     unlockedTitle: "What's unlocked",
@@ -428,8 +447,14 @@ export default {
       "WayBack Premium is tied to your account: that is how the trial survives a new phone and how “Restore purchases” finds it again.",
     authEmail: "Continue with email",
     subTitle: "Start your free trial",
+    /**
+     * Две строки, потому что тарифов на экране бывает один или два — список
+     * приходит из стора. Обещать выбор там, где его нет, нельзя.
+     */
     subBody:
       "{days, plural, one {# day free, then the yearly plan} other {# days free, then the yearly plan}}. You can cancel before it ends and pay nothing.",
+    subBodyChoice:
+      "{days, plural, one {# day free on either plan} other {# days free on either plan}}. You can cancel before the trial ends and pay nothing.",
     signedInAs: "signed in as {email}",
     switchAccount: "Use another account",
     offlineTitle: "No connection",

@@ -17,8 +17,8 @@ import { SUPABASE_TIMEOUT_MS, withTimeout } from "@/lib/offline/deadline";
 
 export interface WaybackSubscription {
   tier: string;
-  /** У приложения один тариф — годовой (месячного товара в сторах нет). */
-  period: "yearly";
+  /** Тариф подписки: неделя или год (месячного товара в сторах нет). */
+  period: "weekly" | "yearly";
   status: "active" | "grace" | "canceled";
   platform: "ios" | "android" | "web";
   current_period_end: string;

@@ -15,26 +15,39 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { WbLabel, WbTile } from "@/components/wayback/primitives";
+import type { WaybackPeriod } from "@/lib/wayback/subscriptionProducts";
 
 export function WayBackTrialTerms({
   trialDays,
   price,
+  period,
   store,
 }: {
   trialDays: number;
   price: string;
+  /**
+   * Период выбранного тарифа. Условия обязаны называть периодичность
+   * списания того тарифа, который человек сейчас купит: «далее $1.99 в
+   * неделю» и «далее $19.99 в год» — разные обещания, и подставлять одно
+   * вместо другого нельзя.
+   */
+  period: WaybackPeriod;
   /** «App Store» / «Google Play» — куда идти отменять. */
   store: string;
 }) {
   const t = useTranslations("wayback.paywall");
+  const weekly = period === "weekly";
 
   return (
     <WbTile tone="quiet" className="flex flex-col gap-2 px-5 py-[18px]">
       <WbLabel>{t("termsTitle")}</WbLabel>
       <ul className="flex flex-col gap-1.5">
         {[
-          t("termsTrial", { days: trialDays, price }),
-          t("termsRenew"),
+          t(weekly ? "termsTrialWeek" : "termsTrialYear", {
+            days: trialDays,
+            price,
+          }),
+          t(weekly ? "termsRenewWeek" : "termsRenewYear"),
           t("termsCancel", { store }),
           t("termsAccount", { store }),
         ].map((line) => (

@@ -189,11 +189,22 @@ function toActive(row: SubscriptionRow): ActiveSubscription {
 
 /**
  * Активная подписка пользователя В ДАННОМ ПРИЛОЖЕНИИ (или null). При
- * нескольких активных (переходный кейс апгрейда) возвращается pro.
+ * нескольких активных (переходный кейс апгрейда) возвращается pro, а среди
+ * равных — та, что кончается позже.
  *
  * `flavor` обязателен: у пользователя одна учётная запись на все три
  * продукта, и без фильтра по тиру подписка, купленная в Mushroom Checker,
  * открывала бы платное в WayBack (и наоборот).
+ *
+ * Про «кончается позже». Переход между тарифами одного приложения (неделя →
+ * год у WayBack) на Android приезжает новым purchaseToken, а строка ключуется
+ * им же — то есть на время, пока прежний период ещё не истёк, у человека
+ * лежат две строки одного тира. Права это не удваивает: наружу уходит одна
+ * подписка, гейт спрашивает про факт, а не про количество. Но выбирать из
+ * двух надо ту, по которой идут списания, иначе аккаунт показывал бы дату
+ * окончания недели у человека, только что купившего год. На iOS такого
+ * раздвоения нет вовсе: апгрейд внутри группы сохраняет
+ * originalTransactionId, и verify-subscription обновляет ту же строку.
  */
 export async function getActiveSubscription(
   userId: string,
@@ -211,7 +222,11 @@ export async function getActiveSubscription(
     .gt("current_period_end", new Date().toISOString());
 
   if (error || !data || data.length === 0) return null;
-  const rows = data as SubscriptionRow[];
+  const rows = [...(data as SubscriptionRow[])].sort(
+    (a, b) =>
+      new Date(b.current_period_end).getTime() -
+      new Date(a.current_period_end).getTime(),
+  );
   const best = rows.find((r) => r.tier === "pro") ?? rows[0];
   return toActive(best);
 }
